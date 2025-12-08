@@ -36,6 +36,8 @@ export default function LineupDetails() {
   const [lineup, setLineup] = useState(null);
   const [songs, setSongs] = useState([]);
   const [allSongs, setAllSongs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const [showModal, setShowModal] = useState(false);
 
@@ -126,9 +128,13 @@ export default function LineupDetails() {
 
   const load = async () => {
     try {
-      const { data: lineups } = await api.get(`/lineups`);
-      const found = lineups.find((l) => l.id == id);
-      setLineup(found);
+      setLoading(true);
+      setError(null);
+      
+      // טעינת הליינאפ ישירות לפי ID (עם בדיקת הרשאות)
+      const { data: lineupData } = await api.get(`/lineups/${id}`);
+      console.log("Lineup data loaded:", lineupData); // Debug
+      setLineup(lineupData);
 
       // טען הכל
       const { data: all } = await api.get(`/songs`);
@@ -137,9 +143,11 @@ export default function LineupDetails() {
       const { data: lineupSongs } = await api.get(`/lineup-songs/${id}`);
 
       // השלם נתונים מהטבלה של allSongs
+      // חשוב: שומרים את lineup_song_id לפני הדריסה
       const enriched = lineupSongs.map((s) => {
         const full = all.find((x) => x.id === s.song_id);
-        return { ...s, ...full };
+        const lineupSongId = s.id; // שמירת ID של lineup_songs
+        return { ...s, ...full, id: lineupSongId }; // שמירת ה-ID הנכון
       });
 
       setSongs(enriched);
@@ -162,6 +170,11 @@ export default function LineupDetails() {
       }
     } catch (err) {
       console.error("❌ שגיאה בטעינה:", err);
+      const errorMessage = err?.response?.data?.message || err?.message || "שגיאה בטעינת הליינאפ";
+      setError(errorMessage);
+      showToast(errorMessage, "error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -176,6 +189,13 @@ export default function LineupDetails() {
 
   useEffect(() => {
     socket.emit("join-lineup", id);
+    
+    // הצטרפות לחדר המשתמש כדי לקבל עדכונים גם כשלא בחדר הליינאפ
+    const user = JSON.parse(localStorage.getItem("ari_user") || "{}");
+    if (user?.id) {
+      socket.emit("join-user", user.id);
+      socket.emit("join-user-updates", user.id);
+    }
 
     socket.on("share:update", (data) => {
       if (data.id == id) {
@@ -184,19 +204,22 @@ export default function LineupDetails() {
     });
     
     // Listeners נוספים לעדכונים בזמן אמת
-    socket.on("lineup-updated", () => {
-      load(); // רענון נתונים
+    socket.on("lineup-updated", (data) => {
+      // אם יש lineupId, נבדוק שהוא תואם
+      if (!data || !data.lineupId || data.lineupId == id) {
+        load(); // רענון נתונים
+      }
     });
     
     socket.on("lineup:updated", ({ lineupId }) => {
       if (lineupId == id) {
-        load(); // רענון נתונים
+        load(); // רענון נתונים כולל פרטי הליינאפ
       }
     });
     
     socket.on("lineup-song:added", ({ lineupId, songId }) => {
       if (lineupId == id) {
-        load(); // רענון רשימת שירים
+        load(); // רענון רשימת שירים - כולל השיר החדש
       }
     });
     
@@ -211,6 +234,12 @@ export default function LineupDetails() {
         load(); // רענון רשימת שירים
       }
     });
+    
+    socket.on("lineup-song:chart-uploaded", ({ lineupId, lineupSongId, songId }) => {
+      if (lineupId == id) {
+        load(); // רענון רשימת שירים כדי לעדכן את ה-PDF
+      }
+    });
 
     return () => {
       socket.off("share:update");
@@ -219,6 +248,7 @@ export default function LineupDetails() {
       socket.off("lineup-song:added");
       socket.off("lineup-song:removed");
       socket.off("lineup-song:reordered");
+      socket.off("lineup-song:chart-uploaded");
       socket.disconnect();
     };
   }, [id, socket]);
@@ -235,6 +265,10 @@ export default function LineupDetails() {
 
   const filteredLineupSongs = useMemo(() => {
     const term = searchMain.toLowerCase();
+    if (!term) {
+      // אם אין חיפוש, החזר את כל השירים
+      return songs;
+    }
     return songs.filter(
       (s) =>
         s.title?.toLowerCase().includes(term) ||
@@ -276,14 +310,18 @@ export default function LineupDetails() {
   const addSong = async (songId) => {
     try {
       await api.post(`/lineup-songs/${id}`, { song_id: songId });
+      
+      // עדכון מיידי - הוספת השיר לרשימה
       const songData = allSongs.find((s) => s.id === songId);
-
       if (songData) {
-        setSongs((prev) => [...prev, { ...songData, song_id: songData.id }]);
+        // נמצא את ה-lineup_song_id מהתשובה או נשתמש ב-socket event
+        // Socket.IO event יגיע ויעדכן את הרשימה
       }
 
       setSearchMain("");
       setSearchModal("");
+      
+      // רענון אוטומטי דרך Socket.IO יגיע
     } catch (err) {
       console.error("❌ שגיאה:", err);
     }
@@ -292,7 +330,11 @@ export default function LineupDetails() {
   const removeSong = async (songId) => {
     try {
       await api.delete(`/lineup-songs/${id}/${songId}`);
+      
+      // עדכון מיידי - הסרת השיר מהרשימה
       setSongs((prev) => prev.filter((s) => s.song_id !== songId));
+      
+      // רענון אוטומטי דרך Socket.IO יגיע גם כן
     } catch (err) {
       console.error("❌ שגיאה במחיקה:", err);
     }
@@ -320,7 +362,7 @@ export default function LineupDetails() {
 
       showToast("קובץ PDF הועלה בהצלחה", "success");
       
-      // עדכון השיר ברשימה
+      // עדכון מיידי - עדכון השיר ברשימה
       setSongs((prev) =>
         prev.map((s) =>
           s.id === lineupSongId
@@ -328,6 +370,7 @@ export default function LineupDetails() {
             : s
         )
       );
+      // רענון אוטומטי דרך Socket.IO יגיע גם כן
     } catch (err) {
       showToast(
         err?.response?.data?.message || "שגיאה בהעלאת הקובץ",
@@ -374,21 +417,43 @@ export default function LineupDetails() {
     const [moved] = reordered.splice(source.index, 1);
     reordered.splice(destination.index, 0, moved);
 
+    // עדכון מיידי - שינוי סדר השירים
     setSongs(reordered);
 
     try {
       await api.put(`/lineup-songs/${id}/order`, {
         songs: reordered.map((s) => s.song_id),
       });
+      
+      // רענון אוטומטי דרך Socket.IO יגיע גם כן
     } catch {}
   };
 
-  if (!lineup)
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-white">
-        טוען...
+        <div className="text-center">
+          <div className="text-xl mb-4">טוען...</div>
+        </div>
       </div>
     );
+  }
+
+  if (error || !lineup) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white">
+        <div className="text-center">
+          <div className="text-xl mb-4 text-red-400">{error || "ליינאפ לא נמצא"}</div>
+          <button
+            onClick={() => navigate(-1)}
+            className="bg-neutral-900 hover:bg-neutral-800 px-4 py-2 rounded-xl"
+          >
+            חזרה
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div dir="rtl" className="min-h-screen text-white p-6 relative">
@@ -530,125 +595,139 @@ export default function LineupDetails() {
                 ref={provided.innerRef}
                 className="space-y-3"
               >
-                {filteredLineupSongs.map((s, index) => (
-                  <Draggable
-                    key={s.id || s.song_id}
-                    draggableId={String(s.id || s.song_id)}
-                    index={index}
-                  >
-                    {(provided) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                        className="glass rounded-2xl p-4 flex justify-between items-center shadow-sm hover:shadow-lg border border-neutral-800"
-                      >
-                        <div className="flex items-center gap-4 flex-1">
-                          <GripVertical
-                            className="text-neutral-500"
-                            size={18}
-                          />
+                {filteredLineupSongs.length === 0 ? (
+                  <div className="text-center text-neutral-400 py-8">
+                    <p className="text-lg mb-2">אין שירים בליינאפ זה</p>
+                    {lineup?.is_owner && (
+                      <p className="text-sm">לחץ על הכפתור הירוק למעלה כדי להוסיף שירים</p>
+                    )}
+                  </div>
+                ) : (
+                  filteredLineupSongs.map((s, index) => (
+                    <Draggable
+                      key={s.id || s.song_id}
+                      draggableId={String(s.id || s.song_id)}
+                      index={index}
+                      isDragDisabled={!lineup?.is_owner}
+                    >
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...(lineup?.is_owner ? provided.dragHandleProps : {})}
+                          className={`glass rounded-2xl p-4 flex justify-between items-center shadow-sm hover:shadow-lg border border-neutral-800 ${
+                            snapshot.isDragging ? "opacity-50" : ""
+                          } ${!lineup?.is_owner ? "cursor-default" : "cursor-grab active:cursor-grabbing"}`}
+                        >
+                          <div className="flex items-center gap-4 flex-1">
+                            {lineup?.is_owner && (
+                              <GripVertical
+                                className="text-neutral-400 hover:text-brand-orange transition-colors cursor-grab active:cursor-grabbing"
+                                size={20}
+                              />
+                            )}
 
-                          <div className="flex-1">
-                            <p className="font-semibold text-lg">
-                              {index + 1}. {s.title}
-                            </p>
-
-                            <p className="text-neutral-400 text-sm">
-                              {s.artist}
-                            </p>
-
-                            {/* תגיות זמן / BPM / סולם */}
-                            <div className="flex flex-wrap gap-2 mt-2 text-xs">
-                              <p className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
-                                BPM {s.bpm || "-"}
+                            <div className="flex-1">
+                              <p className="font-semibold text-lg">
+                                {index + 1}. {s.title}
                               </p>
-                              <p className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
-                                {s.key_sig || "-"}
-                              </p>
-                              <p className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
-                                {s.duration_sec || "00:00"}
-                              </p>
-                            </div>
 
-                            {/* התגית הכתומה בשורה חדשה */}
-                            {s.notes && (
-                              <div className="mt-2">
-                                <span className="inline-block px-2 py-1 text-xs bg-brand-orange rounded-lg text-black font-semibold">
-                                  {s.notes}
-                                </span>
+                              <p className="text-neutral-400 text-sm">
+                                {s.artist}
+                              </p>
+
+                              {/* תגיות זמן / BPM / סולם */}
+                              <div className="flex flex-wrap gap-2 mt-2 text-xs">
+                                <p className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
+                                  BPM {s.bpm || "-"}
+                                </p>
+                                <p className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
+                                  {s.key_sig || "-"}
+                                </p>
+                                <p className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
+                                  {s.duration_sec || "00:00"}
+                                </p>
                               </div>
+
+                              {/* התגית הכתומה בשורה חדשה */}
+                              {s.notes && (
+                                <div className="mt-2">
+                                  <span className="inline-block px-2 py-1 text-xs bg-brand-orange rounded-lg text-black font-semibold">
+                                    {s.notes}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {/* כפתור העלאת PDF - רק אם המשתמש הוא הבעלים של הליינאפ */}
+                            {s.can_edit && (
+                              <>
+                                <input
+                                  type="file"
+                                  accept="application/pdf"
+                                  ref={(el) => {
+                                    fileInputRefs.current[s.id] = el;
+                                  }}
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      handleUploadChart(s.id, file);
+                                    }
+                                    e.target.value = ""; // איפוס input
+                                  }}
+                                  className="hidden"
+                                />
+                                <button
+                                  onClick={() => {
+                                    fileInputRefs.current[s.id]?.click();
+                                  }}
+                                  className="bg-blue-500 hover:bg-blue-600 p-2 rounded-full"
+                                  title="העלה קובץ PDF צ'ארט"
+                                >
+                                  <Upload size={14} />
+                                </button>
+                              </>
+                            )}
+
+                            {/* כפתור תצוגה מקדימה - לכל המשתמשים אם יש PDF */}
+                            {s.chart_pdf_url && (
+                              <button
+                                onClick={() => handlePreviewChart(s.chart_pdf_url)}
+                                className="bg-cyan-500 hover:bg-cyan-600 p-2 rounded-full"
+                                title="תצוגה מקדימה"
+                              >
+                                <Eye size={14} />
+                              </button>
+                            )}
+
+                            {/* כפתור הדפסה - לכל המשתמשים אם יש PDF */}
+                            {s.chart_pdf_url && (
+                              <button
+                                onClick={() => handlePrintChart(s.chart_pdf_url)}
+                                className="bg-green-500 hover:bg-green-600 p-2 rounded-full"
+                                title="הדפס צ'ארט"
+                              >
+                                <Printer size={14} />
+                              </button>
+                            )}
+
+                            {/* כפתור מחיקה - רק אם המשתמש הוא הבעלים של הליינאפ */}
+                            {s.can_edit && (
+                              <button
+                                onClick={() => removeSong(s.song_id)}
+                                className="bg-red-500 hover:bg-red-600 p-2 rounded-full"
+                              >
+                                <Trash2 size={14} />
+                              </button>
                             )}
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-2">
-                          {/* כפתור העלאת PDF - רק אם המשתמש הוא הבעלים של הליינאפ */}
-                          {s.can_edit && (
-                            <>
-                              <input
-                                type="file"
-                                accept="application/pdf"
-                                ref={(el) => {
-                                  fileInputRefs.current[s.id] = el;
-                                }}
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    handleUploadChart(s.id, file);
-                                  }
-                                  e.target.value = ""; // איפוס input
-                                }}
-                                className="hidden"
-                              />
-                              <button
-                                onClick={() => {
-                                  fileInputRefs.current[s.id]?.click();
-                                }}
-                                className="bg-blue-500 hover:bg-blue-600 p-2 rounded-full"
-                                title="העלה קובץ PDF צ'ארט"
-                              >
-                                <Upload size={14} />
-                              </button>
-                            </>
-                          )}
-
-                          {/* כפתור תצוגה מקדימה - לכל המשתמשים אם יש PDF */}
-                          {s.chart_pdf_url && (
-                            <button
-                              onClick={() => handlePreviewChart(s.chart_pdf_url)}
-                              className="bg-cyan-500 hover:bg-cyan-600 p-2 rounded-full"
-                              title="תצוגה מקדימה"
-                            >
-                              <Eye size={14} />
-                            </button>
-                          )}
-
-                          {/* כפתור הדפסה - לכל המשתמשים אם יש PDF */}
-                          {s.chart_pdf_url && (
-                            <button
-                              onClick={() => handlePrintChart(s.chart_pdf_url)}
-                              className="bg-green-500 hover:bg-green-600 p-2 rounded-full"
-                              title="הדפס צ'ארט"
-                            >
-                              <Printer size={14} />
-                            </button>
-                          )}
-
-                          {/* כפתור מחיקה - רק אם המשתמש הוא הבעלים של הליינאפ */}
-                          {s.can_edit && (
-                            <button
-                              onClick={() => removeSong(s.song_id)}
-                              className="bg-red-500 hover:bg-red-600 p-2 rounded-full"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
+                      )}
+                    </Draggable>
+                  ))
+                )}
 
                 {provided.placeholder}
               </div>

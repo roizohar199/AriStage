@@ -78,3 +78,28 @@ export async function emitToUserAndHost(
   io.to(`host_${userId}`).emit(event, data);
 }
 
+/**
+ * שליחת event לכל המשתמשים שמאזינים לעדכונים
+ */
+export async function emitToUserUpdates(
+  io: Server,
+  userId: number,
+  event: string,
+  data: any
+) {
+  if (!io) return;
+  
+  // שליחה ל-room של עדכוני משתמש
+  io.to(`user_updates_${userId}`).emit(event, data);
+  
+  // בדיקה אם המשתמש הוא אורח
+  const hostId = await isGuest(userId);
+  if (hostId) {
+    // שליחה גם למארח
+    io.to(`user_updates_${hostId}`).emit(event, data);
+  }
+  
+  // שליחה לכל האמנים שהוזמנו על ידי המשתמש (אם הוא מארח)
+  io.to(`host_${userId}`).emit(event, data);
+}
+

@@ -165,7 +165,8 @@ export default function Lineup() {
       setShowModal(false);
       setIsEditing(false);
       setEditId(null);
-      load();
+      // רענון אוטומטי דרך Socket.IO יגיע
+      // load(); // לא צריך - Socket.IO יעדכן
     } catch (err) {
       console.error("❌ שגיאה בשמירת ליינאפ:", err);
     }
@@ -181,7 +182,8 @@ export default function Lineup() {
 
     try {
       await api.delete(`/lineups/${id}`);
-      load();
+      // רענון אוטומטי דרך Socket.IO יגיע
+      // load(); // לא צריך - Socket.IO יעדכן
     } catch (err) {
       console.error("❌ שגיאה במחיקת ליינאפ:", err);
     }
@@ -244,7 +246,10 @@ export default function Lineup() {
             onClick={() => navigate(`/lineup/${l.id}`)}
           >
             <div>
-              <p className="font-semibold text-lg">
+              <p 
+                className="font-semibold text-lg cursor-pointer"
+                title={l.description || ""}
+              >
                 {i + 1}. {l.title}
               </p>
 

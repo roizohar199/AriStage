@@ -5,19 +5,23 @@ export async function listLineups(role, userId, hostId = null) {
   const params = [];
 
   if (role === "user") {
-    // אם המשתמש הוא אורח (יש לו hostId), הצג את הליינאפים שלו וגם של המארח
-    if (hostId) {
-      query += " WHERE created_by IN (?, ?)";
-      params.push(userId, hostId);
-    } else {
-      // אחרת, הצג את הליינאפים של המשתמש עצמו
-      query += " WHERE created_by = ?";
-      params.push(userId);
-    }
+    // בדף הליינאפים - הצג רק את הליינאפים שהמשתמש יצר בעצמו
+    // הליינאפים של המארח יראו רק בדף פרופיל האמן
+    query += " WHERE created_by = ?";
+    params.push(userId);
   }
 
   query += " ORDER BY id DESC";
   const [rows] = await pool.query(query, params);
+  return rows;
+}
+
+// פונקציה לקבלת ליינאפים של משתמש ספציפי (לשימוש ב-ArtistProfile)
+export async function listLineupsByUserId(targetUserId) {
+  const [rows] = await pool.query(
+    "SELECT * FROM lineups WHERE created_by = ? ORDER BY id DESC",
+    [targetUserId]
+  );
   return rows;
 }
 

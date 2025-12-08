@@ -6,7 +6,7 @@ import {
   updateSongDetails,
   uploadChartPdfForSong,
 } from "./songs.service.js";
-import { emitToUserAndHost } from "../../core/socket.js";
+import { emitToUserAndHost, emitToUserUpdates } from "../../core/socket.js";
 
 export const songsController = {
   list: asyncHandler(async (req, res) => {
@@ -42,6 +42,14 @@ export const songsController = {
         "song:created",
         { songId: payload.id, userId: req.user.id }
       );
+      
+      // גם ל-user_updates כדי לרענן דפים אחרים
+      await emitToUserUpdates(
+        global.io,
+        req.user.id,
+        "song:created",
+        { songId: payload.id, userId: req.user.id }
+      );
     }
     
     res.status(201).json({
@@ -72,6 +80,14 @@ export const songsController = {
     // שליחת עדכון בזמן אמת
     if (global.io) {
       await emitToUserAndHost(
+        global.io,
+        req.user.id,
+        "song:deleted",
+        { songId, userId: req.user.id }
+      );
+      
+      // גם ל-user_updates כדי לרענן דפים אחרים
+      await emitToUserUpdates(
         global.io,
         req.user.id,
         "song:deleted",

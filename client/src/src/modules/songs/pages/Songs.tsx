@@ -171,7 +171,7 @@ export default function Songs() {
 
       showToast("קובץ PDF הועלה בהצלחה", "success");
       
-      // עדכון השיר ברשימה
+      // עדכון מיידי - עדכון השיר ברשימה
       setSongs((prev) =>
         prev.map((s) =>
           s.id === songId
@@ -179,6 +179,7 @@ export default function Songs() {
             : s
         )
       );
+      // רענון אוטומטי דרך Socket.IO יגיע גם כן
     } catch (err) {
       showToast(
         err?.response?.data?.message || "שגיאה בהעלאת הקובץ",
@@ -257,19 +258,21 @@ export default function Songs() {
 
       setEditingId(null);
       setShowModal(false);
-      load();
+      // רענון אוטומטי דרך Socket.IO יגיע
+      // load(); // לא צריך - Socket.IO יעדכן
     } catch (err) {
       console.error("שגיאה בשמירה:", err);
     }
   };
 
   // מחיקה — עכשיו עם confirm מותאם!!
-  const remove = async (id) => {
+  const remove = async (songId) => {
     const ok = await confirm("מחיקת שיר", "בטוח שאתה רוצה למחוק את השיר?");
     if (!ok) return;
 
-    await api.delete(`/songs/${id}`);
-    load();
+    await api.delete(`/songs/${songId}`);
+    // רענון אוטומטי דרך Socket.IO יגיע
+    // load(); // לא צריך - Socket.IO יעדכן
   };
 
   // עריכה

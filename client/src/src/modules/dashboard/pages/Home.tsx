@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { Music, Users, CalendarCheck, ShieldCheck, User, UserPlus, X, Search, UserX } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "@/modules/shared/lib/api.js"; // 👈 חשוב! משתמשים ב־axios של המערכת
@@ -82,71 +82,70 @@ export default function Home() {
     return io(url, { transports: ["websocket"] });
   }, []);
 
+  // פונקציות טעינה - מוגדרות מחוץ ל-useEffect כדי שיהיו נגישות
+  const load = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data } = await api.get("/dashboard-stats", {
+        skipErrorToast: true,
+      });
+      setStats(data.stats);
+      setRole(data.role);
+    } catch (err) {
+      console.error(err);
+      setError("לא ניתן לטעון נתונים");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const loadArtists = useCallback(async () => {
+    try {
+      setArtistsLoading(true);
+      const { data: myCollection } = await api.get("/users/my-collection", {
+        skipErrorToast: true,
+      });
+      
+      const artistsList = [];
+      if (myCollection) {
+        artistsList.push(myCollection);
+      }
+      
+      setArtists(artistsList);
+    } catch (err) {
+      console.error("שגיאה בטעינת אמנים:", err);
+    } finally {
+      setArtistsLoading(false);
+    }
+  }, []);
+
+  const checkGuestStatus = useCallback(async () => {
+    try {
+      const { data } = await api.get("/users/check-guest", {
+        skipErrorToast: true,
+      });
+      setIsGuest(data.isGuest);
+    } catch (err) {
+      console.error("שגיאה בבדיקת סטטוס אורח:", err);
+    }
+  }, []);
+
+  const loadMyInvitedArtists = useCallback(async () => {
+    try {
+      setMyInvitedArtistsLoading(true);
+      const { data } = await api.get("/users/connected-to-me", {
+        skipErrorToast: true,
+      });
+      setMyInvitedArtists(data || []);
+    } catch (err) {
+      console.error("שגיאה בטעינת אמנים שהזמנתי:", err);
+    } finally {
+      setMyInvitedArtistsLoading(false);
+    }
+  }, []);
+
+  // טעינה ראשונית והגדרת Socket.IO
   useEffect(() => {
-    async function load() {
-      try {
-        setLoading(true);
-
-        // 👇 שימוש ב־axios עם baseURL נכון + טוקן אוטומטי
-        const { data } = await api.get("/dashboard-stats", {
-          skipErrorToast: true,
-        });
-
-        setStats(data.stats);
-        setRole(data.role);
-      } catch (err) {
-        console.error(err);
-        setError("לא ניתן לטעון נתונים");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    async function loadArtists() {
-      try {
-        setArtistsLoading(true);
-        const { data: myCollection } = await api.get("/users/my-collection", {
-          skipErrorToast: true,
-        });
-        
-        const artistsList = [];
-        if (myCollection) {
-          artistsList.push(myCollection);
-        }
-        
-        setArtists(artistsList);
-      } catch (err) {
-        console.error("שגיאה בטעינת אמנים:", err);
-      } finally {
-        setArtistsLoading(false);
-      }
-    }
-
-    async function checkGuestStatus() {
-      try {
-        const { data } = await api.get("/users/check-guest", {
-          skipErrorToast: true,
-        });
-        setIsGuest(data.isGuest);
-      } catch (err) {
-        console.error("שגיאה בבדיקת סטטוס אורח:", err);
-      }
-    }
-
-    async function loadMyInvitedArtists() {
-      try {
-        setMyInvitedArtistsLoading(true);
-        const { data } = await api.get("/users/connected-to-me", {
-          skipErrorToast: true,
-        });
-        setMyInvitedArtists(data || []);
-      } catch (err) {
-        console.error("שגיאה בטעינת אמנים שהזמנתי:", err);
-      } finally {
-        setMyInvitedArtistsLoading(false);
-      }
-    }
-
     load();
     loadArtists();
     checkGuestStatus();
@@ -171,18 +170,42 @@ export default function Home() {
     // Socket.IO listeners
     socket.on("user:invited", () => {
       loadMyInvitedArtists(); // רענון רשימת אמנים
+      load(); // רענון סטטיסטיקות
     });
     
     socket.on("user:uninvited", () => {
       loadMyInvitedArtists(); // רענון רשימת אמנים
+      load(); // רענון סטטיסטיקות
+    });
+    
+    // רענון סטטיסטיקות כאשר יש שינויים בשירים או ליינאפים
+    socket.on("song:created", () => {
+      load(); // רענון סטטיסטיקות
+    });
+    
+    socket.on("song:deleted", () => {
+      load(); // רענון סטטיסטיקות
+    });
+    
+    socket.on("lineup:created", () => {
+      load(); // רענון סטטיסטיקות
+    });
+    
+    socket.on("lineup:deleted", () => {
+      load(); // רענון סטטיסטיקות
     });
     
     return () => {
       socket.off("user:invited");
       socket.off("user:uninvited");
-      socket.disconnect();
+      socket.off("song:created");
+      socket.off("song:deleted");
+      socket.off("lineup:created");
+      socket.off("lineup:deleted");
+      // לא מנתקים את ה-socket כאן כי הוא משותף
     };
-  }, [socket]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket]); // הפונקציות מוגדרות עם useCallback אז הן יציבות
 
   const uninviteArtist = async (artistId, artistName) => {
     const ok = await confirm(

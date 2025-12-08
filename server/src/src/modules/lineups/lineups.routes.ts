@@ -9,6 +9,8 @@ router.get("/public/:token", lineupsController.public);
 router.use(requireAuth);
 
 router.get("/", lineupsController.list);
+router.get("/by-user/:userId", lineupsController.listByUserId);
+router.get("/:id", lineupsController.get);
 router.post("/", lineupsController.create);
 router.put("/:id", lineupsController.update);
 

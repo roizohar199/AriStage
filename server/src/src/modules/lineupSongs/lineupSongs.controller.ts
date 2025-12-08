@@ -11,10 +11,23 @@ export const lineupSongsController = {
   list: asyncHandler(async (req, res) => {
     const songs = await getLineupSongs(req.params.lineupId, req.user);
     
-    // בדיקה אם הליינאפ שייך למשתמש
+    // בדיקה אם הליינאפ שייך למשתמש או למארח שלו (אם הוא אורח)
     const { lineupBelongsToUser } = await import("../lineups/lineups.repository.js");
+    const { checkIfGuest } = await import("../users/users.service.js");
     const lineupId = parseInt(req.params.lineupId);
-    const isLineupOwner = req.user.role === "admin" || await lineupBelongsToUser(lineupId, req.user.id);
+    
+    let isLineupOwner = req.user.role === "admin" || await lineupBelongsToUser(lineupId, req.user.id);
+    
+    // אם לא, בדיקה אם המשתמש הוא אורח והליינאפ שייך למארח שלו
+    if (!isLineupOwner) {
+      const hostId = await checkIfGuest(req.user.id);
+      if (hostId) {
+        isLineupOwner = await lineupBelongsToUser(lineupId, hostId);
+      }
+    }
+    
+    // בדיקה אם המשתמש הוא הבעלים (לא אורח)
+    const isActualOwner = req.user.role === "admin" || await lineupBelongsToUser(lineupId, req.user.id);
     
     // הוספת URL מלא לקבצי PDF וסימון ownership
     const songsWithMetadata = songs.map((song) => {
@@ -26,8 +39,8 @@ export const lineupSongsController = {
         song.chart_pdf_url = `${baseUrl}/uploads/${cleanPdf}`;
       }
       
-      // המשתמש יכול לערוך רק אם הוא הבעלים של הליינאפ
-      song.can_edit = isLineupOwner;
+      // המשתמש יכול לערוך רק אם הוא הבעלים של הליינאפ (לא אורח)
+      song.can_edit = isActualOwner;
       
       return song;
     });

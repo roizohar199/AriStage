@@ -3,12 +3,14 @@ import {
   createLineup,
   createShareLink,
   disableShareLink,
+  getLineupById,
   getLineups,
+  getLineupsByUserId,
   getPublicLineup,
   getShareStatus,
   updateLineup,
 } from "./lineups.service.js";
-import { emitToUserAndHost } from "../../core/socket.js";
+import { emitToUserAndHost, emitToUserUpdates } from "../../core/socket.js";
 
 export const lineupsController = {
   public: asyncHandler(async (req, res) => {
@@ -31,12 +33,53 @@ export const lineupsController = {
     res.json(lineupsWithMetadata);
   }),
 
+  // endpoint לקבלת ליינאפים של משתמש ספציפי (לשימוש ב-ArtistProfile)
+  listByUserId: asyncHandler(async (req, res) => {
+    const targetUserId = parseInt(req.params.userId);
+    if (isNaN(targetUserId)) {
+      return res.status(400).json({ message: "ID משתמש לא תקין" });
+    }
+    
+    // בדיקה שהמשתמש הנוכחי הוא אורח והמשתמש המבוקש הוא המארח שלו
+    const { checkIfGuest } = await import("../users/users.service.js");
+    const hostId = await checkIfGuest(req.user.id);
+    
+    if (!hostId || hostId !== targetUserId) {
+      return res.status(403).json({ message: "אין לך גישה לליינאפים של משתמש זה" });
+    }
+    
+    const lineups = await getLineupsByUserId(targetUserId);
+    res.json(lineups);
+  }),
+
+  get: asyncHandler(async (req, res) => {
+    const lineupId = parseInt(req.params.id);
+    if (isNaN(lineupId)) {
+      return res.status(400).json({ message: "ID ליינאפ לא תקין" });
+    }
+    
+    const lineup = await getLineupById(lineupId, req.user);
+    
+    // הוספת סימון ownership
+    lineup.is_owner = lineup.created_by === req.user.id;
+    
+    res.json(lineup);
+  }),
+
   create: asyncHandler(async (req, res) => {
     const lineup = await createLineup(req.user, req.body);
     
     // שליחת עדכון בזמן אמת
     if (global.io) {
       await emitToUserAndHost(
+        global.io,
+        req.user.id,
+        "lineup:created",
+        { lineupId: lineup.id, userId: req.user.id }
+      );
+      
+      // גם ל-user_updates כדי לרענן דפים אחרים
+      await emitToUserUpdates(
         global.io,
         req.user.id,
         "lineup:created",

@@ -5,10 +5,12 @@ import { getSharedLineup } from "../share/share.service.js";
 import {
   deactivateShare,
   findActiveShare,
+  findLineupById,
   insertLineup,
   insertShareToken,
   lineupBelongsToUser,
   listLineups,
+  listLineupsByUserId,
   updateLineupRecord,
 } from "./lineups.repository.js";
 import { checkIfGuest } from "../users/users.service.js";
@@ -45,9 +47,42 @@ export function getPublicLineup(token) {
 }
 
 export async function getLineups(user) {
-  // בדיקה אם המשתמש הוא אורח
+  // בדף הליינאפים - הצג רק את הליינאפים שהמשתמש יצר בעצמו
+  return listLineups(user.role, user.id, null);
+}
+
+// פונקציה לקבלת ליינאפים של משתמש ספציפי (לשימוש ב-ArtistProfile)
+export async function getLineupsByUserId(targetUserId) {
+  return listLineupsByUserId(targetUserId);
+}
+
+// פונקציה לקבלת ליינאפ בודד לפי ID (עם בדיקת הרשאות)
+export async function getLineupById(lineupId, user) {
+  const lineup = await findLineupById(lineupId);
+  if (!lineup) {
+    throw new AppError(404, "ליינאפ לא נמצא");
+  }
+
+  // בדיקת הרשאות: האם המשתמש הוא הבעלים או אורח של המארח
+  if (user.role === "admin") {
+    return lineup;
+  }
+
+  const hasAccess = await lineupBelongsToUser(lineupId, user.id);
+  if (hasAccess) {
+    return lineup;
+  }
+
+  // אם לא, בדיקה אם המשתמש הוא אורח והליינאפ שייך למארח שלו
   const hostId = await checkIfGuest(user.id);
-  return listLineups(user.role, user.id, hostId);
+  if (hostId) {
+    const hostHasAccess = await lineupBelongsToUser(lineupId, hostId);
+    if (hostHasAccess) {
+      return lineup;
+    }
+  }
+
+  throw new AppError(403, "אין לך גישה לליינאפ הזה");
 }
 
 export async function createLineup(user, payload) {
@@ -89,7 +124,8 @@ export async function updateLineup(user, id, payload) {
     description: payload.description || "",
   });
 
-  emitLineupEvent(id, "lineup-updated");
+  emitLineupEvent(id, "lineup-updated", { lineupId: id });
+  emitLineupEvent(id, "lineup:updated", { lineupId: id });
 
   return lineup;
 }

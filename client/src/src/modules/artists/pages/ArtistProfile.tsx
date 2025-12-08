@@ -8,7 +8,6 @@ export default function ArtistProfile() {
   const navigate = useNavigate();
   const [artist, setArtist] = useState(null);
   const [lineups, setLineups] = useState([]);
-  const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -39,14 +38,11 @@ export default function ArtistProfile() {
 
       setArtist(myCollection);
 
-      // טעינת ליינאפים ושירים של האמן
-      const [lineupsRes, songsRes] = await Promise.all([
-        api.get("/lineups", { skipErrorToast: true }),
-        api.get("/songs", { skipErrorToast: true }),
-      ]);
-
-      setLineups(lineupsRes.data || []);
-      setSongs(songsRes.data || []);
+      // טעינת ליינאפים של המארח (לא של המשתמש הנוכחי)
+      const { data: lineupsData } = await api.get(`/lineups/by-user/${myCollection.id}`, {
+        skipErrorToast: true,
+      });
+      setLineups(lineupsData || []);
     } catch (err) {
       console.error("שגיאה בטעינת נתונים:", err);
       setError("לא ניתן לטעון את הנתונים");
@@ -220,66 +216,6 @@ export default function ArtistProfile() {
           )}
         </div>
 
-        {/* שירים */}
-        <div>
-          <h2 className="text-2xl font-bold text-brand-orange mb-4 flex items-center gap-2">
-            <Music size={24} />
-            שירים ({songs.length})
-          </h2>
-
-          {songs.length === 0 ? (
-            <div className="bg-neutral-900 rounded-2xl p-8 text-center border border-neutral-800">
-              <Music size={48} className="mx-auto mb-4 text-neutral-600" />
-              <p className="text-neutral-400">אין שירים זמינים</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {songs.map((song, index) => (
-                <div
-                  key={song.id}
-                  className="bg-neutral-900 rounded-2xl p-4 border border-neutral-800"
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-white mb-1">
-                        {index + 1}. {song.title}
-                      </h3>
-                      {song.artist && (
-                        <p className="text-neutral-400 text-sm mb-2">
-                          {song.artist}
-                        </p>
-                      )}
-
-                      <div className="flex flex-wrap gap-2 mt-2 text-xs">
-                        {song.key_sig && (
-                          <span className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
-                            {song.key_sig}
-                          </span>
-                        )}
-                        {song.bpm && (
-                          <span className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
-                            {song.bpm} BPM
-                          </span>
-                        )}
-                        {song.duration_sec && (
-                          <span className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
-                            {song.duration_sec}
-                          </span>
-                        )}
-                      </div>
-
-                      {song.notes && (
-                        <span className="inline-block mt-2 px-2 py-1 text-xs bg-brand-orange rounded-lg text-black font-semibold">
-                          {song.notes}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
