@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import { AppError } from "../../core/errors.js";
 import { signToken } from "../auth/token.service.js";
 
-import { findMyCollection, findConnectedToMe, inviteArtist as inviteArtistRepo, uninviteArtist as uninviteArtistRepo, leaveCollection as leaveCollectionRepo, isGuest, saveInvitation, findInvitationByToken, markInvitationAsUsed } from "./users.repository.js";
+import { findMyCollection, findConnectedToMe, inviteArtist as inviteArtistRepo, uninviteArtist as uninviteArtistRepo, leaveCollection as leaveCollectionRepo, isGuest, saveInvitation, findInvitationByToken, markInvitationAsUsed, acceptInvitationStatus as acceptInvitationStatusRepo, rejectInvitationStatus as rejectInvitationStatusRepo } from "./users.repository.js";
 import {
   deleteUserById,
   findUserByEmail,

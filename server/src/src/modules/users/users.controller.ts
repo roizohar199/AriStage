@@ -143,12 +143,20 @@ export const usersController = {
     
     // שליחת עדכון בזמן אמת
     if (global.io) {
-      const { emitToHost } = await import("../../core/socket.js");
+      const { emitToHost, emitToUser } = await import("../../core/socket.js");
+      // עדכון למארח
       await emitToHost(
         global.io,
         hostId,
         "user:invited",
         { artistId, hostId }
+      );
+      // עדכון לאמן שהוזמן - כדי שיראה את ההזמנה הממתינה
+      await emitToUser(
+        global.io,
+        artistId,
+        "invitation:pending",
+        { hostId, artistId }
       );
     }
     

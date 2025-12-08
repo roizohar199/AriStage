@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { User, Music, LogOut, Check, X } from "lucide-react";
 import api from "@/modules/shared/lib/api.js";
 import { useConfirm } from "@/modules/shared/hooks/useConfirm.jsx";
@@ -6,6 +7,7 @@ import { useToast } from "@/modules/shared/components/ToastProvider.jsx";
 import { io } from "socket.io-client";
 
 export default function Artists() {
+  const navigate = useNavigate();
   const { confirm, ConfirmModalComponent } = useConfirm();
   const { showToast } = useToast();
   
@@ -34,13 +36,22 @@ export default function Artists() {
     // Socket.IO listeners לעדכונים בזמן אמת
     socket.on("user:invitation-accepted", () => {
       loadArtists(); // רענון רשימת האמנים
+      // עדכון מיידי - הסרת ההזמנה הממתינה
+      setPendingInvitation(null);
     });
     
     socket.on("user:invitation-rejected", () => {
       loadArtists(); // רענון רשימת האמנים
+      // עדכון מיידי - הסרת ההזמנה הממתינה
+      setPendingInvitation(null);
     });
     
     socket.on("user:left-collection", () => {
+      loadArtists(); // רענון רשימת האמנים
+    });
+    
+    // האזנה לעדכוני הזמנות חדשות
+    socket.on("invitation:pending", () => {
       loadArtists(); // רענון רשימת האמנים
     });
     
@@ -48,6 +59,7 @@ export default function Artists() {
       socket.off("user:invitation-accepted");
       socket.off("user:invitation-rejected");
       socket.off("user:left-collection");
+      socket.off("invitation:pending");
       socket.disconnect();
     };
   }, [socket]);
@@ -116,7 +128,12 @@ export default function Artists() {
       setProcessing(true);
       await api.post("/users/accept-invitation", { hostId });
       showToast("הזמנה אושרה בהצלחה", "success");
-      loadArtists(); // רענון רשימת האמנים
+      // עדכון מיידי - הסרת ההזמנה הממתינה
+      setPendingInvitation(null);
+      // עדכון מיידי של BottomNav דרך custom event
+      window.dispatchEvent(new CustomEvent("pending-invitations-updated"));
+      // רענון רשימת האמנים (יכול לקחת קצת זמן)
+      loadArtists();
     } catch (err) {
       console.error("❌ שגיאה באישור הזמנה:", err);
       const errorMsg = err?.response?.data?.message || "שגיאה באישור ההזמנה";
@@ -137,7 +154,12 @@ export default function Artists() {
       setProcessing(true);
       await api.post("/users/reject-invitation", { hostId });
       showToast("הזמנה נדחתה", "success");
-      loadArtists(); // רענון רשימת האמנים
+      // עדכון מיידי - הסרת ההזמנה הממתינה
+      setPendingInvitation(null);
+      // עדכון מיידי של BottomNav דרך custom event
+      window.dispatchEvent(new CustomEvent("pending-invitations-updated"));
+      // רענון רשימת האמנים
+      loadArtists();
     } catch (err) {
       console.error("❌ שגיאה בדחיית הזמנה:", err);
       const errorMsg = err?.response?.data?.message || "שגיאה בדחיית ההזמנה";
@@ -285,9 +307,12 @@ export default function Artists() {
 
                     {/* פרטי האמן */}
                     <div className="flex-1 min-w-0">
-                      <h2 className="text-2xl font-bold text-white mb-2">
+                      <button
+                        onClick={() => navigate(`/artist/${artist.id}`)}
+                        className="text-2xl font-bold text-white mb-2 hover:text-brand-orange transition cursor-pointer text-right block"
+                      >
                         {artist.full_name || "אמן ללא שם"}
-                      </h2>
+                      </button>
 
                       {/* תיאור תפקיד */}
                       {artist.artist_role && (

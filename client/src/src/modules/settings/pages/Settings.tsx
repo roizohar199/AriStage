@@ -79,6 +79,14 @@ export default function Settings() {
 
       setSuccess("הפרטים נשמרו בהצלחה!");
       setForm({ ...form, newPass: "" });
+      
+      // עדכון משתמש ב-localStorage
+      const { data: userData } = await api.get("/users/me");
+      localStorage.setItem("ari_user", JSON.stringify(userData));
+      
+      // עדכון כל הקומפוננטות דרך custom event
+      window.dispatchEvent(new CustomEvent("data-refresh", { detail: { type: "user", action: "updated" } }));
+      window.dispatchEvent(new CustomEvent("user-updated", { detail: userData }));
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.error || "שגיאה בעדכון הנתונים");

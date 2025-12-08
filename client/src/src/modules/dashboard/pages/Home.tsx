@@ -76,6 +76,7 @@ export default function Home() {
   const [myInvitedArtists, setMyInvitedArtists] = useState([]);
   const [myInvitedArtistsLoading, setMyInvitedArtistsLoading] = useState(true);
   const [leaving, setLeaving] = useState(false);
+  const [pendingInvitations, setPendingInvitations] = useState([]);
 
   // Socket.IO connection
   const socket = useMemo(() => {
@@ -143,12 +144,25 @@ export default function Home() {
     }
   }, []);
 
+  const loadPendingInvitations = useCallback(async () => {
+    try {
+      const { data } = await api.get("/users/pending-invitation", {
+        skipErrorToast: true,
+      });
+      setPendingInvitations(Array.isArray(data) ? data : []);
+    } catch (err) {
+      // שקט - לא להציג שגיאה אם אין הרשאה
+      setPendingInvitations([]);
+    }
+  }, []);
+
   // טעינה ראשונית והגדרת Socket.IO
   useEffect(() => {
     load();
     loadArtists();
     checkGuestStatus();
     loadMyInvitedArtists();
+    loadPendingInvitations();
     
     // הצטרפות ל-rooms של Socket.IO
     const user = JSON.parse(localStorage.getItem("ari_user") || "{}");
@@ -194,6 +208,37 @@ export default function Home() {
       load(); // רענון סטטיסטיקות
     });
     
+    socket.on("invitation:pending", () => {
+      loadPendingInvitations(); // רענון הזמנות ממתינות
+    });
+    
+    socket.on("user:invitation-accepted", () => {
+      loadPendingInvitations(); // רענון הזמנות ממתינות
+      loadArtists(); // רענון רשימת האמנים
+    });
+    
+    socket.on("user:invitation-rejected", () => {
+      loadPendingInvitations(); // רענון הזמנות ממתינות
+    });
+    
+    // האזנה ל-custom events לעדכון אוטומטי אחרי כל פעולה
+    const handleDataRefresh = (event) => {
+      const { type, action } = event.detail || {};
+      // רענון סטטיסטיקות אחרי כל פעולה
+      load();
+      
+      // רענון ספציפי לפי סוג הפעולה
+      if (type === "song") {
+        // שירים - רק סטטיסטיקות
+      } else if (type === "lineup") {
+        // ליינאפים - רק סטטיסטיקות
+      } else if (type === "lineup-song") {
+        // שירים בליינאפ - רק סטטיסטיקות
+      }
+    };
+    
+    window.addEventListener("data-refresh", handleDataRefresh);
+    
     return () => {
       socket.off("user:invited");
       socket.off("user:uninvited");
@@ -201,6 +246,10 @@ export default function Home() {
       socket.off("song:deleted");
       socket.off("lineup:created");
       socket.off("lineup:deleted");
+      socket.off("invitation:pending");
+      socket.off("user:invitation-accepted");
+      socket.off("user:invitation-rejected");
+      window.removeEventListener("data-refresh", handleDataRefresh);
       // לא מנתקים את ה-socket כאן כי הוא משותף
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -285,8 +334,33 @@ export default function Home() {
       className="min-h-screen text-white flex flex-col items-center pb-20"
     >
       <ConfirmModalComponent />
+      
+      {/* התראה על הזמנות ממתינות */}
+      {pendingInvitations.length > 0 && (
+        <div className="w-[90%] max-w-2xl mt-16 mb-4">
+          <div className="bg-yellow-900/30 border-2 border-yellow-500/50 rounded-xl p-4 text-right">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-yellow-400 mb-1">
+                  יש לך {pendingInvitations.length} הזמנה{pendingInvitations.length > 1 ? "ות" : ""} ממתינות לאישור
+                </h3>
+                <p className="text-neutral-300 text-sm">
+                  {pendingInvitations[0]?.full_name || "משתמש"} מזמין אותך להצטרף למאגר שלו
+                </p>
+              </div>
+              <button
+                onClick={() => navigate("/artists")}
+                className="flex-shrink-0 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-6 py-2 rounded-lg transition-all whitespace-nowrap"
+              >
+                צפה והאשר
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* כותרת */}
-      <h1 className="text-3xl font-bold text-brand-orange mt-16 mb-2 drop-shadow-[0_0_10px_rgba(255,136,0,0.3)] text-center">
+      <h1 className={`text-3xl font-bold text-brand-orange ${pendingInvitations.length > 0 ? 'mt-4' : 'mt-16'} mb-2 drop-shadow-[0_0_10px_rgba(255,136,0,0.3)] text-center`}>
         ברוך הבא ל־Ari Stage
       </h1>
 

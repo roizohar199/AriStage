@@ -263,6 +263,17 @@ export default function LineupDetails() {
       }
     });
 
+    // האזנה ל-custom events לעדכון אוטומטי אחרי כל פעולה
+    const handleDataRefresh = (event) => {
+      const { type, action, lineupId } = event.detail || {};
+      // אם זה פעולה על הליינאפ הזה או על שירים בליינאפ הזה
+      if (lineupId == id || (type === "lineup-song" && lineupId == id)) {
+        load(); // רענון נתונים
+      }
+    };
+    
+    window.addEventListener("data-refresh", handleDataRefresh);
+    
     return () => {
       socket.off("share:update");
       socket.off("lineup-updated");
@@ -272,6 +283,7 @@ export default function LineupDetails() {
       socket.off("lineup-song:reordered");
       socket.off("lineup-song:chart-uploaded");
       socket.off("lineup-song:chart-deleted");
+      window.removeEventListener("data-refresh", handleDataRefresh);
       socket.disconnect();
     };
   }, [id, socket]);
@@ -334,17 +346,13 @@ export default function LineupDetails() {
     try {
       await api.post(`/lineup-songs/${id}`, { song_id: songId });
       
-      // עדכון מיידי - הוספת השיר לרשימה
-      const songData = allSongs.find((s) => s.id === songId);
-      if (songData) {
-        // נמצא את ה-lineup_song_id מהתשובה או נשתמש ב-socket event
-        // Socket.IO event יגיע ויעדכן את הרשימה
-      }
+      // רענון מיידי
+      load();
+      // עדכון כל הקומפוננטות דרך custom event
+      window.dispatchEvent(new CustomEvent("data-refresh", { detail: { type: "lineup-song", action: "added", lineupId: id } }));
 
       setSearchMain("");
       setSearchModal("");
-      
-      // רענון אוטומטי דרך Socket.IO יגיע
     } catch (err) {
       console.error("❌ שגיאה:", err);
     }
@@ -354,10 +362,10 @@ export default function LineupDetails() {
     try {
       await api.delete(`/lineup-songs/${id}/${songId}`);
       
-      // עדכון מיידי - הסרת השיר מהרשימה
-      setSongs((prev) => prev.filter((s) => s.song_id !== songId));
-      
-      // רענון אוטומטי דרך Socket.IO יגיע גם כן
+      // רענון מיידי
+      load();
+      // עדכון כל הקומפוננטות דרך custom event
+      window.dispatchEvent(new CustomEvent("data-refresh", { detail: { type: "lineup-song", action: "removed", lineupId: id } }));
     } catch (err) {
       console.error("❌ שגיאה במחיקה:", err);
     }
@@ -385,15 +393,10 @@ export default function LineupDetails() {
 
       showToast("קובץ PDF הועלה בהצלחה", "success");
       
-      // עדכון מיידי - עדכון השיר ברשימה
-      setSongs((prev) =>
-        prev.map((s) =>
-          s.id === lineupSongId
-            ? { ...s, chart_pdf_url: data.chart_pdf_url }
-            : s
-        )
-      );
-      // רענון אוטומטי דרך Socket.IO יגיע גם כן
+      // רענון מיידי
+      load();
+      // עדכון כל הקומפוננטות דרך custom event
+      window.dispatchEvent(new CustomEvent("data-refresh", { detail: { type: "lineup-song", action: "chart-uploaded", lineupId: id } }));
     } catch (err) {
       showToast(
         err?.response?.data?.message || "שגיאה בהעלאת הקובץ",
@@ -471,7 +474,10 @@ export default function LineupDetails() {
         songs: reordered.map((s) => s.song_id),
       });
       
-      // רענון אוטומטי דרך Socket.IO יגיע גם כן
+      // רענון מיידי
+      load();
+      // עדכון כל הקומפוננטות דרך custom event
+      window.dispatchEvent(new CustomEvent("data-refresh", { detail: { type: "lineup-song", action: "reordered", lineupId: id } }));
     } catch {}
   };
 

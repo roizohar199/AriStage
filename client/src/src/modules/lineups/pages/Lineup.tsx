@@ -109,10 +109,21 @@ export default function Lineup() {
       setLineups((prev) => prev.filter((l) => l.id !== lineupId));
     });
     
+    // האזנה ל-custom events לעדכון אוטומטי אחרי כל פעולה
+    const handleDataRefresh = (event) => {
+      const { type, action } = event.detail || {};
+      if (type === "lineup") {
+        load(); // רענון רשימת ליינאפים
+      }
+    };
+    
+    window.addEventListener("data-refresh", handleDataRefresh);
+    
     return () => {
       socket.off("lineup:created");
       socket.off("lineup:updated");
       socket.off("lineup:deleted");
+      window.removeEventListener("data-refresh", handleDataRefresh);
       socket.disconnect();
     };
   }, [socket]);
@@ -165,8 +176,10 @@ export default function Lineup() {
       setShowModal(false);
       setIsEditing(false);
       setEditId(null);
-      // רענון אוטומטי דרך Socket.IO יגיע
-      // load(); // לא צריך - Socket.IO יעדכן
+      // רענון מיידי
+      load();
+      // עדכון כל הקומפוננטות דרך custom event
+      window.dispatchEvent(new CustomEvent("data-refresh", { detail: { type: "lineup", action: isEditing ? "updated" : "created" } }));
     } catch (err) {
       console.error("❌ שגיאה בשמירת ליינאפ:", err);
     }
@@ -182,8 +195,10 @@ export default function Lineup() {
 
     try {
       await api.delete(`/lineups/${id}`);
-      // רענון אוטומטי דרך Socket.IO יגיע
-      // load(); // לא צריך - Socket.IO יעדכן
+      // רענון מיידי
+      load();
+      // עדכון כל הקומפוננטות דרך custom event
+      window.dispatchEvent(new CustomEvent("data-refresh", { detail: { type: "lineup", action: "deleted" } }));
     } catch (err) {
       console.error("❌ שגיאה במחיקת ליינאפ:", err);
     }

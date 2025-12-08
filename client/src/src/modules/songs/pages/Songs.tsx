@@ -124,12 +124,23 @@ export default function Songs() {
       );
     });
     
+    // האזנה ל-custom events לעדכון אוטומטי אחרי כל פעולה
+    const handleDataRefresh = (event) => {
+      const { type, action } = event.detail || {};
+      if (type === "song") {
+        load(); // רענון רשימת שירים
+      }
+    };
+    
+    window.addEventListener("data-refresh", handleDataRefresh);
+    
     return () => {
       socket.off("song:created");
       socket.off("song:updated");
       socket.off("song:deleted");
       socket.off("song:chart-uploaded");
       socket.off("song:chart-deleted");
+      window.removeEventListener("data-refresh", handleDataRefresh);
       socket.disconnect();
     };
   }, [socket]);
@@ -180,15 +191,10 @@ export default function Songs() {
 
       showToast("קובץ PDF הועלה בהצלחה", "success");
       
-      // עדכון מיידי - עדכון השיר ברשימה
-      setSongs((prev) =>
-        prev.map((s) =>
-          s.id === songId
-            ? { ...s, chart_pdf_url: data.chart_pdf_url }
-            : s
-        )
-      );
-      // רענון אוטומטי דרך Socket.IO יגיע גם כן
+      // רענון מיידי
+      load();
+      // עדכון כל הקומפוננטות דרך custom event
+      window.dispatchEvent(new CustomEvent("data-refresh", { detail: { type: "song", action: "chart-uploaded" } }));
     } catch (err) {
       showToast(
         err?.response?.data?.message || "שגיאה בהעלאת הקובץ",
@@ -247,13 +253,10 @@ export default function Songs() {
       await api.delete(`/songs/${songId}/delete-chart`);
       showToast("קובץ PDF נמחק בהצלחה", "success");
       
-      // עדכון מיידי - עדכון השיר ברשימה
-      setSongs((prev) =>
-        prev.map((s) =>
-          s.id === songId ? { ...s, chart_pdf_url: null } : s
-        )
-      );
-      // רענון אוטומטי דרך Socket.IO יגיע גם כן
+      // רענון מיידי
+      load();
+      // עדכון כל הקומפוננטות דרך custom event
+      window.dispatchEvent(new CustomEvent("data-refresh", { detail: { type: "song", action: "chart-deleted" } }));
     } catch (err) {
       showToast(
         err?.response?.data?.message || "שגיאה במחיקת הקובץ",
@@ -290,8 +293,10 @@ export default function Songs() {
 
       setEditingId(null);
       setShowModal(false);
-      // רענון אוטומטי דרך Socket.IO יגיע
-      // load(); // לא צריך - Socket.IO יעדכן
+      // רענון מיידי
+      load();
+      // עדכון כל הקומפוננטות דרך custom event
+      window.dispatchEvent(new CustomEvent("data-refresh", { detail: { type: "song", action: editingId ? "updated" : "created" } }));
     } catch (err) {
       console.error("שגיאה בשמירה:", err);
     }
@@ -303,8 +308,10 @@ export default function Songs() {
     if (!ok) return;
 
     await api.delete(`/songs/${songId}`);
-    // רענון אוטומטי דרך Socket.IO יגיע
-    // load(); // לא צריך - Socket.IO יעדכן
+    // רענון מיידי
+    load();
+    // עדכון כל הקומפוננטות דרך custom event
+    window.dispatchEvent(new CustomEvent("data-refresh", { detail: { type: "song", action: "deleted" } }));
   };
 
   // עריכה

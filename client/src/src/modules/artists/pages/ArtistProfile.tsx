@@ -20,26 +20,36 @@ export default function ArtistProfile() {
       setLoading(true);
       setError(null);
 
-      // טעינת פרטי האמן
+      // טעינת פרטי המארחים
       const { data: myCollection } = await api.get("/users/my-collection", {
         skipErrorToast: true,
       });
 
-      if (!myCollection) {
-        setError("אין לך גישה לפרופיל זה");
+      // myCollection מחזיר רשימה של מארחים
+      const hostsList = Array.isArray(myCollection) ? myCollection : (myCollection ? [myCollection] : []);
+
+      if (hostsList.length === 0) {
+        setError("אין לך גישה לפרופיל זה - לא אישרת הצטרפות למאגר");
         return;
       }
 
-      // אם יש id ב-URL, בדוק שהוא תואם לאמן המארח
-      if (id && myCollection.id !== Number(id)) {
-        setError("אין לך גישה לפרופיל זה");
-        return;
+      // אם יש id ב-URL, מצא את המארח המתאים
+      let selectedHost = null;
+      if (id) {
+        selectedHost = hostsList.find((host) => host.id === Number(id));
+        if (!selectedHost) {
+          setError("אין לך גישה לפרופיל זה - המארח לא נמצא ברשימת המארחים שלך");
+          return;
+        }
+      } else {
+        // אם אין id, קח את המארח הראשון
+        selectedHost = hostsList[0];
       }
 
-      setArtist(myCollection);
+      setArtist(selectedHost);
 
       // טעינת ליינאפים של המארח (לא של המשתמש הנוכחי)
-      const { data: lineupsData } = await api.get(`/lineups/by-user/${myCollection.id}`, {
+      const { data: lineupsData } = await api.get(`/lineups/by-user/${selectedHost.id}`, {
         skipErrorToast: true,
       });
       setLineups(lineupsData || []);

@@ -10,3 +10,4 @@ UPDATE `users`
 SET `invitation_status` = 'accepted' 
 WHERE `invited_by` IS NOT NULL AND `invitation_status` IS NULL;
 
+

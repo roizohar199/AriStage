@@ -33,3 +33,4 @@ ON DUPLICATE KEY UPDATE
 CREATE INDEX idx_guest_status ON `user_hosts` (`guest_id`, `invitation_status`);
 CREATE INDEX idx_host_status ON `user_hosts` (`host_id`, `invitation_status`);
 
+
