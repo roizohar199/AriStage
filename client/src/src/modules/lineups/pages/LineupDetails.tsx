@@ -195,6 +195,18 @@ export default function LineupDetails() {
     if (user?.id) {
       socket.emit("join-user", user.id);
       socket.emit("join-user-updates", user.id);
+      
+      // בדיקה אם המשתמש הוא אורח או מארח - הצטרפות לחדר המתאים
+      api.get("/users/check-guest", { skipErrorToast: true })
+        .then(({ data }) => {
+          if (data.isHost) {
+            socket.emit("join-host", user.id);
+          }
+          if (data.hostId) {
+            socket.emit("join-host", data.hostId);
+          }
+        })
+        .catch(() => {});
     }
 
     socket.on("share:update", (data) => {
@@ -240,6 +252,16 @@ export default function LineupDetails() {
         load(); // רענון רשימת שירים כדי לעדכן את ה-PDF
       }
     });
+    
+    socket.on("lineup-song:chart-deleted", ({ lineupId, lineupSongId, songId }) => {
+      if (lineupId == id) {
+        setSongs((prev) =>
+          prev.map((s) =>
+            s.id === lineupSongId ? { ...s, chart_pdf_url: null } : s
+          )
+        );
+      }
+    });
 
     return () => {
       socket.off("share:update");
@@ -249,6 +271,7 @@ export default function LineupDetails() {
       socket.off("lineup-song:removed");
       socket.off("lineup-song:reordered");
       socket.off("lineup-song:chart-uploaded");
+      socket.off("lineup-song:chart-deleted");
       socket.disconnect();
     };
   }, [id, socket]);
@@ -404,6 +427,29 @@ export default function LineupDetails() {
 
     // פתיחת PDF בחלון חדש
     window.open(chartPdfUrl, "_blank", "width=800,height=600");
+  };
+
+  const handleDeleteChart = async (lineupSongId) => {
+    const ok = await confirm("מחיקת קובץ PDF", "בטוח שאתה רוצה למחוק את קובץ ה-PDF?");
+    if (!ok) return;
+
+    try {
+      await api.delete(`/lineup-songs/${lineupSongId}/delete-chart`);
+      showToast("קובץ PDF נמחק בהצלחה", "success");
+      
+      // עדכון מיידי - עדכון השיר ברשימה
+      setSongs((prev) =>
+        prev.map((s) =>
+          s.id === lineupSongId ? { ...s, chart_pdf_url: null } : s
+        )
+      );
+      // רענון אוטומטי דרך Socket.IO יגיע גם כן
+    } catch (err) {
+      showToast(
+        err?.response?.data?.message || "שגיאה במחיקת הקובץ",
+        "error"
+      );
+    }
   };
 
   const handleDragEnd = async (result) => {
@@ -713,11 +759,23 @@ export default function LineupDetails() {
                               </button>
                             )}
 
+                            {/* כפתור הסרת PDF - רק אם המשתמש יכול לערוך */}
+                            {s.chart_pdf_url && s.can_edit && (
+                              <button
+                                onClick={() => handleDeleteChart(s.id)}
+                                className="bg-orange-500 hover:bg-orange-600 p-2 rounded-full"
+                                title="מחק קובץ PDF"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+
                             {/* כפתור מחיקה - רק אם המשתמש הוא הבעלים של הליינאפ */}
                             {s.can_edit && (
                               <button
                                 onClick={() => removeSong(s.song_id)}
                                 className="bg-red-500 hover:bg-red-600 p-2 rounded-full"
+                                title="מחק שיר מהליינאפ"
                               >
                                 <Trash2 size={14} />
                               </button>

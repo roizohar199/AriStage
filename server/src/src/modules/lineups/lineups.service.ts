@@ -73,12 +73,16 @@ export async function getLineupById(lineupId, user) {
     return lineup;
   }
 
-  // אם לא, בדיקה אם המשתמש הוא אורח והליינאפ שייך למארח שלו
-  const hostId = await checkIfGuest(user.id);
-  if (hostId) {
-    const hostHasAccess = await lineupBelongsToUser(lineupId, hostId);
-    if (hostHasAccess) {
-      return lineup;
+  // אם לא, בדיקה אם המשתמש הוא אורח והליינאפ שייך לאחד מהמארחים שלו
+  const hostIds = await checkIfGuest(user.id);
+  const hostIdsArray: number[] = Array.isArray(hostIds) ? hostIds : (hostIds ? [hostIds] : []);
+  if (hostIdsArray.length > 0) {
+    // בדיקה אם אחד מהמארחים הוא הבעלים של הליינאפ
+    for (const hostId of hostIdsArray) {
+      const hostHasAccess = await lineupBelongsToUser(lineupId, hostId);
+      if (hostHasAccess) {
+        return lineup;
+      }
     }
   }
 

@@ -13,6 +13,10 @@ import {
   getMyConnections,
   inviteArtistToMyCollection,
   uninviteArtistFromMyCollection,
+  leaveMyCollection,
+  getPendingInvitations,
+  acceptInvitationStatus,
+  rejectInvitationStatus,
   checkIfGuest,
   sendArtistInvitation,
   acceptInvitation,
@@ -176,12 +180,92 @@ export const usersController = {
     res.json(result);
   }),
 
+  // ⭐ אורח מבטל את השתתפותו במאגר (כל המארחים או מארח ספציפי)
+  leaveCollection: asyncHandler(async (req, res) => {
+    const artistId = req.user.id;
+    const hostId = req.body.hostId ? parseInt(req.body.hostId) : null;
+    
+    const result = await leaveMyCollection(artistId, hostId);
+    
+    // שליחת עדכון בזמן אמת
+    if (global.io) {
+      const { emitToUserAndHost } = await import("../../core/socket.js");
+      await emitToUserAndHost(
+        global.io,
+        artistId,
+        "user:left-collection",
+        { artistId, hostId }
+      );
+    }
+    
+    res.json(result);
+  }),
+
+  // ⭐ קבלת הזמנות ממתינות לאישור
+  pendingInvitation: asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+    const { getPendingInvitations } = await import("./users.service.js");
+    const pending = await getPendingInvitations(userId);
+    res.json(pending);
+  }),
+
+  // ⭐ אישור הזמנה
+  acceptInvitationStatus: asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+    const hostId = parseInt(req.body.hostId);
+    if (!hostId || isNaN(hostId)) {
+      return res.status(400).json({ message: "נא לספק hostId תקין" });
+    }
+    const { acceptInvitationStatus: acceptInvitationStatusService } = await import("./users.service.js");
+    const result = await acceptInvitationStatusService(userId, hostId);
+    
+    // שליחת עדכון בזמן אמת
+    if (global.io) {
+      const { emitToUserAndHost } = await import("../../core/socket.js");
+      await emitToUserAndHost(
+        global.io,
+        userId,
+        "user:invitation-accepted",
+        { userId, hostId }
+      );
+    }
+    
+    res.json(result);
+  }),
+
+  // ⭐ דחיית הזמנה
+  rejectInvitationStatus: asyncHandler(async (req, res) => {
+    const userId = req.user.id;
+    const hostId = parseInt(req.body.hostId);
+    if (!hostId || isNaN(hostId)) {
+      return res.status(400).json({ message: "נא לספק hostId תקין" });
+    }
+    const { rejectInvitationStatus: rejectInvitationStatusService } = await import("./users.service.js");
+    const result = await rejectInvitationStatusService(userId, hostId);
+    
+    // שליחת עדכון בזמן אמת
+    if (global.io) {
+      const { emitToUserAndHost } = await import("../../core/socket.js");
+      await emitToUserAndHost(
+        global.io,
+        userId,
+        "user:invitation-rejected",
+        { userId, hostId }
+      );
+    }
+    
+    res.json(result);
+  }),
+
   // ⭐ בדיקה אם משתמש הוא אורח או מארח
   checkGuest: asyncHandler(async (req, res) => {
     const { checkIfGuest, checkIfHost } = await import("./users.service.js");
-    const hostId = await checkIfGuest(req.user.id);
+    const hostIds = await checkIfGuest(req.user.id);
     const isHost = await checkIfHost(req.user.id);
-    res.json({ isGuest: !!hostId, hostId, isHost });
+    // מחזיר את המארח הראשון לתאימות לאחור, או null אם אין מארחים
+    const hostIdsArray: number[] = Array.isArray(hostIds) ? hostIds : (hostIds ? [hostIds] : []);
+    const hostId = hostIdsArray.length > 0 ? hostIdsArray[0] : null;
+    res.json({ isGuest: hostIdsArray.length > 0, hostId, hostIds: hostIdsArray, isHost });
   }),
 
   // ⭐ שליחת הזמנה במייל

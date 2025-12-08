@@ -16,6 +16,7 @@ router.post(
   uploadChartPdf.single("pdf"),
   lineupSongsController.uploadChart
 );
+router.delete("/:lineupSongId/delete-chart", lineupSongsController.deleteChart);
 
 export const lineupSongsRouter = router;
 

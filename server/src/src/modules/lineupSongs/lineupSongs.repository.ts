@@ -1,4 +1,6 @@
 import { pool } from "../../database/pool.js";
+import fs from "fs";
+import path from "path";
 
 export async function listLineupSongs(lineupId) {
   const [rows] = await pool.query(
@@ -80,5 +82,35 @@ export async function getLineupSongById(lineupSongId) {
     [lineupSongId]
   );
   return rows[0] || null;
+}
+
+export async function deleteLineupSongChartPdf(lineupSongId) {
+  // קבלת נתיב הקובץ לפני המחיקה
+  const [rows] = await pool.query(
+    "SELECT chart_pdf FROM lineup_songs WHERE id = ?",
+    [lineupSongId]
+  );
+  
+  const chartPdf = rows[0]?.chart_pdf;
+  
+  // מחיקת הקובץ מהדיסק אם קיים
+  if (chartPdf) {
+    try {
+      const filePath = path.join(process.cwd(), chartPdf);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (error) {
+      console.error("שגיאה במחיקת קובץ PDF:", error);
+      // ממשיכים גם אם המחיקה מהדיסק נכשלה
+    }
+  }
+  
+  // עדכון המסד נתונים
+  const [result] = await pool.query(
+    "UPDATE lineup_songs SET chart_pdf = NULL WHERE id = ?",
+    [lineupSongId]
+  );
+  return result.affectedRows > 0;
 }
 

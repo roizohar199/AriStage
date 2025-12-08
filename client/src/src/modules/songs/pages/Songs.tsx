@@ -116,11 +116,20 @@ export default function Songs() {
       );
     });
     
+    socket.on("song:chart-deleted", ({ songId }) => {
+      setSongs((prev) =>
+        prev.map((s) =>
+          s.id === songId ? { ...s, chart_pdf_url: null } : s
+        )
+      );
+    });
+    
     return () => {
       socket.off("song:created");
       socket.off("song:updated");
       socket.off("song:deleted");
       socket.off("song:chart-uploaded");
+      socket.off("song:chart-deleted");
       socket.disconnect();
     };
   }, [socket]);
@@ -228,6 +237,29 @@ export default function Songs() {
 
     // פתיחת PDF בחלון חדש
     window.open(chartPdfUrl, "_blank", "width=800,height=600");
+  };
+
+  const handleDeleteChart = async (songId) => {
+    const ok = await confirm("מחיקת קובץ PDF", "בטוח שאתה רוצה למחוק את קובץ ה-PDF?");
+    if (!ok) return;
+
+    try {
+      await api.delete(`/songs/${songId}/delete-chart`);
+      showToast("קובץ PDF נמחק בהצלחה", "success");
+      
+      // עדכון מיידי - עדכון השיר ברשימה
+      setSongs((prev) =>
+        prev.map((s) =>
+          s.id === songId ? { ...s, chart_pdf_url: null } : s
+        )
+      );
+      // רענון אוטומטי דרך Socket.IO יגיע גם כן
+    } catch (err) {
+      showToast(
+        err?.response?.data?.message || "שגיאה במחיקת הקובץ",
+        "error"
+      );
+    }
   };
 
   // שמירה
@@ -408,8 +440,8 @@ export default function Songs() {
             </div>
 
             <div className="flex gap-3 flex-row-reverse items-center">
-              {/* כפתור העלאת PDF - רק אם המשתמש הוא הבעלים */}
-              {s.is_owner && (
+              {/* כפתור העלאת PDF - אם המשתמש הוא הבעלים או אורח שמציג שירים שהוזמנו אליהם */}
+              {(s.is_owner || (isGuest && activeTab === "invited" && !s.is_owner)) && (
                 <>
                   <input
                     type="file"
@@ -471,12 +503,24 @@ export default function Songs() {
                 </button>
               )}
 
+              {/* כפתור הסרת PDF - אם המשתמש הוא הבעלים או אורח שמציג שירים שהוזמנו אליהם */}
+              {s.chart_pdf_url && (s.is_owner || (isGuest && activeTab === "invited" && !s.is_owner)) && (
+                <button
+                  onClick={() => handleDeleteChart(s.id)}
+                  className="bg-orange-500 hover:bg-orange-600 p-2 rounded-full"
+                  title="מחק קובץ PDF"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+
               {/* כפתורי עריכה ומחיקה - רק אם המשתמש הוא הבעלים */}
               {s.is_owner && (
                 <>
                   <button
                     onClick={() => remove(s.id)}
                     className="bg-red-500 hover:bg-red-600 p-2 rounded-full"
+                    title="מחק שיר"
                   >
                     <Trash2 size={16} />
                   </button>

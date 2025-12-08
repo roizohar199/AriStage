@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import { AppError } from "../../core/errors.js";
 import { signToken } from "../auth/token.service.js";
 
-import { findMyCollection, findConnectedToMe, inviteArtist as inviteArtistRepo, uninviteArtist as uninviteArtistRepo, isGuest, saveInvitation, findInvitationByToken, markInvitationAsUsed } from "./users.repository.js";
+import { findMyCollection, findConnectedToMe, inviteArtist as inviteArtistRepo, uninviteArtist as uninviteArtistRepo, leaveCollection as leaveCollectionRepo, isGuest, saveInvitation, findInvitationByToken, markInvitationAsUsed } from "./users.repository.js";
 import {
   deleteUserById,
   findUserByEmail,
@@ -90,7 +90,7 @@ export async function createUserAccount(currentUser, payload) {
     password_hash: hash,
     role: payload.role || "user",
     subscription_type: payload.subscription_type || "trial",
-    invited_by: currentUser.id,
+    // לא צריך invited_by יותר - נשתמש בטבלת user_hosts
   });
 }
 
@@ -150,9 +150,11 @@ export async function inviteArtistToMyCollection(hostId, artistId) {
     throw new AppError(404, "אמן לא נמצא");
   }
 
-  // בדיקה אם האמן כבר מוזמן על ידי מישהו אחר
-  if (artist.invited_by && artist.invited_by !== hostId) {
-    throw new AppError(400, "האמן כבר מוזמן על ידי אמן אחר");
+  // בדיקה אם האמן כבר מוזמן על ידי המארח הזה
+  const { isGuest } = await import("./users.repository.js");
+  const existingHosts = await isGuest(artistId);
+  if (existingHosts.includes(hostId)) {
+    throw new AppError(400, "האמן כבר מוזמן על ידי המארח הזה");
   }
 
   const success = await inviteArtistRepo(artistId, hostId);
@@ -182,9 +184,56 @@ export async function uninviteArtistFromMyCollection(hostId, artistId) {
   return { message: "השיתוף בוטל בהצלחה" };
 }
 
-// ⭐ בדיקה אם משתמש הוא אורח
+// ⭐ אורח מבטל את השתתפותו במאגר (כל המארחים או מארח ספציפי)
+export async function leaveMyCollection(artistId, hostId = null) {
+  const { isGuest } = await import("./users.repository.js");
+  const existingHosts = await isGuest(artistId);
+  const existingHostsArray: number[] = Array.isArray(existingHosts) ? existingHosts : (existingHosts ? [existingHosts] : []);
+  
+  if (existingHostsArray.length === 0) {
+    throw new AppError(400, "אינך אורח במאגר - אין לך השתתפות לבטל");
+  }
+  
+  if (hostId && !existingHostsArray.includes(hostId)) {
+    throw new AppError(400, "אינך אורח במאגר הזה");
+  }
+
+  const success = await leaveCollectionRepo(artistId, hostId);
+  if (!success) {
+    throw new AppError(400, "ביטול ההשתתפות נכשל");
+  }
+
+  return { message: hostId ? "השתתפותך במאגר בוטלה בהצלחה" : "כל השתתפויותיך במאגרים בוטלו בהצלחה" };
+}
+
+// ⭐ קבלת הזמנות ממתינות לאישור
+export async function getPendingInvitations(userId) {
+  const { findPendingInvitations } = await import("./users.repository.js");
+  return await findPendingInvitations(userId);
+}
+
+// ⭐ אישור הזמנה
+export async function acceptInvitationStatus(userId, hostId) {
+  const success = await acceptInvitationStatusRepo(userId, hostId);
+  if (!success) {
+    throw new AppError(400, "לא נמצאה הזמנה ממתינה לאישור");
+  }
+  return { message: "הזמנה אושרה בהצלחה" };
+}
+
+// ⭐ דחיית הזמנה
+export async function rejectInvitationStatus(userId, hostId) {
+  const success = await rejectInvitationStatusRepo(userId, hostId);
+  if (!success) {
+    throw new AppError(400, "לא נמצאה הזמנה ממתינה לאישור");
+  }
+  return { message: "הזמנה נדחתה" };
+}
+
+// ⭐ בדיקה אם משתמש הוא אורח - מחזיר רשימת מארחים
 export async function checkIfGuest(userId) {
-  return await isGuest(userId);
+  const hostIds = await isGuest(userId);
+  return hostIds.length > 0 ? hostIds : null; // מחזיר null אם אין מארחים, או רשימה
 }
 
 // ⭐ בדיקה אם משתמש הוא מארח
@@ -207,10 +256,11 @@ export async function sendArtistInvitation(hostId, hostName, email) {
       throw new AppError(400, "לא ניתן להזמין את עצמך");
     }
     
-    // בדיקה אם כבר מוזמן
-    const user = await findUserById(existingUser.id);
-    if (user.invited_by && user.invited_by !== hostId) {
-      throw new AppError(400, "האמן כבר מוזמן על ידי אמן אחר");
+    // בדיקה אם כבר מוזמן על ידי המארח הזה
+    const { isGuest } = await import("./users.repository.js");
+    const existingHosts = await isGuest(existingUser.id);
+    if (existingHosts.includes(hostId)) {
+      throw new AppError(400, "האמן כבר מוזמן על ידי המארח הזה");
     }
     
     // הזמנה ישירה
@@ -276,11 +326,11 @@ export async function acceptInvitation(token) {
   // סימון ההזמנה כמשומשת
   await markInvitationAsUsed(token);
 
-  // אם המשתמש כבר קיים, עדכן את ה-invited_by
+  // אם המשתמש כבר קיים, הוסף אותו לטבלת user_hosts עם סטטוס pending
   const existingUser = await findUserByEmail(invitation.email);
   if (existingUser) {
     await inviteArtistRepo(existingUser.id, invitation.host_id);
-    return { message: "הצטרפת בהצלחה למאגר", userId: existingUser.id, needsLogin: true };
+    return { message: "הזמנה נשלחה - אנא אשר את ההזמנה", userId: existingUser.id, needsLogin: true, needsApproval: true };
   }
 
   // אם המשתמש לא קיים, נחזיר את המידע להרשמה

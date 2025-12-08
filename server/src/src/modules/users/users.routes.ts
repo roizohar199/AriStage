@@ -47,6 +47,18 @@ router.post("/invite-artist", usersController.inviteArtist);
 // ⭐ ביטול הזמנת אמן מהמאגר שלי
 router.post("/uninvite-artist", usersController.uninviteArtist);
 
+// ⭐ אורח מבטל את השתתפותו במאגר
+router.post("/leave-collection", usersController.leaveCollection);
+
+// ⭐ קבלת הזמנה ממתינה לאישור
+router.get("/pending-invitation", usersController.pendingInvitation);
+
+// ⭐ אישור הזמנה
+router.post("/accept-invitation", usersController.acceptInvitationStatus);
+
+// ⭐ דחיית הזמנה
+router.post("/reject-invitation", usersController.rejectInvitationStatus);
+
 // ⭐ בדיקה אם משתמש הוא אורח
 router.get("/check-guest", usersController.checkGuest);
 

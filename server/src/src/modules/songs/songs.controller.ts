@@ -5,6 +5,7 @@ import {
   removeSong,
   updateSongDetails,
   uploadChartPdfForSong,
+  removeChartPdfForSong,
 } from "./songs.service.js";
 import { emitToUserAndHost, emitToUserUpdates } from "../../core/socket.js";
 
@@ -153,6 +154,33 @@ export const songsController = {
         });
       }
       
+      throw error;
+    }
+  }),
+  deleteChart: asyncHandler(async (req, res) => {
+    try {
+      const songId = parseInt(req.params.id);
+      if (isNaN(songId)) {
+        return res.status(400).json({ message: "ID שיר לא תקין" });
+      }
+
+      await removeChartPdfForSong(songId, req.user);
+      
+      // שליחת עדכון בזמן אמת
+      if (global.io) {
+        await emitToUserAndHost(
+          global.io,
+          req.user.id,
+          "song:chart-deleted",
+          { songId, userId: req.user.id }
+        );
+      }
+      
+      res.json({ 
+        message: "✅ קובץ PDF נמחק בהצלחה"
+      });
+    } catch (error) {
+      console.error("❌ שגיאה במחיקת PDF:", error);
       throw error;
     }
   }),

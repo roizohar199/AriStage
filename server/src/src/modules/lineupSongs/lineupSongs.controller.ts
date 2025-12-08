@@ -5,6 +5,7 @@ import {
   removeSong,
   reorderLineupSongs,
   uploadChartPdfForSong,
+  removeChartPdfForSong,
 } from "./lineupSongs.service.js";
 
 export const lineupSongsController = {
@@ -18,11 +19,15 @@ export const lineupSongsController = {
     
     let isLineupOwner = req.user.role === "admin" || await lineupBelongsToUser(lineupId, req.user.id);
     
-    // אם לא, בדיקה אם המשתמש הוא אורח והליינאפ שייך למארח שלו
+    // אם לא, בדיקה אם המשתמש הוא אורח והליינאפ שייך לאחד מהמארחים שלו
     if (!isLineupOwner) {
-      const hostId = await checkIfGuest(req.user.id);
-      if (hostId) {
-        isLineupOwner = await lineupBelongsToUser(lineupId, hostId);
+      const hostIds = await checkIfGuest(req.user.id);
+      const hostIdsArray: number[] = Array.isArray(hostIds) ? hostIds : (hostIds ? [hostIds] : []);
+      for (const hostId of hostIdsArray) {
+        if (await lineupBelongsToUser(lineupId, hostId)) {
+          isLineupOwner = true;
+          break;
+        }
       }
     }
     
@@ -78,6 +83,23 @@ export const lineupSongsController = {
       message: "✅ קובץ PDF הועלה בהצלחה",
       chart_pdf_url: pdfUrl 
     });
+  }),
+  deleteChart: asyncHandler(async (req, res) => {
+    try {
+      const lineupSongId = parseInt(req.params.lineupSongId);
+      if (isNaN(lineupSongId)) {
+        return res.status(400).json({ message: "ID שיר לא תקין" });
+      }
+
+      await removeChartPdfForSong(lineupSongId, req.user);
+      
+      res.json({ 
+        message: "✅ קובץ PDF נמחק בהצלחה"
+      });
+    } catch (error) {
+      console.error("❌ שגיאה במחיקת PDF:", error);
+      throw error;
+    }
   }),
 };
 

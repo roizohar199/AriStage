@@ -1,14 +1,17 @@
 import { pool } from "../../database/pool.js";
+import fs from "fs";
+import path from "path";
 
-export async function listSongs(role, userId, hostId = null) {
+export async function listSongs(role, userId, hostIds = []) {
   let query = "SELECT * FROM songs";
   const params = [];
 
   if (role === "user") {
-    // אם המשתמש הוא אורח (יש לו hostId), הצג את השירים שלו וגם של המארח
-    if (hostId) {
-      query += " WHERE user_id IN (?, ?)";
-      params.push(userId, hostId);
+    // אם המשתמש הוא אורח (יש לו מארחים), הצג את השירים שלו וגם של כל המארחים
+    if (hostIds && hostIds.length > 0) {
+      const placeholders = hostIds.map(() => "?").join(", ");
+      query += ` WHERE user_id IN (?, ${placeholders})`;
+      params.push(userId, ...hostIds);
     } else {
       // אחרת, הצג את השירים של המשתמש עצמו
       query += " WHERE user_id = ?";
@@ -79,5 +82,35 @@ export async function findSongOwnership(id, userId) {
     [id, userId]
   );
   return rows.length > 0;
+}
+
+export async function deleteSongChartPdf(songId) {
+  // קבלת נתיב הקובץ לפני המחיקה
+  const [rows] = await pool.query(
+    "SELECT chart_pdf FROM songs WHERE id = ?",
+    [songId]
+  );
+  
+  const chartPdf = rows[0]?.chart_pdf;
+  
+  // מחיקת הקובץ מהדיסק אם קיים
+  if (chartPdf) {
+    try {
+      const filePath = path.join(process.cwd(), chartPdf);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (error) {
+      console.error("שגיאה במחיקת קובץ PDF:", error);
+      // ממשיכים גם אם המחיקה מהדיסק נכשלה
+    }
+  }
+  
+  // עדכון המסד נתונים
+  const [result] = await pool.query(
+    "UPDATE songs SET chart_pdf = NULL WHERE id = ?",
+    [songId]
+  );
+  return result.affectedRows > 0;
 }
 

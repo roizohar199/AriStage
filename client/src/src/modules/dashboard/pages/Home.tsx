@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import { Music, Users, CalendarCheck, ShieldCheck, User, UserPlus, X, Search, UserX } from "lucide-react";
+import { Music, Users, CalendarCheck, ShieldCheck, User, UserPlus, X, Search, UserX, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "@/modules/shared/lib/api.js"; // 👈 חשוב! משתמשים ב־axios של המערכת
 import { useConfirm } from "@/modules/shared/hooks/useConfirm.jsx";
@@ -75,6 +75,7 @@ export default function Home() {
   const [inviteLoading, setInviteLoading] = useState(false);
   const [myInvitedArtists, setMyInvitedArtists] = useState([]);
   const [myInvitedArtistsLoading, setMyInvitedArtistsLoading] = useState(true);
+  const [leaving, setLeaving] = useState(false);
 
   // Socket.IO connection
   const socket = useMemo(() => {
@@ -106,10 +107,8 @@ export default function Home() {
         skipErrorToast: true,
       });
       
-      const artistsList = [];
-      if (myCollection) {
-        artistsList.push(myCollection);
-      }
+      // myCollection עכשיו מחזיר רשימה של מארחים
+      const artistsList = Array.isArray(myCollection) ? myCollection : (myCollection ? [myCollection] : []);
       
       setArtists(artistsList);
     } catch (err) {
@@ -206,6 +205,30 @@ export default function Home() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket]); // הפונקציות מוגדרות עם useCallback אז הן יציבות
+
+  const handleLeaveCollection = async (hostId = null) => {
+    const message = hostId 
+      ? "בטוח שאתה רוצה לבטל את השתתפותך במאגר הזה? לא תוכל עוד לצפות בליינאפים והשירים של המארח."
+      : "בטוח שאתה רוצה לבטל את כל השתתפויותיך במאגרים? לא תוכל עוד לצפות בליינאפים והשירים של המארחים.";
+    const ok = await confirm(
+      "ביטול השתתפות במאגר",
+      message
+    );
+    if (!ok) return;
+
+    try {
+      setLeaving(true);
+      await api.post("/users/leave-collection", hostId ? { hostId } : {});
+      showToast(hostId ? "השתתפותך במאגר בוטלה בהצלחה" : "כל השתתפויותיך בוטלו בהצלחה", "success");
+      loadArtists(); // רענון רשימת האמנים
+    } catch (err) {
+      console.error("❌ שגיאה בביטול השתתפות:", err);
+      const errorMsg = err?.response?.data?.message || "שגיאה בביטול ההשתתפות";
+      showToast(errorMsg, "error");
+    } finally {
+      setLeaving(false);
+    }
+  };
 
   const uninviteArtist = async (artistId, artistName) => {
     const ok = await confirm(
@@ -497,6 +520,18 @@ export default function Home() {
                     {artist.email && (
                       <p className="text-neutral-400 text-xs">{artist.email}</p>
                     )}
+                  </div>
+
+                  {/* כפתור ביטול השתתפות */}
+                  <div className="flex-shrink-0">
+                    <button
+                      onClick={() => handleLeaveCollection(artist.id)}
+                      disabled={leaving}
+                      className="flex items-center gap-2 px-3 py-2 bg-red-500 hover:bg-red-600 disabled:bg-red-700 disabled:opacity-50 text-white font-semibold rounded-lg transition-all text-sm"
+                    >
+                      <LogOut size={16} />
+                      {leaving ? "מבטל..." : "בטל השתתפות"}
+                    </button>
                   </div>
                 </div>
               ))}

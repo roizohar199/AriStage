@@ -23,6 +23,7 @@ router.post(
   },
   songsController.uploadChart
 );
+router.delete("/:id/delete-chart", songsController.deleteChart);
 
 export const songsRouter = router;
 

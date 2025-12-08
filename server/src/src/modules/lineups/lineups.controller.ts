@@ -40,11 +40,12 @@ export const lineupsController = {
       return res.status(400).json({ message: "ID משתמש לא תקין" });
     }
     
-    // בדיקה שהמשתמש הנוכחי הוא אורח והמשתמש המבוקש הוא המארח שלו
+    // בדיקה שהמשתמש הנוכחי הוא אורח והמשתמש המבוקש הוא אחד מהמארחים שלו
     const { checkIfGuest } = await import("../users/users.service.js");
-    const hostId = await checkIfGuest(req.user.id);
+    const hostIds = await checkIfGuest(req.user.id);
+    const hostIdsArray: number[] = Array.isArray(hostIds) ? hostIds : (hostIds ? [hostIds] : []);
     
-    if (!hostId || hostId !== targetUserId) {
+    if (hostIdsArray.length === 0 || !hostIdsArray.includes(targetUserId)) {
       return res.status(403).json({ message: "אין לך גישה לליינאפים של משתמש זה" });
     }
     
@@ -96,12 +97,24 @@ export const lineupsController = {
     
     // שליחת עדכון בזמן אמת
     if (global.io) {
+      // שליחה למשתמש שביצע את הפעולה ולמארח שלו (אם הוא אורח)
       await emitToUserAndHost(
         global.io,
         req.user.id,
         "lineup:updated",
         { lineupId, userId: req.user.id }
       );
+      
+      // שליחה גם למארח שיצר את הליינאפ (אם הוא שונה מהמשתמש שביצע את הפעולה)
+      // זה מבטיח שגם אם מארח משנה משהו, האורחים שלו מקבלים את זה
+      if (lineup.created_by !== req.user.id) {
+        await emitToUserAndHost(
+          global.io,
+          lineup.created_by,
+          "lineup:updated",
+          { lineupId, userId: req.user.id }
+        );
+      }
       
       // גם לחדר של הליינאפ הספציפי
       global.io.to(`lineup_${lineupId}`).emit("lineup:updated", { lineupId });

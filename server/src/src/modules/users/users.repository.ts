@@ -93,15 +93,14 @@ export async function findUserByEmail(email) {
 // ✔ יצירת משתמש
 export async function insertUser(data) {
   await pool.query(
-    `INSERT INTO users (full_name, email, password_hash, role, subscription_type, invited_by)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO users (full_name, email, password_hash, role, subscription_type)
+     VALUES (?, ?, ?, ?, ?)`,
     [
       data.full_name,
       data.email,
       data.password_hash,
       data.role,
       data.subscription_type,
-      data.invited_by,
     ]
   );
 }
@@ -125,69 +124,112 @@ export async function findUserById(id) {
   return rows[0];
 }
 
-// ⭐ מי הזמין אותי → משתמש אחד
+// ⭐ מי הזמין אותי → רשימת מארחים (רק אם ההזמנה אושרה)
 export async function findMyCollection(userId) {
   const [rows] = await pool.query(
-    `SELECT id, full_name, email, role, subscription_type, avatar, artist_role
-     FROM users
-     WHERE id = (SELECT invited_by FROM users WHERE id = ?)`,
+    `SELECT u.id, u.full_name, u.email, u.role, u.subscription_type, u.avatar, u.artist_role
+     FROM users u
+     INNER JOIN user_hosts uh ON u.id = uh.host_id
+     WHERE uh.guest_id = ? AND uh.invitation_status = 'accepted'`,
     [userId]
   );
-  return rows[0] || null;
+  return rows; // מחזיר רשימה במקום משתמש אחד
+}
+
+// ⭐ הזמנות ממתינות לאישור
+export async function findPendingInvitations(userId) {
+  const [rows] = await pool.query(
+    `SELECT u.id, u.full_name, u.email, u.role, u.subscription_type, u.avatar, u.artist_role, uh.invitation_status
+     FROM users u
+     INNER JOIN user_hosts uh ON u.id = uh.host_id
+     WHERE uh.guest_id = ? AND uh.invitation_status = 'pending'`,
+    [userId]
+  );
+  return rows; // מחזיר רשימת הזמנות ממתינות
 }
 
 // ⭐ מי מחובר אליי → רשימה
 export async function findConnectedToMe(userId) {
   const [rows] = await pool.query(
-    `SELECT id, full_name, email, role, subscription_type, avatar, artist_role
-     FROM users
-     WHERE invited_by = ?`,
+    `SELECT u.id, u.full_name, u.email, u.role, u.subscription_type, u.avatar, u.artist_role, uh.invitation_status
+     FROM users u
+     INNER JOIN user_hosts uh ON u.id = uh.guest_id
+     WHERE uh.host_id = ? AND uh.invitation_status = 'accepted'`,
     [userId]
   );
   return rows;
 }
 
-// ⭐ הזמנת אמן - עדכון invited_by
+// ⭐ הזמנת אמן - הוספה לטבלת user_hosts
 export async function inviteArtist(artistId, hostId) {
   const [result] = await pool.query(
-    "UPDATE users SET invited_by = ? WHERE id = ?",
-    [hostId, artistId]
+    `INSERT INTO user_hosts (guest_id, host_id, invitation_status)
+     VALUES (?, ?, 'pending')
+     ON DUPLICATE KEY UPDATE invitation_status = 'pending'`,
+    [artistId, hostId]
   );
   return result.affectedRows > 0;
 }
 
-// ⭐ ביטול הזמנה - איפוס invited_by
+// ⭐ ביטול הזמנה - מחיקה מטבלת user_hosts
 export async function uninviteArtist(artistId, hostId) {
-  // בדיקה שהאמן באמת הוזמן על ידי המארח הזה
-  const [checkRows] = await pool.query(
-    "SELECT id FROM users WHERE id = ? AND invited_by = ?",
-    [artistId, hostId]
-  );
-  
-  if (checkRows.length === 0) {
-    return false; // האמן לא הוזמן על ידי המארח הזה
-  }
-  
   const [result] = await pool.query(
-    "UPDATE users SET invited_by = NULL WHERE id = ? AND invited_by = ?",
+    "DELETE FROM user_hosts WHERE guest_id = ? AND host_id = ?",
     [artistId, hostId]
   );
   return result.affectedRows > 0;
 }
 
-// ⭐ בדיקה אם משתמש הוא אורח (יש לו invited_by)
+// ⭐ אורח מבטל את השתתפותו במאגר - מחיקה מטבלת user_hosts
+export async function leaveCollection(artistId, hostId = null) {
+  if (hostId) {
+    // ביטול השתתפות במארח ספציפי
+    const [result] = await pool.query(
+      "DELETE FROM user_hosts WHERE guest_id = ? AND host_id = ?",
+      [artistId, hostId]
+    );
+    return result.affectedRows > 0;
+  } else {
+    // ביטול כל ההשתתפויות (אם לא צוין מארח ספציפי)
+    const [result] = await pool.query(
+      "DELETE FROM user_hosts WHERE guest_id = ?",
+      [artistId]
+    );
+    return result.affectedRows > 0;
+  }
+}
+
+// ⭐ אישור הזמנה
+export async function acceptInvitationStatus(artistId, hostId) {
+  const [result] = await pool.query(
+    "UPDATE user_hosts SET invitation_status = 'accepted' WHERE guest_id = ? AND host_id = ? AND invitation_status = 'pending'",
+    [artistId, hostId]
+  );
+  return result.affectedRows > 0;
+}
+
+// ⭐ דחיית הזמנה
+export async function rejectInvitationStatus(artistId, hostId) {
+  const [result] = await pool.query(
+    "DELETE FROM user_hosts WHERE guest_id = ? AND host_id = ? AND invitation_status = 'pending'",
+    [artistId, hostId]
+  );
+  return result.affectedRows > 0;
+}
+
+// ⭐ בדיקה אם משתמש הוא אורח - מחזיר רשימת מארחים
 export async function isGuest(userId) {
   const [rows] = await pool.query(
-    "SELECT invited_by FROM users WHERE id = ?",
+    "SELECT host_id FROM user_hosts WHERE guest_id = ? AND invitation_status = 'accepted'",
     [userId]
   );
-  return rows[0]?.invited_by ? rows[0].invited_by : null;
+  return rows.map(row => row.host_id); // מחזיר רשימת מארחים
 }
 
 // ⭐ בדיקה אם משתמש הוא מארח (יש לו אמנים שהוזמנו)
 export async function isHost(userId) {
   const [rows] = await pool.query(
-    "SELECT COUNT(*) as count FROM users WHERE invited_by = ?",
+    "SELECT COUNT(*) as count FROM user_hosts WHERE host_id = ? AND invitation_status = 'accepted'",
     [userId]
   );
   return Boolean((rows[0]?.count || 0) > 0);

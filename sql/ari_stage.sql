@@ -91,7 +91,7 @@ CREATE TABLE `lineup_songs` (
   KEY `song_id` (`song_id`),
   CONSTRAINT `lineup_songs_ibfk_1` FOREIGN KEY (`lineup_id`) REFERENCES `lineups` (`id`) ON DELETE CASCADE,
   CONSTRAINT `lineup_songs_ibfk_2` FOREIGN KEY (`song_id`) REFERENCES `songs` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=233 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=236 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -100,6 +100,7 @@ CREATE TABLE `lineup_songs` (
 
 LOCK TABLES `lineup_songs` WRITE;
 /*!40000 ALTER TABLE `lineup_songs` DISABLE KEYS */;
+INSERT INTO `lineup_songs` VALUES (233,25,51,1,'/uploads/charts/19/chart-233-1765178008981.pdf'),(234,25,52,2,NULL),(235,26,52,1,NULL);
 /*!40000 ALTER TABLE `lineup_songs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -123,7 +124,7 @@ CREATE TABLE `lineups` (
   PRIMARY KEY (`id`),
   KEY `created_by` (`created_by`),
   CONSTRAINT `lineups_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -132,6 +133,7 @@ CREATE TABLE `lineups` (
 
 LOCK TABLES `lineups` WRITE;
 /*!40000 ALTER TABLE `lineups` DISABLE KEYS */;
+INSERT INTO `lineups` VALUES (25,'אשדוד','2025-12-24','10:06:00','אשדוד','',19,'2025-12-08 07:06:35',NULL),(26,'באר שבע','2025-12-20','14:13:00','באר שבע ','',19,'2025-12-08 09:13:44',NULL);
 /*!40000 ALTER TABLE `lineups` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -213,7 +215,7 @@ CREATE TABLE `songs` (
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `songs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=54 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -222,7 +224,43 @@ CREATE TABLE `songs` (
 
 LOCK TABLES `songs` WRITE;
 /*!40000 ALTER TABLE `songs` DISABLE KEYS */;
+INSERT INTO `songs` VALUES (51,'צליל מיתר','אייל גולן',80,'C Major','3:00','שקט',NULL,19,'2025-12-08 06:32:53'),(52,'משוגעת','שרית חדד',120,'C Major','4:00','קצבי','/uploads/charts/20/song-chart-52-1765194627366.pdf',19,'2025-12-08 07:14:13');
 /*!40000 ALTER TABLE `songs` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `user_hosts`
+--
+
+DROP TABLE IF EXISTS `user_hosts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `user_hosts` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `guest_id` int(11) NOT NULL,
+  `host_id` int(11) NOT NULL,
+  `invitation_status` enum('pending','accepted','rejected') DEFAULT 'pending',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_guest_host` (`guest_id`,`host_id`),
+  KEY `guest_id` (`guest_id`),
+  KEY `host_id` (`host_id`),
+  KEY `idx_guest_status` (`guest_id`,`invitation_status`),
+  KEY `idx_host_status` (`host_id`,`invitation_status`),
+  CONSTRAINT `user_hosts_ibfk_1` FOREIGN KEY (`guest_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `user_hosts_ibfk_2` FOREIGN KEY (`host_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `user_hosts`
+--
+
+LOCK TABLES `user_hosts` WRITE;
+/*!40000 ALTER TABLE `user_hosts` DISABLE KEYS */;
+INSERT INTO `user_hosts` VALUES (1,20,19,'accepted','2025-12-08 13:45:01',NULL);
+/*!40000 ALTER TABLE `user_hosts` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -273,6 +311,7 @@ CREATE TABLE `users` (
   `subscription_type` enum('trial','pro') NOT NULL DEFAULT 'trial',
   `theme` enum('light','dark') DEFAULT 'dark',
   `invited_by` int(11) DEFAULT NULL,
+  `invitation_status` enum('pending','accepted','rejected') DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT NULL,
   `reset_token` varchar(255) DEFAULT NULL,
@@ -283,7 +322,7 @@ CREATE TABLE `users` (
   UNIQUE KEY `email` (`email`),
   KEY `invited_by` (`invited_by`),
   CONSTRAINT `users_ibfk_1` FOREIGN KEY (`invited_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -292,6 +331,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
+INSERT INTO `users` VALUES (19,'רועי','roizohar111@gmail.com','$2a$10$RGCdXZP1wM7PEOXFzWAcXeyifbcG6DGyHW.J14OdGqbCdchCAyoUC','user','trial','dark',NULL,NULL,'2025-12-08 06:03:56',NULL,NULL,NULL,'קלידן',NULL),(20,'יוסי','yosiyoviv@gmail.com','$2a$10$28l2Hg4sJVrRiCTBepqHOegUYWusrNW/vLtQjYtYfx1zR/Kbm1ALO','user','trial','dark',19,'accepted','2025-12-08 06:24:31',NULL,NULL,NULL,'בסיסט',NULL);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -304,4 +344,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-12-07 22:17:00
+-- Dump completed on 2025-12-08 16:10:52

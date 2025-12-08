@@ -7,6 +7,7 @@ import {
   updateSongPosition,
   updateChartPdf,
   getLineupSongById,
+  deleteLineupSongChartPdf,
 } from "./lineupSongs.repository.js";
 import { lineupBelongsToUser, findLineupById } from "../lineups/lineups.repository.js";
 import { checkIfGuest } from "../users/users.service.js";
@@ -19,11 +20,15 @@ async function ensureAccess(lineupId, user) {
   const hasAccess = await lineupBelongsToUser(lineupId, user.id);
   if (hasAccess) return true;
   
-  // אם לא, בדיקה אם המשתמש הוא אורח והליינאפ שייך למארח שלו
-  const hostId = await checkIfGuest(user.id);
-  if (hostId) {
-    const hostHasAccess = await lineupBelongsToUser(lineupId, hostId);
-    if (hostHasAccess) return true;
+  // אם לא, בדיקה אם המשתמש הוא אורח והליינאפ שייך לאחד מהמארחים שלו
+  const hostIds = await checkIfGuest(user.id);
+  const hostIdsArray: number[] = Array.isArray(hostIds) ? hostIds : (hostIds ? [hostIds] : []);
+  if (hostIdsArray.length > 0) {
+    // בדיקה אם אחד מהמארחים הוא הבעלים של הליינאפ
+    for (const hostId of hostIdsArray) {
+      const hostHasAccess = await lineupBelongsToUser(lineupId, hostId);
+      if (hostHasAccess) return true;
+    }
   }
   
   throw new AppError(403, "אין לך הרשאה לפעולה בליינאפ הזה");
@@ -61,6 +66,7 @@ export async function addSongToLineup(lineupId, user, songId) {
   if (global.io) {
     const lineup = await findLineupById(lineupId);
     if (lineup) {
+      // שליחה למשתמש שביצע את הפעולה ולמארח שלו (אם הוא אורח)
       await emitToUserAndHost(
         global.io,
         user.id,
@@ -68,6 +74,8 @@ export async function addSongToLineup(lineupId, user, songId) {
         { lineupId, songId, userId: user.id }
       );
       
+      // שליחה גם למארח שיצר את הליינאפ (אם הוא שונה מהמשתמש שביצע את הפעולה)
+      // זה מבטיח שגם אם מארח משנה משהו, האורחים שלו מקבלים את זה
       if (lineup.created_by !== user.id) {
         await emitToUserAndHost(
           global.io,
@@ -195,6 +203,47 @@ export async function uploadChartPdfForSong(lineupSongId, user, filePath) {
     }
   }
 
+  return lineupSong;
+}
+
+export async function removeChartPdfForSong(lineupSongId, user) {
+  const lineupSong = await getLineupSongById(lineupSongId);
+  if (!lineupSong) {
+    throw new AppError(404, "שיר לא נמצא בליינאפ");
+  }
+
+  await ensureAccess(lineupSong.lineup_id, user);
+
+  const deleted = await deleteLineupSongChartPdf(lineupSongId);
+  if (!deleted) {
+    throw new AppError(404, "קובץ PDF לא נמצא");
+  }
+  
+  // שליחה לחדר של הליינאפ הספציפי
+  emitUpdate(lineupSong.lineup_id, "lineup-song:chart-deleted", { lineupSongId, songId: lineupSong.song_id });
+  
+  // שליחה גם למשתמש ולמארח שלו (אם יש) כדי לרענן דפים אחרים
+  if (global.io) {
+    const lineup = await findLineupById(lineupSong.lineup_id);
+    if (lineup) {
+      await emitToUserAndHost(
+        global.io,
+        user.id,
+        "lineup-song:chart-deleted",
+        { lineupId: lineupSong.lineup_id, lineupSongId, songId: lineupSong.song_id, userId: user.id }
+      );
+      
+      if (lineup.created_by !== user.id) {
+        await emitToUserAndHost(
+          global.io,
+          lineup.created_by,
+          "lineup-song:chart-deleted",
+          { lineupId: lineupSong.lineup_id, lineupSongId, songId: lineupSong.song_id, userId: user.id }
+        );
+      }
+    }
+  }
+  
   return lineupSong;
 }
 
