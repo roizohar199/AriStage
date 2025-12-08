@@ -1,0 +1,209 @@
+# ============================================
+# Dependencies
+# ============================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+# Note: package-lock.json should be committed for reproducibility
+yarn.lock
+pnpm-lock.yaml
+
+# ============================================
+# Build outputs
+# ============================================
+# Client build
+client/dist/
+client/build/
+client/.vite/
+
+# Server build
+server/dist/
+server/build/
+server/src/**/*.js
+server/src/**/*.js.map
+!server/src/**/*.config.js
+
+# ============================================
+# Environment variables
+# ============================================
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+.env.*.local
+*.env
+
+# ============================================
+# Uploads & User files
+# ============================================
+server/uploads/
+server/uploads/**/*
+!server/uploads/.gitkeep
+client/public/uploads/
+
+# ============================================
+# Logs
+# ============================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ============================================
+# Database
+# ============================================
+*.sqlite
+*.sqlite3
+*.db
+*.db3
+
+# ============================================
+# OS files
+# ============================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ============================================
+# IDE & Editor
+# ============================================
+# VSCode
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# IntelliJ IDEA / WebStorm
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# ============================================
+# TypeScript
+# ============================================
+*.tsbuildinfo
+.tsbuildinfo
+
+# ============================================
+# Testing
+# ============================================
+coverage/
+.nyc_output/
+*.lcov
+.jest/
+
+# ============================================
+# Temporary files
+# ============================================
+tmp/
+temp/
+*.tmp
+*.temp
+.cache/
+
+# ============================================
+# PM2
+# ============================================
+.pm2/
+# Note: ecosystem.config.js should be committed if used
+
+# ============================================
+# Misc
+# ============================================
+*.pid
+*.seed
+*.pid.lock
+.npm
+.eslintcache
+.stylelintcache
+
+# ============================================
+# Project specific
+# ============================================
+# MySQL password files
+server/*-mysql*.txt
+server/*-mysql*.md
+server/*-password*.bat
+server/*-password*.ps1
+server/*-password*.sql
+server/RESET_MYSQL_PASSWORD.txt
+server/set-mysql-*.bat
+server/set-mysql-*.ps1
+server/set-mysql-*.sql
+server/reset-mysql-*.bat
+server/reset-mysql-*.ps1
+server/set-password-*.md
+server/set-password-*.bat
+server/set-password-*.ps1
+server/set-password-*.sql
+
+# Database import/export files
+server/import-database.bat
+
+# Cursor IDE
+.cursor/plans/
+.cursor/cache/
+plans/
+
+# ============================================
+# Keep empty directories
+# ============================================
+!server/uploads/.gitkeep
+!client/dist/.gitkeep
+
+# ============================================
+# Additional project files
+# ============================================
+# Backup files
+*.bak
+*.backup
+*~
+
+# Archive files
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# Compiled files that shouldn't be committed
+*.class
+*.dll
+*.exe
+*.o
+*.so
+

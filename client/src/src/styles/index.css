@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 🔥 פונט קטן במובייל, רגיל במחשב */
+html {
+  font-size: 14px; /* מובייל קטן */
+}
+
+@media (min-width: 1024px) {
+  html {
+    font-size: 16px; /* מחשב רגיל */
+  }
+}
+
+/* --- BODY STYLE --- */
+body {
+  @apply font-heebo text-white bg-gradient-to-b from-[#0A0A0A] via-[#121212] to-[#1C1C1E];
+}
+
+/* --- GLASS STYLE --- */
+.glass {
+  @apply backdrop-blur-lg bg-white/5 border border-white/10 rounded-2xl shadow-lg;
+  backdrop-filter: blur(20px);
+  background: rgba(30, 30, 30, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* --- DISABLED BUTTON --- */
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --- iOS BUTTON --- */
+.btn-ios {
+  @apply bg-brand-orange text-black font-semibold rounded-xl py-2 px-4 shadow-innerIos transition hover:bg-brand-orangeLight;
+}
+
+/* --- RTL + DARK MODE BASE --- */
+:root {
+  color-scheme: dark;
+}
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  @apply font-heebo bg-neutral-950 text-neutral-100;
+}
+
+/* --- SAFE AREA FOR BOTTOM NAV --- */
+.bottom-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* --- PLACEHOLDER COLOR --- */
+input::placeholder {
+  color: #aaa;
+}
+
+/* --- DISABLED BUTTON (duplicate removed) --- */
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --- REMOVE BROWSER DATE/TIME UI TEXT --- */
+
+/* Hide default dd/mm/yyyy text */
+input[type="date"]::-webkit-datetime-edit {
+  color: transparent;
+}
+
+/* Hide default --:-- text */
+input[type="time"]::-webkit-datetime-edit {
+  color: transparent;
+}
+
+/* When has value — show text */
+input[type="date"].has-value::-webkit-datetime-edit,
+input[type="time"].has-value::-webkit-datetime-edit {
+  color: white !important;
+}
+
+/* Remove blue focus outline */
+input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+
+/* טקסט לבן בתוך אינפוט תאריך ושעה (כרום/אדג') */
+input[type="date"],
+input[type="time"] {
+  color: #fff;
+}
+
+/* חלק הפנימי של התאריך */
+input[type="date"]::-webkit-datetime-edit,
+input[type="date"]::-webkit-datetime-edit-text,
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field {
+  color: #fff;
+}
+
+/* חלק הפנימי של השעה */
+input[type="time"]::-webkit-datetime-edit,
+input[type="time"]::-webkit-datetime-edit-text,
+input[type="time"]::-webkit-datetime-edit-hour-field,
+input[type="time"]::-webkit-datetime-edit-minute-field {
+  color: #fff;
+}
+
+
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
