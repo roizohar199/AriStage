@@ -47,8 +47,12 @@ export function getPublicLineup(token) {
 }
 
 export async function getLineups(user) {
-  // בדף הליינאפים - הצג רק את הליינאפים שהמשתמש יצר בעצמו
-  return listLineups(user.role, user.id, null);
+  // בדיקה אם המשתמש הוא אורח - מחזיר רשימת מארחים
+  const hostIds = await checkIfGuest(user.id);
+  const hostIdsArray: number[] = Array.isArray(hostIds) ? hostIds : (hostIds ? [hostIds] : []);
+  
+  // בדף הליינאפים - הצג את הליינאפים שהמשתמש יצר בעצמו + ליינאפים של המארחים שלו (אם הוא אורח)
+  return listLineups(user.role, user.id, hostIdsArray);
 }
 
 // פונקציה לקבלת ליינאפים של משתמש ספציפי (לשימוש ב-ArtistProfile)

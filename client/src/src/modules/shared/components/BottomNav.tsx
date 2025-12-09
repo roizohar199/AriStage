@@ -20,8 +20,11 @@ export default function BottomNav() {
 
   // Socket.IO connection
   const socket = useMemo(() => {
-    const url = import.meta.env.VITE_API_URL || "http://10.0.0.99:5000";
-    return io(url, { transports: ["websocket"] });
+    const url = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    return io(url, {
+      withCredentials: true,
+      // לא מגדירים transports – Socket.IO מנהל לבד polling → websocket
+    });
   }, []);
 
   // טעינת מספר הזמנות ממתינות
@@ -72,7 +75,7 @@ export default function BottomNav() {
       socket.off("invitation:pending");
       socket.off("user:invitation-accepted");
       socket.off("user:invitation-rejected");
-      socket.disconnect();
+      // לא מנתקים את ה-socket - הוא נשאר פעיל לכל האפליקציה
       window.removeEventListener("pending-invitations-updated", handlePendingUpdate);
       clearInterval(interval);
     };

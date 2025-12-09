@@ -23,20 +23,30 @@ import {
 } from "./users.service.js";
 
 export const usersController = {
-  // ⭐ מאגר אמנים — מי הזמין אותי
+  // ⭐ מאגר אמנים — מי הזמין אותי (מחזיר רשימת מארחים)
   myCollection: asyncHandler(async (req, res) => {
     const userId = req.user.id;
-    const creator = await getMyCollection(userId);
+    const creators = await getMyCollection(userId);
     
-    if (creator?.avatar) {
-      const protocol = req.protocol;
-      const host = req.get("host");
-      const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
-      const cleanAvatar = creator.avatar.replace(/^\/uploads\//, "");
-      creator.avatar = `${baseUrl}/uploads/${cleanAvatar}`;
+    // creators הוא רשימה של מארחים
+    if (!creators || creators.length === 0) {
+      return res.json([]);
     }
     
-    res.json(creator || null);
+    // הוספת URL מלא לתמונות לכל המארחים
+    const protocol = req.protocol;
+    const host = req.get("host");
+    const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
+    
+    const creatorsWithAvatars = creators.map((creator) => {
+      if (creator.avatar) {
+        const cleanAvatar = creator.avatar.replace(/^\/uploads\//, "");
+        creator.avatar = `${baseUrl}/uploads/${cleanAvatar}`;
+      }
+      return creator;
+    });
+    
+    res.json(creatorsWithAvatars);
   }),
 
   // ⭐ מחוברים אליי — מי אני הזמנתי

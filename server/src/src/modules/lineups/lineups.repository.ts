@@ -1,14 +1,20 @@
 import { pool } from "../../database/pool.js";
 
-export async function listLineups(role, userId, hostId = null) {
+export async function listLineups(role, userId, hostIds = []) {
   let query = "SELECT * FROM lineups";
   const params = [];
 
   if (role === "user") {
-    // בדף הליינאפים - הצג רק את הליינאפים שהמשתמש יצר בעצמו
-    // הליינאפים של המארח יראו רק בדף פרופיל האמן
-    query += " WHERE created_by = ?";
-    params.push(userId);
+    // אם המשתמש הוא אורח (יש לו מארחים), הצג את הליינאפים שלו וגם של כל המארחים
+    if (hostIds && hostIds.length > 0) {
+      const placeholders = hostIds.map(() => "?").join(", ");
+      query += ` WHERE created_by IN (?, ${placeholders})`;
+      params.push(userId, ...hostIds);
+    } else {
+      // אחרת, הצג את הליינאפים של המשתמש עצמו
+      query += " WHERE created_by = ?";
+      params.push(userId);
+    }
   }
 
   query += " ORDER BY id DESC";

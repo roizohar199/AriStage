@@ -20,8 +20,11 @@ export default function Artists() {
 
   // Socket.IO connection
   const socket = useMemo(() => {
-    const url = import.meta.env.VITE_API_URL || "http://10.0.0.99:5000";
-    return io(url, { transports: ["websocket"] });
+    const url = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    return io(url, {
+      withCredentials: true,
+      // לא מגדירים transports – Socket.IO מנהל לבד polling → websocket
+    });
   }, []);
 
   useEffect(() => {
@@ -309,7 +312,7 @@ export default function Artists() {
                     <div className="flex-1 min-w-0">
                       <button
                         onClick={() => navigate(`/artist/${artist.id}`)}
-                        className="text-2xl font-bold text-white mb-2 hover:text-brand-orange transition cursor-pointer text-right block"
+                        className="text-2xl font-bold text-white mb-2 hover:text-brand-orange transition cursor-pointer text-right"
                       >
                         {artist.full_name || "אמן ללא שם"}
                       </button>

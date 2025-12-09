@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth, requireRoles } from "../../middleware/auth.js";
+import { emitRefreshOnMutation } from "../../middleware/refresh.js";
 import { usersController } from "./users.controller.js";
 import { uploadUserAvatar } from "../shared/upload.js"; // ⭐ שימוש נכון
 
@@ -9,6 +10,9 @@ const router = Router();
 router.get("/invite/:token", usersController.acceptInvitation);
 
 router.use(requireAuth);
+
+// כל פעולה של POST/PUT/DELETE במודול Users תגרום ל־global:refresh
+router.use(emitRefreshOnMutation);
 
 router.get("/me", usersController.me);
 

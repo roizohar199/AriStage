@@ -20,42 +20,43 @@ export default function ArtistProfile() {
       setLoading(true);
       setError(null);
 
-      // טעינת פרטי המארחים
+      // טעינת פרטי האמנים (רשימת מארחים)
       const { data: myCollection } = await api.get("/users/my-collection", {
         skipErrorToast: true,
       });
 
-      // myCollection מחזיר רשימה של מארחים
-      const hostsList = Array.isArray(myCollection) ? myCollection : (myCollection ? [myCollection] : []);
+      // myCollection הוא רשימה של מארחים
+      const artistsList = Array.isArray(myCollection) ? myCollection : (myCollection ? [myCollection] : []);
 
-      if (hostsList.length === 0) {
-        setError("אין לך גישה לפרופיל זה - לא אישרת הצטרפות למאגר");
+      if (artistsList.length === 0) {
+        setError("אין לך גישה לפרופיל זה - לא הוזמנת למאגר כלשהו");
         return;
       }
 
       // אם יש id ב-URL, מצא את המארח המתאים
-      let selectedHost = null;
+      let selectedArtist = null;
       if (id) {
-        selectedHost = hostsList.find((host) => host.id === Number(id));
-        if (!selectedHost) {
-          setError("אין לך גישה לפרופיל זה - המארח לא נמצא ברשימת המארחים שלך");
+        selectedArtist = artistsList.find((artist) => artist.id === Number(id));
+        if (!selectedArtist) {
+          setError("אין לך גישה לפרופיל זה - המארח הזה לא נמצא במאגר שלך");
           return;
         }
       } else {
         // אם אין id, קח את המארח הראשון
-        selectedHost = hostsList[0];
+        selectedArtist = artistsList[0];
       }
 
-      setArtist(selectedHost);
+      setArtist(selectedArtist);
 
       // טעינת ליינאפים של המארח (לא של המשתמש הנוכחי)
-      const { data: lineupsData } = await api.get(`/lineups/by-user/${selectedHost.id}`, {
+      const { data: lineupsData } = await api.get(`/lineups/by-user/${selectedArtist.id}`, {
         skipErrorToast: true,
       });
       setLineups(lineupsData || []);
     } catch (err) {
       console.error("שגיאה בטעינת נתונים:", err);
-      setError("לא ניתן לטעון את הנתונים");
+      const errorMsg = err?.response?.data?.message || "לא ניתן לטעון את הנתונים";
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }

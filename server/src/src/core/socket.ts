@@ -67,10 +67,12 @@ export async function emitToUserAndHost(
   // שליחה למשתמש
   io.to(`user_${userId}`).emit(event, data);
   
-  // בדיקה אם המשתמש הוא אורח
-  const hostId = await isGuest(userId);
-  if (hostId) {
-    // שליחה גם למארח
+  // בדיקה אם המשתמש הוא אורח - מחזיר רשימת מארחים
+  const hostIds = await isGuest(userId);
+  const hostIdsArray: number[] = Array.isArray(hostIds) ? hostIds : (hostIds ? [hostIds] : []);
+  
+  // שליחה לכל המארחים שלו
+  for (const hostId of hostIdsArray) {
     io.to(`user_${hostId}`).emit(event, data);
   }
   

@@ -183,8 +183,11 @@ export default function LineupDetails() {
   }, [id]);
 
   const socket = useMemo(() => {
-    const url = import.meta.env.VITE_API_URL || "http://10.0.0.99:5000";
-    return io(url, { transports: ["websocket"] });
+    const url = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    return io(url, {
+      withCredentials: true,
+      // לא מגדירים transports – Socket.IO מנהל לבד polling → websocket
+    });
   }, []);
 
   useEffect(() => {
@@ -202,7 +205,12 @@ export default function LineupDetails() {
           if (data.isHost) {
             socket.emit("join-host", user.id);
           }
-          if (data.hostId) {
+          // הצטרפות לכל המארחים (אם יש כמה)
+          if (data.hostIds && Array.isArray(data.hostIds)) {
+            data.hostIds.forEach((hostId) => {
+              socket.emit("join-host", hostId);
+            });
+          } else if (data.hostId) {
             socket.emit("join-host", data.hostId);
           }
         })

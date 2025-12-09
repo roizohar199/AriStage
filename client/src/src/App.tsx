@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { reloadAuth } from "@/modules/shared/lib/authReload.js";
 import { emitToast } from "@/modules/shared/lib/toastBus.js";
+import { io } from "socket.io-client";
 
 import ToastProvider from "@/modules/shared/components/ToastProvider.tsx";
 import BottomNav from "@/modules/shared/components/BottomNav.tsx";
@@ -61,12 +62,56 @@ export default function App(): JSX.Element {
     return () => clearTimeout(timer);
   }, []);
 
-  if (loading) return <Splash />;
-
   /* -----------------------------------------
      🟦 המשתמש הנוכחי
   ----------------------------------------- */
   const currentUser: User = JSON.parse(localStorage.getItem("ari_user") || "{}");
+
+  /* -----------------------------------------
+     🔥 Socket גלובלי אחד לכל האפליקציה
+     ⚠️ חשוב: כל ה-Hooks חייבים להיות לפני early return!
+  ----------------------------------------- */
+  const socket = useMemo(() => {
+    const url =
+      import.meta.env.VITE_API_URL || "http://localhost:5000";
+    return io(url, {
+      withCredentials: true,
+      // לא מגדירים transports – Socket.IO מנהל לבד polling → websocket
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser?.id) {
+      return;
+    }
+
+    // מצטרפים לכל ה־rooms הרלוונטיים עבור המשתמש
+    socket.emit("join-user", currentUser.id);
+    socket.emit("join-host", currentUser.id);
+    socket.emit("join-lineups", currentUser.id);
+    socket.emit("join-songs", currentUser.id);
+
+    // כל event global:refresh → הופך ל־data-refresh לכל האפליקציה
+    const handleGlobalRefresh = (payload: any) => {
+      window.dispatchEvent(
+        new CustomEvent("data-refresh", {
+          detail: payload || { type: "global" },
+        })
+      );
+    };
+
+    socket.on("global:refresh", handleGlobalRefresh);
+
+    return () => {
+      socket.off("global:refresh", handleGlobalRefresh);
+      // לא מנתקים את ה-socket - הוא נשאר פעיל לכל האפליקציה
+    };
+  }, [socket, currentUser?.id]);
+
+  /* -----------------------------------------
+     Early return - רק אחרי כל ה-Hooks!
+  ----------------------------------------- */
+  if (loading) return <Splash />;
 
   /* -----------------------------------------
      🟥 הסתרת ניווט תחתון
