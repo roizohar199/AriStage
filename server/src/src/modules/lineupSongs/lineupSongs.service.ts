@@ -34,13 +34,31 @@ async function ensureAccess(lineupId, user) {
   throw new AppError(403, "אין לך הרשאה לפעולה בליינאפ הזה");
 }
 
-const emitUpdate = (lineupId, event = "lineup-updated", data = {}) => {
-  if (global.io) {
-    // שליחה לחדר של הליינאפ הספציפי
-    global.io.to(`lineup_${lineupId}`).emit("lineup-updated", { lineupId, ...data });
-    if (event !== "lineup-updated") {
-      global.io.to(`lineup_${lineupId}`).emit(event, { lineupId, ...data });
+const emitUpdate = async (lineupId, event = "lineup-updated", data = {}) => {
+  if (!global.io) return;
+  
+  const payload = { lineupId, ...data };
+  
+  // שליחה לחדר של הליינאפ הספציפי
+  global.io.to(`lineup_${lineupId}`).emit("lineup-updated", payload);
+  if (event !== "lineup-updated") {
+    global.io.to(`lineup_${lineupId}`).emit(event, payload);
+  }
+  
+  // שליחה גם לחדר של המארח שיצר את הליינאפ (כדי שכל האמנים שלו יקבלו את העדכון)
+  try {
+    const lineup = await findLineupById(lineupId);
+    if (lineup && lineup.created_by) {
+      // שליחה למארח ולכל האמנים שלו
+      const { emitToHost } = await import("../../core/socket.js");
+      await emitToHost(global.io, lineup.created_by, "lineup-updated", payload);
+      if (event !== "lineup-updated") {
+        await emitToHost(global.io, lineup.created_by, event, payload);
+      }
     }
+  } catch (err) {
+    // אם יש שגיאה, רק לוג - לא לשבור את הפעולה
+    console.warn("⚠️ Warning: Could not emit to host room:", err.message);
   }
 };
 
@@ -60,7 +78,7 @@ export async function addSongToLineup(lineupId, user, songId) {
   await insertLineupSong(lineupId, songId, position);
 
   // שליחה לחדר של הליינאפ הספציפי
-  emitUpdate(lineupId, "lineup-song:added", { songId });
+  await emitUpdate(lineupId, "lineup-song:added", { songId });
   
   // שליחה גם למשתמש ולמארח שלו (אם יש) כדי לרענן דפים אחרים
   if (global.io) {
@@ -106,7 +124,7 @@ export async function reorderLineupSongs(lineupId, user, songs) {
   }
 
   // שליחה לחדר של הליינאפ הספציפי
-  emitUpdate(lineupId, "lineup-song:reordered", { songs });
+  await emitUpdate(lineupId, "lineup-song:reordered", { songs });
   
   // שליחה גם למשתמש ולמארח שלו (אם יש) כדי לרענן דפים אחרים
   if (global.io) {
@@ -143,7 +161,7 @@ export async function removeSong(lineupId, user, songId) {
   }
 
   // שליחה לחדר של הליינאפ הספציפי
-  emitUpdate(lineupId, "lineup-song:removed", { songId });
+  await emitUpdate(lineupId, "lineup-song:removed", { songId });
   
   // שליחה גם למשתמש ולמארח שלו (אם יש) כדי לרענן דפים אחרים
   if (global.io) {
@@ -179,7 +197,7 @@ export async function uploadChartPdfForSong(lineupSongId, user, filePath) {
   await updateChartPdf(lineupSongId, filePath);
   
   // שליחה לחדר של הליינאפ הספציפי
-  emitUpdate(lineupSong.lineup_id, "lineup-song:chart-uploaded", { lineupSongId, songId: lineupSong.song_id });
+  await emitUpdate(lineupSong.lineup_id, "lineup-song:chart-uploaded", { lineupSongId, songId: lineupSong.song_id });
   
   // שליחה גם למשתמש ולמארח שלו (אם יש) כדי לרענן דפים אחרים
   if (global.io) {
@@ -220,7 +238,7 @@ export async function removeChartPdfForSong(lineupSongId, user) {
   }
   
   // שליחה לחדר של הליינאפ הספציפי
-  emitUpdate(lineupSong.lineup_id, "lineup-song:chart-deleted", { lineupSongId, songId: lineupSong.song_id });
+  await emitUpdate(lineupSong.lineup_id, "lineup-song:chart-deleted", { lineupSongId, songId: lineupSong.song_id });
   
   // שליחה גם למשתמש ולמארח שלו (אם יש) כדי לרענן דפים אחרים
   if (global.io) {

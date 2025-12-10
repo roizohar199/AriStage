@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { User, Music, LogOut, Check, X } from "lucide-react";
 import api from "@/modules/shared/lib/api.js";
 import { useConfirm } from "@/modules/shared/hooks/useConfirm.jsx";
@@ -7,7 +6,6 @@ import { useToast } from "@/modules/shared/components/ToastProvider.jsx";
 import { io } from "socket.io-client";
 
 export default function Artists() {
-  const navigate = useNavigate();
   const { confirm, ConfirmModalComponent } = useConfirm();
   const { showToast } = useToast();
   
@@ -20,15 +18,24 @@ export default function Artists() {
 
   // Socket.IO connection
   const socket = useMemo(() => {
-    const url = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    const url = import.meta.env.VITE_API_URL;
+    if (!url) {
+      console.error("VITE_API_URL is not defined");
+      return null;
+    }
     return io(url, {
-      withCredentials: true,
-      // לא מגדירים transports – Socket.IO מנהל לבד polling → websocket
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      timeout: 20000,
     });
   }, []);
 
   useEffect(() => {
     loadArtists();
+    
+    if (!socket) return;
     
     // הצטרפות ל-rooms של Socket.IO
     const user = JSON.parse(localStorage.getItem("ari_user") || "{}");
@@ -59,11 +66,13 @@ export default function Artists() {
     });
     
     return () => {
-      socket.off("user:invitation-accepted");
-      socket.off("user:invitation-rejected");
-      socket.off("user:left-collection");
-      socket.off("invitation:pending");
-      socket.disconnect();
+      if (socket) {
+        socket.off("user:invitation-accepted");
+        socket.off("user:invitation-rejected");
+        socket.off("user:left-collection");
+        socket.off("invitation:pending");
+        socket.disconnect();
+      }
     };
   }, [socket]);
 
@@ -310,12 +319,9 @@ export default function Artists() {
 
                     {/* פרטי האמן */}
                     <div className="flex-1 min-w-0">
-                      <button
-                        onClick={() => navigate(`/artist/${artist.id}`)}
-                        className="text-2xl font-bold text-white mb-2 hover:text-brand-orange transition cursor-pointer text-right"
-                      >
+                      <h2 className="text-2xl font-bold text-white mb-2">
                         {artist.full_name || "אמן ללא שם"}
-                      </button>
+                      </h2>
 
                       {/* תיאור תפקיד */}
                       {artist.artist_role && (

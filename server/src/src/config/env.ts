@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 // טוען את קובץ .env מהשורש של הפרויקט (תיקיית server)
 dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 
-const fallbackOrigins = ["http://localhost:5173", "http://10.0.0.99:5173"];
+const fallbackOrigins = ["http://localhost:5173"];
 const extraOrigins = (process.env.CORS_EXTRA_ORIGINS || "")
   .split(",")
   .map((origin) => origin.trim())
@@ -51,9 +51,9 @@ const port = Number(process.env.PORT || 5000);
 let baseUrl = process.env.SERVER_URL;
 
 if (!baseUrl) {
-  // אם השרת מאזין לכל הכתובות (0.0.0.0) → השתמש ב-IP הפנימי שלך
+  // אם השרת מאזין לכל הכתובות (0.0.0.0) → השתמש ב-localhost
   if (host === "0.0.0.0") {
-    baseUrl = `http://10.0.0.99:${port}`;
+    baseUrl = `http://localhost:${port}`;
   } else {
     baseUrl = `http://${host}:${port}`;
   }

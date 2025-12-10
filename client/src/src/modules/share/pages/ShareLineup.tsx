@@ -57,12 +57,19 @@ export default function ShareLineup() {
   const [error, setError] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // ⭐ Socket.IO connection
+  // ⭐ כאן מדביקים!
   const socket = useMemo(() => {
-    const url = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    const url = import.meta.env.VITE_API_URL;
+    if (!url) {
+      console.error("VITE_API_URL is not defined");
+      return null;
+    }
     return io(url, {
-      withCredentials: true,
-      // לא מגדירים transports – Socket.IO מנהל לבד polling → websocket
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      timeout: 20000,
     });
   }, []);
 
@@ -85,7 +92,7 @@ export default function ShareLineup() {
 
   // ⭐ הצטרפות לחדר והאזנה לעדכונים בזמן אמת
   useEffect(() => {
-    if (!lineup) return;
+    if (!lineup || !socket) return;
 
     socket.emit("join-lineup", lineup.id);
 
@@ -94,10 +101,12 @@ export default function ShareLineup() {
     });
 
     return () => {
-      socket.off("lineup-updated"); // ❗שמרים מאזין
-      // socket.disconnect(); ❌ להסיר! לא סוגרים חיבור כאן
+      if (socket) {
+        socket.off("lineup-updated"); // ❗שמרים מאזין
+        // socket.disconnect(); ❌ להסיר! לא סוגרים חיבור כאן
+      }
     };
-  }, [lineup]);
+  }, [lineup, socket]);
 
   // ⭐ חישוב זמן כולל
   const totalDuration = useMemo(() => {

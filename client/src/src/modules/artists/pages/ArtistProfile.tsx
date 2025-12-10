@@ -20,43 +20,96 @@ export default function ArtistProfile() {
       setLoading(true);
       setError(null);
 
-      // טעינת פרטי האמנים (רשימת מארחים)
-      const { data: myCollection } = await api.get("/users/my-collection", {
+      // בדיקה אם המשתמש הוא אורח או מארח
+      const { data: guestStatus } = await api.get("/users/check-guest", {
         skipErrorToast: true,
       });
 
-      // myCollection הוא רשימה של מארחים
-      const artistsList = Array.isArray(myCollection) ? myCollection : (myCollection ? [myCollection] : []);
+      const currentUser = JSON.parse(localStorage.getItem("ari_user") || "{}");
+      let targetArtist = null;
+      let targetArtistId = null;
 
-      if (artistsList.length === 0) {
-        setError("אין לך גישה לפרופיל זה - לא הוזמנת למאגר כלשהו");
+      if (id) {
+        // אם יש id ב-URL, נשתמש בו
+        targetArtistId = Number(id);
+      } else if (guestStatus?.isGuest && guestStatus?.hostId) {
+        // אם המשתמש הוא אורח, נציג את המארח שלו
+        targetArtistId = guestStatus.hostId;
+      } else if (guestStatus?.isHost) {
+        // אם המשתמש הוא מארח, נציג את עצמו
+        targetArtistId = currentUser.id;
+      }
+
+      if (!targetArtistId) {
+        setError("אין לך גישה לפרופיל זה");
         return;
       }
 
-      // אם יש id ב-URL, מצא את המארח המתאים
-      let selectedArtist = null;
-      if (id) {
-        selectedArtist = artistsList.find((artist) => artist.id === Number(id));
-        if (!selectedArtist) {
-          setError("אין לך גישה לפרופיל זה - המארח הזה לא נמצא במאגר שלך");
+      // בדיקת הרשאות - אם המשתמש הוא אורח, ודא שהוא מחובר למארח הזה
+      if (guestStatus?.isGuest) {
+        if (targetArtistId !== guestStatus.hostId) {
+          setError("אין לך גישה לפרופיל זה");
           return;
         }
-      } else {
-        // אם אין id, קח את המארח הראשון
-        selectedArtist = artistsList[0];
+        // טעינת פרטי המארח דרך my-collection
+        const { data: myCollection } = await api.get("/users/my-collection", {
+          skipErrorToast: true,
+        });
+        
+        // myCollection יכול להיות רשימה או אובייקט
+        if (Array.isArray(myCollection)) {
+          if (myCollection.length > 0) {
+            targetArtist = myCollection.find((host) => host.id === targetArtistId) || myCollection[0];
+          }
+        } else if (myCollection && myCollection.id === targetArtistId) {
+          targetArtist = myCollection;
+        } else if (myCollection) {
+          // אם זה אובייקט אבל לא עם id, נשתמש בו בכל מקרה
+          targetArtist = myCollection;
+        }
+      } else if (guestStatus?.isHost) {
+        // אם המשתמש הוא מארח, הוא יכול לראות את עצמו או אמנים שהוזמנו אליו
+        if (targetArtistId === currentUser.id) {
+          // טעינת פרטי המשתמש הנוכחי
+          const { data: myProfile } = await api.get("/users/me", {
+            skipErrorToast: true,
+          });
+          targetArtist = myProfile;
+        } else {
+          // בדוק אם האמן הזה הוזמן למאגר של המשתמש
+          const { data: myConnections } = await api.get("/users/connected-to-me", {
+            skipErrorToast: true,
+          });
+          const invitedArtist = Array.isArray(myConnections) && 
+            myConnections.find((artist) => artist.id === targetArtistId);
+          
+          if (!invitedArtist) {
+            setError("אין לך גישה לפרופיל זה");
+            return;
+          }
+          targetArtist = invitedArtist;
+        }
       }
 
-      setArtist(selectedArtist);
+      if (!targetArtist) {
+        setError("אמן לא נמצא");
+        return;
+      }
 
-      // טעינת ליינאפים של המארח (לא של המשתמש הנוכחי)
-      const { data: lineupsData } = await api.get(`/lineups/by-user/${selectedArtist.id}`, {
+      setArtist(targetArtist);
+
+      // טעינת ליינאפים של האמן המבוקש
+      const { data: lineupsData } = await api.get(`/lineups/by-user/${targetArtistId}`, {
         skipErrorToast: true,
       });
       setLineups(lineupsData || []);
     } catch (err) {
       console.error("שגיאה בטעינת נתונים:", err);
-      const errorMsg = err?.response?.data?.message || "לא ניתן לטעון את הנתונים";
-      setError(errorMsg);
+      if (err?.response?.status === 403 || err?.response?.status === 404) {
+        setError("אין לך גישה לפרופיל זה");
+      } else {
+        setError("לא ניתן לטעון את הנתונים");
+      }
     } finally {
       setLoading(false);
     }

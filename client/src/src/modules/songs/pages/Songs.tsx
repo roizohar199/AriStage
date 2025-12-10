@@ -57,15 +57,24 @@ export default function Songs() {
 
   // Socket.IO connection
   const socket = useMemo(() => {
-    const url = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    const url = import.meta.env.VITE_API_URL;
+    if (!url) {
+      console.error("VITE_API_URL is not defined");
+      return null;
+    }
     return io(url, {
-      withCredentials: true,
-      // לא מגדירים transports – Socket.IO מנהל לבד polling → websocket
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      timeout: 20000,
     });
   }, []);
 
   useEffect(() => {
     load();
+    
+    if (!socket) return;
     
     // בדיקה אם המשתמש הוא אורח או מארח
     async function checkGuest() {
@@ -79,7 +88,7 @@ export default function Songs() {
         
         // הצטרפות ל-rooms של Socket.IO
         const user = JSON.parse(localStorage.getItem("ari_user") || "{}");
-        if (user?.id) {
+        if (user?.id && socket) {
           socket.emit("join-user", user.id);
           socket.emit("join-songs", user.id);
           
@@ -138,13 +147,15 @@ export default function Songs() {
     window.addEventListener("data-refresh", handleDataRefresh);
     
     return () => {
-      socket.off("song:created");
-      socket.off("song:updated");
-      socket.off("song:deleted");
-      socket.off("song:chart-uploaded");
-      socket.off("song:chart-deleted");
+      if (socket) {
+        socket.off("song:created");
+        socket.off("song:updated");
+        socket.off("song:deleted");
+        socket.off("song:chart-uploaded");
+        socket.off("song:chart-deleted");
+        socket.disconnect();
+      }
       window.removeEventListener("data-refresh", handleDataRefresh);
-      socket.disconnect();
     };
   }, [socket]);
 

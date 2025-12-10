@@ -80,10 +80,17 @@ export default function Home() {
 
   // Socket.IO connection
   const socket = useMemo(() => {
-    const url = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    const url = import.meta.env.VITE_API_URL;
+    if (!url) {
+      console.error("VITE_API_URL is not defined");
+      return null;
+    }
     return io(url, {
-      withCredentials: true,
-      // לא מגדירים transports – Socket.IO מנהל לבד polling → websocket
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      timeout: 20000,
     });
   }, []);
 
@@ -167,6 +174,8 @@ export default function Home() {
     loadMyInvitedArtists();
     loadPendingInvitations();
     
+    if (!socket) return;
+    
     // הצטרפות ל-rooms של Socket.IO
     const user = JSON.parse(localStorage.getItem("ari_user") || "{}");
     if (user?.id) {
@@ -176,7 +185,7 @@ export default function Home() {
       // בדיקה אם המשתמש הוא מארח
       api.get("/users/check-guest", { skipErrorToast: true })
         .then(({ data }) => {
-          if (data.isHost) {
+          if (data.isHost && socket) {
             socket.emit("join-host", user.id);
           }
         })
@@ -243,15 +252,17 @@ export default function Home() {
     window.addEventListener("data-refresh", handleDataRefresh);
     
     return () => {
-      socket.off("user:invited");
-      socket.off("user:uninvited");
-      socket.off("song:created");
-      socket.off("song:deleted");
-      socket.off("lineup:created");
-      socket.off("lineup:deleted");
-      socket.off("invitation:pending");
-      socket.off("user:invitation-accepted");
-      socket.off("user:invitation-rejected");
+      if (socket) {
+        socket.off("user:invited");
+        socket.off("user:uninvited");
+        socket.off("song:created");
+        socket.off("song:deleted");
+        socket.off("lineup:created");
+        socket.off("lineup:deleted");
+        socket.off("invitation:pending");
+        socket.off("user:invitation-accepted");
+        socket.off("user:invitation-rejected");
+      }
       window.removeEventListener("data-refresh", handleDataRefresh);
       // לא מנתקים את ה-socket כאן כי הוא משותף
     };

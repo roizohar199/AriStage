@@ -20,11 +20,25 @@ export default function BottomNav() {
 
   // Socket.IO connection
   const socket = useMemo(() => {
-    const url = import.meta.env.VITE_API_URL || "http://localhost:5000";
-    return io(url, {
-      withCredentials: true,
-      // לא מגדירים transports – Socket.IO מנהל לבד polling → websocket
+    const url = import.meta.env.VITE_API_URL;
+    if (!url) {
+      console.error("VITE_API_URL is not defined");
+      return null;
+    }
+    const socketInstance = io(url, {
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      timeout: 20000,
     });
+    
+    // Error handling - לא להציג שגיאות בקונסול
+    socketInstance.on("connect_error", (err) => {
+      // שקט - reconnection יטפל בזה
+    });
+    
+    return socketInstance;
   }, []);
 
   // טעינת מספר הזמנות ממתינות
@@ -46,8 +60,22 @@ export default function BottomNav() {
 
     loadPendingInvitations();
     
-    // הצטרפות ל-socket room
-    socket.emit("join-user", user.id);
+    if (!socket) return;
+    
+    // ממתינים שהחיבור יהיה פעיל לפני שימוש
+    const setupSocket = () => {
+      if (socket.connected) {
+        // הצטרפות ל-socket room
+        socket.emit("join-user", user.id);
+      } else {
+        // ממתינים לחיבור
+        socket.once("connect", () => {
+          socket.emit("join-user", user.id);
+        });
+      }
+    };
+    
+    setupSocket();
     
     // האזנה לעדכונים בזמן אמת
     socket.on("invitation:pending", () => {
@@ -72,10 +100,12 @@ export default function BottomNav() {
     const interval = setInterval(loadPendingInvitations, 30000);
     
     return () => {
-      socket.off("invitation:pending");
-      socket.off("user:invitation-accepted");
-      socket.off("user:invitation-rejected");
-      // לא מנתקים את ה-socket - הוא נשאר פעיל לכל האפליקציה
+      if (socket && socket.connected) {
+        socket.off("invitation:pending");
+        socket.off("user:invitation-accepted");
+        socket.off("user:invitation-rejected");
+        // לא מנתקים את ה-socket כאן כי הוא משותף
+      }
       window.removeEventListener("pending-invitations-updated", handlePendingUpdate);
       clearInterval(interval);
     };

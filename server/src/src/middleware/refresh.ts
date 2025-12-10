@@ -45,25 +45,10 @@ export function emitRefreshOnMutation(
   // נשלח event רק כשהתגובה נסגרת בהצלחה
   res.on("finish", () => {
     if (res.statusCode >= 200 && res.statusCode < 400) {
-      // חילוץ lineupId מה-URL אם זה פעולה על lineup-song
-      let lineupId: number | undefined = undefined;
-      if (type === "lineup-song") {
-        const lineupMatch = originalUrl.match(/\/lineup-songs\/(\d+)/);
-        if (lineupMatch) {
-          lineupId = parseInt(lineupMatch[1]);
-        }
-      } else if (type === "lineup") {
-        const lineupMatch = originalUrl.match(/\/lineups\/(\d+)/);
-        if (lineupMatch) {
-          lineupId = parseInt(lineupMatch[1]);
-        }
-      }
-
       emitToUserAndHost(global.io, userId, "global:refresh", {
-        type, // לדוגמה: "song", "lineup", "lineup-song"
+        type, // לדוגמה: "song", "lineup"
         action: req.method.toLowerCase(), // לדוגמה: "post", "put"
         path: req.originalUrl, // לדוגמה: "/api/songs/12"
-        lineupId, // ID של הליינאפ (אם רלוונטי)
       }).catch((err) => {
         console.error("Socket global:refresh emit failed:", err);
       });

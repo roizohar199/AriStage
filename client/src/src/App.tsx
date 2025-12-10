@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { reloadAuth } from "@/modules/shared/lib/authReload.js";
 import { emitToast } from "@/modules/shared/lib/toastBus.js";
 import { io } from "socket.io-client";
+import api from "@/modules/shared/lib/api.js";
 
 import ToastProvider from "@/modules/shared/components/ToastProvider.tsx";
 import BottomNav from "@/modules/shared/components/BottomNav.tsx";
@@ -69,27 +70,45 @@ export default function App(): JSX.Element {
 
   /* -----------------------------------------
      🔥 Socket גלובלי אחד לכל האפליקציה
-     ⚠️ חשוב: כל ה-Hooks חייבים להיות לפני early return!
   ----------------------------------------- */
   const socket = useMemo(() => {
-    const url =
-      import.meta.env.VITE_API_URL || "http://localhost:5000";
+    const url = import.meta.env.VITE_API_URL;
+    if (!url) {
+      console.error("VITE_API_URL is not defined");
+      return null;
+    }
     return io(url, {
-      withCredentials: true,
-      // לא מגדירים transports – Socket.IO מנהל לבד polling → websocket
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      timeout: 20000,
     });
   }, []);
 
   useEffect(() => {
-    if (!currentUser?.id) {
+    if (!socket || !currentUser?.id) {
       return;
     }
 
     // מצטרפים לכל ה־rooms הרלוונטיים עבור המשתמש
     socket.emit("join-user", currentUser.id);
-    socket.emit("join-host", currentUser.id);
     socket.emit("join-lineups", currentUser.id);
     socket.emit("join-songs", currentUser.id);
+
+    // בדיקה אם המשתמש הוא אורח או מארח - הצטרפות לחדר המתאים
+    api.get("/users/check-guest", { skipErrorToast: true })
+      .then(({ data }) => {
+        if (socket) {
+          if (data.isHost) {
+            socket.emit("join-host", currentUser.id);
+          }
+          if (data.hostId) {
+            socket.emit("join-host", data.hostId);
+          }
+        }
+      })
+      .catch(() => {});
 
     // כל event global:refresh → הופך ל־data-refresh לכל האפליקציה
     const handleGlobalRefresh = (payload: any) => {
@@ -100,16 +119,29 @@ export default function App(): JSX.Element {
       );
     };
 
+    // האזנה לעדכוני ליינאפים - גם כשלא בדף הליינאפ
+    const handleLineupSongReordered = ({ lineupId }) => {
+      window.dispatchEvent(
+        new CustomEvent("data-refresh", {
+          detail: { type: "lineup-song", action: "reordered", lineupId },
+        })
+      );
+    };
+
     socket.on("global:refresh", handleGlobalRefresh);
+    socket.on("lineup-song:reordered", handleLineupSongReordered);
 
     return () => {
-      socket.off("global:refresh", handleGlobalRefresh);
-      // לא מנתקים את ה-socket - הוא נשאר פעיל לכל האפליקציה
+      if (socket) {
+        socket.off("global:refresh", handleGlobalRefresh);
+        socket.off("lineup-song:reordered", handleLineupSongReordered);
+        // לא מנתקים את ה-socket - הוא נשאר פעיל לכל האפליקציה
+      }
     };
   }, [socket, currentUser?.id]);
 
   /* -----------------------------------------
-     Early return - רק אחרי כל ה-Hooks!
+     🔥 Early return רק אחרי כל ה-hooks
   ----------------------------------------- */
   if (loading) return <Splash />;
 

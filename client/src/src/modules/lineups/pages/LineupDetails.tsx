@@ -183,14 +183,23 @@ export default function LineupDetails() {
   }, [id]);
 
   const socket = useMemo(() => {
-    const url = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    const url = import.meta.env.VITE_API_URL;
+    if (!url) {
+      console.error("VITE_API_URL is not defined");
+      return null;
+    }
     return io(url, {
-      withCredentials: true,
-      // לא מגדירים transports – Socket.IO מנהל לבד polling → websocket
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      timeout: 20000,
     });
   }, []);
 
   useEffect(() => {
+    if (!socket) return;
+    
     socket.emit("join-lineup", id);
     
     // הצטרפות לחדר המשתמש כדי לקבל עדכונים גם כשלא בחדר הליינאפ
@@ -202,16 +211,13 @@ export default function LineupDetails() {
       // בדיקה אם המשתמש הוא אורח או מארח - הצטרפות לחדר המתאים
       api.get("/users/check-guest", { skipErrorToast: true })
         .then(({ data }) => {
-          if (data.isHost) {
-            socket.emit("join-host", user.id);
-          }
-          // הצטרפות לכל המארחים (אם יש כמה)
-          if (data.hostIds && Array.isArray(data.hostIds)) {
-            data.hostIds.forEach((hostId) => {
-              socket.emit("join-host", hostId);
-            });
-          } else if (data.hostId) {
-            socket.emit("join-host", data.hostId);
+          if (socket) {
+            if (data.isHost) {
+              socket.emit("join-host", user.id);
+            }
+            if (data.hostId) {
+              socket.emit("join-host", data.hostId);
+            }
           }
         })
         .catch(() => {});
@@ -250,7 +256,9 @@ export default function LineupDetails() {
     });
     
     socket.on("lineup-song:reordered", ({ lineupId, songs }) => {
+      console.log("🔔 Received lineup-song:reordered event", { lineupId, currentId: id });
       if (lineupId == id) {
+        console.log("✅ Reloading lineup data due to reorder");
         load(); // רענון רשימת שירים
       }
     });
@@ -283,16 +291,18 @@ export default function LineupDetails() {
     window.addEventListener("data-refresh", handleDataRefresh);
     
     return () => {
-      socket.off("share:update");
-      socket.off("lineup-updated");
-      socket.off("lineup:updated");
-      socket.off("lineup-song:added");
-      socket.off("lineup-song:removed");
-      socket.off("lineup-song:reordered");
-      socket.off("lineup-song:chart-uploaded");
-      socket.off("lineup-song:chart-deleted");
+      if (socket && socket.connected) {
+        socket.off("share:update");
+        socket.off("lineup-updated");
+        socket.off("lineup:updated");
+        socket.off("lineup-song:added");
+        socket.off("lineup-song:removed");
+        socket.off("lineup-song:reordered");
+        socket.off("lineup-song:chart-uploaded");
+        socket.off("lineup-song:chart-deleted");
+        // לא מנתקים את ה-socket כאן כי הוא משותף
+      }
       window.removeEventListener("data-refresh", handleDataRefresh);
-      socket.disconnect();
     };
   }, [id, socket]);
 

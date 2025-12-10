@@ -1,9 +1,6 @@
 import axios from "axios";
 import { emitToast } from "./toastBus.ts";
 
-// כתובת השרת ברשת הפנימית שלך
-const LOCAL_SERVER_IP = "10.0.0.99";
-
 // קובע את ה-baseURL לפי המכשיר שנכנס
 function getBaseURL(): string {
   // אם זה פרודקשן
@@ -14,11 +11,6 @@ function getBaseURL(): string {
   // אם נפתחה מה-LOCALHOST
   if (window.location.hostname === "localhost") {
     return "http://localhost:5000/api";
-  }
-
-  // אם נכנסת מה-IP הפנימי
-  if (window.location.hostname === LOCAL_SERVER_IP) {
-    return `http://${LOCAL_SERVER_IP}:5000/api`;
   }
 
   // fallback — אם יש מקרה מוזר

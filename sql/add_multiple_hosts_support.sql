@@ -35,3 +35,4 @@ CREATE INDEX idx_host_status ON `user_hosts` (`host_id`, `invitation_status`);
 
 
 
+

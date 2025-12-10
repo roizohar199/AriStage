@@ -15,9 +15,23 @@ import {
 } from "./lineups.repository.js";
 import { checkIfGuest } from "../users/users.service.js";
 
-const emitLineupEvent = (lineupId, event, payload) => {
-  if (global.io) {
-    global.io.to(`lineup_${lineupId}`).emit(event, payload);
+const emitLineupEvent = async (lineupId, event, payload) => {
+  if (!global.io) return;
+  
+  // שליחה לחדר של הליינאפ
+  global.io.to(`lineup_${lineupId}`).emit(event, payload);
+  
+  // שליחה גם לחדר של המארח שיצר את הליינאפ (כדי שכל האמנים שלו יקבלו את העדכון)
+  try {
+    const lineup = await findLineupById(lineupId);
+    if (lineup && lineup.created_by) {
+      // שליחה למארח ולכל האמנים שלו
+      const { emitToHost } = await import("../../core/socket.js");
+      await emitToHost(global.io, lineup.created_by, event, payload);
+    }
+  } catch (err) {
+    // אם יש שגיאה, רק לוג - לא לשבור את הפעולה
+    console.warn("⚠️ Warning: Could not emit to host room:", err.message);
   }
 };
 
@@ -47,12 +61,8 @@ export function getPublicLineup(token) {
 }
 
 export async function getLineups(user) {
-  // בדיקה אם המשתמש הוא אורח - מחזיר רשימת מארחים
-  const hostIds = await checkIfGuest(user.id);
-  const hostIdsArray: number[] = Array.isArray(hostIds) ? hostIds : (hostIds ? [hostIds] : []);
-  
-  // בדף הליינאפים - הצג את הליינאפים שהמשתמש יצר בעצמו + ליינאפים של המארחים שלו (אם הוא אורח)
-  return listLineups(user.role, user.id, hostIdsArray);
+  // בדף הליינאפים - הצג רק את הליינאפים שהמשתמש יצר בעצמו
+  return listLineups(user.role, user.id, null);
 }
 
 // פונקציה לקבלת ליינאפים של משתמש ספציפי (לשימוש ב-ArtistProfile)
@@ -77,16 +87,12 @@ export async function getLineupById(lineupId, user) {
     return lineup;
   }
 
-  // אם לא, בדיקה אם המשתמש הוא אורח והליינאפ שייך לאחד מהמארחים שלו
-  const hostIds = await checkIfGuest(user.id);
-  const hostIdsArray: number[] = Array.isArray(hostIds) ? hostIds : (hostIds ? [hostIds] : []);
-  if (hostIdsArray.length > 0) {
-    // בדיקה אם אחד מהמארחים הוא הבעלים של הליינאפ
-    for (const hostId of hostIdsArray) {
-      const hostHasAccess = await lineupBelongsToUser(lineupId, hostId);
-      if (hostHasAccess) {
-        return lineup;
-      }
+  // אם לא, בדיקה אם המשתמש הוא אורח והליינאפ שייך למארח שלו
+  const hostId = await checkIfGuest(user.id);
+  if (hostId) {
+    const hostHasAccess = await lineupBelongsToUser(lineupId, hostId);
+    if (hostHasAccess) {
+      return lineup;
     }
   }
 
@@ -132,8 +138,8 @@ export async function updateLineup(user, id, payload) {
     description: payload.description || "",
   });
 
-  emitLineupEvent(id, "lineup-updated", { lineupId: id });
-  emitLineupEvent(id, "lineup:updated", { lineupId: id });
+  await emitLineupEvent(id, "lineup-updated", { lineupId: id });
+  await emitLineupEvent(id, "lineup:updated", { lineupId: id });
 
   return lineup;
 }
@@ -170,12 +176,12 @@ export async function createShareLink(req, lineupId) {
   const baseUrl = resolveBaseUrl(req);
   const url = `${baseUrl}/share/${share.share_token}`;
 
-  emitLineupEvent(lineupId, "share:update", { id: lineupId, url });
+  await emitLineupEvent(lineupId, "share:update", { id: lineupId, url });
 
   return { token: share.share_token, url };
 }
 
 export async function disableShareLink(lineupId) {
   await deactivateShare(lineupId);
-  emitLineupEvent(lineupId, "share:update", { id: lineupId, url: null });
+  await emitLineupEvent(lineupId, "share:update", { id: lineupId, url: null });
 }

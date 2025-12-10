@@ -34,10 +34,17 @@ export default function Lineup() {
 
   // Socket.IO connection
   const socket = useMemo(() => {
-    const url = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    const url = import.meta.env.VITE_API_URL;
+    if (!url) {
+      console.error("VITE_API_URL is not defined");
+      return null;
+    }
     return io(url, {
-      withCredentials: true,
-      // לא מגדירים transports – Socket.IO מנהל לבד polling → websocket
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      timeout: 20000,
     });
   }, []);
 
@@ -80,6 +87,8 @@ export default function Lineup() {
   useEffect(() => {
     load();
     
+    if (!socket) return;
+    
     // הצטרפות ל-rooms של Socket.IO
     const user = JSON.parse(localStorage.getItem("ari_user") || "{}");
     if (user?.id) {
@@ -89,11 +98,13 @@ export default function Lineup() {
       // בדיקה אם המשתמש הוא אורח או מארח
       api.get("/users/check-guest", { skipErrorToast: true })
         .then(({ data }) => {
-          if (data.isHost) {
-            socket.emit("join-host", user.id);
-          }
-          if (data.hostId) {
-            socket.emit("join-host", data.hostId);
+          if (socket) {
+            if (data.isHost) {
+              socket.emit("join-host", user.id);
+            }
+            if (data.hostId) {
+              socket.emit("join-host", data.hostId);
+            }
           }
         })
         .catch(() => {});
@@ -112,6 +123,19 @@ export default function Lineup() {
       setLineups((prev) => prev.filter((l) => l.id !== lineupId));
     });
     
+    // האזנה לעדכוני שירים בליינאפ (כדי לרענן גם כשלא בדף הליינאפ)
+    socket.on("lineup-song:added", ({ lineupId }) => {
+      load(); // רענון רשימת ליינאפים
+    });
+    
+    socket.on("lineup-song:removed", ({ lineupId }) => {
+      load(); // רענון רשימת ליינאפים
+    });
+    
+    socket.on("lineup-song:reordered", ({ lineupId }) => {
+      load(); // רענון רשימת ליינאפים
+    });
+    
     // האזנה ל-custom events לעדכון אוטומטי אחרי כל פעולה
     const handleDataRefresh = (event) => {
       const { type, action } = event.detail || {};
@@ -123,11 +147,16 @@ export default function Lineup() {
     window.addEventListener("data-refresh", handleDataRefresh);
     
     return () => {
-      socket.off("lineup:created");
-      socket.off("lineup:updated");
-      socket.off("lineup:deleted");
+      if (socket && socket.connected) {
+        socket.off("lineup:created");
+        socket.off("lineup:updated");
+        socket.off("lineup:deleted");
+        socket.off("lineup-song:added");
+        socket.off("lineup-song:removed");
+        socket.off("lineup-song:reordered");
+        // לא מנתקים את ה-socket כאן כי הוא משותף
+      }
       window.removeEventListener("data-refresh", handleDataRefresh);
-      socket.disconnect();
     };
   }, [socket]);
 
