@@ -84,6 +84,30 @@ export async function getLineupSongById(lineupSongId) {
   return rows[0] || null;
 }
 
+export async function getLineupSongByLineupAndSong(lineupId, songId) {
+  const [rows] = await pool.query(
+    `SELECT 
+        ls.id, 
+        ls.lineup_id, 
+        ls.song_id, 
+        ls.position,
+        ls.chart_pdf,
+        s.title, 
+        s.artist, 
+        s.bpm, 
+        s.key_sig,
+        s.duration_sec,
+        s.notes
+     FROM lineup_songs ls
+     JOIN songs s ON ls.song_id = s.id
+     WHERE ls.lineup_id = ? AND ls.song_id = ?
+     ORDER BY ls.id DESC
+     LIMIT 1`,
+    [lineupId, songId]
+  );
+  return rows[0] || null;
+}
+
 export async function deleteLineupSongChartPdf(lineupSongId) {
   // קבלת נתיב הקובץ לפני המחיקה
   const [rows] = await pool.query(

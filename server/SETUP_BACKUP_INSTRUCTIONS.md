@@ -48,3 +48,4 @@ schtasks /Run /TN "ARI_Stage_Daily_Backup"
 2. בדוק את הלוג: `backups\backup_log.txt`
 3. הרץ ידנית את `backup-database-daily.ps1` לבדיקה
 
+

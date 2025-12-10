@@ -70,13 +70,16 @@ export const lineupsController = {
   create: asyncHandler(async (req, res) => {
     const lineup = await createLineup(req.user, req.body);
     
-    // שליחת עדכון בזמן אמת
+    // הוספת סימון ownership
+    lineup.is_owner = lineup.created_by === req.user.id;
+    
+    // שליחת עדכון בזמן אמת עם הנתונים המלאים
     if (global.io) {
       await emitToUserAndHost(
         global.io,
         req.user.id,
         "lineup:created",
-        { lineupId: lineup.id, userId: req.user.id }
+        { lineup, lineupId: lineup.id, userId: req.user.id }
       );
       
       // גם ל-user_updates כדי לרענן דפים אחרים
@@ -84,7 +87,7 @@ export const lineupsController = {
         global.io,
         req.user.id,
         "lineup:created",
-        { lineupId: lineup.id, userId: req.user.id }
+        { lineup, lineupId: lineup.id, userId: req.user.id }
       );
     }
     
@@ -95,14 +98,17 @@ export const lineupsController = {
     const lineupId = parseInt(req.params.id);
     const lineup = await updateLineup(req.user, lineupId, req.body);
     
-    // שליחת עדכון בזמן אמת
+    // הוספת סימון ownership
+    lineup.is_owner = lineup.created_by === req.user.id;
+    
+    // שליחת עדכון בזמן אמת עם הנתונים המלאים
     if (global.io) {
       // שליחה למשתמש שביצע את הפעולה ולמארח שלו (אם הוא אורח)
       await emitToUserAndHost(
         global.io,
         req.user.id,
         "lineup:updated",
-        { lineupId, userId: req.user.id }
+        { lineup, lineupId, userId: req.user.id }
       );
       
       // שליחה גם למארח שיצר את הליינאפ (אם הוא שונה מהמשתמש שביצע את הפעולה)
@@ -112,12 +118,12 @@ export const lineupsController = {
           global.io,
           lineup.created_by,
           "lineup:updated",
-          { lineupId, userId: req.user.id }
+          { lineup, lineupId, userId: req.user.id }
         );
       }
       
       // גם לחדר של הליינאפ הספציפי
-      global.io.to(`lineup_${lineupId}`).emit("lineup:updated", { lineupId });
+      global.io.to(`lineup_${lineupId}`).emit("lineup:updated", { lineup, lineupId });
     }
     
     res.json(lineup);

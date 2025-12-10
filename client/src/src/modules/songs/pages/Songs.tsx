@@ -108,12 +108,46 @@ export default function Songs() {
     checkGuest();
     
     // Socket.IO listeners
-    socket.on("song:created", () => {
-      load(); // רענון רשימה
+    socket.on("song:created", ({ song, songId }) => {
+      // אם יש את הנתונים המלאים - פשוט להוסיף
+      if (song) {
+        setSongs((prev) => [song, ...prev]);
+      } else if (songId) {
+        // אם לא - לטעון רק את השיר החדש
+        api.get(`/songs/${songId}`, { skipErrorToast: true })
+          .then(({ data }) => {
+            setSongs((prev) => [data, ...prev]);
+          })
+          .catch(() => {
+            // אם נכשל - לטעון הכל
+            load();
+          });
+      } else {
+        load(); // fallback
+      }
     });
     
-    socket.on("song:updated", ({ songId }) => {
-      load(); // רענון רשימה
+    socket.on("song:updated", ({ song, songId }) => {
+      // אם יש את הנתונים המלאים - פשוט לעדכן
+      if (song) {
+        setSongs((prev) =>
+          prev.map((s) => (s.id === song.id ? song : s))
+        );
+      } else if (songId) {
+        // אם לא - לטעון רק את השיר שעודכן
+        api.get(`/songs/${songId}`, { skipErrorToast: true })
+          .then(({ data }) => {
+            setSongs((prev) =>
+              prev.map((s) => (s.id === songId ? data : s))
+            );
+          })
+          .catch(() => {
+            // אם נכשל - לטעון הכל
+            load();
+          });
+      } else {
+        load(); // fallback
+      }
     });
     
     socket.on("song:deleted", ({ songId }) => {

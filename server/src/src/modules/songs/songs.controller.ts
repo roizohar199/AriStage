@@ -7,6 +7,7 @@ import {
   uploadChartPdfForSong,
   removeChartPdfForSong,
 } from "./songs.service.js";
+import { getSongById } from "./songs.repository.js";
 import { emitToUserAndHost, emitToUserUpdates } from "../../core/socket.js";
 
 export const songsController = {
@@ -35,13 +36,30 @@ export const songsController = {
   create: asyncHandler(async (req, res) => {
     const payload = await createSong(req.user, req.body);
     
-    // שליחת עדכון בזמן אמת
-    if (global.io) {
+    // קבלת הנתונים המלאים של השיר שנוצר
+    const fullSong = await getSongById(payload.id);
+    
+    // הוספת URL מלא ל-PDF אם קיים
+    if (fullSong && fullSong.chart_pdf) {
+      const protocol = req.protocol;
+      const host = req.get("host");
+      const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
+      const cleanPdf = fullSong.chart_pdf.replace(/^\/uploads\//, "");
+      fullSong.chart_pdf_url = `${baseUrl}/uploads/${cleanPdf}`;
+    }
+    
+    // הוספת סימון ownership
+    if (fullSong) {
+      fullSong.is_owner = fullSong.user_id === req.user.id;
+    }
+    
+    // שליחת עדכון בזמן אמת עם הנתונים המלאים
+    if (global.io && fullSong) {
       await emitToUserAndHost(
         global.io,
         req.user.id,
         "song:created",
-        { songId: payload.id, userId: req.user.id }
+        { song: fullSong, songId: payload.id, userId: req.user.id }
       );
       
       // גם ל-user_updates כדי לרענן דפים אחרים
@@ -49,7 +67,7 @@ export const songsController = {
         global.io,
         req.user.id,
         "song:created",
-        { songId: payload.id, userId: req.user.id }
+        { song: fullSong, songId: payload.id, userId: req.user.id }
       );
     }
     
@@ -62,13 +80,30 @@ export const songsController = {
     const songId = parseInt(req.params.id);
     await updateSongDetails(req.user, songId, req.body);
     
-    // שליחת עדכון בזמן אמת
-    if (global.io) {
+    // קבלת הנתונים המלאים של השיר שעודכן
+    const fullSong = await getSongById(songId);
+    
+    // הוספת URL מלא ל-PDF אם קיים
+    if (fullSong && fullSong.chart_pdf) {
+      const protocol = req.protocol;
+      const host = req.get("host");
+      const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
+      const cleanPdf = fullSong.chart_pdf.replace(/^\/uploads\//, "");
+      fullSong.chart_pdf_url = `${baseUrl}/uploads/${cleanPdf}`;
+    }
+    
+    // הוספת סימון ownership
+    if (fullSong) {
+      fullSong.is_owner = fullSong.user_id === req.user.id;
+    }
+    
+    // שליחת עדכון בזמן אמת עם הנתונים המלאים
+    if (global.io && fullSong) {
       await emitToUserAndHost(
         global.io,
         req.user.id,
         "song:updated",
-        { songId, userId: req.user.id }
+        { song: fullSong, songId, userId: req.user.id }
       );
     }
     

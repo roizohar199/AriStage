@@ -72,12 +72,17 @@ export const lineupSongsController = {
     const lineupSongId = parseInt(req.params.lineupSongId);
     const filePath = `/uploads/charts/${req.user.id}/${req.file.filename}`;
     
-    await uploadChartPdfForSong(lineupSongId, req.user, filePath);
+    const lineupSong = await uploadChartPdfForSong(lineupSongId, req.user, filePath);
     
     const protocol = req.protocol;
     const host = req.get("host");
     const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
     const pdfUrl = `${baseUrl}${filePath}`;
+    
+    // הוספת URL מלא לנתונים שנשלחים
+    if (lineupSong) {
+      lineupSong.chart_pdf_url = pdfUrl;
+    }
     
     res.json({ 
       message: "✅ קובץ PDF הועלה בהצלחה",

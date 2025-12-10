@@ -111,12 +111,40 @@ export default function Lineup() {
     }
     
     // Socket.IO listeners
-    socket.on("lineup:created", () => {
-      load(); // רענון רשימה
+    socket.on("lineup:created", ({ lineup, lineupId }) => {
+      // אם יש את הנתונים המלאים של הליינאפ - פשוט להוסיף
+      if (lineup) {
+        setLineups((prev) => [lineup, ...prev]);
+      } else if (lineupId) {
+        // אם לא - לטעון רק את הליינאפ החדש
+        api.get(`/lineups/${lineupId}`, { skipErrorToast: true })
+          .then(({ data }) => {
+            setLineups((prev) => [data, ...prev]);
+          })
+          .catch(() => load()); // fallback
+      } else {
+        load(); // fallback
+      }
     });
     
-    socket.on("lineup:updated", ({ lineupId }) => {
-      load(); // רענון רשימה
+    socket.on("lineup:updated", ({ lineup, lineupId }) => {
+      // אם יש את הנתונים המלאים של הליינאפ - פשוט לעדכן
+      if (lineup) {
+        setLineups((prev) =>
+          prev.map((l) => (l.id === lineup.id ? lineup : l))
+        );
+      } else if (lineupId) {
+        // אם לא - לטעון רק את הליינאפ שעודכן
+        api.get(`/lineups/${lineupId}`, { skipErrorToast: true })
+          .then(({ data }) => {
+            setLineups((prev) =>
+              prev.map((l) => (l.id === lineupId ? data : l))
+            );
+          })
+          .catch(() => load()); // fallback
+      } else {
+        load(); // fallback
+      }
     });
     
     socket.on("lineup:deleted", ({ lineupId }) => {
@@ -125,15 +153,35 @@ export default function Lineup() {
     
     // האזנה לעדכוני שירים בליינאפ (כדי לרענן גם כשלא בדף הליינאפ)
     socket.on("lineup-song:added", ({ lineupId }) => {
-      load(); // רענון רשימת ליינאפים
+      // עדכון מספר השירים בליינאפ
+      setLineups((prev) =>
+        prev.map((l) =>
+          l.id === lineupId ? { ...l, songs_count: (l.songs_count || 0) + 1 } : l
+        )
+      );
     });
     
     socket.on("lineup-song:removed", ({ lineupId }) => {
-      load(); // רענון רשימת ליינאפים
+      // עדכון מספר השירים בליינאפ
+      setLineups((prev) =>
+        prev.map((l) =>
+          l.id === lineupId ? { ...l, songs_count: Math.max((l.songs_count || 1) - 1, 0) } : l
+        )
+      );
     });
     
     socket.on("lineup-song:reordered", ({ lineupId }) => {
-      load(); // רענון רשימת ליינאפים
+      // אין צורך לעדכן כלום ברשימת הליינאפים - רק הסדר של השירים בתוך הליינאפ השתנה
+      // אבל אם יש צורך לעדכן משהו אחר (כמו זמן כולל), אפשר לטעון רק את הליינאפ הספציפי
+      api.get(`/lineups/${lineupId}`, { skipErrorToast: true })
+        .then(({ data }) => {
+          setLineups((prev) =>
+            prev.map((l) => (l.id === lineupId ? data : l))
+          );
+        })
+        .catch(() => {
+          // אם נכשל - לא לעשות כלום, זה לא קריטי
+        });
     });
     
     // האזנה ל-custom events לעדכון אוטומטי אחרי כל פעולה

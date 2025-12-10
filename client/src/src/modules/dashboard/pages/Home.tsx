@@ -205,19 +205,55 @@ export default function Home() {
     
     // רענון סטטיסטיקות כאשר יש שינויים בשירים או ליינאפים
     socket.on("song:created", () => {
-      load(); // רענון סטטיסטיקות
+      // עדכון מספר השירים אם יש נתונים
+      setStats((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          songs: (prev.songs || 0) + 1,
+        };
+      });
+      // עדכון סטטיסטיקות מלאות (למקרה שיש חישובים נוספים)
+      load();
     });
     
     socket.on("song:deleted", () => {
-      load(); // רענון סטטיסטיקות
+      // עדכון מספר השירים אם יש נתונים
+      setStats((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          songs: Math.max((prev.songs || 1) - 1, 0),
+        };
+      });
+      // עדכון סטטיסטיקות מלאות (למקרה שיש חישובים נוספים)
+      load();
     });
     
     socket.on("lineup:created", () => {
-      load(); // רענון סטטיסטיקות
+      // עדכון מספר הליינאפים אם יש נתונים
+      setStats((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          lineups: (prev.lineups || 0) + 1,
+        };
+      });
+      // עדכון סטטיסטיקות מלאות (למקרה שיש חישובים נוספים)
+      load();
     });
     
     socket.on("lineup:deleted", () => {
-      load(); // רענון סטטיסטיקות
+      // עדכון מספר הליינאפים אם יש נתונים
+      setStats((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          lineups: Math.max((prev.lineups || 1) - 1, 0),
+        };
+      });
+      // עדכון סטטיסטיקות מלאות (למקרה שיש חישובים נוספים)
+      load();
     });
     
     socket.on("invitation:pending", () => {

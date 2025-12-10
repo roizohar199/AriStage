@@ -8,6 +8,7 @@ import {
   updateChartPdf,
   getLineupSongById,
   deleteLineupSongChartPdf,
+  getLineupSongByLineupAndSong,
 } from "./lineupSongs.repository.js";
 import { lineupBelongsToUser, findLineupById } from "../lineups/lineups.repository.js";
 import { checkIfGuest } from "../users/users.service.js";
@@ -77,8 +78,11 @@ export async function addSongToLineup(lineupId, user, songId) {
   const position = await getNextPosition(lineupId);
   await insertLineupSong(lineupId, songId, position);
 
+  // קבלת הנתונים המלאים של השיר שנוסף
+  const lineupSong = await getLineupSongByLineupAndSong(lineupId, songId);
+  
   // שליחה לחדר של הליינאפ הספציפי
-  await emitUpdate(lineupId, "lineup-song:added", { songId });
+  await emitUpdate(lineupId, "lineup-song:added", { songId, lineupSong });
   
   // שליחה גם למשתמש ולמארח שלו (אם יש) כדי לרענן דפים אחרים
   if (global.io) {
@@ -89,7 +93,7 @@ export async function addSongToLineup(lineupId, user, songId) {
         global.io,
         user.id,
         "lineup-song:added",
-        { lineupId, songId, userId: user.id }
+        { lineupId, songId, lineupSong, userId: user.id }
       );
       
       // שליחה גם למארח שיצר את הליינאפ (אם הוא שונה מהמשתמש שביצע את הפעולה)
@@ -99,7 +103,7 @@ export async function addSongToLineup(lineupId, user, songId) {
           global.io,
           lineup.created_by,
           "lineup-song:added",
-          { lineupId, songId, userId: user.id }
+          { lineupId, songId, lineupSong, userId: user.id }
         );
       }
     }
@@ -196,8 +200,15 @@ export async function uploadChartPdfForSong(lineupSongId, user, filePath) {
 
   await updateChartPdf(lineupSongId, filePath);
   
+  // קבלת הנתונים המלאים של השיר שעודכן (עם ה-PDF החדש)
+  const updatedLineupSong = await getLineupSongById(lineupSongId);
+  
   // שליחה לחדר של הליינאפ הספציפי
-  await emitUpdate(lineupSong.lineup_id, "lineup-song:chart-uploaded", { lineupSongId, songId: lineupSong.song_id });
+  await emitUpdate(lineupSong.lineup_id, "lineup-song:chart-uploaded", { 
+    lineupSongId, 
+    songId: lineupSong.song_id,
+    lineupSong: updatedLineupSong 
+  });
   
   // שליחה גם למשתמש ולמארח שלו (אם יש) כדי לרענן דפים אחרים
   if (global.io) {
@@ -207,7 +218,13 @@ export async function uploadChartPdfForSong(lineupSongId, user, filePath) {
         global.io,
         user.id,
         "lineup-song:chart-uploaded",
-        { lineupId: lineupSong.lineup_id, lineupSongId, songId: lineupSong.song_id, userId: user.id }
+        { 
+          lineupId: lineupSong.lineup_id, 
+          lineupSongId, 
+          songId: lineupSong.song_id, 
+          lineupSong: updatedLineupSong,
+          userId: user.id 
+        }
       );
       
       if (lineup.created_by !== user.id) {
@@ -215,13 +232,19 @@ export async function uploadChartPdfForSong(lineupSongId, user, filePath) {
           global.io,
           lineup.created_by,
           "lineup-song:chart-uploaded",
-          { lineupId: lineupSong.lineup_id, lineupSongId, songId: lineupSong.song_id, userId: user.id }
+          { 
+            lineupId: lineupSong.lineup_id, 
+            lineupSongId, 
+            songId: lineupSong.song_id, 
+            lineupSong: updatedLineupSong,
+            userId: user.id 
+          }
         );
       }
     }
   }
 
-  return lineupSong;
+  return updatedLineupSong;
 }
 
 export async function removeChartPdfForSong(lineupSongId, user) {

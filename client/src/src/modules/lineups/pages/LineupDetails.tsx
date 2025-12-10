@@ -233,19 +233,47 @@ export default function LineupDetails() {
     socket.on("lineup-updated", (data) => {
       // אם יש lineupId, נבדוק שהוא תואם
       if (!data || !data.lineupId || data.lineupId == id) {
-        load(); // רענון נתונים
+        // אם יש את הנתונים המלאים של הליינאפ - לעדכן רק אותם
+        if (data?.lineup) {
+          setLineup((prev) => ({ ...prev, ...data.lineup }));
+        } else {
+          load(); // fallback - רענון נתונים
+        }
       }
     });
     
-    socket.on("lineup:updated", ({ lineupId }) => {
+    socket.on("lineup:updated", ({ lineup, lineupId }) => {
       if (lineupId == id) {
-        load(); // רענון נתונים כולל פרטי הליינאפ
+        // אם יש את הנתונים המלאים של הליינאפ - לעדכן רק אותם
+        if (lineup) {
+          setLineup((prev) => ({ ...prev, ...lineup }));
+        } else {
+          load(); // fallback - רענון נתונים
+        }
       }
     });
     
-    socket.on("lineup-song:added", ({ lineupId, songId }) => {
+    socket.on("lineup-song:added", ({ lineupId, songId, lineupSong }) => {
       if (lineupId == id) {
-        load(); // רענון רשימת שירים - כולל השיר החדש
+        // אם יש את הנתונים המלאים של השיר שנוסף - פשוט להוסיף
+        if (lineupSong) {
+          setSongs((prev) => [...prev, lineupSong]);
+        } else if (songId) {
+          // אם לא - לטעון רק את השיר החדש
+          api.get(`/lineup-songs/${id}`, { skipErrorToast: true })
+            .then(({ data }) => {
+              // מציאת השיר החדש ברשימה
+              const newSong = data.find((s) => s.song_id === songId);
+              if (newSong) {
+                setSongs((prev) => [...prev, newSong]);
+              } else {
+                load(); // fallback
+              }
+            })
+            .catch(() => load()); // fallback
+        } else {
+          load(); // fallback
+        }
       }
     });
     
@@ -258,14 +286,49 @@ export default function LineupDetails() {
     socket.on("lineup-song:reordered", ({ lineupId, songs }) => {
       console.log("🔔 Received lineup-song:reordered event", { lineupId, currentId: id });
       if (lineupId == id) {
-        console.log("✅ Reloading lineup data due to reorder");
-        load(); // רענון רשימת שירים
+        // אם יש את הנתונים המלאים של הסדר החדש - לעדכן ישירות
+        if (songs && Array.isArray(songs) && songs.length > 0) {
+          // עדכון הסדר לפי ה-song_id
+          setSongs((prev) => {
+            const songsMap = new Map(prev.map((s) => [s.song_id, s]));
+            const reordered = songs
+              .map((songId) => songsMap.get(songId))
+              .filter(Boolean);
+            // הוספת שירים שלא נמצאו (אם יש)
+            const remaining = prev.filter((s) => !songs.includes(s.song_id));
+            return [...reordered, ...remaining];
+          });
+        } else {
+          console.log("✅ Reloading lineup data due to reorder");
+          load(); // fallback - רענון רשימת שירים
+        }
       }
     });
     
-    socket.on("lineup-song:chart-uploaded", ({ lineupId, lineupSongId, songId }) => {
+    socket.on("lineup-song:chart-uploaded", ({ lineupId, lineupSongId, songId, lineupSong }) => {
       if (lineupId == id) {
-        load(); // רענון רשימת שירים כדי לעדכן את ה-PDF
+        // אם יש את הנתונים המלאים של השיר שעודכן - פשוט לעדכן
+        if (lineupSong) {
+          setSongs((prev) =>
+            prev.map((s) => (s.id === lineupSongId ? { ...s, ...lineupSong } : s))
+          );
+        } else if (lineupSongId) {
+          // אם לא - לטעון רק את השיר שעודכן
+          api.get(`/lineup-songs/${id}`, { skipErrorToast: true })
+            .then(({ data }) => {
+              const updatedSong = data.find((s) => s.id === lineupSongId);
+              if (updatedSong) {
+                setSongs((prev) =>
+                  prev.map((s) => (s.id === lineupSongId ? updatedSong : s))
+                );
+              } else {
+                load(); // fallback
+              }
+            })
+            .catch(() => load()); // fallback
+        } else {
+          load(); // fallback
+        }
       }
     });
     
