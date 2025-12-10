@@ -2,7 +2,7 @@
 --
 -- Host: localhost    Database: ari_stage
 -- ------------------------------------------------------
--- Server version	5.5.5-10.4.32-MariaDB
+-- Server version	8.0.36
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -23,12 +23,12 @@ DROP TABLE IF EXISTS `files`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `files` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `file_name` varchar(255) NOT NULL,
-  `file_url` text NOT NULL,
-  `file_type` varchar(50) DEFAULT 'unknown',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `file_name` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `file_url` text COLLATE utf8mb4_general_ci NOT NULL,
+  `file_type` varchar(50) COLLATE utf8mb4_general_ci DEFAULT 'unknown',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `files_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
@@ -52,11 +52,11 @@ DROP TABLE IF EXISTS `lineup_shares`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `lineup_shares` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `lineup_id` int(11) NOT NULL,
-  `share_token` varchar(64) NOT NULL,
-  `is_active` tinyint(1) NOT NULL DEFAULT 1,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `id` int NOT NULL AUTO_INCREMENT,
+  `lineup_id` int NOT NULL,
+  `share_token` varchar(64) COLLATE utf8mb4_general_ci NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `share_token` (`share_token`),
   KEY `lineup_id` (`lineup_id`),
@@ -81,11 +81,11 @@ DROP TABLE IF EXISTS `lineup_songs`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `lineup_songs` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `lineup_id` int(11) NOT NULL,
-  `song_id` int(11) NOT NULL,
-  `position` int(11) NOT NULL DEFAULT 1,
-  `chart_pdf` varchar(255) DEFAULT NULL,
+  `id` int NOT NULL AUTO_INCREMENT,
+  `lineup_id` int NOT NULL,
+  `song_id` int NOT NULL,
+  `position` int NOT NULL DEFAULT '1',
+  `chart_pdf` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `lineup_id` (`lineup_id`),
   KEY `song_id` (`song_id`),
@@ -112,14 +112,14 @@ DROP TABLE IF EXISTS `lineups`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `lineups` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) DEFAULT NULL,
+  `id` int NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `date` date DEFAULT NULL,
   `time` time DEFAULT NULL,
-  `location` varchar(255) DEFAULT NULL,
-  `description` text DEFAULT NULL,
-  `created_by` int(11) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `location` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `description` text COLLATE utf8mb4_general_ci,
+  `created_by` int DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `created_by` (`created_by`),
@@ -145,11 +145,11 @@ DROP TABLE IF EXISTS `metrics`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `metrics` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) DEFAULT NULL,
-  `action` varchar(255) DEFAULT NULL,
-  `value` varchar(255) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int DEFAULT NULL,
+  `action` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `value` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `metrics_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
@@ -173,12 +173,12 @@ DROP TABLE IF EXISTS `notifications`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `notifications` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `title` varchar(255) DEFAULT NULL,
-  `body` text DEFAULT NULL,
-  `is_read` tinyint(1) NOT NULL DEFAULT 0,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `title` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `body` text COLLATE utf8mb4_general_ci,
+  `is_read` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
@@ -202,16 +202,16 @@ DROP TABLE IF EXISTS `songs`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `songs` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) DEFAULT NULL,
-  `artist` varchar(255) DEFAULT NULL,
-  `bpm` int(11) DEFAULT NULL,
-  `key_sig` varchar(10) DEFAULT NULL,
-  `duration_sec` varchar(10) DEFAULT NULL,
-  `notes` text DEFAULT NULL,
-  `chart_pdf` varchar(255) DEFAULT NULL,
-  `user_id` int(11) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `id` int NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `artist` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `bpm` int DEFAULT NULL,
+  `key_sig` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `duration_sec` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `notes` text COLLATE utf8mb4_general_ci,
+  `chart_pdf` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `user_id` int NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `songs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
@@ -236,11 +236,11 @@ DROP TABLE IF EXISTS `user_hosts`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `user_hosts` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `guest_id` int(11) NOT NULL,
-  `host_id` int(11) NOT NULL,
-  `invitation_status` enum('pending','accepted','rejected') DEFAULT 'pending',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `id` int NOT NULL AUTO_INCREMENT,
+  `guest_id` int NOT NULL,
+  `host_id` int NOT NULL,
+  `invitation_status` enum('pending','accepted','rejected') COLLATE utf8mb4_general_ci DEFAULT 'pending',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_guest_host` (`guest_id`,`host_id`),
@@ -271,13 +271,13 @@ DROP TABLE IF EXISTS `user_invitations`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `user_invitations` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `email` varchar(190) NOT NULL,
-  `host_id` int(11) NOT NULL,
-  `token` varchar(255) NOT NULL,
-  `is_used` tinyint(1) NOT NULL DEFAULT 0,
+  `id` int NOT NULL AUTO_INCREMENT,
+  `email` varchar(190) COLLATE utf8mb4_general_ci NOT NULL,
+  `host_id` int NOT NULL,
+  `token` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `is_used` tinyint(1) NOT NULL DEFAULT '0',
   `expires_at` datetime NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `email` (`email`),
   KEY `token` (`token`),
@@ -303,21 +303,21 @@ DROP TABLE IF EXISTS `users`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `users` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `full_name` varchar(255) DEFAULT NULL,
-  `email` varchar(190) DEFAULT NULL,
-  `password_hash` varchar(255) DEFAULT NULL,
-  `role` enum('admin','manager','user') NOT NULL DEFAULT 'user',
-  `subscription_type` enum('trial','pro') NOT NULL DEFAULT 'trial',
-  `theme` enum('light','dark') DEFAULT 'dark',
-  `invited_by` int(11) DEFAULT NULL,
-  `invitation_status` enum('pending','accepted','rejected') DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `id` int NOT NULL AUTO_INCREMENT,
+  `full_name` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `email` varchar(190) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `password_hash` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `role` enum('admin','manager','user') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'user',
+  `subscription_type` enum('trial','pro') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'trial',
+  `theme` enum('light','dark') COLLATE utf8mb4_general_ci DEFAULT 'dark',
+  `invited_by` int DEFAULT NULL,
+  `invitation_status` enum('pending','accepted','rejected') COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT NULL,
-  `reset_token` varchar(255) DEFAULT NULL,
-  `reset_expires` bigint(20) DEFAULT NULL,
-  `artist_role` varchar(255) DEFAULT NULL,
-  `avatar` varchar(255) DEFAULT NULL,
+  `reset_token` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `reset_expires` bigint DEFAULT NULL,
+  `artist_role` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `avatar` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`),
   KEY `invited_by` (`invited_by`),
@@ -344,4 +344,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-12-08 16:10:52
+-- Dump completed on 2025-12-10 10:27:26
