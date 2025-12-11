@@ -8,9 +8,6 @@ const router = Router();
 
 router.use(requireAuth);
 
-// כל פעולה של POST/PUT/DELETE במודול LineupSongs תגרום ל־global:refresh
-router.use(emitRefreshOnMutation);
-
 router.get("/:lineupId", lineupSongsController.list);
 router.post("/:lineupId", lineupSongsController.create);
 router.put("/:lineupId/order", lineupSongsController.reorder);
@@ -23,4 +20,3 @@ router.post(
 router.delete("/:lineupSongId/delete-chart", lineupSongsController.deleteChart);
 
 export const lineupSongsRouter = router;
-

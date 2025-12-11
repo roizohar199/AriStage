@@ -401,32 +401,6 @@ export default function Home() {
     >
       <ConfirmModalComponent />
 
-      {/* התראה על הזמנות ממתינות */}
-      {pendingInvitations.length > 0 && (
-        <div className="w-[90%] max-w-2xl mt-16 mb-4">
-          <div className="bg-yellow-900/30 border-2 border-yellow-500/50 rounded-xl p-4 text-right">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-yellow-400 mb-1">
-                  יש לך {pendingInvitations.length} הזמנה
-                  {pendingInvitations.length > 1 ? "ות" : ""} ממתינות לאישור
-                </h3>
-                <p className="text-neutral-300 text-sm">
-                  {pendingInvitations[0]?.full_name || "משתמש"} מזמין אותך
-                  להצטרף למאגר שלו
-                </p>
-              </div>
-              <button
-                onClick={() => navigate("/artists")}
-                className="flex-shrink-0 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-6 py-2 rounded-lg transition-all whitespace-nowrap"
-              >
-                צפה והאשר
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* כותרת */}
       <h1
         className={`text-3xl font-bold text-brand-orange ${
@@ -474,6 +448,32 @@ export default function Home() {
 
         {/* סטטיסטיקות */}
         {stats && <DashboardStats stats={stats} role={role} />}
+
+        {/* התראה על הזמנות ממתינות */}
+        {pendingInvitations.length > 0 && (
+          <div className="w-[100%] max-w-2xl mt-16 mb-4">
+            <div className="bg-yellow-900/30 border-2 border-yellow-500/50 rounded-xl p-4 text-right">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-yellow-400 mb-1">
+                    יש לך {pendingInvitations.length} הזמנה
+                    {pendingInvitations.length > 1 ? "ות" : ""} ממתינות לאישור
+                  </h3>
+                  <p className="text-neutral-300 text-sm">
+                    {pendingInvitations[0]?.full_name || "משתמש"} מזמין אותך
+                    להצטרף למאגר שלו
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate("/artists")}
+                  className="flex-shrink-0 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-6 py-2 rounded-lg transition-all whitespace-nowrap"
+                >
+                  צפה והאשר
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* המאגרים שלי - אמנים שהזמנתי */}
         <div className="mt-8">
