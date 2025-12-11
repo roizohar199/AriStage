@@ -17,10 +17,10 @@ router.get("/by-user/:userId", lineupsController.listByUserId);
 router.get("/:id", lineupsController.get);
 router.post("/", lineupsController.create);
 router.put("/:id", lineupsController.update);
+router.delete("/:id", lineupsController.remove);
 
 router.get("/:id/share", lineupsController.shareStatus);
 router.post("/:id/share", lineupsController.generateShare);
 router.delete("/:id/share", lineupsController.disableShare);
 
 export const lineupsRouter = router;
-

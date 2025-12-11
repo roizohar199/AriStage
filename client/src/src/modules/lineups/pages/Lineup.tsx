@@ -32,7 +32,7 @@ export default function Lineup() {
 
   const navigate = useNavigate();
 
-  // Socket.IO connection
+  // Socket.IO
   const socket = useMemo(() => {
     const url = import.meta.env.VITE_API_URL;
     if (!url) {
@@ -49,32 +49,30 @@ export default function Lineup() {
   }, []);
 
   // -------------------------------------------------
-  // פונקציות המרה לתאריך ושעה
+  // פונקציות עזר
   // -------------------------------------------------
-
   const normalizeDate = (d) => {
     if (!d) return "";
-    const dateObj = new Date(d);
-    if (isNaN(dateObj)) return "";
-    return dateObj.toISOString().slice(0, 10); // YYYY-MM-DD
+    const obj = new Date(d);
+    if (isNaN(obj)) return "";
+    return obj.toISOString().slice(0, 10);
   };
 
   const normalizeTime = (t) => {
     if (!t) return "";
-    return t.toString().slice(0, 5); // HH:MM
+    return t.toString().slice(0, 5);
   };
 
   const formatForDisplay = (d) => {
     if (!d) return "לא צוין תאריך";
-    const dateObj = new Date(d);
-    if (isNaN(dateObj)) return "לא צוין תאריך";
-    return dateObj.toLocaleDateString("he-IL"); // DD/MM/YYYY
+    const obj = new Date(d);
+    if (isNaN(obj)) return "לא צוין תאריך";
+    return obj.toLocaleDateString("he-IL");
   };
 
   // -------------------------------------------------
-  // טעינת ליינאפים
+  // טעינה ראשית אחת בלבד
   // -------------------------------------------------
-
   const load = async () => {
     try {
       const { data } = await api.get("/lineups");
@@ -86,142 +84,110 @@ export default function Lineup() {
 
   useEffect(() => {
     load();
-    
+
     if (!socket) return;
-    
-    // הצטרפות ל-rooms של Socket.IO
+
     const user = JSON.parse(localStorage.getItem("ari_user") || "{}");
     if (user?.id) {
       socket.emit("join-user", user.id);
       socket.emit("join-lineups", user.id);
-      
-      // בדיקה אם המשתמש הוא אורח או מארח
-      api.get("/users/check-guest", { skipErrorToast: true })
-        .then(({ data }) => {
-          if (socket) {
-            if (data.isHost) {
-              socket.emit("join-host", user.id);
-            }
-            if (data.hostId) {
-              socket.emit("join-host", data.hostId);
-            }
-          }
-        })
-        .catch(() => {});
     }
-    
-    // Socket.IO listeners
+
+    // -------------------------------------------------
+    // Socket Events — מעודכן למניעת כפילויות
+    // -------------------------------------------------
+
+    // יצירה
     socket.on("lineup:created", ({ lineup, lineupId }) => {
-      // אם יש את הנתונים המלאים של הליינאפ - פשוט להוסיף
-      if (lineup) {
-        setLineups((prev) => [lineup, ...prev]);
-      } else if (lineupId) {
-        // אם לא - לטעון רק את הליינאפ החדש
-        api.get(`/lineups/${lineupId}`, { skipErrorToast: true })
-          .then(({ data }) => {
-            setLineups((prev) => [data, ...prev]);
-          })
-          .catch(() => load()); // fallback
-      } else {
-        load(); // fallback
+      const id = lineup?.id || lineupId;
+      if (!id) return;
+
+      // אם כבר קיים – לא מוסיפים שוב
+      setLineups((prev) => {
+        if (prev.some((l) => l.id === id)) return prev;
+        return lineup ? [lineup, ...prev] : prev;
+      });
+
+      // fallback — אם אין lineup מלא
+      if (!lineup && lineupId) {
+        api.get(`/lineups/${lineupId}`).then(({ data }) => {
+          setLineups((prev) => {
+            if (prev.some((l) => l.id === data.id)) return prev;
+            return [data, ...prev];
+          });
+        });
       }
     });
-    
+
+    // עדכון
     socket.on("lineup:updated", ({ lineup, lineupId }) => {
-      // אם יש את הנתונים המלאים של הליינאפ - פשוט לעדכן
+      const id = lineup?.id || lineupId;
+      if (!id) return;
+
       if (lineup) {
         setLineups((prev) =>
           prev.map((l) => (l.id === lineup.id ? lineup : l))
         );
-      } else if (lineupId) {
-        // אם לא - לטעון רק את הליינאפ שעודכן
-        api.get(`/lineups/${lineupId}`, { skipErrorToast: true })
-          .then(({ data }) => {
-            setLineups((prev) =>
-              prev.map((l) => (l.id === lineupId ? data : l))
-            );
-          })
-          .catch(() => load()); // fallback
       } else {
-        load(); // fallback
+        api.get(`/lineups/${lineupId}`).then(({ data }) => {
+          setLineups((prev) => prev.map((l) => (l.id === lineupId ? data : l)));
+        });
       }
     });
-    
+
+    // מחיקה
     socket.on("lineup:deleted", ({ lineupId }) => {
       setLineups((prev) => prev.filter((l) => l.id !== lineupId));
     });
-    
-    // האזנה לעדכוני שירים בליינאפ (כדי לרענן גם כשלא בדף הליינאפ)
+
+    // עדכוני שירים בליינאפ
     socket.on("lineup-song:added", ({ lineupId }) => {
-      // עדכון מספר השירים בליינאפ
       setLineups((prev) =>
         prev.map((l) =>
-          l.id === lineupId ? { ...l, songs_count: (l.songs_count || 0) + 1 } : l
+          l.id === lineupId
+            ? { ...l, songs_count: (l.songs_count || 0) + 1 }
+            : l
         )
       );
     });
-    
+
     socket.on("lineup-song:removed", ({ lineupId }) => {
-      // עדכון מספר השירים בליינאפ
       setLineups((prev) =>
         prev.map((l) =>
-          l.id === lineupId ? { ...l, songs_count: Math.max((l.songs_count || 1) - 1, 0) } : l
+          l.id === lineupId
+            ? { ...l, songs_count: Math.max((l.songs_count || 1) - 1, 0) }
+            : l
         )
       );
     });
-    
+
     socket.on("lineup-song:reordered", ({ lineupId }) => {
-      // אין צורך לעדכן כלום ברשימת הליינאפים - רק הסדר של השירים בתוך הליינאפ השתנה
-      // אבל אם יש צורך לעדכן משהו אחר (כמו זמן כולל), אפשר לטעון רק את הליינאפ הספציפי
-      api.get(`/lineups/${lineupId}`, { skipErrorToast: true })
-        .then(({ data }) => {
-          setLineups((prev) =>
-            prev.map((l) => (l.id === lineupId ? data : l))
-          );
-        })
-        .catch(() => {
-          // אם נכשל - לא לעשות כלום, זה לא קריטי
-        });
+      api.get(`/lineups/${lineupId}`).then(({ data }) => {
+        setLineups((prev) => prev.map((l) => (l.id === lineupId ? data : l)));
+      });
     });
-    
-    // האזנה ל-custom events לעדכון אוטומטי אחרי כל פעולה
-    const handleDataRefresh = (event) => {
-      const { type, action } = event.detail || {};
-      if (type === "lineup") {
-        load(); // רענון רשימת ליינאפים
-      }
-    };
-    
-    window.addEventListener("data-refresh", handleDataRefresh);
-    
+
     return () => {
-      if (socket && socket.connected) {
+      if (socket) {
         socket.off("lineup:created");
         socket.off("lineup:updated");
         socket.off("lineup:deleted");
         socket.off("lineup-song:added");
         socket.off("lineup-song:removed");
         socket.off("lineup-song:reordered");
-        // לא מנתקים את ה-socket כאן כי הוא משותף
       }
-      window.removeEventListener("data-refresh", handleDataRefresh);
     };
   }, [socket]);
 
   // -------------------------------------------------
-  // יצירה
+  // יצירה / עריכה
   // -------------------------------------------------
-
   const openCreateModal = () => {
     setForm({ title: "", date: "", time: "", location: "", description: "" });
     setIsEditing(false);
     setEditId(null);
     setShowModal(true);
   };
-
-  // -------------------------------------------------
-  // עריכה — כולל המרה מתקנת
-  // -------------------------------------------------
 
   const openEditModal = (lineup) => {
     setForm({
@@ -237,13 +203,8 @@ export default function Lineup() {
     setShowModal(true);
   };
 
-  // -------------------------------------------------
-  // שמירה (יצירה/עריכה)
-  // -------------------------------------------------
-
   const submit = async (e) => {
     e.preventDefault();
-
     if (!form.title.trim()) return;
 
     try {
@@ -253,13 +214,10 @@ export default function Lineup() {
         await api.post("/lineups", form);
       }
 
+      // אין load!! הסוקט יעדכן
       setShowModal(false);
       setIsEditing(false);
       setEditId(null);
-      // רענון מיידי
-      load();
-      // עדכון כל הקומפוננטות דרך custom event
-      window.dispatchEvent(new CustomEvent("data-refresh", { detail: { type: "lineup", action: isEditing ? "updated" : "created" } }));
     } catch (err) {
       console.error("❌ שגיאה בשמירת ליינאפ:", err);
     }
@@ -268,17 +226,15 @@ export default function Lineup() {
   // -------------------------------------------------
   // מחיקה
   // -------------------------------------------------
-
   const remove = async (id) => {
     const ok = await confirm("מחיקה", "בטוח למחוק את הליינאפ?");
     if (!ok) return;
 
     try {
       await api.delete(`/lineups/${id}`);
-      // רענון מיידי
-      load();
-      // עדכון כל הקומפוננטות דרך custom event
-      window.dispatchEvent(new CustomEvent("data-refresh", { detail: { type: "lineup", action: "deleted" } }));
+
+      // ⭐ עדכון UI מיידי — בלי קשר לסוקט
+      setLineups((prev) => prev.filter((l) => l.id !== id));
     } catch (err) {
       console.error("❌ שגיאה במחיקת ליינאפ:", err);
     }
@@ -287,7 +243,6 @@ export default function Lineup() {
   // -------------------------------------------------
   // סינון
   // -------------------------------------------------
-
   const filteredLineups = lineups.filter(
     (l) =>
       l.title?.toLowerCase().includes(search.toLowerCase()) ||
@@ -299,7 +254,6 @@ export default function Lineup() {
   // -------------------------------------------------
   // UI
   // -------------------------------------------------
-
   return (
     <div dir="rtl" className="min-h-screen text-white p-6">
       <ConfirmModalComponent />
@@ -310,7 +264,7 @@ export default function Lineup() {
 
         <button
           onClick={openCreateModal}
-          className="bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold rounded-full p-2 flex items-center justify-center transition-all"
+          className="bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold rounded-full p-2 flex items-center justify-center"
         >
           <Plus size={18} />
         </button>
@@ -325,7 +279,6 @@ export default function Lineup() {
           onChange={(e) => setSearch(e.target.value)}
           className="w-full rounded-xl bg-neutral-900 border border-neutral-800 p-3 pl-10 text-sm placeholder-neutral-500"
         />
-
         <Search
           className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
           size={18}
@@ -337,26 +290,24 @@ export default function Lineup() {
         {filteredLineups.map((l, i) => (
           <div
             key={l.id}
-            className="bg-neutral-900 rounded-2xl p-4 flex justify-between items-center shadow-sm hover:shadow-lg transition border border-neutral-800"
+            className="bg-neutral-900 rounded-2xl p-4 flex justify-between items-center hover:shadow-lg transition border border-neutral-800"
             onClick={() => navigate(`/lineup/${l.id}`)}
           >
             <div>
-              <p 
-                className="font-semibold text-lg cursor-pointer"
-                title={l.description || ""}
-              >
+              <p className="font-semibold text-lg">
                 {i + 1}. {l.title}
               </p>
 
               <div className="flex flex-wrap gap-2 mt-2 text-xs">
-                <span className="flex items-center gap-1 px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700 flex flex-row-reverse">
+                <span className="flex items-center gap-1 px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700 flex-row-reverse">
                   <CalendarDays size={14} /> {formatForDisplay(l.date)}
                 </span>
 
-                <span className="flex items-center gap-1 px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700 flex flex-row-reverse">
+                <span className="flex items-center gap-1 px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700 flex-row-reverse">
                   <Clock size={14} /> {normalizeTime(l.time) || "לא צוין שעה"}
                 </span>
               </div>
+
               <div className="flex flex-wrap gap-2 mt-2 text-xs">
                 <span className="flex flex-row-reverse items-center gap-1 px-2 py-1 bg-brand-orange rounded-lg text-black font-semibold">
                   <MapPin size={14} /> {l.location || "לא צוין מיקום"}
@@ -390,7 +341,6 @@ export default function Lineup() {
           </div>
         ))}
 
-        {/* If empty */}
         {filteredLineups.length === 0 && (
           <p className="text-neutral-500 text-center mt-10">
             אין ליינאפים עדיין 😴
@@ -401,7 +351,7 @@ export default function Lineup() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50">
-          <div className="bg-neutral-900 rounded-2xl w-full max-w-md p-6 relative shadow-xl border border-neutral-800">
+          <div className="bg-neutral-900 rounded-2xl w-full max-w-md p-6 relative border border-neutral-800">
             <button
               onClick={() => setShowModal(false)}
               className="absolute top-3 left-3 text-neutral-400 hover:text-white"
@@ -422,35 +372,19 @@ export default function Lineup() {
                 required
               />
 
-              {/* תאריך */}
-              <div className="relative w-full">
-                <input
-                  type="date"
-                  value={form.date}
-                  onChange={(e) => setForm({ ...form, date: e.target.value })}
-                  className="w-full bg-neutral-800 p-3 rounded-lg border border-neutral-700 text-sm text-white"
-                />
-                {!form.date && (
-                  <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 text-sm">
-                    תאריך
-                  </div>
-                )}
-              </div>
+              <input
+                type="date"
+                value={form.date}
+                onChange={(e) => setForm({ ...form, date: e.target.value })}
+                className="w-full bg-neutral-800 p-3 rounded-lg border border-neutral-700 text-sm"
+              />
 
-              {/* שעה */}
-              <div className="relative w-full mt-3">
-                <input
-                  type="time"
-                  value={form.time}
-                  onChange={(e) => setForm({ ...form, time: e.target.value })}
-                  className="w-full bg-neutral-800 p-3 rounded-lg border border-neutral-700 text-sm text-white"
-                />
-                {!form.time && (
-                  <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 text-sm">
-                    שעה
-                  </div>
-                )}
-              </div>
+              <input
+                type="time"
+                value={form.time}
+                onChange={(e) => setForm({ ...form, time: e.target.value })}
+                className="w-full bg-neutral-800 p-3 rounded-lg border border-neutral-700 text-sm"
+              />
 
               <input
                 placeholder="מיקום"
@@ -471,7 +405,7 @@ export default function Lineup() {
 
               <button
                 type="submit"
-                className="w-full bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold py-2 rounded-lg mt-2 transition-all"
+                className="w-full bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold py-2 rounded-lg mt-2"
               >
                 {isEditing ? "עדכון" : "שמור"}
               </button>

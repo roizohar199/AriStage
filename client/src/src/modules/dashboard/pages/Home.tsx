@@ -1,5 +1,16 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
-import { Music, Users, CalendarCheck, ShieldCheck, User, UserPlus, X, Search, UserX, LogOut } from "lucide-react";
+import {
+  Music,
+  Users,
+  CalendarCheck,
+  ShieldCheck,
+  User,
+  UserPlus,
+  X,
+  Search,
+  UserX,
+  LogOut,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "@/modules/shared/lib/api.js"; // 👈 חשוב! משתמשים ב־axios של המערכת
 import { useConfirm } from "@/modules/shared/hooks/useConfirm.jsx";
@@ -117,10 +128,14 @@ export default function Home() {
       const { data: myCollection } = await api.get("/users/my-collection", {
         skipErrorToast: true,
       });
-      
+
       // myCollection עכשיו מחזיר רשימה של מארחים
-      const artistsList = Array.isArray(myCollection) ? myCollection : (myCollection ? [myCollection] : []);
-      
+      const artistsList = Array.isArray(myCollection)
+        ? myCollection
+        : myCollection
+        ? [myCollection]
+        : [];
+
       setArtists(artistsList);
     } catch (err) {
       console.error("שגיאה בטעינת אמנים:", err);
@@ -173,17 +188,18 @@ export default function Home() {
     checkGuestStatus();
     loadMyInvitedArtists();
     loadPendingInvitations();
-    
+
     if (!socket) return;
-    
+
     // הצטרפות ל-rooms של Socket.IO
     const user = JSON.parse(localStorage.getItem("ari_user") || "{}");
     if (user?.id) {
       socket.emit("join-user", user.id);
       socket.emit("join-user-updates", user.id);
-      
+
       // בדיקה אם המשתמש הוא מארח
-      api.get("/users/check-guest", { skipErrorToast: true })
+      api
+        .get("/users/check-guest", { skipErrorToast: true })
         .then(({ data }) => {
           if (data.isHost && socket) {
             socket.emit("join-host", user.id);
@@ -191,18 +207,18 @@ export default function Home() {
         })
         .catch(() => {});
     }
-    
+
     // Socket.IO listeners
     socket.on("user:invited", () => {
       loadMyInvitedArtists(); // רענון רשימת אמנים
       load(); // רענון סטטיסטיקות
     });
-    
+
     socket.on("user:uninvited", () => {
       loadMyInvitedArtists(); // רענון רשימת אמנים
       load(); // רענון סטטיסטיקות
     });
-    
+
     // רענון סטטיסטיקות כאשר יש שינויים בשירים או ליינאפים
     socket.on("song:created", () => {
       // עדכון מספר השירים אם יש נתונים
@@ -216,7 +232,7 @@ export default function Home() {
       // עדכון סטטיסטיקות מלאות (למקרה שיש חישובים נוספים)
       load();
     });
-    
+
     socket.on("song:deleted", () => {
       // עדכון מספר השירים אם יש נתונים
       setStats((prev) => {
@@ -229,7 +245,7 @@ export default function Home() {
       // עדכון סטטיסטיקות מלאות (למקרה שיש חישובים נוספים)
       load();
     });
-    
+
     socket.on("lineup:created", () => {
       // עדכון מספר הליינאפים אם יש נתונים
       setStats((prev) => {
@@ -242,7 +258,7 @@ export default function Home() {
       // עדכון סטטיסטיקות מלאות (למקרה שיש חישובים נוספים)
       load();
     });
-    
+
     socket.on("lineup:deleted", () => {
       // עדכון מספר הליינאפים אם יש נתונים
       setStats((prev) => {
@@ -255,26 +271,26 @@ export default function Home() {
       // עדכון סטטיסטיקות מלאות (למקרה שיש חישובים נוספים)
       load();
     });
-    
+
     socket.on("invitation:pending", () => {
       loadPendingInvitations(); // רענון הזמנות ממתינות
     });
-    
+
     socket.on("user:invitation-accepted", () => {
       loadPendingInvitations(); // רענון הזמנות ממתינות
       loadArtists(); // רענון רשימת האמנים
     });
-    
+
     socket.on("user:invitation-rejected", () => {
       loadPendingInvitations(); // רענון הזמנות ממתינות
     });
-    
+
     // האזנה ל-custom events לעדכון אוטומטי אחרי כל פעולה
     const handleDataRefresh = (event) => {
       const { type, action } = event.detail || {};
       // רענון סטטיסטיקות אחרי כל פעולה
       load();
-      
+
       // רענון ספציפי לפי סוג הפעולה
       if (type === "song") {
         // שירים - רק סטטיסטיקות
@@ -284,9 +300,9 @@ export default function Home() {
         // שירים בליינאפ - רק סטטיסטיקות
       }
     };
-    
+
     window.addEventListener("data-refresh", handleDataRefresh);
-    
+
     return () => {
       if (socket) {
         socket.off("user:invited");
@@ -306,19 +322,19 @@ export default function Home() {
   }, [socket]); // הפונקציות מוגדרות עם useCallback אז הן יציבות
 
   const handleLeaveCollection = async (hostId = null) => {
-    const message = hostId 
+    const message = hostId
       ? "בטוח שאתה רוצה לבטל את השתתפותך במאגר הזה? לא תוכל עוד לצפות בליינאפים והשירים של המארח."
       : "בטוח שאתה רוצה לבטל את כל השתתפויותיך במאגרים? לא תוכל עוד לצפות בליינאפים והשירים של המארחים.";
-    const ok = await confirm(
-      "ביטול השתתפות במאגר",
-      message
-    );
+    const ok = await confirm("ביטול השתתפות במאגר", message);
     if (!ok) return;
 
     try {
       setLeaving(true);
       await api.post("/users/leave-collection", hostId ? { hostId } : {});
-      showToast(hostId ? "השתתפותך במאגר בוטלה בהצלחה" : "כל השתתפויותיך בוטלו בהצלחה", "success");
+      showToast(
+        hostId ? "השתתפותך במאגר בוטלה בהצלחה" : "כל השתתפויותיך בוטלו בהצלחה",
+        "success"
+      );
       loadArtists(); // רענון רשימת האמנים
     } catch (err) {
       console.error("❌ שגיאה בביטול השתתפות:", err);
@@ -352,7 +368,7 @@ export default function Home() {
 
   const sendInvitation = async (e) => {
     e.preventDefault();
-    
+
     if (!inviteEmail || !inviteEmail.includes("@")) {
       alert("נא להזין כתובת אימייל תקינה");
       return;
@@ -363,7 +379,7 @@ export default function Home() {
       const { data } = await api.post("/users/send-invitation", {
         email: inviteEmail,
       });
-      
+
       alert(data.message || "הזמנה נשלחה בהצלחה!");
       setInviteEmail("");
       setShowInviteModal(false);
@@ -384,7 +400,7 @@ export default function Home() {
       className="min-h-screen text-white flex flex-col items-center pb-20"
     >
       <ConfirmModalComponent />
-      
+
       {/* התראה על הזמנות ממתינות */}
       {pendingInvitations.length > 0 && (
         <div className="w-[90%] max-w-2xl mt-16 mb-4">
@@ -392,10 +408,12 @@ export default function Home() {
             <div className="flex items-center justify-between gap-4">
               <div className="flex-1">
                 <h3 className="text-lg font-bold text-yellow-400 mb-1">
-                  יש לך {pendingInvitations.length} הזמנה{pendingInvitations.length > 1 ? "ות" : ""} ממתינות לאישור
+                  יש לך {pendingInvitations.length} הזמנה
+                  {pendingInvitations.length > 1 ? "ות" : ""} ממתינות לאישור
                 </h3>
                 <p className="text-neutral-300 text-sm">
-                  {pendingInvitations[0]?.full_name || "משתמש"} מזמין אותך להצטרף למאגר שלו
+                  {pendingInvitations[0]?.full_name || "משתמש"} מזמין אותך
+                  להצטרף למאגר שלו
                 </p>
               </div>
               <button
@@ -408,9 +426,13 @@ export default function Home() {
           </div>
         </div>
       )}
-      
+
       {/* כותרת */}
-      <h1 className={`text-3xl font-bold text-brand-orange ${pendingInvitations.length > 0 ? 'mt-4' : 'mt-16'} mb-2 drop-shadow-[0_0_10px_rgba(255,136,0,0.3)] text-center`}>
+      <h1
+        className={`text-3xl font-bold text-brand-orange ${
+          pendingInvitations.length > 0 ? "mt-4" : "mt-16"
+        } mb-2 drop-shadow-[0_0_10px_rgba(255,136,0,0.3)] text-center`}
+      >
         ברוך הבא ל־Ari Stage
       </h1>
 
@@ -544,7 +566,9 @@ export default function Home() {
                   {/* כפתור ביטול שיתוף */}
                   <div className="flex-shrink-0">
                     <button
-                      onClick={() => uninviteArtist(artist.id, artist.full_name || "האמן")}
+                      onClick={() =>
+                        uninviteArtist(artist.id, artist.full_name || "האמן")
+                      }
                       disabled={inviteLoading}
                       className="bg-red-500 hover:bg-red-600 disabled:bg-red-500/50 disabled:cursor-not-allowed text-white font-semibold px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-all"
                       title="בטל שיתוף מאגר"
@@ -566,7 +590,8 @@ export default function Home() {
           </h2>
 
           <p className="text-neutral-400 text-sm mb-4 text-center">
-            אמנים שהזמינו אותי למאגר שלהם - אני יכול לצפות בליינאפים והשירים שלהם
+            אמנים שהזמינו אותי למאגר שלהם - אני יכול לצפות בליינאפים והשירים
+            שלהם
           </p>
 
           {artistsLoading ? (
@@ -663,7 +688,6 @@ export default function Home() {
           )}
         </div>
 
-
         {/* פוטר */}
         <p className="text-neutral-600 text-xs mt-10 mb-2">
           © {new Date().getFullYear()} Ari Stage. כל הזכויות שמורות.
@@ -689,7 +713,8 @@ export default function Home() {
             </h2>
 
             <p className="text-neutral-400 text-sm mb-4 text-center">
-              הזן את כתובת האימייל של האמן. הוא יקבל מייל עם קישור להצטרפות למאגר שלך.
+              הזן את כתובת האימייל של האמן. הוא יקבל מייל עם קישור להצטרפות
+              למאגר שלך.
             </p>
 
             <form onSubmit={sendInvitation} className="space-y-4">

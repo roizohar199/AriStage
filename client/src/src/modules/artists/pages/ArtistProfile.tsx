@@ -1,6 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { User, Music, ListMusic, ArrowLeft, CalendarDays, MapPin, Clock } from "lucide-react";
+import {
+  User,
+  Music,
+  ListMusic,
+  ArrowLeft,
+  CalendarDays,
+  MapPin,
+  Clock,
+} from "lucide-react";
 import api from "@/modules/shared/lib/api.js";
 
 export default function ArtistProfile() {
@@ -55,11 +63,13 @@ export default function ArtistProfile() {
         const { data: myCollection } = await api.get("/users/my-collection", {
           skipErrorToast: true,
         });
-        
+
         // myCollection יכול להיות רשימה או אובייקט
         if (Array.isArray(myCollection)) {
           if (myCollection.length > 0) {
-            targetArtist = myCollection.find((host) => host.id === targetArtistId) || myCollection[0];
+            targetArtist =
+              myCollection.find((host) => host.id === targetArtistId) ||
+              myCollection[0];
           }
         } else if (myCollection && myCollection.id === targetArtistId) {
           targetArtist = myCollection;
@@ -77,12 +87,16 @@ export default function ArtistProfile() {
           targetArtist = myProfile;
         } else {
           // בדוק אם האמן הזה הוזמן למאגר של המשתמש
-          const { data: myConnections } = await api.get("/users/connected-to-me", {
-            skipErrorToast: true,
-          });
-          const invitedArtist = Array.isArray(myConnections) && 
+          const { data: myConnections } = await api.get(
+            "/users/connected-to-me",
+            {
+              skipErrorToast: true,
+            }
+          );
+          const invitedArtist =
+            Array.isArray(myConnections) &&
             myConnections.find((artist) => artist.id === targetArtistId);
-          
+
           if (!invitedArtist) {
             setError("אין לך גישה לפרופיל זה");
             return;
@@ -99,9 +113,12 @@ export default function ArtistProfile() {
       setArtist(targetArtist);
 
       // טעינת ליינאפים של האמן המבוקש
-      const { data: lineupsData } = await api.get(`/lineups/by-user/${targetArtistId}`, {
-        skipErrorToast: true,
-      });
+      const { data: lineupsData } = await api.get(
+        `/lineups/by-user/${targetArtistId}`,
+        {
+          skipErrorToast: true,
+        }
+      );
       setLineups(lineupsData || []);
     } catch (err) {
       console.error("שגיאה בטעינת נתונים:", err);
@@ -279,9 +296,7 @@ export default function ArtistProfile() {
             </div>
           )}
         </div>
-
       </div>
     </div>
   );
 }
-

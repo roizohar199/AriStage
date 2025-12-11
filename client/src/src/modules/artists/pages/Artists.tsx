@@ -8,7 +8,7 @@ import { io } from "socket.io-client";
 export default function Artists() {
   const { confirm, ConfirmModalComponent } = useConfirm();
   const { showToast } = useToast();
-  
+
   const [artists, setArtists] = useState([]);
   const [pendingInvitation, setPendingInvitation] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,37 +34,37 @@ export default function Artists() {
 
   useEffect(() => {
     loadArtists();
-    
+
     if (!socket) return;
-    
+
     // הצטרפות ל-rooms של Socket.IO
     const user = JSON.parse(localStorage.getItem("ari_user") || "{}");
     if (user?.id) {
       socket.emit("join-user", user.id);
     }
-    
+
     // Socket.IO listeners לעדכונים בזמן אמת
     socket.on("user:invitation-accepted", () => {
       loadArtists(); // רענון רשימת האמנים
       // עדכון מיידי - הסרת ההזמנה הממתינה
       setPendingInvitation(null);
     });
-    
+
     socket.on("user:invitation-rejected", () => {
       loadArtists(); // רענון רשימת האמנים
       // עדכון מיידי - הסרת ההזמנה הממתינה
       setPendingInvitation(null);
     });
-    
+
     socket.on("user:left-collection", () => {
       loadArtists(); // רענון רשימת האמנים
     });
-    
+
     // האזנה לעדכוני הזמנות חדשות
     socket.on("invitation:pending", () => {
       loadArtists(); // רענון רשימת האמנים
     });
-    
+
     return () => {
       if (socket) {
         socket.off("user:invitation-accepted");
@@ -80,23 +80,29 @@ export default function Artists() {
     try {
       setLoading(true);
       setError(null);
-      
+
       // טוען את המארחים שהזמינו אותי (מאגר אמנים) - רק אם ההזמנה אושרה
       const { data: myCollection } = await api.get("/users/my-collection", {
         skipErrorToast: true,
       });
-      
+
       // טוען הזמנות ממתינות לאישור
       const { data: pending } = await api.get("/users/pending-invitation", {
         skipErrorToast: true,
       });
-      
+
       // myCollection עכשיו מחזיר רשימה של מארחים
-      const artistsList = Array.isArray(myCollection) ? myCollection : (myCollection ? [myCollection] : []);
-      
+      const artistsList = Array.isArray(myCollection)
+        ? myCollection
+        : myCollection
+        ? [myCollection]
+        : [];
+
       setArtists(artistsList);
       // pending עכשיו מחזיר רשימה של הזמנות ממתינות
-      setPendingInvitation(Array.isArray(pending) && pending.length > 0 ? pending[0] : null);
+      setPendingInvitation(
+        Array.isArray(pending) && pending.length > 0 ? pending[0] : null
+      );
     } catch (err) {
       console.error("שגיאה בטעינת אמנים:", err);
       setError("לא ניתן לטעון את רשימת האמנים");
@@ -106,19 +112,19 @@ export default function Artists() {
   };
 
   const handleLeaveCollection = async (hostId = null) => {
-    const message = hostId 
+    const message = hostId
       ? "בטוח שאתה רוצה לבטל את השתתפותך במאגר הזה? לא תוכל עוד לצפות בליינאפים והשירים של המארח."
       : "בטוח שאתה רוצה לבטל את כל השתתפויותיך במאגרים? לא תוכל עוד לצפות בליינאפים והשירים של המארחים.";
-    const ok = await confirm(
-      "ביטול השתתפות במאגר",
-      message
-    );
+    const ok = await confirm("ביטול השתתפות במאגר", message);
     if (!ok) return;
 
     try {
       setLeaving(true);
       await api.post("/users/leave-collection", hostId ? { hostId } : {});
-      showToast(hostId ? "השתתפותך במאגר בוטלה בהצלחה" : "כל השתתפויותיך בוטלו בהצלחה", "success");
+      showToast(
+        hostId ? "השתתפותך במאגר בוטלה בהצלחה" : "כל השתתפויותיך בוטלו בהצלחה",
+        "success"
+      );
       loadArtists(); // רענון רשימת האמנים
     } catch (err) {
       console.error("❌ שגיאה בביטול השתתפות:", err);
@@ -221,7 +227,9 @@ export default function Artists() {
                     className="w-20 h-20 rounded-full object-cover border-2 border-yellow-500 shadow-lg"
                     onError={(e) => {
                       e.target.style.display = "none";
-                      e.target.nextSibling.style.display = "flex";
+                      if (e.target.nextSibling) {
+                        e.target.nextSibling.style.display = "flex";
+                      }
                     }}
                   />
                 ) : null}
@@ -234,13 +242,14 @@ export default function Artists() {
                   <User size={32} className="text-neutral-500" />
                 </div>
               </div>
-              
+
               <div className="flex-1 min-w-0">
                 <h3 className="text-xl font-bold text-yellow-400 mb-2">
                   הזמנה חדשה למאגר
                 </h3>
                 <p className="text-neutral-300 mb-1">
-                  <strong>{pendingInvitation.full_name || "אמן"}</strong> מזמין אותך להצטרף למאגר שלו
+                  <strong>{pendingInvitation.full_name || "אמן"}</strong> מזמין
+                  אותך להצטרף למאגר שלו
                 </p>
                 {pendingInvitation.artist_role && (
                   <p className="text-neutral-400 text-sm mb-3">
@@ -251,7 +260,7 @@ export default function Artists() {
                   לאחר האישור, תוכל לצפות בליינאפים והשירים שלו
                 </p>
               </div>
-              
+
               <div className="flex gap-3 flex-shrink-0">
                 <button
                   onClick={() => handleAcceptInvitation(pendingInvitation.id)}
@@ -287,81 +296,83 @@ export default function Artists() {
                   אמנים יופיעו כאן כאשר הם יזמינו אותך למאגר שלהם
                 </p>
               </div>
-            ) : artists.length > 0 && (
-              <div className="space-y-4">
-                {artists.map((artist) => (
-                  <div
-                    key={artist.id}
-                    className="bg-neutral-900 rounded-2xl p-6 flex flex-col sm:flex-row gap-6 items-start sm:items-center shadow-lg hover:shadow-xl transition border border-neutral-800"
-                  >
-                    {/* תמונת פרופיל */}
-                    <div className="flex-shrink-0">
-                      {artist.avatar ? (
-                        <img
-                          src={artist.avatar}
-                          alt={artist.full_name}
-                          className="w-24 h-24 rounded-full object-cover border-2 border-brand-orange shadow-lg"
-                          onError={(e) => {
-                            e.target.style.display = "none";
-                            e.target.nextSibling.style.display = "flex";
+            ) : (
+              artists.length > 0 && (
+                <div className="space-y-4">
+                  {artists.map((artist) => (
+                    <div
+                      key={artist.id}
+                      className="bg-neutral-900 rounded-2xl p-6 flex flex-col sm:flex-row gap-6 items-start sm:items-center shadow-lg hover:shadow-xl transition border border-neutral-800"
+                    >
+                      {/* תמונת פרופיל */}
+                      <div className="flex-shrink-0">
+                        {artist.avatar ? (
+                          <img
+                            src={artist.avatar}
+                            alt={artist.full_name}
+                            className="w-24 h-24 rounded-full object-cover border-2 border-brand-orange shadow-lg"
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                              e.target.nextSibling.style.display = "flex";
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className="w-24 h-24 rounded-full bg-neutral-800 border-2 border-brand-orange flex items-center justify-center"
+                          style={{
+                            display: artist.avatar ? "none" : "flex",
                           }}
-                        />
-                      ) : null}
-                      <div
-                        className="w-24 h-24 rounded-full bg-neutral-800 border-2 border-brand-orange flex items-center justify-center"
-                        style={{
-                          display: artist.avatar ? "none" : "flex",
-                        }}
-                      >
-                        <User size={40} className="text-neutral-500" />
-                      </div>
-                    </div>
-
-                    {/* פרטי האמן */}
-                    <div className="flex-1 min-w-0">
-                      <h2 className="text-2xl font-bold text-white mb-2">
-                        {artist.full_name || "אמן ללא שם"}
-                      </h2>
-
-                      {/* תיאור תפקיד */}
-                      {artist.artist_role && (
-                        <div className="mb-3">
-                          <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-brand-orange rounded-lg text-black font-semibold text-sm">
-                            <Music size={16} />
-                            {artist.artist_role}
-                          </span>
+                        >
+                          <User size={40} className="text-neutral-500" />
                         </div>
-                      )}
+                      </div>
 
-                      {/* פרטים נוספים */}
-                      <div className="flex flex-wrap gap-3 mt-3 text-sm">
-                        {artist.email && (
-                          <span className="text-neutral-400">
-                            {artist.email}
-                          </span>
+                      {/* פרטי האמן */}
+                      <div className="flex-1 min-w-0">
+                        <h2 className="text-2xl font-bold text-white mb-2">
+                          {artist.full_name || "אמן ללא שם"}
+                        </h2>
+
+                        {/* תיאור תפקיד */}
+                        {artist.artist_role && (
+                          <div className="mb-3">
+                            <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-brand-orange rounded-lg text-black font-semibold text-sm">
+                              <Music size={16} />
+                              {artist.artist_role}
+                            </span>
+                          </div>
                         )}
-                        {artist.role && (
-                          <span className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700 text-neutral-300">
-                            {artist.role}
-                          </span>
-                        )}
+
+                        {/* פרטים נוספים */}
+                        <div className="flex flex-wrap gap-3 mt-3 text-sm">
+                          {artist.email && (
+                            <span className="text-neutral-400">
+                              {artist.email}
+                            </span>
+                          )}
+                          {artist.role && (
+                            <span className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700 text-neutral-300">
+                              {artist.role}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* כפתור ביטול השתתפות */}
+                      <div className="flex-shrink-0">
+                        <button
+                          onClick={() => handleLeaveCollection(artist.id)}
+                          disabled={leaving}
+                          className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 disabled:bg-red-700 disabled:opacity-50 text-white font-semibold rounded-lg transition-all"
+                        >
+                          <LogOut size={18} />
+                          {leaving ? "מבטל..." : "בטל השתתפות"}
+                        </button>
                       </div>
                     </div>
-
-                    {/* כפתור ביטול השתתפות */}
-                    <div className="flex-shrink-0">
-                      <button
-                        onClick={() => handleLeaveCollection(artist.id)}
-                        disabled={leaving}
-                        className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 disabled:bg-red-700 disabled:opacity-50 text-white font-semibold rounded-lg transition-all"
-                      >
-                        <LogOut size={18} />
-                        {leaving ? "מבטל..." : "בטל השתתפות"}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )
             )}
           </>
         )}
@@ -369,4 +380,3 @@ export default function Artists() {
     </div>
   );
 }
-

@@ -90,3 +90,6 @@ export async function deactivateShare(lineupId) {
   );
 }
 
+export async function deleteLineupRecord(id) {
+  await pool.query("DELETE FROM lineups WHERE id = ?", [id]);
+}

@@ -3,6 +3,11 @@ import { AppError } from "../../core/errors.js";
 import { env } from "../../config/env.js";
 import { getSharedLineup } from "../share/share.service.js";
 import {
+  deleteLineupRecord,
+  lineupBelongsToUser,
+} from "./lineups.repository.js";
+
+import {
   deactivateShare,
   findActiveShare,
   findLineupById,
@@ -17,10 +22,10 @@ import { checkIfGuest } from "../users/users.service.js";
 
 const emitLineupEvent = async (lineupId, event, payload) => {
   if (!global.io) return;
-  
+
   // שליחה לחדר של הליינאפ
   global.io.to(`lineup_${lineupId}`).emit(event, payload);
-  
+
   // שליחה גם לחדר של המארח שיצר את הליינאפ (כדי שכל האמנים שלו יקבלו את העדכון)
   try {
     const lineup = await findLineupById(lineupId);
@@ -184,4 +189,23 @@ export async function createShareLink(req, lineupId) {
 export async function disableShareLink(lineupId) {
   await deactivateShare(lineupId);
   await emitLineupEvent(lineupId, "share:update", { id: lineupId, url: null });
+}
+
+export async function deleteLineup(userId, lineupId) {
+  const allowed = await lineupBelongsToUser(lineupId, userId);
+  if (!allowed) throw new AppError("Not allowed", 403);
+
+  await deleteLineupRecord(lineupId);
+
+  // ⭐ הוספת שידור מחיקה בזמן אמת
+  if (global.io) {
+    const { emitToUserAndHost, emitToUserUpdates } = await import(
+      "../../core/socket.js"
+    );
+
+    await emitToUserAndHost(global.io, userId, "lineup:deleted", { lineupId });
+    await emitToUserUpdates(global.io, userId, "lineup:deleted", { lineupId });
+
+    global.io.to(`lineup_${lineupId}`).emit("lineup:deleted", { lineupId });
+  }
 }
