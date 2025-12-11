@@ -1,5 +1,17 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
-import { Plus, Trash2, Edit2, X, Search, Upload, Printer, FileDown, Eye } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Edit2,
+  X,
+  Search,
+  Upload,
+  Printer,
+  FileDown,
+  Eye,
+  User,
+  Music,
+} from "lucide-react";
 import api from "@/modules/shared/lib/api.js";
 import { useConfirm } from "@/modules/shared/hooks/useConfirm.jsx";
 import { useToast } from "@/modules/shared/components/ToastProvider.jsx";
@@ -18,6 +30,7 @@ export default function Songs() {
   const [isHost, setIsHost] = useState(false);
   const [activeTab, setActiveTab] = useState("my");
   const fileInputRefs = useRef({});
+  const [selectedHost, setSelectedHost] = useState(null);
 
   const [form, setForm] = useState({
     title: "",
@@ -73,9 +86,9 @@ export default function Songs() {
 
   useEffect(() => {
     load();
-    
+
     if (!socket) return;
-    
+
     // בדיקה אם המשתמש הוא אורח או מארח
     async function checkGuest() {
       try {
@@ -85,17 +98,17 @@ export default function Songs() {
         setIsGuest(data.isGuest);
         setHostId(data.hostId || null);
         setIsHost(data.isHost || false);
-        
+
         // הצטרפות ל-rooms של Socket.IO
         const user = JSON.parse(localStorage.getItem("ari_user") || "{}");
         if (user?.id && socket) {
           socket.emit("join-user", user.id);
           socket.emit("join-songs", user.id);
-          
+
           if (data.isHost) {
             socket.emit("join-host", user.id);
           }
-          
+
           if (data.hostId) {
             socket.emit("join-host", data.hostId);
           }
@@ -104,9 +117,9 @@ export default function Songs() {
         console.error("שגיאה בבדיקת סטטוס אורח:", err);
       }
     }
-    
+
     checkGuest();
-    
+
     // Socket.IO listeners
     socket.on("song:created", ({ song, songId }) => {
       // אם יש את הנתונים המלאים - פשוט להוסיף
@@ -114,7 +127,8 @@ export default function Songs() {
         setSongs((prev) => [song, ...prev]);
       } else if (songId) {
         // אם לא - לטעון רק את השיר החדש
-        api.get(`/songs/${songId}`, { skipErrorToast: true })
+        api
+          .get(`/songs/${songId}`, { skipErrorToast: true })
           .then(({ data }) => {
             setSongs((prev) => [data, ...prev]);
           })
@@ -126,20 +140,17 @@ export default function Songs() {
         load(); // fallback
       }
     });
-    
+
     socket.on("song:updated", ({ song, songId }) => {
       // אם יש את הנתונים המלאים - פשוט לעדכן
       if (song) {
-        setSongs((prev) =>
-          prev.map((s) => (s.id === song.id ? song : s))
-        );
+        setSongs((prev) => prev.map((s) => (s.id === song.id ? song : s)));
       } else if (songId) {
         // אם לא - לטעון רק את השיר שעודכן
-        api.get(`/songs/${songId}`, { skipErrorToast: true })
+        api
+          .get(`/songs/${songId}`, { skipErrorToast: true })
           .then(({ data }) => {
-            setSongs((prev) =>
-              prev.map((s) => (s.id === songId ? data : s))
-            );
+            setSongs((prev) => prev.map((s) => (s.id === songId ? data : s)));
           })
           .catch(() => {
             // אם נכשל - לטעון הכל
@@ -149,11 +160,11 @@ export default function Songs() {
         load(); // fallback
       }
     });
-    
+
     socket.on("song:deleted", ({ songId }) => {
       setSongs((prev) => prev.filter((s) => s.id !== songId));
     });
-    
+
     socket.on("song:chart-uploaded", ({ songId, chartPdfUrl }) => {
       setSongs((prev) =>
         prev.map((s) =>
@@ -161,15 +172,13 @@ export default function Songs() {
         )
       );
     });
-    
+
     socket.on("song:chart-deleted", ({ songId }) => {
       setSongs((prev) =>
-        prev.map((s) =>
-          s.id === songId ? { ...s, chart_pdf_url: null } : s
-        )
+        prev.map((s) => (s.id === songId ? { ...s, chart_pdf_url: null } : s))
       );
     });
-    
+
     // האזנה ל-custom events לעדכון אוטומטי אחרי כל פעולה
     const handleDataRefresh = (event) => {
       const { type, action } = event.detail || {};
@@ -177,9 +186,9 @@ export default function Songs() {
         load(); // רענון רשימת שירים
       }
     };
-    
+
     window.addEventListener("data-refresh", handleDataRefresh);
-    
+
     return () => {
       if (socket) {
         socket.off("song:created");
@@ -238,16 +247,17 @@ export default function Songs() {
       );
 
       showToast("קובץ PDF הועלה בהצלחה", "success");
-      
+
       // רענון מיידי
       load();
       // עדכון כל הקומפוננטות דרך custom event
-      window.dispatchEvent(new CustomEvent("data-refresh", { detail: { type: "song", action: "chart-uploaded" } }));
-    } catch (err) {
-      showToast(
-        err?.response?.data?.message || "שגיאה בהעלאת הקובץ",
-        "error"
+      window.dispatchEvent(
+        new CustomEvent("data-refresh", {
+          detail: { type: "song", action: "chart-uploaded" },
+        })
       );
+    } catch (err) {
+      showToast(err?.response?.data?.message || "שגיאה בהעלאת הקובץ", "error");
     }
   };
 
@@ -294,22 +304,26 @@ export default function Songs() {
   };
 
   const handleDeleteChart = async (songId) => {
-    const ok = await confirm("מחיקת קובץ PDF", "בטוח שאתה רוצה למחוק את קובץ ה-PDF?");
+    const ok = await confirm(
+      "מחיקת קובץ PDF",
+      "בטוח שאתה רוצה למחוק את קובץ ה-PDF?"
+    );
     if (!ok) return;
 
     try {
       await api.delete(`/songs/${songId}/delete-chart`);
       showToast("קובץ PDF נמחק בהצלחה", "success");
-      
+
       // רענון מיידי
       load();
       // עדכון כל הקומפוננטות דרך custom event
-      window.dispatchEvent(new CustomEvent("data-refresh", { detail: { type: "song", action: "chart-deleted" } }));
-    } catch (err) {
-      showToast(
-        err?.response?.data?.message || "שגיאה במחיקת הקובץ",
-        "error"
+      window.dispatchEvent(
+        new CustomEvent("data-refresh", {
+          detail: { type: "song", action: "chart-deleted" },
+        })
       );
+    } catch (err) {
+      showToast(err?.response?.data?.message || "שגיאה במחיקת הקובץ", "error");
     }
   };
 
@@ -344,7 +358,11 @@ export default function Songs() {
       // רענון מיידי
       load();
       // עדכון כל הקומפוננטות דרך custom event
-      window.dispatchEvent(new CustomEvent("data-refresh", { detail: { type: "song", action: editingId ? "updated" : "created" } }));
+      window.dispatchEvent(
+        new CustomEvent("data-refresh", {
+          detail: { type: "song", action: editingId ? "updated" : "created" },
+        })
+      );
     } catch (err) {
       console.error("שגיאה בשמירה:", err);
     }
@@ -359,7 +377,11 @@ export default function Songs() {
     // רענון מיידי
     load();
     // עדכון כל הקומפוננטות דרך custom event
-    window.dispatchEvent(new CustomEvent("data-refresh", { detail: { type: "song", action: "deleted" } }));
+    window.dispatchEvent(
+      new CustomEvent("data-refresh", {
+        detail: { type: "song", action: "deleted" },
+      })
+    );
   };
 
   // עריכה
@@ -377,13 +399,37 @@ export default function Songs() {
     setShowModal(true);
   };
 
+  const invitedHosts = useMemo(() => {
+    const hosts = {};
+
+    songs.forEach((s) => {
+      // שיר מוזמן = לא אני הבעלים
+      if (!s.is_owner && s.owner_id) {
+        if (!hosts[s.owner_id]) {
+          hosts[s.owner_id] = {
+            id: s.owner_id,
+            name: s.owner_name,
+            full_name: s.owner_name,
+            avatar: s.owner_avatar,
+            artist_role: s.owner_role, // מושך תפקיד מהשרת
+            email: s.owner_email, // מושך מייל מהשרת
+            songs: [],
+          };
+        }
+        hosts[s.owner_id].songs.push(s);
+      }
+    });
+
+    return Object.values(hosts);
+  }, [songs]);
+
   const filtered = songs.filter((s) => {
     // פילטור לפי טאב (אם המשתמש הוא אורח או מארח)
     if ((isGuest && hostId) || isHost) {
       if (activeTab === "my" && !s.is_owner) return false;
       if (activeTab === "invited" && s.is_owner) return false;
     }
-    
+
     // פילטור לפי חיפוש
     return (
       s.title?.toLowerCase().includes(search.toLowerCase()) ||
@@ -419,7 +465,6 @@ export default function Songs() {
           <Plus size={18} />
         </button>
       </header>
-      
 
       {/* חיפוש */}
       <div className="relative mb-6">
@@ -461,137 +506,387 @@ export default function Songs() {
           </button>
         </div>
       ) : null}
-
-      {/* רשימת שירים */}
-      <div className="space-y-3">
-        {filtered.map((s, i) => (
-          <div
-            key={s.id}
-            className="bg-neutral-900 rounded-2xl p-4 flex justify-between items-center shadow-sm hover:shadow-lg transition border border-neutral-800"
-          >
-            <div>
-              <p className="font-semibold text-lg">
-                {i + 1}. {s.title}
+      {/* אם הטאב הוא "שירים שהוזמנתי אליהם" ועדיין לא נבחר מארח */}
+      {activeTab === "invited" && !selectedHost && (
+        <div className="space-y-4 mb-6">
+          {invitedHosts.length === 0 ? (
+            <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-8 text-center shadow-lg">
+              <p className="text-neutral-400 text-lg">
+                אין שירים שהוזמנת אליהם
               </p>
-              <p className="text-neutral-400 text-sm">{s.artist}</p>
+              <p className="text-neutral-500 text-sm mt-2">
+                מארחים יופיעו כאן כאשר יזמינו אותך למאגר שלהם
+              </p>
+            </div>
+          ) : (
+            invitedHosts.map((host) => (
+              <div
+                key={host.id}
+                onClick={() => setSelectedHost(host)}
+                className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 flex items-center gap-4 cursor-pointer shadow-lg hover:shadow-xl transition"
+              >
+                <div className="flex-shrink-0">
+                  {host.avatar ? (
+                    <img
+                      src={host.avatar}
+                      alt={host.name}
+                      className="w-16 h-16 rounded-full object-cover border-2 border-brand-orange"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                        if (e.target.nextSibling) {
+                          e.target.nextSibling.style.display = "flex";
+                        }
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className="w-16 h-16 rounded-full bg-neutral-700 border-2 border-brand-orange flex items-center justify-center"
+                    style={{
+                      display: host.avatar ? "none" : "flex",
+                    }}
+                  >
+                    <Eye size={24} className="text-neutral-500" />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0 text-right">
+                  <h3 className="text-lg font-bold text-white mb-1">
+                    {host.name || "מארח ללא שם"}
+                  </h3>
+                  {/* תפקיד */}
+                  {host.artist_role && (
+                    <div className="mb-1">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-brand-orange rounded-lg text-black font-semibold text-xs">
+                        <Music size={12} />
+                        {host.artist_role}
+                      </span>
+                    </div>
+                  )}
+                  {/* מייל */}
+                  {host.email && (
+                    <p className="text-neutral-400 text-xs mb-1">
+                      {host.email}
+                    </p>
+                  )}
+                  <p className="text-neutral-400 text-xs">
+                    {host.songs.length} שירים
+                  </p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+      {/* אם נבחר מארח — מציגים את השירים שלו */}
+      {activeTab === "invited" && selectedHost && (
+        <>
+          <div className="space-y-3">
+            <div
+              className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 flex items-center gap-4 cursor-pointer shadow-lg hover:shadow-xl transition"
+              onClick={() => setSelectedHost(null)}
+            >
+              {/* תמונת פרופיל */}
+              <div className="flex-shrink-0">
+                {selectedHost.avatar ? (
+                  <img
+                    src={selectedHost.avatar}
+                    alt={selectedHost.name}
+                    className="w-16 h-16 rounded-full bg-neutral-700 border-2 border-brand-orange flex items-center justify-center"
+                    onClick={() => setSelectedHost(null)}
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                      if (e.target.nextSibling) {
+                        e.target.nextSibling.style.display = "flex";
+                      }
+                    }}
+                  />
+                ) : null}
+                <div
+                  className="w-16 h-16 rounded-full bg-neutral-700 border-2 border-brand-orange flex items-center justify-center"
+                  style={{
+                    display: selectedHost.avatar ? "none" : "flex",
+                  }}
+                  onClick={() => setSelectedHost(null)}
+                >
+                  <User size={40} className="text-neutral-500" />
+                </div>
 
-              <div className="flex flex-wrap gap-2 mt-2 text-xs">
-                <span className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
-                  {safeKey(s.key_sig)}
-                </span>
-                <span className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
-                  {s.bpm} BPM
-                </span>
-                <span className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
-                  {safeDuration(s.duration_sec)}
+                {/* פרטי האמן */}
+                <div className="flex-1 min-w-0 text-right">
+                  <h3 className="text-lg font-bold text-white mb-1">
+                    {selectedHost.name}
+                  </h3>
+
+                  {/* תיאור תפקיד */}
+                  {selectedHost.artist_role && (
+                    <div className="mb-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-brand-orange rounded-lg text-black font-semibold text-xs">
+                        <Music size={12} />
+                        {selectedHost.artist_role}
+                      </span>
+                    </div>
+                  )}
+                  {selectedHost.email && (
+                    <span className="text-neutral-400 text-xs">
+                      {selectedHost.email}
+                    </span>
+                  )}
+                  <span className="text-neutral-500 text-xs">
+                    {selectedHost.songs.length} שירים במאגר
+                  </span>
+                </div>
+                <span className="absolute top-2 left-2 text-xs text-neutral-400 bg-neutral-800 rounded-full px-3 py-1 pointer-events-none select-none">
+                  לחץ על הכרטיס כדי לסגור
                 </span>
               </div>
-
-              {s.notes && (
-                <span className="inline-block mt-2 px-2 py-1 text-xs bg-brand-orange rounded-lg text-black font-semibold">
-                  {s.notes}
-                </span>
-              )}
-            </div>
-
-            <div className="flex gap-3 flex-row-reverse items-center">
-              {/* כפתור העלאת PDF - אם המשתמש הוא הבעלים או אורח שמציג שירים שהוזמנו אליהם */}
-              {(s.is_owner || (isGuest && activeTab === "invited" && !s.is_owner)) && (
-                <>
-                  <input
-                    type="file"
-                    accept="application/pdf"
-                    ref={(el) => {
-                      fileInputRefs.current[s.id] = el;
-                    }}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        handleUploadChart(s.id, file);
-                      }
-                      e.target.value = ""; // איפוס input
-                    }}
-                    className="hidden"
-                  />
-                  <button
-                    onClick={() => {
-                      fileInputRefs.current[s.id]?.click();
-                    }}
-                    className="bg-blue-500 hover:bg-blue-600 p-2 rounded-full"
-                    title="העלה קובץ PDF צ'ארט"
-                  >
-                    <Upload size={16} />
-                  </button>
-                </>
-              )}
-
-              {/* כפתור תצוגה מקדימה - לכל המשתמשים אם יש PDF */}
-              {s.chart_pdf_url && (
-                <button
-                  onClick={() => handlePreviewChart(s.chart_pdf_url)}
-                  className="bg-cyan-500 hover:bg-cyan-600 p-2 rounded-full"
-                  title="תצוגה מקדימה"
-                >
-                  <Eye size={16} />
-                </button>
-              )}
-
-              {/* כפתור הדפסה - לכל המשתמשים אם יש PDF */}
-              {s.chart_pdf_url && (
-                <button
-                  onClick={() => handlePrintChart(s.chart_pdf_url)}
-                  className="bg-green-500 hover:bg-green-600 p-2 rounded-full"
-                  title="הדפס צ'ארט"
-                >
-                  <Printer size={16} />
-                </button>
-              )}
-
-              {/* כפתור הורדה - לכל המשתמשים אם יש PDF */}
-              {s.chart_pdf_url && (
-                <button
-                  onClick={() => handleDownloadChart(s.chart_pdf_url, s.title)}
-                  className="bg-purple-500 hover:bg-purple-600 p-2 rounded-full"
-                  title="שמור כקובץ PDF"
-                >
-                  <FileDown size={16} />
-                </button>
-              )}
-
-              {/* כפתור הסרת PDF - אם המשתמש הוא הבעלים או אורח שמציג שירים שהוזמנו אליהם */}
-              {s.chart_pdf_url && (s.is_owner || (isGuest && activeTab === "invited" && !s.is_owner)) && (
-                <button
-                  onClick={() => handleDeleteChart(s.id)}
-                  className="bg-orange-500 hover:bg-orange-600 p-2 rounded-full"
-                  title="מחק קובץ PDF"
-                >
-                  <Trash2 size={16} />
-                </button>
-              )}
-
-              {/* כפתורי עריכה ומחיקה - רק אם המשתמש הוא הבעלים */}
-              {s.is_owner && (
-                <>
-                  <button
-                    onClick={() => remove(s.id)}
-                    className="bg-red-500 hover:bg-red-600 p-2 rounded-full"
-                    title="מחק שיר"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-
-                  <button
-                    onClick={() => edit(s)}
-                    className="bg-neutral-700 hover:bg-neutral-600 p-2 rounded-full"
-                  >
-                    <Edit2 size={16} />
-                  </button>
-                </>
-              )}
             </div>
           </div>
-        ))}
-      </div>
+          <div className="flex flex-col items-center gap-4">
+            {selectedHost.songs.length === 0 ? (
+              <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-8 text-center shadow-lg w-full max-w-md">
+                <p className="text-neutral-400 text-lg">אין שירים למארח זה</p>
+              </div>
+            ) : (
+              <div className="w-full max-w-2xl flex flex-col gap-4">
+                {selectedHost.songs.map((s, i) => (
+                  <div
+                    key={s.id}
+                    className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 flex justify-between items-center shadow-lg hover:shadow-xl transition"
+                  >
+                    <div>
+                      <p className="font-semibold text-lg">
+                        {i + 1}. {s.title}
+                      </p>
+                      <p className="text-neutral-400 text-sm">{s.artist}</p>
+                      <div className="flex flex-wrap gap-2 mt-2 text-xs">
+                        <span className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
+                          {safeKey(s.key_sig)}
+                        </span>
+                        <span className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
+                          {s.bpm} BPM
+                        </span>
+                        <span className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
+                          {safeDuration(s.duration_sec)}
+                        </span>
+                      </div>
+                      {s.notes && (
+                        <span className="inline-block mt-2 px-2 py-1 text-xs bg-brand-orange rounded-lg text-black font-semibold">
+                          {s.notes}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex gap-3 flex-row-reverse items-center">
+                      {/* העלאת PDF */}
+                      {isGuest && !s.is_owner && (
+                        <>
+                          <input
+                            type="file"
+                            accept="application/pdf"
+                            ref={(el) => {
+                              fileInputRefs.current[s.id] = el;
+                            }}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleUploadChart(s.id, file);
+                              }
+                              e.target.value = "";
+                            }}
+                            className="hidden"
+                          />
+                          <button
+                            onClick={() => fileInputRefs.current[s.id]?.click()}
+                            className="bg-blue-500 hover:bg-blue-600 p-2 rounded-full"
+                            title="העלה קובץ PDF"
+                          >
+                            <Upload size={16} />
+                          </button>
+                        </>
+                      )}
+
+                      {/* תצוגה מקדימה */}
+                      {s.chart_pdf_url && (
+                        <button
+                          onClick={() => handlePreviewChart(s.chart_pdf_url)}
+                          className="bg-cyan-500 hover:bg-cyan-600 p-2 rounded-full"
+                        >
+                          <Eye size={16} />
+                        </button>
+                      )}
+
+                      {/* הדפסה */}
+                      {s.chart_pdf_url && (
+                        <button
+                          onClick={() => handlePrintChart(s.chart_pdf_url)}
+                          className="bg-green-500 hover:bg-green-600 p-2 rounded-full"
+                        >
+                          <Printer size={16} />
+                        </button>
+                      )}
+
+                      {/* הורדה */}
+                      {s.chart_pdf_url && (
+                        <button
+                          onClick={() =>
+                            handleDownloadChart(s.chart_pdf_url, s.title)
+                          }
+                          className="bg-purple-500 hover:bg-purple-600 p-2 rounded-full"
+                        >
+                          <FileDown size={16} />
+                        </button>
+                      )}
+
+                      {/* מחיקת PDF */}
+                      {s.chart_pdf_url && isGuest && !s.is_owner && (
+                        <button
+                          onClick={() => handleDeleteChart(s.id)}
+                          className="bg-orange-500 hover:bg-orange-600 p-2 rounded-full"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* רשימת שירים */}
+      {activeTab === "my" && (
+        <div className="space-y-3">
+          {filtered.map((s, i) => (
+            <div
+              key={s.id}
+              className="bg-neutral-900 rounded-2xl p-4 flex justify-between items-center shadow-sm hover:shadow-lg transition border border-neutral-800"
+            >
+              <div>
+                <p className="font-semibold text-lg">
+                  {i + 1}. {s.title}
+                </p>
+
+                <p className="text-neutral-400 text-sm">{s.artist}</p>
+
+                <div className="flex flex-wrap gap-2 mt-2 text-xs">
+                  <span className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
+                    {safeKey(s.key_sig)}
+                  </span>
+
+                  <span className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
+                    {s.bpm} BPM
+                  </span>
+
+                  <span className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
+                    {safeDuration(s.duration_sec)}
+                  </span>
+                </div>
+
+                {s.notes && (
+                  <span className="inline-block mt-2 px-2 py-1 text-xs bg-brand-orange rounded-lg text-black font-semibold">
+                    {s.notes}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex gap-3 flex-row-reverse items-center">
+                {/* העלאת PDF */}
+                {(s.is_owner ||
+                  (isGuest && activeTab === "invited" && !s.is_owner)) && (
+                  <>
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      ref={(el) => {
+                        fileInputRefs.current[s.id] = el;
+                      }}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleUploadChart(s.id, file);
+                        }
+                        e.target.value = "";
+                      }}
+                      className="hidden"
+                    />
+
+                    <button
+                      onClick={() => fileInputRefs.current[s.id]?.click()}
+                      className="bg-blue-500 hover:bg-blue-600 p-2 rounded-full"
+                      title="העלה קובץ PDF"
+                    >
+                      <Upload size={16} />
+                    </button>
+                  </>
+                )}
+
+                {/* תצוגה מקדימה */}
+                {s.chart_pdf_url && (
+                  <button
+                    onClick={() => handlePreviewChart(s.chart_pdf_url)}
+                    className="bg-cyan-500 hover:bg-cyan-600 p-2 rounded-full"
+                  >
+                    <Eye size={16} />
+                  </button>
+                )}
+
+                {/* הדפסה */}
+                {s.chart_pdf_url && (
+                  <button
+                    onClick={() => handlePrintChart(s.chart_pdf_url)}
+                    className="bg-green-500 hover:bg-green-600 p-2 rounded-full"
+                  >
+                    <Printer size={16} />
+                  </button>
+                )}
+
+                {/* הורדה */}
+                {s.chart_pdf_url && (
+                  <button
+                    onClick={() =>
+                      handleDownloadChart(s.chart_pdf_url, s.title)
+                    }
+                    className="bg-purple-500 hover:bg-purple-600 p-2 rounded-full"
+                  >
+                    <FileDown size={16} />
+                  </button>
+                )}
+
+                {/* מחיקת PDF */}
+                {s.chart_pdf_url &&
+                  (s.is_owner ||
+                    (isGuest && activeTab === "invited" && !s.is_owner)) && (
+                    <button
+                      onClick={() => handleDeleteChart(s.id)}
+                      className="bg-orange-500 hover:bg-orange-600 p-2 rounded-full"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+
+                {/* מחיקת שיר + עריכה */}
+                {s.is_owner && (
+                  <>
+                    <button
+                      onClick={() => remove(s.id)}
+                      className="bg-red-500 hover:bg-red-600 p-2 rounded-full"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+
+                    <button
+                      onClick={() => edit(s)}
+                      className="bg-neutral-700 hover:bg-neutral-600 p-2 rounded-full"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* מודאל הוספה/עריכה */}
       {showModal && (
