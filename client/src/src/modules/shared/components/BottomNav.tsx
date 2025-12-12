@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { NavLink } from "react-router-dom";
-import { Home, Music, Users, Settings, ListMusic, UserCheck } from "lucide-react";
+import { Home, Music, Users, Settings, ListMusic } from "lucide-react";
 import api from "@/modules/shared/lib/api.js";
 import { io } from "socket.io-client";
 
@@ -32,12 +32,12 @@ export default function BottomNav() {
       reconnectionDelay: 1000,
       timeout: 20000,
     });
-    
+
     // Error handling - לא להציג שגיאות בקונסול
     socketInstance.on("connect_error", (err) => {
       // שקט - reconnection יטפל בזה
     });
-    
+
     return socketInstance;
   }, []);
 
@@ -59,9 +59,9 @@ export default function BottomNav() {
     };
 
     loadPendingInvitations();
-    
+
     if (!socket) return;
-    
+
     // ממתינים שהחיבור יהיה פעיל לפני שימוש
     const setupSocket = () => {
       if (socket.connected) {
@@ -74,31 +74,31 @@ export default function BottomNav() {
         });
       }
     };
-    
+
     setupSocket();
-    
+
     // האזנה לעדכונים בזמן אמת
     socket.on("invitation:pending", () => {
       loadPendingInvitations();
     });
-    
+
     socket.on("user:invitation-accepted", () => {
       loadPendingInvitations();
     });
-    
+
     socket.on("user:invitation-rejected", () => {
       loadPendingInvitations();
     });
-    
+
     // האזנה לעדכון מיידי דרך custom event
     const handlePendingUpdate = () => {
       loadPendingInvitations();
     };
     window.addEventListener("pending-invitations-updated", handlePendingUpdate);
-    
+
     // רענון כל 30 שניות (fallback)
     const interval = setInterval(loadPendingInvitations, 30000);
-    
+
     return () => {
       if (socket && socket.connected) {
         socket.off("invitation:pending");
@@ -106,7 +106,10 @@ export default function BottomNav() {
         socket.off("user:invitation-rejected");
         // לא מנתקים את ה-socket כאן כי הוא משותף
       }
-      window.removeEventListener("pending-invitations-updated", handlePendingUpdate);
+      window.removeEventListener(
+        "pending-invitations-updated",
+        handlePendingUpdate
+      );
       clearInterval(interval);
     };
   }, [user?.id, socket]);
@@ -115,7 +118,6 @@ export default function BottomNav() {
     { to: "/home", label: "בית", icon: <Home size={22} /> },
     { to: "/songs", label: "שירים", icon: <Music size={22} /> },
     { to: "/lineup", label: "ליינאפ", icon: <ListMusic size={22} /> },
-    { to: "/artists", label: "אמנים", icon: <UserCheck size={22} />, badge: pendingCount },
     ...(role === "admin" || role === "manager"
       ? [{ to: "/users", label: "משתמשים", icon: <Users size={22} /> }]
       : []),
