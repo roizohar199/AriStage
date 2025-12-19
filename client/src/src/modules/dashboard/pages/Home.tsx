@@ -7,6 +7,7 @@ import {
   User,
   UserPlus,
   X,
+  Check,
   Search,
   UserX,
   LogOut,
@@ -15,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import api from "@/modules/shared/lib/api.js";
 import { useToast } from "@/modules/shared/components/ToastProvider.jsx";
 import { io } from "socket.io-client";
+import ConfirmModal from "@/modules/shared/components/ConfirmModal";
 
 // ======================================================
 // 🧩 קומפוננטה: DashboardStats
@@ -86,6 +88,8 @@ export default function Home() {
   const [myInvitedArtistsLoading, setMyInvitedArtistsLoading] = useState(true);
   const [leaving, setLeaving] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState([]);
+  const [showPendingModal, setShowPendingModal] = useState(false);
+  const [processingInvitation, setProcessingInvitation] = useState(false);
 
   // Socket.IO connection
   const socket = useMemo(() => {
@@ -283,6 +287,15 @@ export default function Home() {
       loadPendingInvitations(); // רענון הזמנות ממתינות
     });
 
+    // בדיקה כאשר משנים בעמוד
+    const handlePendingInvitationsUpdated = () => {
+      loadPendingInvitations();
+    };
+    window.addEventListener(
+      "pending-invitations-updated",
+      handlePendingInvitationsUpdated
+    );
+
     // האזנה ל-custom events לעדכון אוטומטי אחרי כל פעולה
     const handleDataRefresh = (event) => {
       const { type, action } = event.detail || {};
@@ -314,6 +327,10 @@ export default function Home() {
         socket.off("user:invitation-rejected");
       }
       window.removeEventListener("data-refresh", handleDataRefresh);
+      window.removeEventListener(
+        "pending-invitations-updated",
+        handlePendingInvitationsUpdated
+      );
       // לא מנתקים את ה-socket כאן כי הוא משותף
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -345,8 +362,9 @@ export default function Home() {
   };
 
   const uninviteArtist = async (artistId, artistName) => {
-    const ok = window.confirm(
-      `לבטל את השיתוף עם ${artistName}? האמן לא יוכל עוד לצפות בליינאפים והשירים שלך.`
+    const ok = await confirm(
+      "ביטול שיתוף",
+      `בטוח שאתה רוצה לבטל את השיתוף עם ${artistName}? האמן לא יוכל עוד לצפות בליינאפים והשירים שלך.`
     );
     if (!ok) return;
 
@@ -393,6 +411,49 @@ export default function Home() {
     }
   };
 
+  const handleAcceptInvitationInModal = async (hostId) => {
+    const ok = window.confirm("בטוח שאתה רוצה לאשר את ההזמנה?");
+    if (!ok) return;
+
+    try {
+      setProcessingInvitation(true);
+      await api.post("/users/accept-invitation", { hostId });
+      showToast("הזמנה אושרה בהצלחה", "success");
+      setPendingInvitations((prevInvitations) =>
+        prevInvitations.filter((inv) => inv.id !== hostId)
+      );
+      window.dispatchEvent(new CustomEvent("pending-invitations-updated"));
+      loadArtists();
+    } catch (err) {
+      console.error("❌ שגיאה באישור הזמנה:", err);
+      const errorMsg = err?.response?.data?.message || "שגיאה באישור ההזמנה";
+      showToast(errorMsg, "error");
+    } finally {
+      setProcessingInvitation(false);
+    }
+  };
+
+  const handleRejectInvitationInModal = async (hostId) => {
+    const ok = window.confirm("בטוח שאתה רוצה לדחות את ההזמנה?");
+    if (!ok) return;
+
+    try {
+      setProcessingInvitation(true);
+      await api.post("/users/reject-invitation", { hostId });
+      showToast("הזמנה נדחתה", "success");
+      setPendingInvitations((prevInvitations) =>
+        prevInvitations.filter((inv) => inv.id !== hostId)
+      );
+      window.dispatchEvent(new CustomEvent("pending-invitations-updated"));
+    } catch (err) {
+      console.error("❌ שגיאה בדחיית הזמנה:", err);
+      const errorMsg = err?.response?.data?.message || "שגיאה בדחיית ההזמנה";
+      showToast(errorMsg, "error");
+    } finally {
+      setProcessingInvitation(false);
+    }
+  };
+
   return (
     <div dir="rtl" className="min-h-screen text-white p-6">
       {/* כותרת */}
@@ -419,34 +480,156 @@ export default function Home() {
         {stats && <DashboardStats stats={stats} role={role} />}
 
         <div className="space-y-4 mb-6 p-4 bg-neutral-900 rounded-2xl border border-neutral-800 flex flex-col gap-8 ">
-          {/* המאגרים שלי - אמנים שהזמנתי */}
+          {/* הזמנות ממתינות לאישור */}
           <section>
-            {/* התראה על הזמנות ממתינות */}
-            {pendingInvitations.length > 0 && (
-              <div className="bg-neutral-900 space-y-4 mb-6 p-4 border-b border-neutral-800">
-                <div className="bg-yellow-900/30 border border-yellow-500 rounded-xl p-4 text-right">
-                  <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center justify-center min-h-[48px]">
+              <h2 className="text-xl font-bold text-yellow-400 text-center w-full">
+                הזמנות ממתינות
+              </h2>
+            </div>
+            <div className="space-y-3">
+              {pendingInvitations.length === 0 ? (
+                <div className="bg-neutral-800 border border-neutral-700 rounded-xl p-4 text-right">
+                  <p className="text-neutral-400 text-sm">
+                    אין הזמנות ממתינות כרגע
+                  </p>
+                </div>
+              ) : (
+                pendingInvitations.map((invitation) => (
+                  <div
+                    key={invitation.id}
+                    className="bg-yellow-900/30 border border-yellow-500 rounded-xl p-4 text-right flex items-center justify-between gap-4"
+                  >
                     <div className="flex-1">
-                      <h3 className="text-lg font-bold text-yellow-400 mb-1">
-                        יש לך {pendingInvitations.length} הזמנה
-                        {pendingInvitations.length > 1 ? "ות" : ""} ממתינות
-                        לאישור
-                      </h3>
                       <p className="text-neutral-300 text-sm">
-                        {pendingInvitations[0]?.full_name || "משתמש"} מזמין אותך
-                        להצטרף למאגר שלו
+                        <strong>{invitation.full_name || "משתמש"}</strong> מזמין
+                        אותך להצטרף למאגר שלו
                       </p>
                     </div>
                     <button
-                      onClick={() => navigate("/artists")}
-                      className="flex-shrink-0 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold px-4 py-2 text-sm rounded-lg transition-all whitespace-nowrap"
+                      onClick={() => setShowPendingModal(true)}
+                      className="flex-shrink-0 bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2 text-sm rounded-lg transition-all whitespace-nowrap"
                     >
                       צפה והאשר
                     </button>
                   </div>
-                </div>
+                ))
+              )}
+            </div>
+          </section>
+
+          {/* אמנים משותפים - אמנים שהזמינו אותי */}
+          <div className="border-t border-neutral-800"></div>
+          <section>
+            <div className="flex items-center justify-center min-h-[48px]">
+              <h2 className="text-xl font-bold text-brand-orange text-center w-full">
+                אמנים משותפים
+              </h2>
+            </div>
+            <p className="text-neutral-400 text-sm mb-4 text-center">
+              אמנים שהזמינו אותי למאגר שלהם - אני יכול לצפות בליינאפים והשירים
+              שלהם
+            </p>
+
+            {artistsLoading ? (
+              <div className="text-neutral-400 text-center py-4">
+                טוען אמנים...
+              </div>
+            ) : artists.length === 0 ? (
+              <div className="bg-neutral-800 border border-neutral-700 rounded-xl p-6 text-center">
+                <User size={32} className="mx-auto mb-3 text-neutral-600" />
+                <p className="text-neutral-400 text-sm">
+                  אין מאגרים שהוזמנת אליהם כרגע
+                </p>
+                <p className="text-neutral-500 text-xs mt-1">
+                  אמנים יופיעו כאן כאשר הם יזמינו אותך למאגר שלהם
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {artists.map((artist) => (
+                  <div
+                    key={artist.id}
+                    className="bg-neutral-800 border border-neutral-700 rounded-xl p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center"
+                  >
+                    {/* תמונת פרופיל */}
+                    <div className="flex-shrink-0">
+                      {artist.avatar ? (
+                        <img
+                          src={artist.avatar}
+                          alt={artist.full_name}
+                          className="w-16 h-16 rounded-full object-cover border-2 border-brand-orange"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                            if (e.target.nextSibling) {
+                              e.target.nextSibling.style.display = "flex";
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <div
+                        className="w-16 h-16 rounded-full bg-neutral-700 border-2 border-brand-orange flex items-center justify-center"
+                        style={{
+                          display: artist.avatar ? "none" : "flex",
+                        }}
+                      >
+                        <User size={24} className="text-neutral-500" />
+                      </div>
+                    </div>
+
+                    {/* פרטי האמן */}
+                    <div className="flex-1 min-w-0 text-right">
+                      {isGuest ? (
+                        <button
+                          onClick={() => navigate(`/artist/${artist.id}`)}
+                          className="text-lg font-bold text-white mb-1 hover:text-brand-orange transition cursor-pointer text-right"
+                        >
+                          {artist.full_name || "אמן ללא שם"}
+                        </button>
+                      ) : (
+                        <h3 className="text-lg font-bold text-white mb-1">
+                          {artist.full_name || "אמן ללא שם"}
+                        </h3>
+                      )}
+
+                      {/* תיאור תפקיד */}
+                      {artist.artist_role && (
+                        <div className="mb-2">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-brand-orange rounded-lg text-black font-semibold text-xs">
+                            <Music size={12} />
+                            {artist.artist_role}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* פרטים נוספים */}
+                      {artist.email && (
+                        <p className="text-neutral-400 text-xs">
+                          {artist.email}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* כפתור ביטול השתתפות */}
+                    <div className="flex-shrink-0">
+                      <button
+                        onClick={() => handleLeaveCollection(artist.id)}
+                        disabled={leaving}
+                        className="flex items-center gap-2 px-3 py-2 bg-red-500 hover:bg-red-600 disabled:bg-red-700 disabled:opacity-50 text-white font-semibold rounded-lg transition-all text-sm"
+                      >
+                        <LogOut size={16} />
+                        {leaving ? "מבטל..." : "בטל השתתפות"}
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
+          </section>
+
+          {/* המאגרים שלי - אמנים שהזמנתי */}
+          <div className="border-t border-neutral-800"></div>
+          <section>
             <div className="flex items-center justify-center gap-4 relative min-h-[48px]">
               <button
                 onClick={() => setShowInviteModal(true)}
@@ -558,115 +741,6 @@ export default function Home() {
               )}
             </div>
           </section>
-
-          {/* מאגרים שהוזמנתי אליהם - אמנים שהזמינו אותי */}
-          <div className="border-t border-neutral-800"></div>
-          <section>
-            <div className="flex items-center justify-center min-h-[48px]">
-              <h2 className="text-xl font-bold text-brand-orange text-center w-full">
-                מאגרים שהוזמנתי אליהם
-              </h2>
-            </div>
-            <p className="text-neutral-400 text-sm mb-4 text-center">
-              אמנים שהזמינו אותי למאגר שלהם - אני יכול לצפות בליינאפים והשירים
-              שלהם
-            </p>
-
-            {artistsLoading ? (
-              <div className="text-neutral-400 text-center py-4">
-                טוען אמנים...
-              </div>
-            ) : artists.length === 0 ? (
-              <div className="bg-neutral-800 border border-neutral-700 rounded-xl p-6 text-center">
-                <User size={32} className="mx-auto mb-3 text-neutral-600" />
-                <p className="text-neutral-400 text-sm">
-                  אין מאגרים שהוזמנת אליהם כרגע
-                </p>
-                <p className="text-neutral-500 text-xs mt-1">
-                  אמנים יופיעו כאן כאשר הם יזמינו אותך למאגר שלהם
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {artists.map((artist) => (
-                  <div
-                    key={artist.id}
-                    className="bg-neutral-800 border border-neutral-700 rounded-xl p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center"
-                  >
-                    {/* תמונת פרופיל */}
-                    <div className="flex-shrink-0">
-                      {artist.avatar ? (
-                        <img
-                          src={artist.avatar}
-                          alt={artist.full_name}
-                          className="w-16 h-16 rounded-full object-cover border-2 border-brand-orange"
-                          onError={(e) => {
-                            e.target.style.display = "none";
-                            if (e.target.nextSibling) {
-                              e.target.nextSibling.style.display = "flex";
-                            }
-                          }}
-                        />
-                      ) : null}
-                      <div
-                        className="w-16 h-16 rounded-full bg-neutral-700 border-2 border-brand-orange flex items-center justify-center"
-                        style={{
-                          display: artist.avatar ? "none" : "flex",
-                        }}
-                      >
-                        <User size={24} className="text-neutral-500" />
-                      </div>
-                    </div>
-
-                    {/* פרטי האמן */}
-                    <div className="flex-1 min-w-0 text-right">
-                      {isGuest ? (
-                        <button
-                          onClick={() => navigate(`/artist/${artist.id}`)}
-                          className="text-lg font-bold text-white mb-1 hover:text-brand-orange transition cursor-pointer text-right"
-                        >
-                          {artist.full_name || "אמן ללא שם"}
-                        </button>
-                      ) : (
-                        <h3 className="text-lg font-bold text-white mb-1">
-                          {artist.full_name || "אמן ללא שם"}
-                        </h3>
-                      )}
-
-                      {/* תיאור תפקיד */}
-                      {artist.artist_role && (
-                        <div className="mb-2">
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-brand-orange rounded-lg text-black font-semibold text-xs">
-                            <Music size={12} />
-                            {artist.artist_role}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* פרטים נוספים */}
-                      {artist.email && (
-                        <p className="text-neutral-400 text-xs">
-                          {artist.email}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* כפתור ביטול השתתפות */}
-                    <div className="flex-shrink-0">
-                      <button
-                        onClick={() => handleLeaveCollection(artist.id)}
-                        disabled={leaving}
-                        className="flex items-center gap-2 px-3 py-2 bg-red-500 hover:bg-red-600 disabled:bg-red-700 disabled:opacity-50 text-white font-semibold rounded-lg transition-all text-sm"
-                      >
-                        <LogOut size={16} />
-                        {leaving ? "מבטל..." : "בטל השתתפות"}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
         </div>
         {/* פוטר */}
         <p className="text-neutral-600 text-center text-xs mt-10 mb-2">
@@ -731,6 +805,109 @@ export default function Home() {
                 )}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal הזמנות ממתינות */}
+      {showPendingModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-2xl p-6 relative">
+            <button
+              onClick={() => setShowPendingModal(false)}
+              className="absolute top-6 left-6 text-neutral-400 hover:text-white transition"
+            >
+              <X size={22} />
+            </button>
+
+            <div className="text-center mb-2">
+              <h2 className="text-lg font-semibold text-yellow-400">
+                הזמנות ממתינות
+              </h2>
+            </div>
+
+            <p className="text-neutral-400 text-sm mb-4 text-center">
+              בחר הזמנות לאישור או דחיה
+            </p>
+
+            {/* רשימת הזמנות */}
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+              {pendingInvitations.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-neutral-400">אין הזמנות ממתינות</p>
+                </div>
+              ) : (
+                pendingInvitations.map((invitation) => (
+                  <div
+                    key={invitation.id}
+                    className="bg-yellow-900/20 border border-yellow-500/50 rounded-xl p-4"
+                  >
+                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                      <div className="flex-shrink-0">
+                        {invitation.avatar ? (
+                          <img
+                            src={invitation.avatar}
+                            alt={invitation.full_name}
+                            className="w-16 h-16 rounded-full object-cover border-2 border-yellow-500"
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                              if (e.target.nextSibling) {
+                                e.target.nextSibling.style.display = "flex";
+                              }
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className="w-16 h-16 rounded-full bg-neutral-700 border-2 border-yellow-500 flex items-center justify-center"
+                          style={{
+                            display: invitation.avatar ? "none" : "flex",
+                          }}
+                        >
+                          <User size={24} className="text-neutral-500" />
+                        </div>
+                      </div>
+
+                      <div className="flex-1 min-w-0 text-right">
+                        <p className="text-white font-semibold">
+                          {invitation.full_name || "משתמש"}
+                        </p>
+                        {invitation.artist_role && (
+                          <p className="text-neutral-400 text-sm">
+                            {invitation.artist_role}
+                          </p>
+                        )}
+                        <p className="text-neutral-400 text-xs mt-1">
+                          מזמין אותך להצטרף למאגר שלו
+                        </p>
+                      </div>
+
+                      <div className="flex gap-2 flex-shrink-0">
+                        <button
+                          onClick={() =>
+                            handleAcceptInvitationInModal(invitation.id)
+                          }
+                          disabled={processingInvitation}
+                          className="flex items-center gap-1 px-3 py-2 bg-green-500 hover:bg-green-600 disabled:bg-green-700 disabled:opacity-50 text-white font-semibold rounded-lg transition-all text-sm"
+                        >
+                          <Check size={16} />
+                          אשר
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleRejectInvitationInModal(invitation.id)
+                          }
+                          disabled={processingInvitation}
+                          className="flex items-center gap-1 px-3 py-2 bg-red-500 hover:bg-red-600 disabled:bg-red-700 disabled:opacity-50 text-white font-semibold rounded-lg transition-all text-sm"
+                        >
+                          <X size={16} />
+                          דחה
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -1,3 +1,6 @@
+import { deleteSongChart } from "./songs.repository.js";
+import { getPrivateChartsForSong } from "./songs.service.js";
+import { uploadPrivateChartPdfForSong } from "./songs.service.js";
 import { asyncHandler } from "../../core/asyncHandler.js";
 import {
   createSong,
@@ -11,6 +14,75 @@ import { getSongById } from "./songs.repository.js";
 import { emitToUserAndHost, emitToUserUpdates } from "../../core/socket.js";
 
 export const songsController = {
+  deletePrivateChart: asyncHandler(async (req, res) => {
+    const chartId = parseInt(req.params.chartId);
+    const user = req.user;
+    const deleted = await deleteSongChart(chartId, user.id);
+    if (deleted) {
+      res.json({ message: "הצ'ארט נמחק בהצלחה" });
+    } else {
+      res.status(403).json({ message: "לא נמצא או אין הרשאה למחוק" });
+    }
+  }),
+  getPrivateCharts: asyncHandler(async (req, res) => {
+    const songId = parseInt(req.params.id);
+    const user = req.user;
+    const charts = await getPrivateChartsForSong(songId, user);
+
+    // הוספת URL מלא לכל צ'ארט
+    const protocol = req.protocol;
+    const host = req.get("host");
+    const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
+
+    const chartsWithUrl = charts.map((chart) => {
+      // נקה את הנתיב - הסר נתיב מלא אם קיים ותשאיר רק את החלק היחסי
+      let cleanPath = chart.file_path;
+
+      // אם זה נתיב מלא (מכיל C:/ או דומה), קח רק את החלק אחרי uploads/
+      if (cleanPath.includes(":")) {
+        const uploadsIndex = cleanPath.indexOf("uploads/");
+        if (uploadsIndex !== -1) {
+          cleanPath = cleanPath.substring(uploadsIndex);
+        }
+      }
+
+      // הסר / מהתחלה אם קיים
+      cleanPath = cleanPath.replace(/^[\/\\]+/, "");
+
+      return {
+        ...chart,
+        file_path: chart.file_path.startsWith("http")
+          ? chart.file_path
+          : `${baseUrl}/${cleanPath}`,
+      };
+    });
+
+    res.json({ charts: chartsWithUrl });
+  }),
+  uploadPrivateChart: asyncHandler(async (req, res) => {
+    const songId = parseInt(req.params.id);
+    const user = req.user;
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ message: "לא נבחר קובץ" });
+    }
+
+    // המרת הנתיב המלא לנתיב יחסי
+    let relativePath = file.path;
+    const uploadsIndex = relativePath.indexOf("uploads");
+    if (uploadsIndex !== -1) {
+      relativePath = relativePath.substring(uploadsIndex);
+    }
+    // החלפת backslashes ב-forward slashes
+    relativePath = relativePath.replace(/\\/g, "/");
+
+    const chartId = await uploadPrivateChartPdfForSong(
+      songId,
+      user,
+      relativePath
+    );
+    res.json({ message: "הצ'ארט הועלה בהצלחה", chartId });
+  }),
   list: asyncHandler(async (req, res) => {
     const songs = await getSongs(req.user);
 

@@ -54,6 +54,59 @@ export async function updateSongChartPdf(songId, chartPdfPath) {
   }
 }
 
+// יצירת צ'ארט חדש
+export async function insertSongChart({ song_id, user_id, file_path }) {
+  const [result] = await pool.query(
+    "INSERT INTO song_charts (song_id, user_id, file_path) VALUES (?, ?, ?)",
+    [song_id, user_id, file_path]
+  );
+  return result.insertId;
+}
+
+// שליפת כל הצ'ארטים של שיר עבור משתמש
+export async function getSongChartsByUser(song_id, user_id) {
+  const [rows] = await pool.query(
+    "SELECT * FROM song_charts WHERE song_id = ? AND user_id = ? ORDER BY uploaded_at DESC",
+    [song_id, user_id]
+  );
+  return rows;
+}
+
+// שליפת כל הצ'ארטים של שיר (למשתמשים שונים)
+export async function getSongCharts(song_id) {
+  const [rows] = await pool.query(
+    "SELECT * FROM song_charts WHERE song_id = ? ORDER BY uploaded_at DESC",
+    [song_id]
+  );
+  return rows;
+}
+
+// מחיקת צ'ארט לפי מזהה
+export async function deleteSongChart(chartId, userId) {
+  // קבלת נתיב הקובץ לפני מחיקה
+  const [rows] = await pool.query(
+    "SELECT file_path FROM song_charts WHERE id = ? AND user_id = ?",
+    [chartId, userId]
+  );
+  const chart = rows[0];
+  if (chart?.file_path) {
+    try {
+      const filePath = path.join(process.cwd(), chart.file_path);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (error) {
+      console.error("שגיאה במחיקת קובץ PDF:", error);
+    }
+  }
+  // מחיקה מהמסד
+  const [result] = await pool.query(
+    "DELETE FROM song_charts WHERE id = ? AND user_id = ?",
+    [chartId, userId]
+  );
+  return result.affectedRows > 0;
+}
+
 export async function getSongById(songId) {
   const [rows] = await pool.query(
     `

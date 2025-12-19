@@ -93,8 +93,15 @@ export async function getLineupById(lineupId, user) {
   }
 
   // אם לא, בדיקה אם המשתמש הוא אורח והליינאפ שייך למארח שלו
-  const hostId = await checkIfGuest(user.id);
-  if (hostId) {
+  const hostIds = await checkIfGuest(user.id);
+  const hostIdsArray: number[] = Array.isArray(hostIds)
+    ? hostIds
+    : hostIds
+    ? [hostIds]
+    : [];
+
+  // בדיקה אם הליינאפ שייך לאחד המארחים
+  for (const hostId of hostIdsArray) {
     const hostHasAccess = await lineupBelongsToUser(lineupId, hostId);
     if (hostHasAccess) {
       return lineup;

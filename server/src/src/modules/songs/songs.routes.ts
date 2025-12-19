@@ -13,14 +13,35 @@ router.use(emitRefreshOnMutation);
 
 router.get("/", songsController.list);
 router.post("/", songsController.create);
+router.get("/:id/private-charts", songsController.getPrivateCharts);
+router.post(
+  "/:id/private-charts",
+  (req, res, next) => {
+    uploadSongChartPdf.single("pdf")(req, res, (err: any) => {
+      if (err) {
+        return res
+          .status(400)
+          .json({ message: err.message || "שגיאה בהעלאת הקובץ" });
+      }
+      next();
+    });
+  },
+  songsController.uploadPrivateChart
+);
+router.delete(
+  "/:id/private-charts/:chartId",
+  songsController.deletePrivateChart
+);
 router.put("/:id", songsController.update);
 router.delete("/:id", songsController.remove);
 router.post(
   "/:id/upload-chart",
   (req, res, next) => {
-    uploadSongChartPdf.single("pdf")(req, res, (err) => {
+    uploadSongChartPdf.single("pdf")(req, res, (err: any) => {
       if (err) {
-        return res.status(400).json({ message: err.message || "שגיאה בהעלאת הקובץ" });
+        return res
+          .status(400)
+          .json({ message: err.message || "שגיאה בהעלאת הקובץ" });
       }
       next();
     });
@@ -30,4 +51,3 @@ router.post(
 router.delete("/:id/delete-chart", songsController.deleteChart);
 
 export const songsRouter = router;
-

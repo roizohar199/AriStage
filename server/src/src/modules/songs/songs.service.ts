@@ -1,3 +1,24 @@
+import { getSongChartsByUser } from "./songs.repository.js";
+// שליפת כל הצ'ארטים של שיר עבור המשתמש
+export async function getPrivateChartsForSong(songId, user) {
+  return await getSongChartsByUser(songId, user.id);
+}
+import { insertSongChart } from "./songs.repository.js";
+// העלאת צ'ארט פרטי למשתמש
+export async function uploadPrivateChartPdfForSong(songId, user, filePath) {
+  // ודא שהשיר קיים
+  const song = await getSongById(songId);
+  if (!song) {
+    throw new Error("שיר לא נמצא");
+  }
+  // שמור את הצ'ארט בטבלת song_charts
+  const chartId = await insertSongChart({
+    song_id: songId,
+    user_id: user.id,
+    file_path: filePath,
+  });
+  return chartId;
+}
 import { AppError } from "../../core/errors.js";
 import {
   deleteSong,
@@ -14,7 +35,11 @@ import { checkIfGuest } from "../users/users.service.js";
 export async function getSongs(user) {
   // בדיקה אם המשתמש הוא אורח - מחזיר רשימת מארחים
   const hostIds = await checkIfGuest(user.id);
-  const hostIdsArray: number[] = Array.isArray(hostIds) ? hostIds : (hostIds ? [hostIds] : []);
+  const hostIdsArray: number[] = Array.isArray(hostIds)
+    ? hostIds
+    : hostIds
+    ? [hostIds]
+    : [];
   return listSongs(user.role, user.id, hostIdsArray);
 }
 
@@ -89,11 +114,16 @@ export async function uploadChartPdfForSong(songId, user, filePath) {
 
   if (user.role !== "admin") {
     const ownsSong = await findSongOwnership(songId, user.id);
-    
+
     // אם המשתמש לא הבעלים, נבדוק אם הוא אורח והשיר שייך למארח שלו
     if (!ownsSong) {
-      const hostId = await checkIfGuest(user.id);
-      if (hostId && song.user_id === hostId) {
+      const hostIds = await checkIfGuest(user.id);
+      const hostIdsArray: number[] = Array.isArray(hostIds)
+        ? hostIds
+        : hostIds
+        ? [hostIds]
+        : [];
+      if (hostIdsArray.includes(song.user_id)) {
         // המשתמש הוא אורח והשיר שייך למארח שלו - מותר להעלות PDF
       } else {
         throw new AppError(403, "אין לך הרשאה לעדכן את השיר הזה");
@@ -115,11 +145,16 @@ export async function removeChartPdfForSong(songId, user) {
 
   if (user.role !== "admin") {
     const ownsSong = await findSongOwnership(songId, user.id);
-    
+
     // אם המשתמש לא הבעלים, נבדוק אם הוא אורח והשיר שייך למארח שלו
     if (!ownsSong) {
-      const hostId = await checkIfGuest(user.id);
-      if (hostId && song.user_id === hostId) {
+      const hostIds = await checkIfGuest(user.id);
+      const hostIdsArray: number[] = Array.isArray(hostIds)
+        ? hostIds
+        : hostIds
+        ? [hostIds]
+        : [];
+      if (hostIdsArray.includes(song.user_id)) {
         // המשתמש הוא אורח והשיר שייך למארח שלו - מותר למחוק PDF
       } else {
         throw new AppError(403, "אין לך הרשאה למחוק את הקובץ הזה");
@@ -131,7 +166,6 @@ export async function removeChartPdfForSong(songId, user) {
   if (!deleted) {
     throw new AppError(404, "קובץ PDF לא נמצא");
   }
-  
+
   return song;
 }
-

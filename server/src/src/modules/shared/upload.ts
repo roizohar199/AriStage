@@ -112,10 +112,17 @@ export const uploadSongChartPdf = multer({
   }),
 
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === "application/pdf") {
+    const allowedTypes = [
+      "application/pdf",
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/jpg",
+    ];
+    if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error("רק קבצי PDF מותרים"), false);
+      cb(new Error("רק קבצי PDF או תמונה (JPG, PNG, GIF) מותרים"), false);
     }
   },
 
