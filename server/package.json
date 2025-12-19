@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "bidi-js": "^1.0.3",
+    "canvas": "^3.2.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
@@ -19,7 +21,12 @@
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
     "mysql2": "^3.11.3",
+    "node-fetch": "^2.7.0",
     "nodemailer": "^7.0.10",
+    "puppeteer": "^22.7.1",
+    "pdf-lib": "^1.17.1",
+    "pdfkit": "^0.17.2",
+    "sharp": "^0.34.5",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {

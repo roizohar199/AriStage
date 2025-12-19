@@ -62,6 +62,9 @@ export default function Songs() {
   });
   const fileInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
   const [viewingChart, setViewingChart] = useState<string | null>(null);
+  const [isGuest, setIsGuest] = useState(false);
+  const [hostId, setHostId] = useState<number | null>(null);
+  const [isHost, setIsHost] = useState(false);
 
   const handleDeletePrivateChart = async (songId: number, chartId: number) => {
     const ok = await confirm("מחיקת צ'ארט", "בטוח שאתה רוצה למחוק את הצ'ארט?");
@@ -536,8 +539,6 @@ export default function Songs() {
                 {i + 1}. {s.title}
               </p>
 
-              <p className="text-neutral-400 text-sm">{s.artist}</p>
-
               <div className="flex flex-wrap gap-2 mt-2 text-xs">
                 <span className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
                   {safeKey(s.key_sig)}
@@ -550,17 +551,17 @@ export default function Songs() {
                 <span className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
                   {safeDuration(s.duration_sec)}
                 </span>
-              </div>
 
-              {s.notes && (
-                <span className="inline-block mt-2 px-2 py-1 text-xs bg-brand-orange rounded-lg text-black font-semibold">
-                  {s.notes}
-                </span>
-              )}
+                {s.notes && (
+                  <span className="inline-block px-2 py-1 text-xs bg-brand-orange rounded-lg text-black font-semibold">
+                    {s.notes}
+                  </span>
+                )}
+              </div>
 
               {/* הצגת הצ'ארטים הפרטיים של המשתמש */}
               {privateCharts[s.id] && privateCharts[s.id].length > 0 && (
-                <div className="mt-3 p-3 bg-neutral-800/50 rounded-xl border border-neutral-700">
+                <div className="grid place-items-center mt-3 p-3 bg-neutral-800/50 rounded-xl border border-neutral-700">
                   <div className="flex items-center gap-2 mb-2">
                     <FileText size={14} className="text-cyan-400" />
                     <span className="text-xs font-semibold text-neutral-300">

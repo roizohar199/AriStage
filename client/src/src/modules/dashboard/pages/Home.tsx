@@ -90,6 +90,12 @@ export default function Home() {
   const [pendingInvitations, setPendingInvitations] = useState([]);
   const [showPendingModal, setShowPendingModal] = useState(false);
   const [processingInvitation, setProcessingInvitation] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({
+    show: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
 
   // Socket.IO connection
   const socket = useMemo(() => {
@@ -337,49 +343,82 @@ export default function Home() {
   }, [socket]); // הפונקציות מוגדרות עם useCallback אז הן יציבות
 
   const handleLeaveCollection = async (hostId = null) => {
-    // הצג הודעת אישור בדיאלוג דפדפן רגיל (או תוכל להחסיר לגמרי)
     const message = hostId
       ? "בטוח שאתה רוצה לבטל את השתתפותך במאגר הזה? לא תוכל עוד לצפות בליינאפים והשירים של המארח."
       : "בטוח שאתה רוצה לבטל את כל השתתפויותיך במאגרים? לא תוכל עוד לצפות בליינאפים והשירים של המארחים.";
-    const ok = window.confirm(message);
-    if (!ok) return;
 
-    try {
-      setLeaving(true);
-      await api.post("/users/leave-collection", hostId ? { hostId } : {});
-      showToast(
-        hostId ? "השתתפותך במאגר בוטלה בהצלחה" : "כל השתתפויותיך בוטלו בהצלחה",
-        "success"
-      );
-      loadArtists(); // רענון רשימת האמנים
-    } catch (err) {
-      console.error("❌ שגיאה בביטול השתתפות:", err);
-      const errorMsg = err?.response?.data?.message || "שגיאה בביטול ההשתתפות";
-      showToast(errorMsg, "error");
-    } finally {
-      setLeaving(false);
-    }
+    setConfirmModal({
+      show: true,
+      title: "ביטול השתתפות",
+      message: message,
+      onConfirm: async () => {
+        try {
+          setLeaving(true);
+          await api.post("/users/leave-collection", hostId ? { hostId } : {});
+          showToast(
+            hostId
+              ? "השתתפותך במאגר בוטלה בהצלחה"
+              : "כל השתתפויותיך בוטלו בהצלחה",
+            "success"
+          );
+          loadArtists(); // רענון רשימת האמנים
+          setConfirmModal({
+            show: false,
+            title: "",
+            message: "",
+            onConfirm: null,
+          });
+        } catch (err) {
+          console.error("❌ שגיאה בביטול השתתפות:", err);
+          const errorMsg =
+            err?.response?.data?.message || "שגיאה בביטול ההשתתפות";
+          showToast(errorMsg, "error");
+          setConfirmModal({
+            show: false,
+            title: "",
+            message: "",
+            onConfirm: null,
+          });
+        } finally {
+          setLeaving(false);
+        }
+      },
+    });
   };
 
   const uninviteArtist = async (artistId, artistName) => {
-    const ok = await confirm(
-      "ביטול שיתוף",
-      `בטוח שאתה רוצה לבטל את השיתוף עם ${artistName}? האמן לא יוכל עוד לצפות בליינאפים והשירים שלך.`
-    );
-    if (!ok) return;
-
-    try {
-      setInviteLoading(true);
-      await api.post("/users/uninvite-artist", { artist_id: artistId });
-      showToast("השיתוף בוטל בהצלחה", "success");
-      loadMyInvitedArtists(); // רענון רשימת האמנים
-    } catch (err) {
-      console.error("❌ שגיאה בביטול שיתוף:", err);
-      const errorMsg = err?.response?.data?.message || "שגיאה בביטול השיתוף";
-      showToast(errorMsg, "error");
-    } finally {
-      setInviteLoading(false);
-    }
+    setConfirmModal({
+      show: true,
+      title: "ביטול שיתוף",
+      message: `בטוח שאתה רוצה לבטל את השיתוף עם ${artistName}? האמן לא יוכל עוד לצפות בליינאפים והשירים שלך.`,
+      onConfirm: async () => {
+        try {
+          setInviteLoading(true);
+          await api.post("/users/uninvite-artist", { artist_id: artistId });
+          showToast("השיתוף בוטל בהצלחה", "success");
+          loadMyInvitedArtists(); // רענון רשימת האמנים
+          setConfirmModal({
+            show: false,
+            title: "",
+            message: "",
+            onConfirm: null,
+          });
+        } catch (err) {
+          console.error("❌ שגיאה בביטול שיתוף:", err);
+          const errorMsg =
+            err?.response?.data?.message || "שגיאה בביטול השיתוף";
+          showToast(errorMsg, "error");
+          setConfirmModal({
+            show: false,
+            title: "",
+            message: "",
+            onConfirm: null,
+          });
+        } finally {
+          setInviteLoading(false);
+        }
+      },
+    });
   };
 
   const sendInvitation = async (e) => {
@@ -412,46 +451,80 @@ export default function Home() {
   };
 
   const handleAcceptInvitationInModal = async (hostId) => {
-    const ok = window.confirm("בטוח שאתה רוצה לאשר את ההזמנה?");
-    if (!ok) return;
-
-    try {
-      setProcessingInvitation(true);
-      await api.post("/users/accept-invitation", { hostId });
-      showToast("הזמנה אושרה בהצלחה", "success");
-      setPendingInvitations((prevInvitations) =>
-        prevInvitations.filter((inv) => inv.id !== hostId)
-      );
-      window.dispatchEvent(new CustomEvent("pending-invitations-updated"));
-      loadArtists();
-    } catch (err) {
-      console.error("❌ שגיאה באישור הזמנה:", err);
-      const errorMsg = err?.response?.data?.message || "שגיאה באישור ההזמנה";
-      showToast(errorMsg, "error");
-    } finally {
-      setProcessingInvitation(false);
-    }
+    setConfirmModal({
+      show: true,
+      title: "אישור הזמנה",
+      message: "בטוח שאתה רוצה לאשר את ההזמנה?",
+      onConfirm: async () => {
+        try {
+          setProcessingInvitation(true);
+          await api.post("/users/accept-invitation", { hostId });
+          showToast("הזמנה אושרה בהצלחה", "success");
+          setPendingInvitations((prevInvitations) =>
+            prevInvitations.filter((inv) => inv.id !== hostId)
+          );
+          window.dispatchEvent(new CustomEvent("pending-invitations-updated"));
+          loadArtists();
+          setConfirmModal({
+            show: false,
+            title: "",
+            message: "",
+            onConfirm: null,
+          });
+        } catch (err) {
+          console.error("❌ שגיאה באישור הזמנה:", err);
+          const errorMsg =
+            err?.response?.data?.message || "שגיאה באישור ההזמנה";
+          showToast(errorMsg, "error");
+          setConfirmModal({
+            show: false,
+            title: "",
+            message: "",
+            onConfirm: null,
+          });
+        } finally {
+          setProcessingInvitation(false);
+        }
+      },
+    });
   };
 
   const handleRejectInvitationInModal = async (hostId) => {
-    const ok = window.confirm("בטוח שאתה רוצה לדחות את ההזמנה?");
-    if (!ok) return;
-
-    try {
-      setProcessingInvitation(true);
-      await api.post("/users/reject-invitation", { hostId });
-      showToast("הזמנה נדחתה", "success");
-      setPendingInvitations((prevInvitations) =>
-        prevInvitations.filter((inv) => inv.id !== hostId)
-      );
-      window.dispatchEvent(new CustomEvent("pending-invitations-updated"));
-    } catch (err) {
-      console.error("❌ שגיאה בדחיית הזמנה:", err);
-      const errorMsg = err?.response?.data?.message || "שגיאה בדחיית ההזמנה";
-      showToast(errorMsg, "error");
-    } finally {
-      setProcessingInvitation(false);
-    }
+    setConfirmModal({
+      show: true,
+      title: "דחיית הזמנה",
+      message: "בטוח שאתה רוצה לדחות את ההזמנה?",
+      onConfirm: async () => {
+        try {
+          setProcessingInvitation(true);
+          await api.post("/users/reject-invitation", { hostId });
+          showToast("הזמנה נדחתה", "success");
+          setPendingInvitations((prevInvitations) =>
+            prevInvitations.filter((inv) => inv.id !== hostId)
+          );
+          window.dispatchEvent(new CustomEvent("pending-invitations-updated"));
+          setConfirmModal({
+            show: false,
+            title: "",
+            message: "",
+            onConfirm: null,
+          });
+        } catch (err) {
+          console.error("❌ שגיאה בדחיית הזמנה:", err);
+          const errorMsg =
+            err?.response?.data?.message || "שגיאה בדחיית ההזמנה";
+          showToast(errorMsg, "error");
+          setConfirmModal({
+            show: false,
+            title: "",
+            message: "",
+            onConfirm: null,
+          });
+        } finally {
+          setProcessingInvitation(false);
+        }
+      },
+    });
   };
 
   return (
@@ -911,6 +984,22 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* ConfirmModal */}
+      <ConfirmModal
+        show={confirmModal.show}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm || (() => {})}
+        onCancel={() =>
+          setConfirmModal({
+            show: false,
+            title: "",
+            message: "",
+            onConfirm: null,
+          })
+        }
+      />
     </div>
   );
 }

@@ -156,4 +156,179 @@ export const lineupsController = {
     await disableShareLink(req.params.id);
     res.json({ message: "קישור השיתוף בוטל" });
   }),
+
+  downloadCharts: asyncHandler(async (req, res) => {
+    const puppeteer = await import("puppeteer");
+    const fetch = (await import("node-fetch")).default;
+    const sharp = (await import("sharp")).default;
+    const { env } = await import("../../config/env.js");
+    const { charts } = req.body;
+
+    console.log("=== התחלת הורדת צ'ארטים ===");
+    console.log("מספר צ'ארטים:", charts?.length);
+
+    if (!charts || !Array.isArray(charts) || charts.length === 0) {
+      return res.status(400).json({ message: "לא נמצאו צ'ארטים להורדה" });
+    }
+
+    let browser;
+    try {
+      // הכנת HTML עם כל הצ'ארטים
+      let htmlContent = `
+        <!DOCTYPE html>
+        <html dir="rtl" lang="he">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Lineup Charts</title>
+          <style>
+            * {
+              margin: 0;
+              padding: 0;
+            }
+            body {
+              font-family: Arial, sans-serif;
+              direction: rtl;
+              line-height: 1.6;
+              background: white;
+              padding: 20px;
+            }
+            .song-container {
+              page-break-after: always;
+              margin-bottom: 40px;
+              padding: 20px;
+              border-bottom: 2px solid #ddd;
+            }
+            .song-title {
+              font-size: 24px;
+              font-weight: bold;
+              color: #333;
+              margin-bottom: 15px;
+              text-align: right;
+            }
+            .song-details {
+              margin-bottom: 20px;
+              text-align: right;
+            }
+            .detail-line {
+              font-size: 14px;
+              color: #555;
+              margin: 8px 0;
+              padding: 5px;
+            }
+            .chart-image {
+              max-width: 100%;
+              height: auto;
+              margin-top: 20px;
+              border: 1px solid #ccc;
+              padding: 10px;
+            }
+            .no-chart {
+              color: #999;
+              font-style: italic;
+              margin-top: 10px;
+            }
+          </style>
+        </head>
+        <body>
+      `;
+
+      // הוספת כל השירים
+      for (let i = 0; i < charts.length; i++) {
+        const chart = charts[i];
+
+        htmlContent += `
+          <div class="song-container">
+            <div class="song-title">${chart.songTitle || `Song #${i + 1}`}</div>
+            <div class="song-details">
+              <div class="detail-line"><strong>מספר:</strong> ${i + 1}</div>
+              <div class="detail-line"><strong>אמן:</strong> ${
+                chart.artist || "N/A"
+              }</div>
+              <div class="detail-line"><strong>מפתח:</strong> ${
+                chart.key_sig || "N/A"
+              }</div>
+              <div class="detail-line"><strong>BPM:</strong> ${
+                chart.bpm || "N/A"
+              }</div>
+              <div class="detail-line"><strong>משך:</strong> ${
+                chart.duration || "N/A"
+              }</div>
+            </div>
+        `;
+
+        // הוסף צ'ארט אם קיים
+        if (chart.chartUrl) {
+          let fullUrl = chart.chartUrl;
+          if (chart.chartUrl.startsWith("/uploads")) {
+            fullUrl = `${env.baseUrl}${chart.chartUrl}`;
+          }
+
+          try {
+            const response = await fetch(fullUrl);
+            if (response.ok) {
+              const buffer = await response.buffer();
+
+              // בדוק אם זה תמונה
+              if (chart.chartUrl.match(/\.(jpg|jpeg|png|gif)$/i)) {
+                // המרת תמונה ל-base64
+                const base64 = buffer.toString("base64");
+                const imageType = chart.chartUrl.match(/\.(jpg|jpeg)$/i)
+                  ? "jpeg"
+                  : "png";
+                htmlContent += `<img class="chart-image" src="data:image/${imageType};base64,${base64}" alt="Chart">`;
+              }
+            }
+          } catch (err) {
+            console.error(`שגיאה בהוספת צ'ארט ${chart.songTitle}:`, err);
+            htmlContent += `<div class="no-chart">לא ניתן להוריד את הצ'ארט</div>`;
+          }
+        } else {
+          htmlContent += `<div class="no-chart">אין צ'ארט לשיר זה</div>`;
+        }
+
+        htmlContent += `</div>`;
+      }
+
+      htmlContent += `
+        </body>
+        </html>
+      `;
+
+      // הפעלת Puppeteer כדי להמיר HTML ל-PDF
+      browser = await puppeteer.default.launch({
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
+
+      const page = await browser.newPage();
+      await page.setContent(htmlContent, { waitUntil: "networkidle0" });
+
+      const pdfBuffer = await page.pdf({
+        format: "A4",
+        margin: {
+          top: "20px",
+          bottom: "20px",
+          left: "20px",
+          right: "20px",
+        },
+      });
+
+      await browser.close();
+
+      // שלח את ה-PDF
+      res.contentType("application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        'attachment; filename="lineup-charts.pdf"'
+      );
+      res.send(pdfBuffer);
+    } catch (err) {
+      console.error("שגיאה ביצירת PDF:", err);
+      if (browser) {
+        await browser.close();
+      }
+      res.status(500).json({ message: "שגיאה ביצירת ה-PDF" });
+    }
+  }),
 };

@@ -104,7 +104,7 @@ const SongList = memo(function SongList({
                         : "cursor-grab active:cursor-grabbing"
                     }`}
                   >
-                    <div className="flex justify-between items-start gap-4">
+                    <div className="rounded-2xl p-4 flex justify-between items-center ">
                       <div className="flex items-start gap-4 flex-1">
                         {lineup?.is_owner && (
                           <GripVertical
@@ -116,30 +116,27 @@ const SongList = memo(function SongList({
                           <p className="font-semibold text-lg">
                             {index + 1}. {s.title}
                           </p>
-                          <p className="text-neutral-400 text-sm">{s.artist}</p>
                           <div className="flex flex-wrap gap-2 mt-2 text-xs">
                             <p className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
-                              BPM {s.bpm || "-"}
+                              {s.key_sig || ""}
                             </p>
                             <p className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
-                              {s.key_sig || "-"}
+                              BPM {s.bpm || ""}
                             </p>
                             <p className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
                               {s.duration_sec || "00:00"}
                             </p>
-                          </div>
-                          {s.notes && (
-                            <div className="mt-2">
+
+                            {s.notes && (
                               <span className="inline-block px-2 py-1 text-xs bg-brand-orange rounded-lg text-black font-semibold">
                                 {s.notes}
                               </span>
-                            </div>
-                          )}
-
+                            )}
+                          </div>
                           {/* הצגת הצ'ארטים הפרטיים של המשתמש */}
                           {privateCharts[s.song_id] &&
                             privateCharts[s.song_id].length > 0 && (
-                              <div className="mt-3 p-3 bg-neutral-800/50 rounded-xl border border-neutral-700">
+                              <div className="grid place-items-center mt-3 p-3 bg-neutral-800/50 rounded-xl border border-neutral-700">
                                 <div className="flex items-center gap-2 mb-2">
                                   <Music4Icon
                                     size={14}
@@ -358,7 +355,6 @@ const AddSongModal = memo(function AddSongModal({
             >
               <div>
                 <p className="font-semibold text-lg text-white">{s.title}</p>
-                <p className="text-neutral-400 text-sm">{s.artist}</p>
                 <div className="flex flex-wrap gap-2 mt-2 text-xs">
                   <p className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
                     BPM {s.bpm || "-"}
@@ -820,6 +816,104 @@ export default function LineupDetails() {
     [showToast]
   );
 
+  const handleDownloadAllCharts = useCallback(async () => {
+    try {
+      showToast("בטעינת צ'ארטים...", "info");
+
+      // אסוף את כל הצ'ארטים לכל שיר בסדר הלינאפ
+      const chartsToMerge = [];
+      for (let i = 0; i < songs.length; i++) {
+        const song = songs[i];
+        if (!song.song_id) continue;
+
+        // המרת duration לפורמט מתאים
+        let formattedDuration = "N/A";
+        if (song.duration) {
+          if (typeof song.duration === "number") {
+            const minutes = Math.floor(song.duration / 60);
+            const seconds = song.duration % 60;
+            formattedDuration = `${minutes}:${seconds
+              .toString()
+              .padStart(2, "0")}`;
+          } else if (typeof song.duration === "string") {
+            formattedDuration = song.duration;
+          }
+        }
+
+        try {
+          const { data } = await api.get(
+            `/songs/${song.song_id}/private-charts`
+          );
+          if (data.charts && data.charts.length > 0) {
+            // קח את הצ'ארט הראשון של השיר
+            chartsToMerge.push({
+              songTitle: song.title,
+              artist: song.artist,
+              key_sig: song.key_sig,
+              bpm: song.bpm,
+              duration: formattedDuration,
+              chartUrl: data.charts[0].file_path,
+              index: i + 1,
+            });
+          } else {
+            // הוסף שיר גם בלי צ'ארט
+            chartsToMerge.push({
+              songTitle: song.title,
+              artist: song.artist,
+              key_sig: song.key_sig,
+              bpm: song.bpm,
+              duration: formattedDuration,
+              chartUrl: null,
+              index: i + 1,
+            });
+          }
+        } catch (err) {
+          // גם אם אין צ'ארט, הוסף את פרטי השיר
+          console.log(`אין צ'ארט לשיר: ${song.title}`);
+          chartsToMerge.push({
+            songTitle: song.title,
+            artist: song.artist,
+            key_sig: song.key_sig,
+            bpm: song.bpm,
+            duration: formattedDuration,
+            chartUrl: null,
+            index: i + 1,
+          });
+        }
+      }
+
+      if (chartsToMerge.length === 0) {
+        showToast("אין צ'ארטים להורדה בליינאפ זה", "warning");
+        return;
+      }
+
+      // שליחת בקשה למערכת כדי למזג את הצ'ארטים
+      const { data: mergedPdf } = await api.post(
+        `/lineups/${id}/download-charts`,
+        { charts: chartsToMerge },
+        { responseType: "blob" }
+      );
+
+      // הורדת הקובץ המוזג
+      const url = window.URL.createObjectURL(new Blob([mergedPdf]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${lineup?.title || "lineup"}-charts.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      showToast("הצ'ארטים הורדו בהצלחה", "success");
+    } catch (err) {
+      console.error("שגיאה בהורדת הצ'ארטים:", err);
+      showToast(
+        err?.response?.data?.message || "שגיאה בהורדת הצ'ארטים",
+        "error"
+      );
+    }
+  }, [songs, id, lineup, showToast]);
+
   const handleDragEnd = useCallback(
     async (result: any) => {
       if (!lineup?.is_owner) return;
@@ -982,6 +1076,15 @@ export default function LineupDetails() {
                   className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-800"
                 >
                   <FileDown size={16} /> PDF
+                </button>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    handleDownloadAllCharts();
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-800"
+                >
+                  <FileDown size={16} /> הורד צ'ארטים
                 </button>
               </div>
             )}

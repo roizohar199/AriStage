@@ -208,7 +208,7 @@ export default function ArtistProfile() {
   const handleUploadChart = async (songId: number, file: File) => {
     try {
       const formData = new FormData();
-      formData.append("chart", file);
+      formData.append("pdf", file);
       await api.post(`/songs/${songId}/private-charts`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -247,10 +247,11 @@ export default function ArtistProfile() {
   };
 
   const safeKey = (k?: string) => k || "לא צוין";
-  const safeDuration = (sec?: number) => {
-    if (!sec) return "00:00";
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
+  const safeDuration = (sec?: number | string) => {
+    const numSec = typeof sec === "string" ? parseInt(sec, 10) : sec;
+    if (!numSec) return "00:00";
+    const m = Math.floor(numSec / 60);
+    const s = numSec % 60;
     return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
 
@@ -546,17 +547,17 @@ export default function ArtistProfile() {
                           <span className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
                             {safeDuration(s.duration_sec)}
                           </span>
-                        </div>
-                        {s.notes && (
-                          <span className="inline-block mt-2 px-2 py-1 text-xs bg-brand-orange rounded-lg text-black font-semibold">
-                            {s.notes}
-                          </span>
-                        )}
 
+                          {s.notes && (
+                            <span className="inline-block px-2 py-1 text-xs bg-brand-orange rounded-lg text-black font-semibold">
+                              {s.notes}
+                            </span>
+                          )}
+                        </div>
                         {/* Private charts */}
                         {privateCharts[s.id] &&
                           privateCharts[s.id].length > 0 && (
-                            <div className="mt-3 p-3 bg-neutral-800/50 rounded-xl border border-neutral-700">
+                            <div className="grid place-items-center mt-3 p-3 bg-neutral-800/50 rounded-xl border border-neutral-700">
                               <div className="flex items-center gap-2 mb-2">
                                 <FileText size={14} className="text-cyan-400" />
                                 <span className="text-xs font-semibold text-neutral-300">
@@ -610,7 +611,7 @@ export default function ArtistProfile() {
                       </div>
 
                       {/* Upload button */}
-                      <div className="flex gap-2 flex-row-reverse items-center">
+                      <div className="flex gap-3 flex-row-reverse items-center">
                         <input
                           type="file"
                           accept="application/pdf,image/jpeg,image/png,image/gif,image/jpg"
@@ -628,7 +629,7 @@ export default function ArtistProfile() {
                         />
                         <button
                           onClick={() => fileInputRefs.current[s.id]?.click()}
-                          className="bg-brand-orange hover:bg-brand-orangeLight text-black p-2 rounded-full transition-all"
+                          className="bg-blue-500 hover:bg-blue-600 p-2 rounded-full"
                           title="העלה צ'ארט"
                         >
                           <Upload size={16} />

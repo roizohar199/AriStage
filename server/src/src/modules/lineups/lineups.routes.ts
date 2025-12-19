@@ -23,4 +23,6 @@ router.get("/:id/share", lineupsController.shareStatus);
 router.post("/:id/share", lineupsController.generateShare);
 router.delete("/:id/share", lineupsController.disableShare);
 
+router.post("/:id/download-charts", lineupsController.downloadCharts);
+
 export const lineupsRouter = router;
