@@ -4,7 +4,7 @@
 
 /* 🔥 פונט קטן במובייל, רגיל במחשב */
 html {
-  font-size: 14px; /* מובייל קטן */
+  font-size: 16px; /* מובייל קטן */
 }
 
 @media (min-width: 1024px) {
@@ -42,7 +42,9 @@ button:disabled {
 :root {
   color-scheme: dark;
 }
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
 }
 
@@ -90,7 +92,6 @@ input:focus {
   box-shadow: none !important;
 }
 
-
 /* טקסט לבן בתוך אינפוט תאריך ושעה (כרום/אדג') */
 input[type="date"],
 input[type="time"] {
@@ -114,11 +115,15 @@ input[type="time"]::-webkit-datetime-edit-minute-field {
   color: #fff;
 }
 
-
-
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .animate-fade-in {
   animation: fadeIn 0.3s ease-in-out;

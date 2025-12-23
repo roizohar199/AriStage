@@ -594,11 +594,6 @@ export default function Home() {
           {/* אמנים משותפים - אמנים שהזמינו אותי */}
           <div className="border-t border-neutral-800"></div>
           <section>
-            <div className="flex items-center justify-center min-h-[48px]">
-              <h2 className="text-xl font-bold text-brand-orange text-center w-full">
-                אמנים משותפים
-              </h2>
-            </div>
             <p className="text-neutral-400 text-sm mb-4 text-center">
               אמנים שהזמינו אותי למאגר שלהם - אני יכול לצפות בליינאפים והשירים
               שלהם

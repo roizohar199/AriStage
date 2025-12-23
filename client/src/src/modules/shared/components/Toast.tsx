@@ -7,7 +7,11 @@ interface ToastProps {
   duration?: number;
 }
 
-export default function Toast({ message, type = "success", duration = 2300 }: ToastProps): JSX.Element {
+export default function Toast({
+  message,
+  type = "success",
+  duration = 2300,
+}: ToastProps): JSX.Element {
   const [visible, setVisible] = useState<boolean>(false);
   const isError = type === "error";
 
@@ -26,13 +30,13 @@ export default function Toast({ message, type = "success", duration = 2300 }: To
       className={`
         fixed left-1/2 -translate-x-1/2 z-50
         px-4 py-2
-        rounded-xl
-        backdrop-blur-xl border shadow-lg
+        rounded-2xl
+        backdrop-blur-xl shadow-lg
         flex items-center gap-2
         text-xs font-medium
         transition-all duration-500 ease-out
 
-        ${visible ? "top-6 opacity-100" : "top-[-60px] opacity-0"}
+        ${visible ? "top-6 opacity-100" : "top-[-10px] opacity-0"}
 
         ${
           isError
