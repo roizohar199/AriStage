@@ -22,13 +22,21 @@ import {
   Pencil,
   Search as SearchIcon,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import {
+  useNavigate,
+  Routes,
+  Route,
+  Navigate,
+  Outlet,
+  useLocation,
+} from "react-router-dom";
 import { AddNewSong, SongForm } from "../../shared/components/Addnewsong";
 import CreateLineup from "../../shared/components/Createlineup";
 import Search from "../../shared/components/Search";
 import Charts from "../../shared/components/Charts";
 import CardSong from "../../shared/components/cardsong";
 import BlockLineup from "../../shared/components/blocklineup";
+import LineupDetails from "../../lineups/pages/LineupDetails.tsx";
 import api from "@/modules/shared/lib/api.js";
 import { useConfirm } from "../../shared/hooks/useConfirm";
 import { useToast } from "../../shared/components/ToastProvider";
@@ -73,6 +81,21 @@ function PersonalStats({
 }
 
 export default function My(): JSX.Element {
+  return (
+    <Routes>
+      <Route path="/" element={<MyContent />}>
+        <Route index element={null} />
+        <Route path="lineups/:lineupId" element={<LineupDetails />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/my" replace />} />
+    </Routes>
+  );
+}
+
+function MyContent(): JSX.Element {
+  const location = useLocation();
+  const isLineupRoute = /^\/my\/lineups\/\d+/.test(location.pathname);
+
   // --- סטייטים כלליים ---
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -709,7 +732,10 @@ export default function My(): JSX.Element {
               ? "w-fit border-b-2 border-brand-orange overflow-hidden text-brand-orange font-bold"
               : "font-bold text-white"
           }`}
-          onClick={() => setSelectedTab("songs")}
+          onClick={() => {
+            navigate("/my");
+            setSelectedTab("songs");
+          }}
         >
           שירים
         </button>
@@ -719,9 +745,12 @@ export default function My(): JSX.Element {
               ? "w-fit border-b-2 border-brand-orange overflow-hidden text-brand-orange font-bold"
               : "font-bold text-white"
           }`}
-          onClick={() => setSelectedTab("lineups")}
+          onClick={() => {
+            navigate("/my");
+            setSelectedTab("lineups");
+          }}
         >
-          לינאפים
+          ליינאפים
         </button>
         <button
           className={`px-6 py-2  transition ${
@@ -729,14 +758,19 @@ export default function My(): JSX.Element {
               ? "w-fit border-b-2 border-brand-orange overflow-hidden text-brand-orange font-bold"
               : "font-bold text-white "
           }`}
-          onClick={() => setSelectedTab("shared")}
+          onClick={() => {
+            navigate("/my");
+            setSelectedTab("shared");
+          }}
         >
           משותפים
         </button>
       </div>
 
       {/* --- תוכן טאב השירים --- */}
-      {selectedTab === "songs" && (
+      {isLineupRoute ? (
+        <Outlet />
+      ) : selectedTab === "songs" ? (
         <>
           <div className="flex items-center gap-3 mb-3">
             {/* חיפוש */}
@@ -883,9 +917,7 @@ export default function My(): JSX.Element {
             </div>
           )}
         </>
-      )}
-      {/* --- תוכן טאב הלינאפים --- */}
-      {selectedTab === "lineups" && (
+      ) : selectedTab === "lineups" ? (
         <>
           <div className="flex items-center gap-3 mb-3">
             {/* חיפוש */}
@@ -930,7 +962,7 @@ export default function My(): JSX.Element {
                 key={l.id}
                 lineup={l}
                 index={i}
-                onOpen={() => navigate(`/lineup/${l.id}`)}
+                onOpen={() => navigate(`/my/lineups/${l.id}`)}
                 onEdit={() => openEditLineupModal(l)}
                 onDelete={() => removeLineup(l.id)}
               />
@@ -992,9 +1024,7 @@ export default function My(): JSX.Element {
             editing={isEditingLineup}
           />
         </>
-      )}
-      {/* --- תוכן טאב משותפים --- */}
-      {selectedTab === "shared" && (
+      ) : selectedTab === "shared" ? (
         <div className="space-y-3">
           {/* הזמנות ממתינות */}
 
@@ -1104,7 +1134,7 @@ export default function My(): JSX.Element {
                           )}
                         </div>
                         {/* כפתור ביטול שיתוף */}
-                        <div className="flex-shrink-0">
+                        <div className="flex m-4 gap-6 flex-row-reverse items-center">
                           <button
                             onClick={() => {
                               setConfirmModal({
@@ -1152,7 +1182,7 @@ export default function My(): JSX.Element {
             </div>
           </div>
         </div>
-      )}
+      ) : null}
       {/* Confirm Modal for cancel share */}
       {confirmModal.show && (
         <ConfirmModal

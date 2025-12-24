@@ -13,7 +13,7 @@ interface SearchProps {
 const PLACEHOLDERS: Record<SearchVariant, string> = {
   song: "חפש לפי שם שיר",
   artist: "חפש לפי שם אמן",
-  lineup: "חפש לפי שם לינאפ",
+  lineup: "חפש לפי שם ליינאפ",
   full: "חפש",
 };
 

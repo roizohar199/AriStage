@@ -70,12 +70,15 @@ const CardSong: React.FC<CardSongProps> = ({
             >
               <Trash2 size={20} />
             </button>
-            <button
-              onClick={() => onEdit(song)}
-              className="w-6 h-6 text-white hover:text-brand-orange"
-            >
-              <Edit2 size={20} />
-            </button>
+
+            {onEdit && (
+              <button
+                onClick={() => onEdit(song)}
+                className="w-6 h-6 text-white hover:text-brand-orange"
+              >
+                <Edit2 size={20} />
+              </button>
+            )}
           </>
         )}
       </div>

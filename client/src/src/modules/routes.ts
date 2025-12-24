@@ -37,14 +37,13 @@ export const publicRoutes: PublicRoute[] = [
 
 export const protectedRoutes: ProtectedRoute[] = [
   { path: "/home", component: Home },
-  { path: "/my", component: My },
+  { path: "/my/*", component: My },
   { path: "/artist2", component: Artists2 },
   { path: "/artist2/:id", component: ArtistProfile2 },
   { path: "/artists", component: Artists },
   { path: "/artist/:id", component: ArtistProfile },
   { path: "/songs", component: Songs },
   { path: "/lineup", component: Lineup },
-  { path: "/lineup/:id", component: LineupDetails },
   { path: "/settings", component: Settings },
   { path: "/users", component: Users, roles: ["admin", "manager"] },
 ];
