@@ -9,6 +9,9 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 
 const fallbackOrigins = ["http://localhost:5173"];
+// Dev-only: allow local-network client access alongside localhost
+const devNetworkOrigins =
+  process.env.NODE_ENV === "development" ? ["http://10.0.0.99:5173"] : [];
 const extraOrigins = (process.env.CORS_EXTRA_ORIGINS || "")
   .split(",")
   .map((origin) => origin.trim())
@@ -18,6 +21,7 @@ const allowedOrigins = [
   ...fallbackOrigins,
   process.env.CLIENT_URL,
   ...extraOrigins,
+  ...devNetworkOrigins, // Dev-only extension for local + network development
 ]
   .filter(Boolean)
   .map((origin) => origin.replace(/\/$/, ""));

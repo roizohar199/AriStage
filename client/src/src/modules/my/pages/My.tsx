@@ -38,10 +38,10 @@ import CardSong from "../../shared/components/cardsong";
 import BlockLineup from "../../shared/components/blocklineup";
 import LineupDetails from "../../lineups/pages/LineupDetails.tsx";
 import api from "@/modules/shared/lib/api.js";
-import { useConfirm } from "../../shared/hooks/useConfirm";
+import DesignActionButton from "../../shared/components/DesignActionButton";
+import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "../../shared/components/ToastProvider";
 
-import ConfirmModal from "../../shared/components/ConfirmModal";
 import { io } from "socket.io-client";
 
 function PersonalStats({
@@ -114,12 +114,6 @@ function MyContent(): JSX.Element {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [sharedSearch, setSharedSearch] = useState("");
-  const [confirmModal, setConfirmModal] = useState({
-    show: false,
-    title: "",
-    message: "",
-    onConfirm: null,
-  });
   // --- טעינת אמנים שהזמנתי ---
   const loadMyInvitedArtists = useCallback(async () => {
     try {
@@ -164,7 +158,7 @@ function MyContent(): JSX.Element {
       setInviteLoading(false);
     }
   };
-  const { confirm, ConfirmModalComponent } = useConfirm();
+  const confirm = useConfirm();
   const { showToast } = useToast();
   interface Chart {
     id: number;
@@ -481,7 +475,10 @@ function MyContent(): JSX.Element {
     }
   };
   const remove = async (songId: number) => {
-    const ok = await confirm("מחיקת שיר", "בטוח שאתה רוצה למחוק את השיר?");
+    const ok = await confirm({
+      title: "מחיקת שיר",
+      message: "בטוח שאתה רוצה למחוק את השיר?",
+    });
     if (!ok) return;
     await api.delete(`/songs/${songId}`);
     load();
@@ -678,7 +675,10 @@ function MyContent(): JSX.Element {
   };
 
   const removeLineup = async (id: number) => {
-    const ok = await confirm("מחיקה", "בטוח למחוק את הליינאפ?");
+    const ok = await confirm({
+      title: "מחיקה",
+      message: "בטוח למחוק את הליינאפ?",
+    });
     if (!ok) return;
 
     try {
@@ -703,8 +703,6 @@ function MyContent(): JSX.Element {
       <header className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">אישי</h1>
       </header>
-
-      <ConfirmModalComponent />
 
       {loading && (
         <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-6 text-center text-neutral-400">
@@ -780,7 +778,7 @@ function MyContent(): JSX.Element {
               onChange={(e) => setSearch(e.target.value)}
             />
             {/* הוסף שיר */}
-            <button
+            <DesignActionButton
               onClick={() => {
                 setShowModal(true);
                 setEditingId(null);
@@ -793,20 +791,10 @@ function MyContent(): JSX.Element {
                   notes: "",
                 });
               }}
-              className="
-  w-auto
-  bg-brand-orange
-  text-black
-  font-semibold
-  rounded-2xl
-  gap-1
-  flex flex-row-reverse items-center justify-center
-  px-4 py-2
-"
             >
               <Plus size={18} />
               הוסף שיר
-            </button>
+            </DesignActionButton>
           </div>
 
           {/* רשימת שירים */}
@@ -927,7 +915,7 @@ function MyContent(): JSX.Element {
               onChange={(e) => setLineupSearch(e.target.value)}
             />
             {/* צור לינאפ חדש */}
-            <button
+            <DesignActionButton
               onClick={() => {
                 setShowLineupModal(true);
                 setIsEditingLineup(false);
@@ -940,20 +928,10 @@ function MyContent(): JSX.Element {
                   description: "",
                 });
               }}
-              className="
-  w-auto
-  bg-brand-orange
-  text-black
-  font-semibold
-  rounded-2xl
-  gap-1
-  flex flex-row-reverse items-center justify-center
-  px-4 py-2
-"
             >
               <Plus size={18} />
               צור לינאפ חדש
-            </button>
+            </DesignActionButton>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1038,24 +1016,14 @@ function MyContent(): JSX.Element {
                 onChange={(e) => setSharedSearch(e.target.value)}
               />
               {/* הזמן אמן */}
-              <button
+              <DesignActionButton
                 onClick={() => setShowInviteModal(true)}
-                className="
-  w-auto
-  bg-brand-orange
-  text-black
-  font-semibold
-  rounded-2xl
-  gap-1
-  flex flex-row-reverse items-center justify-center
-  px-4 py-2
-"
                 title="הזמן אמן למאגר שלך"
                 style={{ minWidth: 0 }}
               >
                 <UserPlus size={18} />
                 הזמן אמן
-              </button>
+              </DesignActionButton>
             </div>
             <div>
               {myInvitedArtistsLoading ? (
@@ -1136,37 +1104,30 @@ function MyContent(): JSX.Element {
                         {/* כפתור ביטול שיתוף */}
                         <div className="flex m-4 gap-6 flex-row-reverse items-center">
                           <button
-                            onClick={() => {
-                              setConfirmModal({
-                                show: true,
+                            onClick={async () => {
+                              const ok = await confirm({
                                 title: "ביטול שיתוף",
                                 message: `בטוח שאתה רוצה לבטל את השיתוף עם ${
                                   artist.full_name || "האמן"
                                 }? האמן לא יוכל עוד לצפות בליינאפים והשירים שלך.`,
-                                onConfirm: async () => {
-                                  setInviteLoading(true);
-                                  try {
-                                    await api.post("/users/uninvite-artist", {
-                                      artist_id: artist.id,
-                                    });
-                                    showToast("השיתוף בוטל בהצלחה", "success");
-                                    loadMyInvitedArtists();
-                                  } catch (err) {
-                                    const errorMsg =
-                                      err?.response?.data?.message ||
-                                      "שגיאה בביטול השיתוף";
-                                    showToast(errorMsg, "error");
-                                  } finally {
-                                    setInviteLoading(false);
-                                    setConfirmModal({
-                                      show: false,
-                                      title: "",
-                                      message: "",
-                                      onConfirm: null,
-                                    });
-                                  }
-                                },
                               });
+                              if (!ok) return;
+
+                              setInviteLoading(true);
+                              try {
+                                await api.post("/users/uninvite-artist", {
+                                  artist_id: artist.id,
+                                });
+                                showToast("השיתוף בוטל בהצלחה", "success");
+                                loadMyInvitedArtists();
+                              } catch (err) {
+                                const errorMsg =
+                                  err?.response?.data?.message ||
+                                  "שגיאה בביטול השיתוף";
+                                showToast(errorMsg, "error");
+                              } finally {
+                                setInviteLoading(false);
+                              }
                             }}
                             disabled={inviteLoading}
                             className="w-6 h-6 text-red-500 hover:text-red-400"
@@ -1183,23 +1144,6 @@ function MyContent(): JSX.Element {
           </div>
         </div>
       ) : null}
-      {/* Confirm Modal for cancel share */}
-      {confirmModal.show && (
-        <ConfirmModal
-          show={confirmModal.show}
-          title={confirmModal.title}
-          message={confirmModal.message}
-          onConfirm={confirmModal.onConfirm}
-          onCancel={() =>
-            setConfirmModal({
-              show: false,
-              title: "",
-              message: "",
-              onConfirm: null,
-            })
-          }
-        />
-      )}
 
       {/* מודאל הזמנת אמן */}
       {showInviteModal && (

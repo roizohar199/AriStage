@@ -2,6 +2,7 @@ import React, { useState, useCallback } from "react";
 import { Trash2, Upload, FileDown, Eye, FileText } from "lucide-react";
 import api from "@/modules/shared/lib/api.js";
 import { useToast } from "./ToastProvider";
+import { ConfirmOptions } from "../confirm/types";
 
 interface Chart {
   id: number;
@@ -36,7 +37,7 @@ interface ChartsProps {
   >;
   viewingChart: string | null;
   setViewingChart: React.Dispatch<React.SetStateAction<string | null>>;
-  onConfirm: (title: string, message: string) => Promise<boolean>;
+  onConfirm: (options: ConfirmOptions) => Promise<boolean>;
 }
 
 export default function Charts({
@@ -52,10 +53,10 @@ export default function Charts({
 
   const handleDeleteChart = useCallback(
     async (chartId: number) => {
-      const ok = await onConfirm(
-        "מחיקת צ'ארט",
-        "בטוח שאתה רוצה למחוק את הצ'ארט?"
-      );
+      const ok = await onConfirm({
+        title: "מחיקת צ'ארט",
+        message: "בטוח שאתה רוצה למחוק את הצ'ארט?",
+      });
       if (!ok) return;
       try {
         await api.delete(`/songs/${song.id}/private-charts/${chartId}`);

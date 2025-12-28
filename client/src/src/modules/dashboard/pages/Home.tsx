@@ -15,8 +15,9 @@ import {
 import { useNavigate } from "react-router-dom";
 import api from "@/modules/shared/lib/api.js";
 import { useToast } from "@/modules/shared/components/ToastProvider.jsx";
+import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
+import BaseModal from "@/modules/shared/components/BaseModal.tsx";
 import { io } from "socket.io-client";
-import ConfirmModal from "@/modules/shared/components/ConfirmModal";
 
 // ======================================================
 // 🧩 קומפוננטה: DashboardStats
@@ -74,6 +75,7 @@ function DashboardStats({ stats, role }) {
 export default function Home() {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const confirm = useConfirm();
   const [stats, setStats] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -90,12 +92,6 @@ export default function Home() {
   const [pendingInvitations, setPendingInvitations] = useState([]);
   const [showPendingModal, setShowPendingModal] = useState(false);
   const [processingInvitation, setProcessingInvitation] = useState(false);
-  const [confirmModal, setConfirmModal] = useState({
-    show: false,
-    title: "",
-    message: "",
-    onConfirm: null,
-  });
 
   // Socket.IO connection
   const socket = useMemo(() => {
@@ -347,78 +343,48 @@ export default function Home() {
       ? "בטוח שאתה רוצה לבטל את השתתפותך במאגר הזה? לא תוכל עוד לצפות בליינאפים והשירים של המארח."
       : "בטוח שאתה רוצה לבטל את כל השתתפויותיך במאגרים? לא תוכל עוד לצפות בליינאפים והשירים של המארחים.";
 
-    setConfirmModal({
-      show: true,
+    const ok = await confirm({
       title: "ביטול השתתפות",
-      message: message,
-      onConfirm: async () => {
-        try {
-          setLeaving(true);
-          await api.post("/users/leave-collection", hostId ? { hostId } : {});
-          showToast(
-            hostId
-              ? "השתתפותך במאגר בוטלה בהצלחה"
-              : "כל השתתפויותיך בוטלו בהצלחה",
-            "success"
-          );
-          loadArtists(); // רענון רשימת האמנים
-          setConfirmModal({
-            show: false,
-            title: "",
-            message: "",
-            onConfirm: null,
-          });
-        } catch (err) {
-          console.error("❌ שגיאה בביטול השתתפות:", err);
-          const errorMsg =
-            err?.response?.data?.message || "שגיאה בביטול ההשתתפות";
-          showToast(errorMsg, "error");
-          setConfirmModal({
-            show: false,
-            title: "",
-            message: "",
-            onConfirm: null,
-          });
-        } finally {
-          setLeaving(false);
-        }
-      },
+      message,
     });
+    if (!ok) return;
+
+    try {
+      setLeaving(true);
+      await api.post("/users/leave-collection", hostId ? { hostId } : {});
+      showToast(
+        hostId ? "השתתפותך במאגר בוטלה בהצלחה" : "כל השתתפויותיך בוטלו בהצלחה",
+        "success"
+      );
+      loadArtists(); // רענון רשימת האמנים
+    } catch (err) {
+      console.error("❌ שגיאה בביטול השתתפות:", err);
+      const errorMsg = err?.response?.data?.message || "שגיאה בביטול ההשתתפות";
+      showToast(errorMsg, "error");
+    } finally {
+      setLeaving(false);
+    }
   };
 
   const uninviteArtist = async (artistId, artistName) => {
-    setConfirmModal({
-      show: true,
+    const ok = await confirm({
       title: "ביטול שיתוף",
       message: `בטוח שאתה רוצה לבטל את השיתוף עם ${artistName}? האמן לא יוכל עוד לצפות בליינאפים והשירים שלך.`,
-      onConfirm: async () => {
-        try {
-          setInviteLoading(true);
-          await api.post("/users/uninvite-artist", { artist_id: artistId });
-          showToast("השיתוף בוטל בהצלחה", "success");
-          loadMyInvitedArtists(); // רענון רשימת האמנים
-          setConfirmModal({
-            show: false,
-            title: "",
-            message: "",
-            onConfirm: null,
-          });
-        } catch (err) {
-          console.error("❌ שגיאה בביטול שיתוף:", err);
-          const errorMsg =
-            err?.response?.data?.message || "שגיאה בביטול השיתוף";
-          showToast(errorMsg, "error");
-          setConfirmModal({
-            show: false,
-            title: "",
-            message: "",
-            onConfirm: null,
-          });
-        } finally {
-          setInviteLoading(false);
-        }
-      },
     });
+    if (!ok) return;
+
+    try {
+      setInviteLoading(true);
+      await api.post("/users/uninvite-artist", { artist_id: artistId });
+      showToast("השיתוף בוטל בהצלחה", "success");
+      loadMyInvitedArtists(); // רענון רשימת האמנים
+    } catch (err) {
+      console.error("❌ שגיאה בביטול שיתוף:", err);
+      const errorMsg = err?.response?.data?.message || "שגיאה בביטול השיתוף";
+      showToast(errorMsg, "error");
+    } finally {
+      setInviteLoading(false);
+    }
   };
 
   const sendInvitation = async (e) => {
@@ -451,80 +417,52 @@ export default function Home() {
   };
 
   const handleAcceptInvitationInModal = async (hostId) => {
-    setConfirmModal({
-      show: true,
+    const ok = await confirm({
       title: "אישור הזמנה",
       message: "בטוח שאתה רוצה לאשר את ההזמנה?",
-      onConfirm: async () => {
-        try {
-          setProcessingInvitation(true);
-          await api.post("/users/accept-invitation", { hostId });
-          showToast("הזמנה אושרה בהצלחה", "success");
-          setPendingInvitations((prevInvitations) =>
-            prevInvitations.filter((inv) => inv.id !== hostId)
-          );
-          window.dispatchEvent(new CustomEvent("pending-invitations-updated"));
-          loadArtists();
-          setConfirmModal({
-            show: false,
-            title: "",
-            message: "",
-            onConfirm: null,
-          });
-        } catch (err) {
-          console.error("❌ שגיאה באישור הזמנה:", err);
-          const errorMsg =
-            err?.response?.data?.message || "שגיאה באישור ההזמנה";
-          showToast(errorMsg, "error");
-          setConfirmModal({
-            show: false,
-            title: "",
-            message: "",
-            onConfirm: null,
-          });
-        } finally {
-          setProcessingInvitation(false);
-        }
-      },
     });
+    if (!ok) return;
+
+    try {
+      setProcessingInvitation(true);
+      await api.post("/users/accept-invitation", { hostId });
+      showToast("הזמנה אושרה בהצלחה", "success");
+      setPendingInvitations((prevInvitations) =>
+        prevInvitations.filter((inv) => inv.id !== hostId)
+      );
+      window.dispatchEvent(new CustomEvent("pending-invitations-updated"));
+      loadArtists();
+    } catch (err) {
+      console.error("❌ שגיאה באישור הזמנה:", err);
+      const errorMsg = err?.response?.data?.message || "שגיאה באישור ההזמנה";
+      showToast(errorMsg, "error");
+    } finally {
+      setProcessingInvitation(false);
+    }
   };
 
   const handleRejectInvitationInModal = async (hostId) => {
-    setConfirmModal({
-      show: true,
+    const ok = await confirm({
       title: "דחיית הזמנה",
       message: "בטוח שאתה רוצה לדחות את ההזמנה?",
-      onConfirm: async () => {
-        try {
-          setProcessingInvitation(true);
-          await api.post("/users/reject-invitation", { hostId });
-          showToast("הזמנה נדחתה", "success");
-          setPendingInvitations((prevInvitations) =>
-            prevInvitations.filter((inv) => inv.id !== hostId)
-          );
-          window.dispatchEvent(new CustomEvent("pending-invitations-updated"));
-          setConfirmModal({
-            show: false,
-            title: "",
-            message: "",
-            onConfirm: null,
-          });
-        } catch (err) {
-          console.error("❌ שגיאה בדחיית הזמנה:", err);
-          const errorMsg =
-            err?.response?.data?.message || "שגיאה בדחיית ההזמנה";
-          showToast(errorMsg, "error");
-          setConfirmModal({
-            show: false,
-            title: "",
-            message: "",
-            onConfirm: null,
-          });
-        } finally {
-          setProcessingInvitation(false);
-        }
-      },
     });
+    if (!ok) return;
+
+    try {
+      setProcessingInvitation(true);
+      await api.post("/users/reject-invitation", { hostId });
+      showToast("הזמנה נדחתה", "success");
+      setPendingInvitations((prevInvitations) =>
+        prevInvitations.filter((inv) => inv.id !== hostId)
+      );
+      window.dispatchEvent(new CustomEvent("pending-invitations-updated"));
+    } catch (err) {
+      console.error("❌ שגיאה בדחיית הזמנה:", err);
+      const errorMsg = err?.response?.data?.message || "שגיאה בדחיית ההזמנה";
+      showToast(errorMsg, "error");
+    } finally {
+      setProcessingInvitation(false);
+    }
   };
 
   return (
@@ -816,66 +754,61 @@ export default function Home() {
         </p>
       </div>
       {/* מודאל הזמנת אמן */}
-      {showInviteModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-          <div className="bg-neutral-900 rounded-2xl w-full max-w-md p-6 relative shadow-xl border border-neutral-800">
-            <button
-              onClick={() => {
-                setShowInviteModal(false);
-                setInviteEmail("");
-              }}
-              className="absolute top-3 left-3 text-neutral-400 hover:text-white"
-            >
-              <X size={22} />
-            </button>
+      {/* Modal הזמנת אמן */}
+      <BaseModal
+        open={showInviteModal}
+        onClose={() => {
+          setShowInviteModal(false);
+          setInviteEmail("");
+        }}
+        title="הזמן אמן למאגר שלך"
+        maxWidth="max-w-md"
+      >
+        <h2 className="text-xl font-bold mb-4 text-center">
+          הזמן אמן למאגר שלך
+        </h2>
 
-            <h2 className="text-xl font-bold mb-4 text-center">
-              הזמן אמן למאגר שלך
-            </h2>
+        <p className="text-neutral-400 text-sm mb-4 text-center">
+          הזן את כתובת האימייל של האמן. הוא יקבל מייל עם קישור להצטרפות למאגר
+          שלך.
+        </p>
 
-            <p className="text-neutral-400 text-sm mb-4 text-center">
-              הזן את כתובת האימייל של האמן. הוא יקבל מייל עם קישור להצטרפות
-              למאגר שלך.
-            </p>
-
-            <form onSubmit={sendInvitation} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-2">
-                  כתובת אימייל
-                </label>
-                <input
-                  type="email"
-                  placeholder="artist@example.com"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  className="w-full rounded-xl bg-neutral-800 border border-neutral-700 p-3 text-sm placeholder-neutral-500 focus:border-brand-orange focus:outline-none"
-                  dir="ltr"
-                  required
-                  disabled={inviteLoading}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={inviteLoading}
-                className="w-full bg-green-500 hover:bg-green-600 disabled:bg-green-700 disabled:cursor-not-allowed text-white font-semibold px-4 py-3 rounded-lg flex items-center justify-center gap-2"
-              >
-                {inviteLoading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    שולח...
-                  </>
-                ) : (
-                  <>
-                    <UserPlus size={18} />
-                    שלח הזמנה
-                  </>
-                )}
-              </button>
-            </form>
+        <form onSubmit={sendInvitation} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-neutral-300 mb-2">
+              כתובת אימייל
+            </label>
+            <input
+              type="email"
+              placeholder="artist@example.com"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              className="w-full rounded-xl bg-neutral-800 border border-neutral-700 p-3 text-sm placeholder-neutral-500 focus:border-brand-orange focus:outline-none"
+              dir="ltr"
+              required
+              disabled={inviteLoading}
+            />
           </div>
-        </div>
-      )}
+
+          <button
+            type="submit"
+            disabled={inviteLoading}
+            className="w-full bg-green-500 hover:bg-green-600 disabled:bg-green-700 disabled:cursor-not-allowed text-white font-semibold px-4 py-3 rounded-lg flex items-center justify-center gap-2"
+          >
+            {inviteLoading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                שולח...
+              </>
+            ) : (
+              <>
+                <UserPlus size={18} />
+                שלח הזמנה
+              </>
+            )}
+          </button>
+        </form>
+      </BaseModal>
 
       {/* Modal הזמנות ממתינות */}
       {showPendingModal && (
@@ -979,22 +912,6 @@ export default function Home() {
           </div>
         </div>
       )}
-
-      {/* ConfirmModal */}
-      <ConfirmModal
-        show={confirmModal.show}
-        title={confirmModal.title}
-        message={confirmModal.message}
-        onConfirm={confirmModal.onConfirm || (() => {})}
-        onCancel={() =>
-          setConfirmModal({
-            show: false,
-            title: "",
-            message: "",
-            onConfirm: null,
-          })
-        }
-      />
     </div>
   );
 }

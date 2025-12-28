@@ -11,9 +11,9 @@ import LineupDetails from "./lineups/pages/LineupDetails.tsx";
 import Users from "./users/pages/Users.tsx";
 import Settings from "./settings/pages/Settings.tsx";
 import Artists from "./artists/pages/Artists.tsx";
-import Artists2 from "./artists/pages/Artists2.tsx";
+import MyArtist from "./artists/pages/MyArtist.tsx";
 import ArtistProfile from "./artists/pages/ArtistProfile.tsx";
-import ArtistProfile2 from "./artists/pages/ArtistProfile2.tsx";
+import ProfileArtist from "./artists/pages/ProfileArtist.tsx";
 import My from "./my/pages/My.tsx";
 
 interface PublicRoute {
@@ -38,8 +38,8 @@ export const publicRoutes: PublicRoute[] = [
 export const protectedRoutes: ProtectedRoute[] = [
   { path: "/home", component: Home },
   { path: "/my/*", component: My },
-  { path: "/artist2", component: Artists2 },
-  { path: "/artist2/:id", component: ArtistProfile2 },
+  { path: "/MyArtist", component: MyArtist },
+  { path: "/MyArtist/:id", component: ProfileArtist },
   { path: "/artists", component: Artists },
   { path: "/artist/:id", component: ArtistProfile },
   { path: "/songs", component: Songs },

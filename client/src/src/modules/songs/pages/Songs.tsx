@@ -14,12 +14,12 @@ import {
   FileText,
 } from "lucide-react";
 import api from "../../shared/lib/api";
-import { useConfirm } from "../../shared/hooks/useConfirm";
+import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "../../shared/components/ToastProvider";
 import { io } from "socket.io-client";
 
 export default function Songs() {
-  const { confirm, ConfirmModalComponent } = useConfirm();
+  const confirm = useConfirm();
   const { showToast } = useToast();
 
   // סטייט לצ'ארטים פרטיים לכל שיר
@@ -67,7 +67,10 @@ export default function Songs() {
   const [isHost, setIsHost] = useState(false);
 
   const handleDeletePrivateChart = async (songId: number, chartId: number) => {
-    const ok = await confirm("מחיקת צ'ארט", "בטוח שאתה רוצה למחוק את הצ'ארט?");
+    const ok = await confirm({
+      title: "מחיקת צ'ארט",
+      message: "בטוח שאתה רוצה למחוק את הצ'ארט?",
+    });
     if (!ok) return;
     try {
       await api.delete(`/songs/${songId}/private-charts/${chartId}`);
@@ -443,7 +446,10 @@ export default function Songs() {
 
   // מחיקה — עכשיו עם confirm מותאם!!
   const remove = async (songId: number) => {
-    const ok = await confirm("מחיקת שיר", "בטוח שאתה רוצה למחוק את השיר?");
+    const ok = await confirm({
+      title: "מחיקת שיר",
+      message: "בטוח שאתה רוצה למחוק את השיר?",
+    });
     if (!ok) return;
 
     await api.delete(`/songs/${songId}`);
@@ -486,9 +492,6 @@ export default function Songs() {
 
   return (
     <div dir="rtl" className="min-h-screen text-white p-6">
-      {/* 🔥 מודל אישור גלובלי */}
-      <ConfirmModalComponent />
-
       {/* כותרת */}
       <header className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">מאגר השירים</h1>

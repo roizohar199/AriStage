@@ -19,6 +19,31 @@ export function createApp(): Application {
   app.use(
     helmet({
       crossOriginResourcePolicy: false,
+      contentSecurityPolicy: {
+        directives: {
+          ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+          // Dev-only: extend CSP to support local + network development
+          "frame-ancestors": [
+            "'self'",
+            "http://localhost:5173",
+            ...(env.nodeEnv === "development" ? ["http://10.0.0.99:5173"] : []),
+          ],
+          ...(env.nodeEnv === "development"
+            ? {
+                // Dev-only: allow API and WS connections from local + network
+                "connect-src": [
+                  ...(helmet.contentSecurityPolicy.getDefaultDirectives()[
+                    "connect-src"
+                  ] || ["'self'"]),
+                  "http://localhost:5000",
+                  "http://10.0.0.99:5000",
+                  "ws://localhost:5000",
+                  "ws://10.0.0.99:5000",
+                ],
+              }
+            : {}),
+        },
+      },
     })
   );
 

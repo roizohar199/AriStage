@@ -2,6 +2,7 @@ import React from "react";
 import Footer from "@/modules/shared/components/Footer.tsx";
 import Header from "@/modules/shared/components/Header.tsx";
 import BottomNav from "@/modules/shared/components/BottomNav.tsx";
+import { useCurrentUser } from "@/modules/shared/hooks/useCurrentUser.ts";
 
 interface User {
   id: number;
@@ -26,6 +27,9 @@ export default function AppLayout({
   hideNav,
   children,
 }: AppLayoutProps): JSX.Element {
+  const { user } = useCurrentUser();
+  const isAuthenticated = !!user?.id;
+
   return (
     <div className="min-h-screen bg-neutral-950 text-white flex flex-col lg:flex-row">
       {/* 🟧 Impersonation banner */}
@@ -56,7 +60,7 @@ export default function AppLayout({
       {/* MAIN LAYOUT - Flex column for header, content, footer */}
       <div className="flex-1 flex flex-col">
         {/* Header - Fixed top */}
-        <Header />
+        {isAuthenticated && <Header />}
 
         {/* Main content - Scrollable; offset for header/footer */}
         <main className="flex-1 overflow-y-auto bg-neutral-900 pt-16 pb-20 md:pb-0">

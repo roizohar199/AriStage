@@ -17,11 +17,11 @@ import {
   X,
 } from "lucide-react";
 import api from "@/modules/shared/lib/api.js";
-import { useConfirm } from "@/modules/shared/hooks/useConfirm.jsx";
+import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "@/modules/shared/components/ToastProvider.jsx";
 
 export default function ArtistProfile() {
-  const { confirm, ConfirmModalComponent } = useConfirm();
+  const confirm = useConfirm();
   const { showToast } = useToast();
   const { id } = useParams();
   const navigate = useNavigate();
@@ -232,7 +232,10 @@ export default function ArtistProfile() {
   };
 
   const handleDeletePrivateChart = async (songId: number, chartId: number) => {
-    const ok = await confirm("מחיקת צ'ארט", "בטוח שאתה רוצה למחוק את הצ'ארט?");
+    const ok = await confirm({
+      title: "מחיקת צ'ארט",
+      message: "בטוח שאתה רוצה למחוק את הצ'ארט?",
+    });
     if (!ok) return;
     try {
       await api.delete(`/songs/${songId}/private-charts/${chartId}`);
@@ -440,8 +443,6 @@ export default function ArtistProfile() {
             </div>
           </div>
         )}
-
-        <ConfirmModalComponent />
 
         {/* ליינאפים */}
         {activeTab === "lineups" && (

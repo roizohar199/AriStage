@@ -29,11 +29,12 @@ import SearchInput from "../../shared/components/Search";
 import api from "@/modules/shared/lib/api.js";
 import { useParams, useNavigate } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { useConfirm } from "@/modules/shared/hooks/useConfirm.jsx";
+import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "@/modules/shared/components/ToastProvider.jsx";
 import { io } from "socket.io-client";
 import CardSong from "../../shared/components/cardsong";
 import Charts from "../../shared/components/Charts";
+import DesignActionButton from "../../shared/components/DesignActionButton";
 
 // --- Helper functions ---
 const parseDuration = (d: string | number | undefined) => {
@@ -305,7 +306,7 @@ const AddSongModal = memo(function AddSongModal({
 
 // --- Main Component ---
 export default function LineupDetails() {
-  const { confirm, ConfirmModalComponent } = useConfirm();
+  const confirm = useConfirm();
   const { showToast } = useToast();
   const { lineupId } = useParams<{ lineupId: string }>();
   const navigate = useNavigate();
@@ -731,7 +732,10 @@ export default function LineupDetails() {
   );
 
   const generateShareLink = useCallback(async () => {
-    const ok = await confirm("שיתוף ליינאפ", "האם ליצור קישור?");
+    const ok = await confirm({
+      title: "שיתוף ליינאפ",
+      message: "האם ליצור קישור?",
+    });
     if (!ok) return;
     try {
       setLoadingShare(true);
@@ -746,7 +750,10 @@ export default function LineupDetails() {
   }, [lineupId, confirm, showToast]);
 
   const revokeShareLink = useCallback(async () => {
-    const ok = await confirm("ביטול שיתוף", "לבטל את השיתוף?");
+    const ok = await confirm({
+      title: "ביטול שיתוף",
+      message: "לבטל את השיתוף?",
+    });
     if (!ok) return;
     try {
       await api.delete(`/lineups/${lineupId}/share`);
@@ -813,7 +820,6 @@ export default function LineupDetails() {
 
   return (
     <div dir="rtl" className="text-white relative">
-      <ConfirmModalComponent />
       {/* HEADER */}
 
       <header className="flex items-center gap-3 mb-3">
@@ -828,27 +834,17 @@ export default function LineupDetails() {
           />
         </div>
         {lineup?.is_owner && (
-          <button
+          <DesignActionButton
             onClick={() => {
               setShowModal(true);
               setSearchModal("");
               setModalActiveTab("my");
               setSelectedArtistId(null);
             }}
-            className="
-  w-auto
-  bg-brand-orange
-  text-black
-  font-semibold
-  rounded-2xl
-  gap-1
-  flex flex-row-reverse items-center justify-center
-  px-4 py-2
-"
           >
             <Plus size={25} />
             הוסף שיר
-          </button>
+          </DesignActionButton>
         )}
       </header>
 

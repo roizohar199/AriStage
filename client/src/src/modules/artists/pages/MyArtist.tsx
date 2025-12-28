@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function Artists2(): JSX.Element {
+export default function MyArtist(): JSX.Element {
   return (
     <div className="min-h-[50vh] flex items-center justify-center text-center text-neutral-300">
       <div>

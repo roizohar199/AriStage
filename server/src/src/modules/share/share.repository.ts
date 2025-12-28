@@ -24,7 +24,8 @@ export async function listSharedSongs(lineupId) {
         s.artist,
         s.bpm,
         s.key_sig,
-        s.duration_sec
+        s.duration_sec,
+        s.notes
       FROM lineup_songs ls
       JOIN songs s ON s.id = ls.song_id
       WHERE ls.lineup_id = ?
@@ -33,4 +34,3 @@ export async function listSharedSongs(lineupId) {
   );
   return rows;
 }
-

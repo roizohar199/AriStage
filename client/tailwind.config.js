@@ -5,8 +5,8 @@ export default {
     extend: {
       colors: {
         brand: {
-          orange: "#FF8800", // 🍊 צבע כתום עיקרי
-          orangeLight: "#FFAE42", // ✨ צבע כתום בהיר להובר/הארה
+          orange: "#e879f9", // 🍊 צבע כתום עיקרי
+          orangeLight: "#e879f9", // ✨ צבע כתום בהיר להובר/הארה
           dark: "#0A0A0A", // 🖤 רקע כהה ראשי
           mid: "#1C1C1E", // 🌑 אפור כהה
           light: "#F2F2F7", // ☁️ טקסט/רקע בהיר

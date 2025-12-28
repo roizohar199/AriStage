@@ -16,7 +16,7 @@ export default function Landing() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white flex flex-col">
+    <div className="min-h-screen text-white flex flex-col">
       {/* HERO */}
       <section className="flex-1 flex flex-col md:flex-row items-center justify-center gap-10 px-6 pt-10 md:pt-0">
         {/* טקסט */}
@@ -35,8 +35,7 @@ export default function Landing() {
             {/* התחברות */}
             <button
               onClick={() => navigate("/login")}
-              className="bg-brand-orange text-black font-bold py-2 rounded-xl 
-              hover:bg-orange-500 transition flex items-center justify-center gap-2 shadow-xl"
+              className="bg-brand-orange text-black font-bold px-4 py-2 rounded-2xl transition flex items-center justify-center gap-2 shadow-xl text-sm hover:bg-brand-orangeLight"
             >
               התחברות
             </button>
@@ -44,8 +43,7 @@ export default function Landing() {
             {/* ניסיון חינם */}
             <button
               onClick={() => navigate("/login?tab=register")}
-              className="bg-neutral-800 border border-neutral-700 py-2 rounded-xl 
-              hover:bg-neutral-700 transition shadow-md"
+              className="bg-neutral-800 px-4 py-2 rounded-2xl hover:bg-neutral-700 transition shadow-md text-sm"
             >
               התחל ניסיון חינם
             </button>
@@ -56,8 +54,8 @@ export default function Landing() {
                 const el = document.getElementById("why");
                 if (el) el.scrollIntoView({ behavior: "smooth" });
               }}
-              className="flex flex-row-reverse py-2 rounded-xl border border-brand-orange text-brand-orange
-              hover:bg-brand-orange/20 transition flex items-center justify-center gap-2"
+              className="bg-brand-orange/20 flex flex-row-reverse px-4 py-2 rounded-2xl text-brand-orange
+              hover:bg-brand-orange/50 hover:text-white transition flex items-center justify-center gap-2 text-sm"
             >
               <Play size={18} />
               צפה בדמו
@@ -77,17 +75,14 @@ export default function Landing() {
       </section>
 
       {/* למה אנחנו – גרסה חדשה ומוכרת */}
-      <section
-        id="why"
-        className="py-12 px-5 bg-neutral-900 rounded-2xl border border-neutral-700 mt-10"
-      >
+      <section id="why" className="py-12 px-5 rounded-2xl mt-10">
         <h2 className="text-center text-3xl font-bold mb-12 text-brand-orange">
           למה דווקא Ari Stage?
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto">
           {/* מאגר שירים */}
-          <div className="bg-neutral-800 p-6 rounded-2xl border border-neutral-700 hover:border-brand-orange transition shadow-md">
+          <div className="bg-neutral-800 p-6 rounded-2xl shadow-md">
             <ListMusic size={38} className="text-brand-orange mb-4" />
             <h3 className="text-xl font-semibold mb-2">מאגר שירים חכם</h3>
             <p className="text-neutral-400 text-sm leading-relaxed">
@@ -97,7 +92,7 @@ export default function Landing() {
           </div>
 
           {/* שיתוף לינאפים אונליין */}
-          <div className="bg-neutral-800 p-6 rounded-2xl border border-neutral-700 hover:border-brand-orange transition shadow-md">
+          <div className="bg-neutral-800 p-6 rounded-2xl shadow-md">
             <Share2 size={38} className="text-brand-orange mb-4" />
             <h3 className="text-xl font-semibold mb-2">שיתוף לינאפ בלחיצה</h3>
             <p className="text-neutral-400 text-sm leading-relaxed">
@@ -107,7 +102,7 @@ export default function Landing() {
           </div>
 
           {/* ליינאפים חכמים */}
-          <div className="bg-neutral-800 p-6 rounded-2xl border border-neutral-700 hover:border-brand-orange transition shadow-md">
+          <div className="bg-neutral-800 p-6 rounded-2xl shadow-md">
             <Music2 size={38} className="text-brand-orange mb-4" />
             <h3 className="text-xl font-semibold mb-2">לינאפים חכמים</h3>
             <p className="text-neutral-400 text-sm leading-relaxed">
@@ -117,7 +112,7 @@ export default function Landing() {
           </div>
 
           {/* עדכון בזמן אמת */}
-          <div className="bg-neutral-800 p-6 rounded-2xl border border-neutral-700 hover:border-brand-orange transition shadow-md">
+          <div className="bg-neutral-800 p-6 rounded-2xl shadow-md">
             <Cloud size={38} className="text-brand-orange mb-4" />
             <h3 className="text-xl font-semibold mb-2">עדכונים בזמן אמת</h3>
             <p className="text-neutral-400 text-sm leading-relaxed">
@@ -127,7 +122,7 @@ export default function Landing() {
           </div>
 
           {/* ניהול אירועים */}
-          <div className="bg-neutral-800 p-6 rounded-2xl border border-neutral-700 hover:border-brand-orange transition shadow-md">
+          <div className="bg-neutral-800 p-6 rounded-2xl shadow-md">
             <Timer size={38} className="text-brand-orange mb-4" />
             <h3 className="text-xl font-semibold mb-2">
               ניהול הופעות ואירועים
@@ -139,7 +134,7 @@ export default function Landing() {
           </div>
 
           {/* אוטומציה חכמה */}
-          <div className="bg-neutral-800 p-6 rounded-2xl border border-neutral-700 hover:border-brand-orange transition shadow-md">
+          <div className="bg-neutral-800 p-6 rounded-2xl shadow-md">
             <Wand2 size={38} className="text-brand-orange mb-4" />
             <h3 className="text-xl font-semibold mb-2">
               אוטומציה ו-AI בהופעות
@@ -151,10 +146,6 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
-      <footer className="text-center py-6 text-neutral-500 text-sm mt-4">
-        © {new Date().getFullYear()} Ari Stage. כל הזכויות שמורות.
-      </footer>
     </div>
   );
 }

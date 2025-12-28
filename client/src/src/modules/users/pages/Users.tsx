@@ -1,11 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { Plus, Trash2, Edit2, X, Search, UserCheck, UserPlus } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Edit2,
+  X,
+  Search,
+  UserCheck,
+  UserPlus,
+} from "lucide-react";
 import api from "@/modules/shared/lib/api.js";
-import { useConfirm } from "@/modules/shared/hooks/useConfirm.jsx";
+import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { Mail, User, Star } from "lucide-react";
 
 export default function Users() {
-  const { confirm, ConfirmModalComponent } = useConfirm();
+  const confirm = useConfirm();
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -101,7 +109,10 @@ export default function Users() {
   };
 
   const removeUser = async (id) => {
-    const ok = await confirm("מחיקה", "בטוח למחוק משתמש זה?");
+    const ok = await confirm({
+      title: "מחיקה",
+      message: "בטוח למחוק משתמש זה?",
+    });
     if (!ok) return;
 
     try {
@@ -113,7 +124,10 @@ export default function Users() {
   };
 
   const impersonateUser = async (id) => {
-    const ok = await confirm("ייצוג משתמש", "להיכנס לחשבון שלו?");
+    const ok = await confirm({
+      title: "ייצוג משתמש",
+      message: "להיכנס לחשבון שלו?",
+    });
     if (!ok) return;
 
     try {
@@ -153,10 +167,10 @@ export default function Users() {
   };
 
   const inviteArtist = async (artistId, artistName) => {
-    const ok = await confirm(
-      "הזמנת אמן",
-      `להזמין את ${artistName} למאגר שלך? האמן יוכל לצפות בליינאפים והשירים שלך (קריאה בלבד).`
-    );
+    const ok = await confirm({
+      title: "הזמנת אמן",
+      message: `להזמין את ${artistName} למאגר שלך? האמן יוכל לצפות בליינאפים והשירים שלך (קריאה בלבד).`,
+    });
     if (!ok) return;
 
     try {
@@ -188,8 +202,6 @@ export default function Users() {
 
   return (
     <div dir="rtl" className="min-h-screen text-white p-6">
-      <ConfirmModalComponent />
-
       {/* HEADER */}
       <header className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">ניהול משתמשים</h1>

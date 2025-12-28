@@ -1,5 +1,6 @@
 import axios from "axios";
 import { emitToast } from "./toastBus.ts";
+import { authLogoutEvent } from "@/modules/shared/contexts/AuthContext.tsx";
 
 // קובע את ה-baseURL לפי המכשיר שנכנס
 function getBaseURL(): string {
@@ -110,6 +111,9 @@ api.interceptors.response.use(
 
         localStorage.removeItem("ari_token");
         localStorage.removeItem("ari_user");
+
+        // Dispatch logout event to update AuthContext
+        authLogoutEvent.dispatchEvent(new Event("logout"));
 
         // אל תמחק את כל ה־localStorage שאולי מכיל דברים קריטיים
         // רק פריטי התחברות

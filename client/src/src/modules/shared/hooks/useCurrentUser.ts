@@ -1,14 +1,4 @@
-import { useEffect, useState } from "react";
-import api from "@/modules/shared/lib/api.js";
-
-function readStoredUser() {
-  try {
-    const raw = localStorage.getItem("ari_user");
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
+import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 
 export type CurrentUser = {
   id?: number;
@@ -18,35 +8,11 @@ export type CurrentUser = {
   avatar?: string | null;
 };
 
+/**
+ * Hook that returns current user state from AuthContext.
+ * @deprecated Consider using useAuth() directly for full context access including logout.
+ */
 export function useCurrentUser() {
-  const [user, setUser] = useState<CurrentUser | null>(() => readStoredUser());
-  const [loading, setLoading] = useState<boolean>(false);
-
-  useEffect(() => {
-    let mounted = true;
-    setLoading(true);
-    api
-      .get("/users/me", { skipErrorToast: true })
-      .then(({ data }) => {
-        if (!mounted) return;
-        setUser(data || null);
-        // optionally sync localStorage
-        try {
-          localStorage.setItem("ari_user", JSON.stringify(data || {}));
-        } catch {}
-      })
-      .catch(() => {
-        if (!mounted) return;
-        setUser(readStoredUser());
-      })
-      .finally(() => {
-        if (mounted) setLoading(false);
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
+  const { user, loading } = useAuth();
   return { user, loading };
 }

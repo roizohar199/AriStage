@@ -2,9 +2,13 @@ import React, { useEffect, useState } from "react";
 import { LogOut } from "lucide-react";
 import api from "@/modules/shared/lib/api.js";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import ContactForm from "@/modules/shared/components/ContactForm.jsx";
 
 export default function Settings() {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
   const [form, setForm] = useState({
     full_name: "",
     email: "",
@@ -19,8 +23,6 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(null);
   const [error, setError] = useState(null);
-
-  const navigate = useNavigate();
 
   // 📥 טעינת פרטי משתמש
   useEffect(() => {
@@ -102,9 +104,8 @@ export default function Settings() {
   };
 
   // 🚪 התנתקות
-  const logout = () => {
-    localStorage.removeItem("ari_user");
-    localStorage.removeItem("token");
+  const handleLogout = () => {
+    logout(); // This clears state and localStorage
     navigate("/login");
   };
 
@@ -118,8 +119,8 @@ export default function Settings() {
         <h1 className="text-3xl font-bold">הגדרות מערכת</h1>
 
         <button
-          onClick={logout}
-          className="bg-neutral-900 px{4} py{2} rounded-XL backdrop-blur-xl text-white flex items-center gap-2"
+          onClick={handleLogout}
+          className="bg-neutral-900 px-4 py-2 rounded-2xl backdrop-blur-xl text-white flex flex-row-reverse items-center gap-2"
         >
           <LogOut size={18} /> התנתק
         </button>
@@ -130,11 +131,11 @@ export default function Settings() {
         {/* טופס הגדרות */}
         <form
           onSubmit={submit}
-          className="space-y-4 bg-neutral-900 border border-neutral-800 rounded-2xl p-6 shadow-xl"
+          className="space-y-4 bg-neutral-800 rounded-2xl p-6"
         >
           {/* תמונת פרופיל */}
           <div className="flex flex-col items-center space-y-3">
-            <div className="w-28 h-28 rounded-full overflow-hidden bg-neutral-800 border border-neutral-700 shadow-md">
+            <div className="w-28 h-28 rounded-full overflow-hidden bg-neutral-800 border-2 border-brand-orange shadow-md">
               {preview ? (
                 <img
                   src={preview}
@@ -148,7 +149,7 @@ export default function Settings() {
               )}
             </div>
 
-            <label className="cursor-pointer bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold px-4 py-2 rounded-xl shadow-innerIos transition text-sm">
+            <label className="cursor-pointer bg-brand-orange text-black font-semibold px-4 py-2 rounded-2xl shadow-innerIos transition text-sm">
               החלף תמונה
               <input
                 type="file"
@@ -170,7 +171,7 @@ export default function Settings() {
               type="text"
               value={form.full_name}
               onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-              className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm outline-none focus:border-orange-500"
+              className="w-full bg-neutral-700 p-2 rounded-2xl text-sm outline-none"
             />
           </div>
 
@@ -183,7 +184,7 @@ export default function Settings() {
                 setForm({ ...form, artist_role: e.target.value })
               }
               placeholder="גיטריסט, מפיק, בסיסט..."
-              className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm outline-none focus:border-orange-500"
+              className="w-full bg-neutral-700 p-2 rounded-2xl text-sm outline-none"
             />
           </div>
 
@@ -195,7 +196,7 @@ export default function Settings() {
               dir="ltr"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm outline-none focus:border-orange-500"
+              className="w-full bg-neutral-700 p-2 rounded-2xl text-sm outline-none"
             />
           </div>
 
@@ -207,7 +208,7 @@ export default function Settings() {
               value={form.newPass}
               onChange={(e) => setForm({ ...form, newPass: e.target.value })}
               placeholder="לא חובה"
-              className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm outline-none focus:border-orange-500"
+              className="w-full bg-neutral-700 p-2 rounded-2xl text-sm outline-none"
             />
           </div>
 
@@ -215,7 +216,7 @@ export default function Settings() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold py-2 rounded-lg mt-2 transition shadow-innerIos"
+            className="w-full cursor-pointer bg-brand-orange text-black font-semibold px-4 py-2 rounded-2xl shadow-innerIos transition text-sm"
           >
             {saving ? "שומר..." : "שמור שינויים"}
           </button>

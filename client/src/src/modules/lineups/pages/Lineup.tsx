@@ -11,11 +11,11 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "@/modules/shared/lib/api.js";
-import { useConfirm } from "@/modules/shared/hooks/useConfirm.jsx";
+import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { io } from "socket.io-client";
 
 export default function Lineup() {
-  const { confirm, ConfirmModalComponent } = useConfirm();
+  const confirm = useConfirm();
 
   const [lineups, setLineups] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -227,7 +227,10 @@ export default function Lineup() {
   // מחיקה
   // -------------------------------------------------
   const remove = async (id) => {
-    const ok = await confirm("מחיקה", "בטוח למחוק את הליינאפ?");
+    const ok = await confirm({
+      title: "מחיקה",
+      message: "בטוח למחוק את הליינאפ?",
+    });
     if (!ok) return;
 
     try {
@@ -256,8 +259,6 @@ export default function Lineup() {
   // -------------------------------------------------
   return (
     <div dir="rtl" className="min-h-screen text-white p-6">
-      <ConfirmModalComponent />
-
       {/* Header */}
       <header className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">הליינאפ שלי</h1>

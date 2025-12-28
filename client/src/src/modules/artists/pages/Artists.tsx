@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { User, Music, LogOut, Check, X } from "lucide-react";
 import api from "@/modules/shared/lib/api.js";
-import { useConfirm } from "@/modules/shared/hooks/useConfirm.jsx";
+import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "@/modules/shared/components/ToastProvider.jsx";
 import { io } from "socket.io-client";
 
 export default function Artists() {
-  const { confirm, ConfirmModalComponent } = useConfirm();
+  const confirm = useConfirm();
   const { showToast } = useToast();
 
   const [artists, setArtists] = useState([]);
@@ -106,10 +106,10 @@ export default function Artists() {
   };
 
   const handleLeaveCollection = async (hostId, hostName) => {
-    const ok = await confirm(
-      "ביטול השתתפות במאגר",
-      `בטוח שאתה רוצה לבטל את השתתפותך במאגר של ${hostName}? לא תוכל עוד לצפות בליינאפים והשירים שלו.`
-    );
+    const ok = await confirm({
+      title: "ביטול השתתפות במאגר",
+      message: `בטוח שאתה רוצה לבטל את השתתפותך במאגר של ${hostName}? לא תוכל עוד לצפות בליינאפים והשירים שלו.`,
+    });
     if (!ok) return;
 
     try {
@@ -127,10 +127,11 @@ export default function Artists() {
   };
 
   const handleAcceptInvitation = async (hostId) => {
-    const ok = await confirm(
-      "אישור הזמנה",
-      "בטוח שאתה רוצה לאשר את ההזמנה? תוכל לצפות בליינאפים והשירים של המארח."
-    );
+    const ok = await confirm({
+      title: "אישור הזמנה",
+      message:
+        "בטוח שאתה רוצה לאשר את ההזמנה? תוכל לצפות בליינאפים והשירים של המארח.",
+    });
     if (!ok) return;
 
     try {
@@ -155,10 +156,11 @@ export default function Artists() {
   };
 
   const handleRejectInvitation = async (hostId) => {
-    const ok = await confirm(
-      "דחיית הזמנה",
-      "בטוח שאתה רוצה לדחות את ההזמנה? לא תוכל לצפות בליינאפים והשירים של המארח."
-    );
+    const ok = await confirm({
+      title: "דחיית הזמנה",
+      message:
+        "בטוח שאתה רוצה לדחות את ההזמנה? לא תוכל לצפות בליינאפים והשירים של המארח.",
+    });
     if (!ok) return;
 
     try {
@@ -184,7 +186,6 @@ export default function Artists() {
 
   return (
     <div dir="rtl" className="min-h-screen text-white pb-20">
-      <ConfirmModalComponent />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         {/* כותרת */}
         <div className="mb-6">
