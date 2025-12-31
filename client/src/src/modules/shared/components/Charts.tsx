@@ -3,6 +3,7 @@ import { Trash2, Upload, FileDown, Eye, FileText } from "lucide-react";
 import api from "@/modules/shared/lib/api.js";
 import { useToast } from "./ToastProvider";
 import { ConfirmOptions } from "../confirm/types";
+import BaseModal from "./BaseModal.tsx";
 
 interface Chart {
   id: number;
@@ -213,36 +214,33 @@ export default function Charts({
       </div>
 
       {/* מודאל צפייה בצ'ארט */}
-      {viewingChart && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="bg-neutral-950 rounded-lg w-full max-w-4xl max-h-[90vh] overflow-auto flex flex-col">
-            <div className="flex justify-between items-center p-4 border-b border-neutral-700 sticky top-0 bg-neutral-950">
-              <h3 className="text-white">צפייה בצ'ארט</h3>
-              <button
-                onClick={() => setViewingChart(null)}
-                className="text-neutral-400 hover:text-white"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="flex-1 overflow-auto p-4 flex items-center justify-center">
-              {viewingChart.toLowerCase().endsWith(".pdf") ? (
-                <iframe
-                  src={viewingChart}
-                  className="w-full h-full min-h-96"
-                  style={{ border: "none" }}
-                />
-              ) : (
-                <img
-                  src={viewingChart}
-                  alt="צ'ארט"
-                  className="max-w-full max-h-full"
-                />
-              )}
-            </div>
-          </div>
+      <BaseModal
+        open={!!viewingChart}
+        onClose={() => setViewingChart(null)}
+        title="צפייה בצ'ארט"
+        maxWidth="max-w-4xl"
+        containerClassName="max-h-[90vh] flex flex-col overflow-hidden"
+        padding="p-0"
+      >
+        <div className="flex justify-between items-center p-4 border-b border-neutral-700 bg-neutral-950">
+          <h3 className="text-white">צפייה בצ'ארט</h3>
         </div>
-      )}
+        <div className="flex-1 overflow-auto p-4 flex items-center justify-center">
+          {viewingChart && viewingChart.toLowerCase().endsWith(".pdf") ? (
+            <iframe
+              src={viewingChart}
+              className="w-full h-full min-h-96"
+              style={{ border: "none" }}
+            />
+          ) : (
+            <img
+              src={viewingChart || ""}
+              alt="צ'ארט"
+              className="max-w-full max-h-full"
+            />
+          )}
+        </div>
+      </BaseModal>
     </>
   );
 }

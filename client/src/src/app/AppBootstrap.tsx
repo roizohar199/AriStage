@@ -9,6 +9,7 @@ import ProtectedRoute from "@/modules/shared/components/ProtectedRoute.tsx";
 import Splash from "@/modules/shared/components/Splash.tsx";
 
 import { publicRoutes, protectedRoutes } from "../modules/routes.js";
+import LineupDetails from "../modules/lineups/pages/LineupDetails.tsx";
 import AppLayout from "../layouts/AppLayout.tsx";
 
 interface User {
@@ -175,20 +176,39 @@ export default function AppBootstrap(): JSX.Element {
         ))}
 
         {protectedRoutes.map(
-          ({ path, component: Component, roles = undefined }) => (
-            <Route
-              key={path}
-              path={path}
-              element={
-                <ProtectedRoute roles={roles}>
-                  <Component />
-                </ProtectedRoute>
-              }
-            />
-          )
+          ({ path, component: Component, roles = undefined }) => {
+            // Special handling for ArtistProfile with nested LineupDetails route
+            if (path === "/artist/:id/*") {
+              return (
+                <Route
+                  key={path}
+                  path={path}
+                  element={
+                    <ProtectedRoute roles={roles}>
+                      <Component />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route path="lineups/:lineupId" element={<LineupDetails />} />
+                </Route>
+              );
+            }
+
+            return (
+              <Route
+                key={path}
+                path={path}
+                element={
+                  <ProtectedRoute roles={roles}>
+                    <Component />
+                  </ProtectedRoute>
+                }
+              />
+            );
+          }
         )}
 
-        <Route path="*" element={<Navigate to="/home" replace />} />
+        <Route path="*" element={<Navigate to="/my" replace />} />
       </Routes>
     </AppLayout>
   );

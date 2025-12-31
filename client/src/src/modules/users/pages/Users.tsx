@@ -1,16 +1,9 @@
 import React, { useEffect, useState } from "react";
-import {
-  Plus,
-  Trash2,
-  Edit2,
-  X,
-  Search,
-  UserCheck,
-  UserPlus,
-} from "lucide-react";
+import { Plus, Trash2, Edit2, Search, UserCheck, UserPlus } from "lucide-react";
 import api from "@/modules/shared/lib/api.js";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { Mail, User, Star } from "lucide-react";
+import BaseModal from "@/modules/shared/components/BaseModal.tsx";
 
 export default function Users() {
   const confirm = useConfirm();
@@ -311,90 +304,80 @@ export default function Users() {
       </div>
 
       {/* MODAL */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50">
-          <div className="bg-neutral-900 rounded-2xl w-full max-w-md p-6 relative shadow-xl border border-neutral-800">
-            <button
-              onClick={() => {
-                setShowModal(false);
-                setEditingId(null);
-              }}
-              className="absolute top-3 left-3 text-neutral-400 hover:text-white"
-            >
-              <X size={22} />
-            </button>
+      <BaseModal
+        open={showModal}
+        onClose={() => {
+          setShowModal(false);
+          setEditingId(null);
+        }}
+        title={editingId ? "עריכת משתמש" : "משתמש חדש"}
+        maxWidth="max-w-md"
+      >
+        <h2 className="text-xl font-bold mb-4">
+          {editingId ? "עריכת משתמש" : "משתמש חדש"}
+        </h2>
 
-            <h2 className="text-xl font-bold mb-4">
-              {editingId ? "עריכת משתמש" : "משתמש חדש"}
-            </h2>
+        <form onSubmit={submit} className="space-y-3">
+          <input
+            type="text"
+            placeholder="שם מלא *"
+            value={form.full_name}
+            onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+            className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm focus:border-orange-500 outline-none"
+            required
+          />
 
-            <form onSubmit={submit} className="space-y-3">
-              <input
-                type="text"
-                placeholder="שם מלא *"
-                value={form.full_name}
-                onChange={(e) =>
-                  setForm({ ...form, full_name: e.target.value })
-                }
-                className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm focus:border-orange-500 outline-none"
-                required
-              />
+          <input
+            type="email"
+            placeholder="אימייל *"
+            dir="ltr"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            disabled={!!editingId}
+            className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm focus:border-orange-500 outline-none"
+            required={!editingId}
+          />
 
-              <input
-                type="email"
-                placeholder="אימייל *"
-                dir="ltr"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                disabled={!!editingId}
-                className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm focus:border-orange-500 outline-none"
-                required={!editingId}
-              />
+          {!editingId && (
+            <input
+              type="password"
+              placeholder="סיסמה *"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm focus:border-orange-500 outline-none"
+              required
+            />
+          )}
 
-              {!editingId && (
-                <input
-                  type="password"
-                  placeholder="סיסמה *"
-                  value={form.password}
-                  onChange={(e) =>
-                    setForm({ ...form, password: e.target.value })
-                  }
-                  className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm focus:border-orange-500 outline-none"
-                  required
-                />
-              )}
+          <select
+            value={form.role}
+            onChange={(e) => setForm({ ...form, role: e.target.value })}
+            className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm focus:border-orange-500 outline-none"
+          >
+            <option value="admin">Admin</option>
+            <option value="manager">Manager</option>
+            <option value="user">User</option>
+          </select>
 
-              <select
-                value={form.role}
-                onChange={(e) => setForm({ ...form, role: e.target.value })}
-                className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm focus:border-orange-500 outline-none"
-              >
-                <option value="admin">Admin</option>
-                <option value="manager">Manager</option>
-                <option value="user">User</option>
-              </select>
+          <select
+            value={form.subscription_type}
+            onChange={(e) =>
+              setForm({ ...form, subscription_type: e.target.value })
+            }
+            className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm focus:border-orange-500 outline-none"
+          >
+            <option value="trial">Trial</option>
+            <option value="pro">Pro</option>
+          </select>
 
-              <select
-                value={form.subscription_type}
-                onChange={(e) =>
-                  setForm({ ...form, subscription_type: e.target.value })
-                }
-                className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm focus:border-orange-500 outline-none"
-              >
-                <option value="trial">Trial</option>
-                <option value="pro">Pro</option>
-              </select>
-
-              <button
-                type="submit"
-                className="w-full bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold py-2 rounded-lg mt-2 transition-all duration-200"
-              >
-                {editingId ? "עדכון" : "שמור"}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+          <button
+            type="submit"
+            className="w-full bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold py-2 rounded-lg mt-2 transition-all duration-200"
+          >
+            {editingId ? "עדכון" : "שמור"}
+          </button>
+        </form>
+      </BaseModal>
     </div>
   );
 }

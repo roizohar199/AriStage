@@ -7,6 +7,6 @@ const router = Router();
 router.use(requireAuth);
 
 router.get("/", dashboardController.stats);
+router.get("/shared", dashboardController.sharedStats);
 
 export const dashboardRouter = router;
-

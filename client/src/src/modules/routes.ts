@@ -4,17 +4,16 @@ import Login from "./auth/pages/Login.tsx";
 import ResetPassword from "./auth/pages/ResetPassword.tsx";
 import AcceptInvitation from "./auth/pages/AcceptInvitation.tsx";
 import ShareLineup from "./share/pages/ShareLineup.tsx";
-import Home from "./dashboard/pages/Home.tsx";
-import Songs from "./songs/pages/Songs.tsx";
-import Lineup from "./lineups/pages/Lineup.tsx";
+// Removed unused Home, Songs, Lineup imports
 import LineupDetails from "./lineups/pages/LineupDetails.tsx";
-import Users from "./users/pages/Users.tsx";
+// import Users from "./users/pages/Users.tsx";
 import Settings from "./settings/pages/Settings.tsx";
 import Artists from "./artists/pages/Artists.tsx";
 import MyArtist from "./artists/pages/MyArtist.tsx";
 import ArtistProfile from "./artists/pages/ArtistProfile.tsx";
 import ProfileArtist from "./artists/pages/ProfileArtist.tsx";
 import My from "./my/pages/My.tsx";
+import Admin from "./admin/pages/Admin.tsx";
 
 interface PublicRoute {
   path: string;
@@ -36,14 +35,11 @@ export const publicRoutes: PublicRoute[] = [
 ];
 
 export const protectedRoutes: ProtectedRoute[] = [
-  { path: "/home", component: Home },
+  // { path: "/home", component: Home },
   { path: "/my/*", component: My },
   { path: "/MyArtist", component: MyArtist },
-  { path: "/MyArtist/:id", component: ProfileArtist },
-  { path: "/artists", component: Artists },
-  { path: "/artist/:id", component: ArtistProfile },
-  { path: "/songs", component: Songs },
-  { path: "/lineup", component: Lineup },
+  { path: "/artist/:id/*", component: ArtistProfile },
   { path: "/settings", component: Settings },
-  { path: "/users", component: Users, roles: ["admin", "manager"] },
+  // { path: "/users", component: Users, roles: ["admin", "manager"] },
+  { path: "/admin", component: Admin, roles: ["admin"] },
 ];

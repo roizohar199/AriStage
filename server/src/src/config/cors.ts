@@ -5,6 +5,12 @@ function normalizeOrigin(origin: string = ""): string {
 }
 
 const normalizedOrigins = env.allowedOrigins.map(normalizeOrigin);
+const socketAllowedOrigins = Array.from(
+  new Set([
+    env.clientUrl ? normalizeOrigin(env.clientUrl) : undefined,
+    ...normalizedOrigins,
+  ])
+).filter(Boolean) as string[];
 
 export function createCorsOptions(): any {
   return {
@@ -27,17 +33,7 @@ export function createCorsOptions(): any {
 }
 
 export const socketCorsOptions = {
-  origin(origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void): void {
-    if (!origin) {
-      return callback(null, true);
-    }
-    const normalized = normalizeOrigin(origin);
-    if (normalizedOrigins.includes(normalized)) {
-      return callback(null, true);
-    }
-    return callback(new Error("Not allowed by CORS (socket.io)"));
-  },
+  origin: socketAllowedOrigins,
   methods: corsMethods.filter((method: string) => method !== "OPTIONS"),
   credentials: true,
 };
-

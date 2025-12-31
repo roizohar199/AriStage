@@ -117,13 +117,6 @@ export default function Settings() {
       {/* כותרת עליונה */}
       <header className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">הגדרות מערכת</h1>
-
-        <button
-          onClick={handleLogout}
-          className="bg-neutral-900 px-4 py-2 rounded-2xl backdrop-blur-xl text-white flex flex-row-reverse items-center gap-2"
-        >
-          <LogOut size={18} /> התנתק
-        </button>
       </header>
 
       {/* כרטיס מרכזי - זהה למבנה Home */}
@@ -131,7 +124,7 @@ export default function Settings() {
         {/* טופס הגדרות */}
         <form
           onSubmit={submit}
-          className="space-y-4 bg-neutral-800 rounded-2xl p-6"
+          className="space-y-4 bg-neutral-950/50 rounded-2xl p-6"
         >
           {/* תמונת פרופיל */}
           <div className="flex flex-col items-center space-y-3">
@@ -171,7 +164,7 @@ export default function Settings() {
               type="text"
               value={form.full_name}
               onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-              className="w-full bg-neutral-700 p-2 rounded-2xl text-sm outline-none"
+              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm outline-none"
             />
           </div>
 
@@ -184,7 +177,7 @@ export default function Settings() {
                 setForm({ ...form, artist_role: e.target.value })
               }
               placeholder="גיטריסט, מפיק, בסיסט..."
-              className="w-full bg-neutral-700 p-2 rounded-2xl text-sm outline-none"
+              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm outline-none"
             />
           </div>
 
@@ -196,7 +189,7 @@ export default function Settings() {
               dir="ltr"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full bg-neutral-700 p-2 rounded-2xl text-sm outline-none"
+              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm outline-none"
             />
           </div>
 
@@ -208,7 +201,7 @@ export default function Settings() {
               value={form.newPass}
               onChange={(e) => setForm({ ...form, newPass: e.target.value })}
               placeholder="לא חובה"
-              className="w-full bg-neutral-700 p-2 rounded-2xl text-sm outline-none"
+              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm outline-none"
             />
           </div>
 

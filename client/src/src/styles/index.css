@@ -46,10 +46,40 @@ html,
 body,
 #root {
   height: 100%;
+  overflow: hidden;
 }
 
 body {
   @apply font-heebo bg-neutral-950 text-neutral-100;
+}
+
+/* Scrollbar for in-app scrolling containers */
+.app-scroll {
+  direction: ltr;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.app-scroll.scrolling {
+  scrollbar-color: rgb(var(--tw-color-brand-orange)) transparent;
+}
+
+.app-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.app-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app-scroll::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 999px;
+  transition: background-color 0.3s ease;
+}
+
+.app-scroll.scrolling::-webkit-scrollbar-thumb {
+  background-color: rgb(var(--tw-color-brand-orange));
 }
 
 /* --- SAFE AREA FOR BOTTOM NAV --- */

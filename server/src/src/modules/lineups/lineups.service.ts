@@ -16,6 +16,7 @@ import {
   lineupBelongsToUser,
   listLineups,
   listLineupsByUserId,
+  listSharedLineups,
   updateLineupRecord,
 } from "./lineups.repository.js";
 import { checkIfGuest } from "../users/users.service.js";
@@ -68,6 +69,11 @@ export function getPublicLineup(token) {
 export async function getLineups(user) {
   // בדף הליינאפים - הצג רק את הליינאפים שהמשתמש יצר בעצמו
   return listLineups(user.role, user.id, null);
+}
+
+// פונקציה לקבלת ליינאפים משותפים (אמנים שהזמינו אותי)
+export async function getSharedLineups(user) {
+  return listSharedLineups(user.id);
 }
 
 // פונקציה לקבלת ליינאפים של משתמש ספציפי (לשימוש ב-ArtistProfile)

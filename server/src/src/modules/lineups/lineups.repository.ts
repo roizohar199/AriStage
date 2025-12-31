@@ -93,3 +93,24 @@ export async function deactivateShare(lineupId) {
 export async function deleteLineupRecord(id) {
   await pool.query("DELETE FROM lineups WHERE id = ?", [id]);
 }
+
+// פונקציה לקבלת ליינאפים משותפים (אמנים שהזמינו אותי)
+export async function listSharedLineups(userId) {
+  const [rows] = await pool.query(
+    `SELECT 
+      l.*,
+      l.created_by AS owner_id,
+      u.full_name AS owner_name,
+      u.avatar AS owner_avatar,
+      u.artist_role AS owner_role
+     FROM lineups l
+     INNER JOIN user_hosts uh ON l.created_by = uh.host_id
+     INNER JOIN users u ON l.created_by = u.id
+     WHERE uh.guest_id = ? 
+       AND uh.invitation_status = 'accepted'
+       AND l.created_by != ?
+     ORDER BY l.id DESC`,
+    [userId, userId]
+  );
+  return rows;
+}

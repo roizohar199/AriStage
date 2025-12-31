@@ -172,7 +172,7 @@ export default function ShareLineup() {
   return (
     <div className="min-h-screen text-white p-4 flex flex-col items-center">
       {/* כרטיס ליינאפ */}
-      <div className="w-full border border-neutral-800 rounded-2xl p-6 relative">
+      <div className="w-full bg-brand-orange/30 rounded-2xl p-6 relative">
         {/* כותרת */}
         <h1 className="text-3xl font-bold mb-2 text-right">{lineup.title}</h1>
 

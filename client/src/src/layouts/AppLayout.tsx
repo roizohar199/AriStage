@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import Footer from "@/modules/shared/components/Footer.tsx";
 import Header from "@/modules/shared/components/Header.tsx";
 import BottomNav from "@/modules/shared/components/BottomNav.tsx";
@@ -27,28 +27,55 @@ export default function AppLayout({
   hideNav,
   children,
 }: AppLayoutProps): JSX.Element {
+  const scrollAreaRef = useRef<HTMLElement | null>(null);
+  const scrollTimeoutRef = useRef<number | undefined>();
   const { user } = useCurrentUser();
   const isAuthenticated = !!user?.id;
 
+  useEffect(() => {
+    const mainEl = scrollAreaRef.current;
+    if (!mainEl) return;
+
+    const handleScroll = () => {
+      mainEl.classList.add("scrolling");
+      if (scrollTimeoutRef.current) {
+        window.clearTimeout(scrollTimeoutRef.current);
+      }
+
+      scrollTimeoutRef.current = window.setTimeout(() => {
+        mainEl.classList.remove("scrolling");
+      }, 1500);
+    };
+
+    mainEl.addEventListener("scroll", handleScroll);
+
+    return () => {
+      mainEl.removeEventListener("scroll", handleScroll);
+      if (scrollTimeoutRef.current) {
+        window.clearTimeout(scrollTimeoutRef.current);
+      }
+      mainEl.classList.remove("scrolling");
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen bg-neutral-950 text-white flex flex-col lg:flex-row">
+    <div className="h-screen bg-neutral-950 text-white flex flex-col">
       {/* 🟧 Impersonation banner */}
       {isImpersonating && (
         <div
-          className="w-full bg-gradient-to-r from-amber-400/80 via-orange-500/90 to-amber-400/80
-          text-black py-2 px-4 text-center font-semibold 
+          className="w-full bg-brand-orange text-black py-2 px-4 text-center font-semibold 
           flex flex-col sm:flex-row items-center justify-center gap-3
-          shadow-lg backdrop-blur-md sticky top-0 z-50 border-b border-orange-400/40 lg:order-1"
+          shadow-lg backdrop-blur-md sticky top-0 z-50 lg:order-1"
         >
           <span>
-            🎭 אתה כרגע מייצג את:{" "}
+            אתה כרגע מייצג את:{" "}
             <strong>{currentUser.full_name || "משתמש לא מזוהה"}</strong>
           </span>
 
           <button
             onClick={onExitImpersonation}
-            className="bg-black/30 hover:bg-black/40 transition px-3 py-1 rounded-lg
-            text-white font-bold text-sm border border-black/20 shadow-sm"
+            className="bg-neutral-800/50 transition px-3 py-1 rounded-2xl
+            text-white font-bold text-sm 0 shadow-sm"
           >
             חזרה לחשבון המקורי
           </button>
@@ -57,22 +84,25 @@ export default function AppLayout({
 
       {/* Sidebar removed per request */}
 
-      {/* MAIN LAYOUT - Flex column for header, content, footer */}
-      <div className="flex-1 flex flex-col">
-        {/* Header - Fixed top */}
-        {isAuthenticated && <Header />}
+      {/* Header - Fixed top */}
+      {isAuthenticated && <Header />}
 
-        {/* Main content - Scrollable; offset for header/footer */}
-        <main className="flex-1 overflow-y-auto bg-neutral-900 pt-16 pb-20 md:pb-0">
-          <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            {children}
-          </div>
-        </main>
+      {/* Main content - Only element that scrolls */}
+      <main
+        ref={scrollAreaRef}
+        dir="ltr"
+        className="flex-1 overflow-y-auto relative app-scroll bg-neutral-900 pt-16 pb-20 md:pb-0"
+      >
+        <div
+          dir="rtl"
+          className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
+        >
+          {children}
+        </div>
 
         {/* Footer - Fixed bottom */}
         <Footer />
-      </div>
-
+      </main>
       {/* Bottom nav for mobile */}
       {!hideNav && <BottomNav />}
     </div>

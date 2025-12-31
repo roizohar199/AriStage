@@ -25,7 +25,6 @@ export default function BaseModal({
   maxWidth = "max-w-md",
   closeOnBackdropClick = true,
   closeOnEsc = true,
-  lockScroll = true,
   backdropClassName = "bg-black/70",
   padding = "p-6",
   showCloseButton = true,
@@ -57,26 +56,12 @@ export default function BaseModal({
     return () => window.removeEventListener("keydown", handleEsc);
   }, [open, closeOnEsc, onClose]);
 
-  useEffect(() => {
-    if (!lockScroll) return;
-
-    if (open) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [open, lockScroll]);
-
   // ❗ רק כאן עושים תנאי
   if (!open) return null;
 
   return (
     <div
-      className={`fixed inset-0 ${backdropClassName} backdrop-blur-sm flex justify-center items-center z-50 p-4 transition-all duration-200 ${backdropContainerClassName}`}
+      className={`fixed top-16 left-0 right-0 bottom-0 ${backdropClassName} backdrop-blur-sm flex justify-center items-center z-50 p-4 transition-all duration-200 ${backdropContainerClassName}`}
       onClick={handleBackdropClick}
       role="presentation"
     >

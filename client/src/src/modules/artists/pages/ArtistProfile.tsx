@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useState, useRef, useMemo } from "react";
+import { useParams, useNavigate, Outlet, useLocation } from "react-router-dom";
 import {
   User,
   Music,
@@ -13,26 +13,33 @@ import {
   FileDown,
   Trash2,
   Upload,
-  Search,
-  X,
+  ArrowRight,
 } from "lucide-react";
 import api from "@/modules/shared/lib/api.js";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "@/modules/shared/components/ToastProvider.jsx";
+import BaseModal from "@/modules/shared/components/BaseModal.tsx";
+import ArtistCard from "@/modules/shared/components/ArtistCard";
+import Search from "@/modules/shared/components/Search";
+import BlockLineup from "@/modules/shared/components/blocklineup";
+import CardSong from "@/modules/shared/components/cardsong";
+import Charts from "@/modules/shared/components/Charts";
 
 export default function ArtistProfile() {
   const confirm = useConfirm();
   const { showToast } = useToast();
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isLineupRoute = /^\/artist\/\d+\/lineups\/\d+/.test(location.pathname);
   const [artist, setArtist] = useState(null);
   const [lineups, setLineups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<"lineups" | "songs">("lineups");
-  const [searchTerm, setSearchTerm] = useState("");
+  // Remove setActiveTab, use URL to control active tab
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Songs and charts
   interface Chart {
@@ -55,6 +62,32 @@ export default function ArtistProfile() {
   );
   const [viewingChart, setViewingChart] = useState<string | null>(null);
   const fileInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
+
+  // Determine active tab from URL
+  const activeTab: "lineups" | "songs" = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("tab") === "songs" ? "songs" : "lineups";
+  }, [location.search]);
+
+  const filteredLineups = useMemo(() => {
+    if (!searchQuery) return lineups;
+    const query = searchQuery.toLowerCase();
+    return lineups.filter(
+      (lineup) =>
+        lineup.title?.toLowerCase().includes(query) ||
+        lineup.location?.toLowerCase().includes(query)
+    );
+  }, [lineups, searchQuery]);
+
+  const filteredSongs = useMemo(() => {
+    if (!searchQuery) return songs;
+    const query = searchQuery.toLowerCase();
+    return songs.filter(
+      (song) =>
+        song.title?.toLowerCase().includes(query) ||
+        song.artist?.toLowerCase().includes(query)
+    );
+  }, [songs, searchQuery]);
 
   useEffect(() => {
     loadData();
@@ -258,6 +291,17 @@ export default function ArtistProfile() {
     return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
 
+  // Handlers for edit and remove (not used in artist profile view)
+  const handleEditSong = (song: Song) => {
+    // User cannot edit other artist's songs
+    console.log("Edit not allowed for other artist's songs");
+  };
+
+  const handleRemoveSong = async (songId: number) => {
+    // User cannot remove other artist's songs
+    console.log("Remove not allowed for other artist's songs");
+  };
+
   const normalizeTime = (t) => {
     if (!t) return "";
     return t.toString().slice(0, 5);
@@ -268,376 +312,187 @@ export default function ArtistProfile() {
     return new Date(date).toLocaleDateString("he-IL");
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-white">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-brand-orange border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-neutral-400">טוען נתונים...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !artist) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-white p-4">
-        <div className="bg-neutral-900 rounded-2xl p-8 border border-neutral-800 text-center max-w-md">
-          <div className="text-red-400 text-xl mb-4">❌</div>
-          <h2 className="text-2xl font-bold mb-2">שגיאה</h2>
-          <p className="text-neutral-400 mb-6">{error || "אמן לא נמצא"}</p>
-          <button
-            onClick={() => navigate("/home")}
-            className="bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold px-6 py-3 rounded-lg"
-          >
-            חזרה לדף הבית
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div dir="rtl" className="min-h-screen text-white pb-20">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        {/* כפתור חזרה */}
-        <button
-          onClick={() => navigate("/artists")}
-          className="mb-4 flex items-center gap-2 text-neutral-400 hover:text-white transition-colors"
-        >
-          <ArrowLeft size={20} />
-          <span>חזרה לאמנים</span>
-        </button>
-
-        {/* כותרת */}
+      <div className="min-h-screen text-white p-6">
+        <header className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold">משותפים</h1>
+        </header>
         <div className="mb-6">
-          <div className="bg-neutral-900 rounded-2xl p-6 border border-neutral-800">
-            <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
-              {/* תמונת פרופיל */}
-              <div className="flex-shrink-0">
-                {artist.avatar ? (
-                  <img
-                    src={artist.avatar}
-                    alt={artist.full_name}
-                    className="w-24 h-24 rounded-full object-cover border-2 border-brand-orange shadow-lg"
-                    onError={(e) => {
-                      e.target.style.display = "none";
-                      if (e.target.nextSibling) {
-                        e.target.nextSibling.style.display = "flex";
-                      }
-                    }}
-                  />
-                ) : null}
-                <div
-                  className="w-24 h-24 rounded-full bg-neutral-800 border-2 border-brand-orange flex items-center justify-center"
-                  style={{
-                    display: artist.avatar ? "none" : "flex",
-                  }}
-                >
-                  <User size={40} className="text-neutral-500" />
-                </div>
-              </div>
-
-              {/* פרטי האמן */}
-              <div className="flex-1 min-w-0">
-                <h1 className="text-2xl font-bold text-white mb-2">
-                  {artist.full_name || "אמן ללא שם"}
-                </h1>
-
-                {artist.artist_role && (
-                  <div className="mb-2">
-                    <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-brand-orange rounded-lg text-black font-semibold text-sm">
-                      <Music size={16} />
-                      {artist.artist_role}
-                    </span>
+          {loading || error || !artist ? (
+            <>
+              {loading && (
+                <div className="min-h-[200px] flex items-center justify-center text-white">
+                  <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-brand-orange border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-neutral-400">טוען נתונים...</p>
                   </div>
-                )}
-
-                <div className="flex flex-wrap gap-3 text-sm">
-                  {artist.email && (
-                    <span className="text-neutral-400">{artist.email}</span>
-                  )}
-                  {artist.role && (
-                    <span className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700 text-neutral-300">
-                      {artist.role}
-                    </span>
-                  )}
                 </div>
-              </div>
-            </div>
-          </div>
+              )}
+              {(error || !artist) && !loading && (
+                <div className="bg-neutral-900 rounded-2xl p-8 border border-neutral-800 text-center max-w-md mx-auto">
+                  <div className="text-red-400 text-xl mb-4">❌</div>
+                  <h2 className="text-2xl font-bold mb-2">שגיאה</h2>
+                  <p className="text-neutral-400 mb-6">
+                    {error || "אמן לא נמצא"}
+                  </p>
+                  <button
+                    onClick={() => navigate("/my")}
+                    className="bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold px-6 py-3 rounded-lg"
+                  >
+                    חזרה לדף הבית
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <ArtistCard artist={artist} disableActions={true} />
+          )}
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex justify-between mt-8 bg-neutral-800 rounded-2xl mb-6 overflow-hidden w-fit">
           <button
-            onClick={() => setActiveTab("lineups")}
-            className={`flex-1 py-2.5 rounded-xl font-semibold transition-all text-sm ${
+            onClick={() => {
+              navigate(`/artist/${id}`);
+            }}
+            className={`px-6 py-2 transition font-bold flex items-center gap-2 ${
               activeTab === "lineups"
-                ? "bg-brand-orange text-black"
-                : "bg-neutral-900 border border-neutral-800 text-neutral-400 hover:bg-neutral-800"
+                ? "border-b-2 border-brand-orange text-brand-orange"
+                : "text-white"
             }`}
           >
-            <ListMusic className="inline-block ml-2" size={16} />
-            לינאפים
+            ליינאפים
           </button>
+
           <button
-            onClick={() => setActiveTab("songs")}
-            className={`flex-1 py-2.5 rounded-xl font-semibold transition-all text-sm ${
+            onClick={() => {
+              navigate(`/artist/${id}?tab=songs`);
+            }}
+            className={`px-6 py-2 transition font-bold flex items-center gap-2 ${
               activeTab === "songs"
-                ? "bg-brand-orange text-black"
-                : "bg-neutral-900 border border-neutral-800 text-neutral-400 hover:bg-neutral-800"
+                ? "border-b-2 border-brand-orange text-brand-orange"
+                : "text-white"
             }`}
           >
-            <Music className="inline-block ml-2" size={16} />
             שירים
           </button>
         </div>
 
-        {/* Search */}
-        <div className="relative mb-6">
-          <input
-            type="text"
-            placeholder={
-              activeTab === "lineups" ? "חפש לינאפ..." : "חפש שיר..."
-            }
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-xl bg-neutral-900 border border-neutral-800 p-3 pl-10 text-sm placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-brand-orange"
-          />
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
-            size={18}
-          />
-        </div>
-
         {/* Chart viewing modal */}
-        {viewingChart && (
-          <div
-            className="fixed inset-0 bg-black/95 backdrop-blur-sm flex justify-center items-center z-50 p-4"
-            onClick={() => setViewingChart(null)}
-          >
-            <div className="relative max-w-5xl max-h-[90vh] w-full">
-              <button
-                onClick={() => setViewingChart(null)}
-                className="absolute -top-12 right-0 bg-neutral-900 hover:bg-neutral-800 text-white px-4 py-2 rounded-lg font-semibold border border-neutral-800 flex items-center gap-2"
-              >
-                <X size={18} />
-                סגור
-              </button>
-              <div className="bg-neutral-900 rounded-2xl p-4 overflow-auto max-h-[85vh] border border-neutral-800">
-                {viewingChart.endsWith(".pdf") ? (
-                  <iframe
-                    src={viewingChart}
-                    className="w-full h-[80vh] rounded-xl"
-                    title="Chart Viewer"
-                  />
-                ) : (
-                  <img
-                    src={viewingChart}
-                    alt="Chart"
-                    className="w-full h-auto rounded-xl"
-                  />
-                )}
-              </div>
-            </div>
+        <BaseModal
+          open={!!viewingChart}
+          onClose={() => setViewingChart(null)}
+          title="צפייה בצ'ארט"
+          maxWidth="max-w-5xl"
+          containerClassName="max-h-[90vh]"
+          padding="p-4"
+        >
+          <div className="overflow-auto max-h-[85vh] rounded-2xl">
+            {viewingChart && viewingChart.endsWith(".pdf") ? (
+              <iframe
+                src={viewingChart}
+                className="w-full h-[80vh] rounded-xl"
+                title="Chart Viewer"
+              />
+            ) : (
+              <img
+                src={viewingChart || ""}
+                alt="Chart"
+                className="w-full h-auto rounded-xl"
+              />
+            )}
           </div>
-        )}
+        </BaseModal>
 
         {/* ליינאפים */}
         {activeTab === "lineups" && (
-          <div className="mb-8">
-            {lineups.length === 0 ? (
-              <div className="bg-neutral-900 rounded-2xl p-8 text-center border border-neutral-800">
-                <ListMusic
-                  size={48}
-                  className="mx-auto mb-4 text-neutral-600"
-                />
-                <p className="text-neutral-400">אין ליינאפים זמינים</p>
-              </div>
+          <>
+            {isLineupRoute ? (
+              <Outlet />
             ) : (
-              <div className="space-y-3">
-                {lineups
-                  .filter(
-                    (lineup) =>
-                      lineup.title
-                        .toLowerCase()
-                        .includes(searchTerm.toLowerCase()) ||
-                      lineup.location
-                        ?.toLowerCase()
-                        .includes(searchTerm.toLowerCase())
-                  )
-                  .map((lineup, i) => (
-                    <div
-                      key={lineup.id}
-                      onClick={() => navigate(`/lineup/${lineup.id}`)}
-                      className="bg-neutral-900 rounded-2xl p-4 flex justify-between items-center hover:shadow-lg transition border border-neutral-800"
-                    >
-                      <div className="flex-1">
-                        <p className="font-semibold text-lg">
-                          {i + 1}. {lineup.title}
-                        </p>
-
-                        <div className="flex flex-wrap gap-2 mt-2 text-xs">
-                          <span className="flex items-center gap-1 px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700 flex-row-reverse">
-                            <CalendarDays size={14} />
-                            {formatDate(lineup.date)}
-                          </span>
-
-                          <span className="flex items-center gap-1 px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700 flex-row-reverse">
-                            <Clock size={14} />
-                            {normalizeTime(lineup.time) || "לא צוין שעה"}
-                          </span>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2 mt-2 text-xs">
-                          <span className="flex flex-row-reverse items-center gap-1 px-2 py-1 bg-brand-orange rounded-lg text-black font-semibold">
-                            <MapPin size={14} />
-                            {lineup.location || "לא צוין מיקום"}
-                          </span>
-                        </div>
-
-                        {lineup.description && (
-                          <p className="text-neutral-400 mt-2 text-sm line-clamp-2">
-                            {lineup.description}
-                          </p>
-                        )}
-                      </div>
+              <>
+                {/* Search */}
+                <div className="mb-6">
+                  <Search
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    variant={activeTab === "lineups" ? "lineup" : "song"}
+                  />
+                </div>
+                <div className="mb-8">
+                  {filteredLineups.length === 0 ? (
+                    <div className="bg-neutral-900 rounded-2xl p-8 text-center border border-neutral-800">
+                      <ListMusic
+                        size={48}
+                        className="mx-auto mb-4 text-neutral-600"
+                      />
+                      <p className="text-neutral-400">
+                        {lineups.length === 0
+                          ? "אין ליינאפים זמינים"
+                          : "לא נמצאו תוצאות"}
+                      </p>
                     </div>
-                  ))}
-              </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {filteredLineups.map((lineup, i) => (
+                        <BlockLineup
+                          key={lineup.id}
+                          lineup={lineup}
+                          index={i}
+                          onOpen={() => navigate(`lineups/${lineup.id}`)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
             )}
-          </div>
+          </>
         )}
 
         {/* שירים */}
         {activeTab === "songs" && (
           <div className="mb-8">
-            {songs.length === 0 ? (
+            {/* Search for songs */}
+            <div className="mb-6">
+              <Search
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                variant="song"
+              />
+            </div>
+            {filteredSongs.length === 0 ? (
               <div className="bg-neutral-900 rounded-2xl p-8 text-center border border-neutral-800">
                 <Music size={48} className="mx-auto mb-4 text-neutral-600" />
-                <p className="text-neutral-400">אין שירים זמינים</p>
+                <p className="text-neutral-400">
+                  {songs.length === 0 ? "אין שירים זמינים" : "לא נמצאו תוצאות"}
+                </p>
               </div>
             ) : (
               <div className="space-y-3">
-                {songs
-                  .filter(
-                    (s) =>
-                      s.title
-                        .toLowerCase()
-                        .includes(searchTerm.toLowerCase()) ||
-                      s.artist?.toLowerCase().includes(searchTerm.toLowerCase())
-                  )
-                  .map((s, i) => (
-                    <div
-                      key={s.id}
-                      className="bg-neutral-900 rounded-2xl p-4 flex justify-between items-center shadow-sm hover:shadow-lg transition border border-neutral-800"
-                    >
-                      <div>
-                        <p className="font-semibold text-lg">
-                          {i + 1}. {s.title}
-                        </p>
-                        <p className="text-neutral-400 text-sm">{s.artist}</p>
-                        <div className="flex flex-wrap gap-2 mt-2 text-xs">
-                          <span className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
-                            {safeKey(s.key_sig)}
-                          </span>
-                          <span className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
-                            {s.bpm} BPM
-                          </span>
-                          <span className="px-2 py-1 bg-neutral-800 rounded-lg border border-neutral-700">
-                            {safeDuration(s.duration_sec)}
-                          </span>
-
-                          {s.notes && (
-                            <span className="inline-block px-2 py-1 text-xs bg-brand-orange rounded-lg text-black font-semibold">
-                              {s.notes}
-                            </span>
-                          )}
-                        </div>
-                        {/* Private charts */}
-                        {privateCharts[s.id] &&
-                          privateCharts[s.id].length > 0 && (
-                            <div className="grid place-items-center mt-3 p-3 bg-neutral-800/50 rounded-xl border border-neutral-700">
-                              <div className="flex items-center gap-2 mb-2">
-                                <FileText size={14} className="text-cyan-400" />
-                                <span className="text-xs font-semibold text-neutral-300">
-                                  הצ'ארטים שלי ({privateCharts[s.id].length})
-                                </span>
-                              </div>
-                              <div className="flex flex-wrap gap-2">
-                                {privateCharts[s.id].map((chart, idx) => (
-                                  <div
-                                    key={chart.id}
-                                    className="flex items-center gap-1 bg-neutral-900 px-2 py-1.5 rounded-lg border border-neutral-600"
-                                  >
-                                    <span className="text-xs text-neutral-400 mr-1">
-                                      #{idx + 1}
-                                    </span>
-                                    <button
-                                      onClick={() =>
-                                        handleViewChart(chart.file_path)
-                                      }
-                                      className="bg-cyan-600 hover:bg-cyan-700 p-1.5 rounded-full transition-colors"
-                                      title="צפייה"
-                                    >
-                                      <Eye size={12} />
-                                    </button>
-                                    <button
-                                      onClick={() =>
-                                        handleDownloadChart(
-                                          chart.file_path,
-                                          s.title
-                                        )
-                                      }
-                                      className="bg-emerald-600 hover:bg-emerald-700 p-1.5 rounded-full transition-colors"
-                                      title="הורדה"
-                                    >
-                                      <FileDown size={12} />
-                                    </button>
-                                    <button
-                                      onClick={() =>
-                                        handleDeletePrivateChart(s.id, chart.id)
-                                      }
-                                      className="bg-rose-600 hover:bg-rose-700 p-1.5 rounded-full transition-colors"
-                                      title="מחיקה"
-                                    >
-                                      <Trash2 size={12} />
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                      </div>
-
-                      {/* Upload button */}
-                      <div className="flex gap-3 flex-row-reverse items-center">
-                        <input
-                          type="file"
-                          accept="application/pdf,image/jpeg,image/png,image/gif,image/jpg"
-                          ref={(el) => {
-                            fileInputRefs.current[s.id] = el;
-                          }}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              handleUploadChart(s.id, file);
-                            }
-                            e.target.value = "";
-                          }}
-                          className="hidden"
-                        />
-                        <button
-                          onClick={() => fileInputRefs.current[s.id]?.click()}
-                          className="bg-blue-500 hover:bg-blue-600 p-2 rounded-full"
-                          title="העלה צ'ארט"
-                        >
-                          <Upload size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                {filteredSongs.map((s, i) => (
+                  <CardSong
+                    key={s.id}
+                    song={s}
+                    index={i}
+                    safeKey={safeKey}
+                    safeDuration={safeDuration}
+                    onEdit={handleEditSong}
+                    onRemove={handleRemoveSong}
+                    chartsComponent={
+                      <Charts
+                        song={s}
+                        privateCharts={privateCharts[s.id] || []}
+                        setPrivateCharts={setPrivateCharts}
+                        fileInputRefs={fileInputRefs}
+                        viewingChart={viewingChart}
+                        setViewingChart={setViewingChart}
+                        onConfirm={confirm}
+                      />
+                    }
+                  />
+                ))}
               </div>
             )}
           </div>

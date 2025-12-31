@@ -13,6 +13,7 @@ router.use(requireAuth);
 router.use(emitRefreshOnMutation);
 
 router.get("/", lineupsController.list);
+router.get("/shared-with-me", lineupsController.sharedWithMe);
 router.get("/by-user/:userId", lineupsController.listByUserId);
 router.get("/:id", lineupsController.get);
 router.post("/", lineupsController.create);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import BaseModal from "./BaseModal.tsx";
 
 /* ---------- Types ---------- */
 
@@ -146,204 +146,198 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
     });
   }, [initialForm, editingId, open]);
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-neutral-900 rounded-2xl w-full max-w-md p-6 relative shadow-2xl">
+    <BaseModal
+      open={open}
+      onClose={onClose}
+      title={editingId ? "עריכת שיר 🎧" : "הוסף שיר חדש"}
+      maxWidth="max-w-md"
+    >
+      <h2 className="text-xl font-bold mb-4">
+        {editingId ? "עריכת שיר 🎧" : "הוסף שיר חדש"}
+      </h2>
+
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          await onSubmit(form, editingId);
+        }}
+        className="space-y-4"
+      >
+        {/* שם השיר */}
+        <input
+          placeholder="שם השיר *"
+          value={form.title}
+          onChange={(e) => setForm({ ...form, title: e.target.value })}
+          className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
+          required
+        />
+
+        {/* אמן */}
+        <input
+          placeholder="אמן"
+          value={form.artist}
+          onChange={(e) => setForm({ ...form, artist: e.target.value })}
+          className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
+        />
+
+        {/* BPM */}
+        <input
+          placeholder="BPM"
+          type="number"
+          min={1}
+          max={350}
+          value={form.bpm}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              bpm: e.target.value.replace(/\D/g, ""),
+            })
+          }
+          className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
+        />
+
+        {/* סולם */}
+        <div>
+          <p className="text-sm text-neutral-400 mb-1">סולם השיר:</p>
+
+          <div className="flex gap-2" ref={dropdownRef}>
+            {/* Root Dropmenu */}
+            <div className="relative flex-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setRootOpen((v) => !v);
+                  setModeOpen(false);
+                }}
+                className="w-full text-left bg-neutral-800 p-2 rounded-2xl text-sm"
+              >
+                {getRoot(form.key_sig)}
+              </button>
+              {rootOpen && (
+                <div className="absolute mt-1 w-full bg-neutral-800 rounded-2xl max-h-44 overflow-auto z-20">
+                  {notesKeys.map((note) => (
+                    <button
+                      key={note}
+                      type="button"
+                      onClick={() => {
+                        setForm({
+                          ...form,
+                          key_sig: `${note} ${getMode(form.key_sig)}`,
+                        });
+                        setRootOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-neutral-700 text-sm"
+                    >
+                      {note}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Mode Dropmenu */}
+            <div className="relative flex-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setModeOpen((v) => !v);
+                  setRootOpen(false);
+                }}
+                className="w-full text-left bg-neutral-800 p-2 rounded-2xl text-sm"
+              >
+                {getMode(form.key_sig)}
+              </button>
+              {modeOpen && (
+                <div className="absolute mt-1 w-full bg-neutral-800 rounded-2xl max-h-44 overflow-auto z-20">
+                  {scaleModes.map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => {
+                        setForm({
+                          ...form,
+                          key_sig: `${getRoot(form.key_sig)} ${mode}`,
+                        });
+                        setModeOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-neutral-700 text-sm"
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* משך זמן */}
+        <div>
+          <p className="text-sm text-neutral-400 mb-1">משך זמן:</p>
+          <div className="flex flex-justify-between gap-2 items-center">
+            <input
+              type="number"
+              min={0}
+              max={59}
+              value={getMinutes(form.duration_sec)}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  duration_sec: `${e.target.value}:${getSeconds(
+                    form.duration_sec
+                  )}`,
+                })
+              }
+              className="w-fit bg-neutral-800 p-2 rounded-2xl text-sm text-center"
+            />
+            <span>:</span>
+            <input
+              type="number"
+              min={0}
+              max={59}
+              value={getSeconds(form.duration_sec)}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  duration_sec: `${getMinutes(form.duration_sec)}:${
+                    e.target.value
+                  }`,
+                })
+              }
+              className="w-fit bg-neutral-800 p-2 rounded-2xl text-sm text-center"
+            />
+          </div>
+        </div>
+
+        {/* תגיות */}
+        <div>
+          <p className="text-sm text-neutral-400 mb-1">תגית:</p>
+          <div className="flex flex-wrap gap-2">
+            {notesList.map((tag) => (
+              <button
+                type="button"
+                key={tag}
+                onClick={() => setForm({ ...form, notes: tag })}
+                className={`px-3 py-1 rounded-2xl text-sm ${
+                  form.notes === tag
+                    ? "bg-brand-orange border-brand-orange text-black"
+                    : "bg-neutral-800 text-neutral-300"
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <button
-          onClick={onClose}
-          className="absolute top-3 left-3 text-neutral-400 hover:text-white"
+          type="submit"
+          className="w-full p-2 bg-brand-orange text-black hover:text-black font-semibold py-2 rounded-2xl mt-2"
         >
-          <X size={22} />
+          {editingId ? "עדכון" : "שמור"}
         </button>
-
-        <h2 className="text-xl font-bold mb-4">
-          {editingId ? "עריכת שיר 🎧" : "הוסף שיר חדש"}
-        </h2>
-
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            await onSubmit(form, editingId);
-          }}
-          className="space-y-4"
-        >
-          {/* שם השיר */}
-          <input
-            placeholder="שם השיר *"
-            value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
-            className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
-            required
-          />
-
-          {/* אמן */}
-          <input
-            placeholder="אמן"
-            value={form.artist}
-            onChange={(e) => setForm({ ...form, artist: e.target.value })}
-            className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
-          />
-
-          {/* BPM */}
-          <input
-            placeholder="BPM"
-            type="number"
-            min={1}
-            max={350}
-            value={form.bpm}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                bpm: e.target.value.replace(/\D/g, ""),
-              })
-            }
-            className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
-          />
-
-          {/* סולם */}
-          <div>
-            <p className="text-sm text-neutral-400 mb-1">סולם השיר:</p>
-
-            <div className="flex gap-2" ref={dropdownRef}>
-              {/* Root Dropmenu */}
-              <div className="relative flex-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRootOpen((v) => !v);
-                    setModeOpen(false);
-                  }}
-                  className="w-full text-left bg-neutral-800 p-2 rounded-2xl text-sm"
-                >
-                  {getRoot(form.key_sig)}
-                </button>
-                {rootOpen && (
-                  <div className="absolute mt-1 w-full bg-neutral-800 rounded-2xl max-h-44 overflow-auto z-20">
-                    {notesKeys.map((note) => (
-                      <button
-                        key={note}
-                        type="button"
-                        onClick={() => {
-                          setForm({
-                            ...form,
-                            key_sig: `${note} ${getMode(form.key_sig)}`,
-                          });
-                          setRootOpen(false);
-                        }}
-                        className="w-full text-left px-3 py-2 hover:bg-neutral-700 text-sm"
-                      >
-                        {note}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Mode Dropmenu */}
-              <div className="relative flex-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModeOpen((v) => !v);
-                    setRootOpen(false);
-                  }}
-                  className="w-full text-left bg-neutral-800 p-2 rounded-2xl text-sm"
-                >
-                  {getMode(form.key_sig)}
-                </button>
-                {modeOpen && (
-                  <div className="absolute mt-1 w-full bg-neutral-800 rounded-2xl max-h-44 overflow-auto z-20">
-                    {scaleModes.map((mode) => (
-                      <button
-                        key={mode}
-                        type="button"
-                        onClick={() => {
-                          setForm({
-                            ...form,
-                            key_sig: `${getRoot(form.key_sig)} ${mode}`,
-                          });
-                          setModeOpen(false);
-                        }}
-                        className="w-full text-left px-3 py-2 hover:bg-neutral-700 text-sm"
-                      >
-                        {mode}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* משך זמן */}
-          <div>
-            <p className="text-sm text-neutral-400 mb-1">משך זמן:</p>
-            <div className="flex flex-justify-between gap-2 items-center">
-              <input
-                type="number"
-                min={0}
-                max={59}
-                value={getMinutes(form.duration_sec)}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    duration_sec: `${e.target.value}:${getSeconds(
-                      form.duration_sec
-                    )}`,
-                  })
-                }
-                className="w-fit bg-neutral-800 p-2 rounded-2xl text-sm text-center"
-              />
-              <span>:</span>
-              <input
-                type="number"
-                min={0}
-                max={59}
-                value={getSeconds(form.duration_sec)}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    duration_sec: `${getMinutes(form.duration_sec)}:${
-                      e.target.value
-                    }`,
-                  })
-                }
-                className="w-fit bg-neutral-800 p-2 rounded-2xl text-sm text-center"
-              />
-            </div>
-          </div>
-
-          {/* תגיות */}
-          <div>
-            <p className="text-sm text-neutral-400 mb-1">תגית:</p>
-            <div className="flex flex-wrap gap-2">
-              {notesList.map((tag) => (
-                <button
-                  type="button"
-                  key={tag}
-                  onClick={() => setForm({ ...form, notes: tag })}
-                  className={`px-3 py-1 rounded-2xl text-sm ${
-                    form.notes === tag
-                      ? "bg-brand-orange border-brand-orange text-black"
-                      : "bg-neutral-800 text-neutral-300"
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            className="w-full p-2 bg-brand-orange text-black hover:text-black font-semibold py-2 rounded-2xl mt-2"
-          >
-            {editingId ? "עדכון" : "שמור"}
-          </button>
-        </form>
-      </div>
-    </div>
+      </form>
+    </BaseModal>
   );
 };

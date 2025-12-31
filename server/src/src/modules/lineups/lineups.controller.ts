@@ -8,6 +8,7 @@ import {
   getLineupsByUserId,
   getPublicLineup,
   getShareStatus,
+  getSharedLineups,
   updateLineup,
   deleteLineup,
 } from "./lineups.service.js";
@@ -28,6 +29,20 @@ export const lineupsController = {
     // הוספת סימון ownership לכל ליינאפ
     const lineupsWithMetadata = lineups.map((lineup) => {
       lineup.is_owner = lineup.created_by === req.user.id;
+      lineup.owner_id = lineup.created_by; // הוספת owner_id בצורה מפורשת
+      return lineup;
+    });
+
+    res.json(lineupsWithMetadata);
+  }),
+
+  // endpoint חדש לליינאפים משותפים
+  sharedWithMe: asyncHandler(async (req, res) => {
+    const sharedLineups = await getSharedLineups(req.user);
+
+    // הוספת מטאדאטה לכל ליינאפ
+    const lineupsWithMetadata = sharedLineups.map((lineup) => {
+      lineup.is_owner = false; // בהגדרה אני לא הבעלים של ליינאפים משותפים
       return lineup;
     });
 
@@ -70,6 +85,7 @@ export const lineupsController = {
 
     // הוספת סימון ownership
     lineup.is_owner = lineup.created_by === req.user.id;
+    lineup.owner_id = lineup.created_by;
 
     res.json(lineup);
   }),
@@ -84,6 +100,7 @@ export const lineupsController = {
 
     // הוספת סימון ownership
     lineup.is_owner = lineup.created_by === req.user.id;
+    lineup.owner_id = lineup.created_by;
 
     // שליחת עדכון בזמן אמת עם הנתונים המלאים
     if (global.io) {
@@ -110,6 +127,7 @@ export const lineupsController = {
 
     // הוספת סימון ownership
     lineup.is_owner = lineup.created_by === req.user.id;
+    lineup.owner_id = lineup.created_by;
 
     // שליחת עדכון בזמן אמת עם הנתונים המלאים
     if (global.io) {

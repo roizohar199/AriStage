@@ -42,7 +42,7 @@ export default function Login() {
         await login(data.token);
       }
 
-      navigate("/home");
+      navigate("/my");
     } catch (err) {
       setError(err?.response?.data?.message || "שגיאה בהתחברות");
     } finally {
@@ -157,7 +157,7 @@ export default function Login() {
               dir="ltr"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-neutral-700 rounded-2xl px-3 py-2 text-sm text-white"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white"
               required
             />
             <input
@@ -165,7 +165,7 @@ export default function Login() {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-neutral-700 rounded-2xl px-3 py-2 text-sm text-white"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white"
               required
             />
             <button
@@ -187,7 +187,7 @@ export default function Login() {
           <form onSubmit={handleRegister} className="space-y-4">
             {/* AVATAR + CIRCLE PREVIEW */}
             <div className="flex flex-col items-center space-y-3">
-              <div className="w-28 h-28 rounded-full overflow-hidden bg-neutral-700 shadow-md">
+              <div className="w-28 h-28 rounded-full overflow-hidden bg-neutral-800 shadow-md">
                 {preview ? (
                   <img
                     src={preview}
@@ -223,7 +223,7 @@ export default function Login() {
               placeholder="שם מלא"
               value={full_name}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-full bg-neutral-700 rounded-2xl px-3 py-2 text-sm text-white"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white"
               required
             />
 
@@ -233,7 +233,7 @@ export default function Login() {
               dir="ltr"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-neutral-700 rounded-2xl px-3 py-2 text-sm text-white"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white"
               required
             />
 
@@ -243,7 +243,7 @@ export default function Login() {
               placeholder="תפקיד (גיטריסט, בסיסט...)"
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="w-full bg-neutral-700 rounded-2xl px-3 py-2 text-sm text-white"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white"
             />
 
             <input
@@ -251,7 +251,7 @@ export default function Login() {
               placeholder="בחר סיסמה"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-neutral-700 rounded-2xl px-3 py-2 text-sm text-white"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white"
               required
             />
 
@@ -260,7 +260,7 @@ export default function Login() {
               placeholder="אימות סיסמה"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              className="w-full bg-neutral-700 rounded-2xl px-3 py-2 text-sm text-white"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white"
               required
             />
 
@@ -298,7 +298,7 @@ export default function Login() {
               dir="ltr"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-neutral-700 rounded-2xl px-3 py-2 text-sm text-white"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white"
               required
             />
             <button className="w-full cursor-pointer bg-brand-orange text-black font-semibold px-4 py-2 rounded-2xl shadow-innerIos transition text-sm">
@@ -318,7 +318,7 @@ export default function Login() {
       dir="rtl"
       className="flex flex-col items-center justify-center min-h-screen text-white"
     >
-      <div className="w-full max-w-sm bg-neutral-800 p-6 text-center rounded-2xl backdrop-blur-xl">
+      <div className="w-full max-w-sm bg-neutral-950/50 p-6 text-center rounded-2xl backdrop-blur-xl">
         <div className="mb-5">
           <h1 className="text-3xl font-bold text-brand-orange">Ari Stage</h1>
           <p className="text-sm text-gray-400 mt-1">
@@ -326,7 +326,7 @@ export default function Login() {
           </p>
         </div>
 
-        <div className="bg-neutral-900 flex rounded-2xl mb-6 overflow-hidden">
+        <div className="bg-neutral-800 flex rounded-2xl mb-6 overflow-hidden">
           {["login", "register", "reset"].map((t) => (
             <button
               key={t}

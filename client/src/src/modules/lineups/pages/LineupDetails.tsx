@@ -25,6 +25,7 @@ import {
   Eye,
   ArrowRight,
 } from "lucide-react";
+import BaseModal from "@/modules/shared/components/BaseModal";
 import SearchInput from "../../shared/components/Search";
 import api from "@/modules/shared/lib/api.js";
 import { useParams, useNavigate } from "react-router-dom";
@@ -178,129 +179,125 @@ const AddSongModal = memo(function AddSongModal({
   selectedArtistId,
   setSelectedArtistId,
 }: any) {
-  if (!showModal) return null;
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center p-4">
-      <div className="bg-neutral-900 rounded-2xl w-full max-w-2xl p-6 relative">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-white">הוסף שיר לליינאפ</h2>
+    <BaseModal
+      open={showModal}
+      onClose={onClose}
+      title="הוסף שיר לליינאפ"
+      maxWidth="max-w-2xl"
+    >
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold text-white">הוסף שיר לליינאפ</h2>
+      </div>
+
+      {/* Tabs */}
+      <div className="mb-4">
+        <div className="flex gap-3 bg-neutral-800 rounded-2xl p-1 ">
           <button
-            onClick={onClose}
-            className="text-neutral-400 hover:text-white"
+            onClick={() => setModalActiveTab("my")}
+            className={`flex-1 py-2 px-4 rounded-2xl font-semibold transition-all ${
+              modalActiveTab === "my"
+                ? "bg-brand-orange text-black"
+                : "text-neutral-400 hover:text-white"
+            }`}
           >
-            <X size={22} />
+            השירים שלי
+          </button>
+          <button
+            onClick={() => setModalActiveTab("artists")}
+            className={`flex-1 py-2 px-4 rounded-2xl font-semibold transition-all ${
+              modalActiveTab === "artists"
+                ? "bg-brand-orange text-black"
+                : "text-neutral-400 hover:text-white"
+            }`}
+          >
+            שירים של אמנים
           </button>
         </div>
-
-        {/* Tabs */}
-        <div className="mb-4">
-          <div className="flex gap-3 bg-neutral-800 rounded-2xl p-1 ">
-            <button
-              onClick={() => setModalActiveTab("my")}
-              className={`flex-1 py-2 px-4 rounded-2xl font-semibold transition-all ${
-                modalActiveTab === "my"
-                  ? "bg-brand-orange text-black"
-                  : "text-neutral-400 hover:text-white"
-              }`}
-            >
-              השירים שלי
-            </button>
-            <button
-              onClick={() => setModalActiveTab("artists")}
-              className={`flex-1 py-2 px-4 rounded-2xl font-semibold transition-all ${
-                modalActiveTab === "artists"
-                  ? "bg-brand-orange text-black"
-                  : "text-neutral-400 hover:text-white"
-              }`}
-            >
-              שירים של אמנים
-            </button>
-          </div>
-        </div>
-
-        {/* אמנים - רשימה תמיד נראית בטאב אמנים */}
-        {modalActiveTab === "artists" && connectedArtists.length > 0 && (
-          <div className="mb-4">
-            <p className="text-sm text-neutral-400 mb-2">
-              בחר אמן להצגת שירים שלו
-            </p>
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {connectedArtists.map((artist) => (
-                <button
-                  key={artist.id}
-                  onClick={() =>
-                    setSelectedArtistId(
-                      selectedArtistId === artist.id ? null : artist.id
-                    )
-                  }
-                  className={`flex-shrink-0 py-2 px-4 rounded-2xl text-sm font-semibold transition-all whitespace-nowrap ${
-                    selectedArtistId === artist.id
-                      ? "bg-brand-orange text-black"
-                      : "bg-neutral-800 text-neutral-400 hover:text-white"
-                  }`}
-                >
-                  {artist.full_name}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="relative mb-4">
-          <SearchIcon
-            size={16}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500"
-          />
-          <input
-            type="text"
-            placeholder="חפש לפי שם, אמן, BPM, סולם..."
-            value={searchModal}
-            onChange={(e) => setSearchModal(e.target.value)}
-            className="w-full bg-neutral-800 rounded-2xl p-2 pr-8 text-sm text-white"
-          />
-        </div>
-
-        <div className="max-h-[400px] overflow-y-auto space-y-3 pr-1">
-          {filteredModalSongs.map((s: any) => (
-            <div
-              key={s.id}
-              className="bg-neutral-800 rounded-2xl p-4 flex justify-between items-center shadow-sm"
-            >
-              <div>
-                <p className="font-semibold text-lg text-white">{s.title}</p>
-                <div className="flex flex-wrap gap-2 mt-2 text-xs">
-                  <p className="px-2 py-1 bg-neutral-900 rounded-2xl">
-                    BPM {s.bpm || ""}
-                  </p>
-                  <p className="px-2 py-1 bg-neutral-900 rounded-2xl">
-                    {s.key_sig || "-"}
-                  </p>
-                  <p className="px-2 py-1 bg-neutral-900 rounded-2xl">
-                    {s.duration_sec || "00:00"}
-                  </p>
-                  {s.notes && (
-                    <span className="inline-block px-2 py-1 text-xs bg-brand-orange rounded-2xl text-black font-semibold">
-                      {s.notes}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={() => addSong(s.id)}
-                className="w-6 h-6 text-white hover:text-brand-orange"
-              >
-                <Plus size={20} />
-              </button>
-            </div>
-          ))}
-          {filteredModalSongs.length === 0 && (
-            <p className="text-center text-neutral-400 py-6">
-              לא נמצאו תוצאות...
-            </p>
-          )}
-        </div>
       </div>
-    </div>
+
+      {/* אמנים - רשימה תמיד נראית בטאב אמנים */}
+      {modalActiveTab === "artists" && connectedArtists.length > 0 && (
+        <div className="mb-4">
+          <p className="text-sm text-neutral-400 mb-2">
+            בחר אמן להצגת שירים שלו
+          </p>
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {connectedArtists.map((artist) => (
+              <button
+                key={artist.id}
+                onClick={() =>
+                  setSelectedArtistId(
+                    selectedArtistId === artist.id ? null : artist.id
+                  )
+                }
+                className={`flex-shrink-0 py-2 px-4 rounded-2xl text-sm font-semibold transition-all whitespace-nowrap ${
+                  selectedArtistId === artist.id
+                    ? "bg-brand-orange text-black"
+                    : "bg-neutral-800 text-neutral-400 hover:text-white"
+                }`}
+              >
+                {artist.full_name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="relative mb-4">
+        <SearchIcon
+          size={16}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500"
+        />
+        <input
+          type="text"
+          placeholder="חפש לפי שם, אמן, BPM, סולם..."
+          value={searchModal}
+          onChange={(e) => setSearchModal(e.target.value)}
+          className="w-full bg-neutral-800 rounded-2xl p-2 pr-8 text-sm text-white"
+        />
+      </div>
+
+      <div className="max-h-[400px] overflow-y-auto space-y-3 pr-1">
+        {filteredModalSongs.map((s: any) => (
+          <div
+            key={s.id}
+            className="bg-neutral-800 rounded-2xl p-4 flex justify-between items-center shadow-sm"
+          >
+            <div>
+              <p className="font-semibold text-lg text-white">{s.title}</p>
+              <div className="flex flex-wrap gap-2 mt-2 text-xs">
+                <p className="px-2 py-1 bg-neutral-900 rounded-2xl">
+                  BPM {s.bpm || ""}
+                </p>
+                <p className="px-2 py-1 bg-neutral-900 rounded-2xl">
+                  {s.key_sig || "-"}
+                </p>
+                <p className="px-2 py-1 bg-neutral-900 rounded-2xl">
+                  {s.duration_sec || "00:00"}
+                </p>
+                {s.notes && (
+                  <span className="inline-block px-2 py-1 text-xs bg-brand-orange rounded-2xl text-black font-semibold">
+                    {s.notes}
+                  </span>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => addSong(s.id)}
+              className="w-6 h-6 text-white hover:text-brand-orange"
+            >
+              <Plus size={20} />
+            </button>
+          </div>
+        ))}
+        {filteredModalSongs.length === 0 && (
+          <p className="text-center text-neutral-400 py-6">
+            לא נמצאו תוצאות...
+          </p>
+        )}
+      </div>
+    </BaseModal>
   );
 });
 

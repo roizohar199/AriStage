@@ -15,7 +15,6 @@ import {
   CalendarCheck,
   Users,
   UserPlus,
-  X,
   MapPin,
   CalendarDays,
   Clock,
@@ -30,6 +29,7 @@ import {
   Outlet,
   useLocation,
 } from "react-router-dom";
+import BaseModal from "@/modules/shared/components/BaseModal.tsx";
 import { AddNewSong, SongForm } from "../../shared/components/Addnewsong";
 import CreateLineup from "../../shared/components/Createlineup";
 import Search from "../../shared/components/Search";
@@ -41,6 +41,7 @@ import api from "@/modules/shared/lib/api.js";
 import DesignActionButton from "../../shared/components/DesignActionButton";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "../../shared/components/ToastProvider";
+import ArtistCard from "../../shared/components/ArtistCard";
 
 import { io } from "socket.io-client";
 
@@ -52,12 +53,12 @@ function PersonalStats({
   connectedArtistsCount: number;
 }) {
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div className="bg-neutral-800 rounded-2xl p-4 flex items-center gap-4">
         <Music size={32} className="text-brand-orange shrink-0" />
         <div className="flex flex-col">
           <span className="text-xl font-bold">{stats?.songs ?? 0}</span>
-          <span className="text-sm text-neutral-300">שירים שלך</span>
+          <span className="text-sm text-neutral-300">שירים שלי </span>
         </div>
       </div>
 
@@ -65,7 +66,7 @@ function PersonalStats({
         <CalendarCheck size={32} className="text-brand-orange shrink-0" />
         <div className="flex flex-col">
           <span className="text-xl font-bold">{stats?.lineups ?? 0}</span>
-          <span className="text-sm text-neutral-300">ליינאפים שיצרת</span>
+          <span className="text-sm text-neutral-300">ליינאפים שלי</span>
         </div>
       </div>
 
@@ -73,7 +74,7 @@ function PersonalStats({
         <Users size={32} className="text-brand-orange shrink-0" />
         <div className="flex flex-col">
           <span className="text-xl font-bold">{connectedArtistsCount}</span>
-          <span className="text-sm text-neutral-300">אמנים מחוברים אליך</span>
+          <span className="text-sm text-neutral-300">אמנים שלי </span>
         </div>
       </div>
     </div>
@@ -104,6 +105,19 @@ function MyContent(): JSX.Element {
   const [selectedTab, setSelectedTab] = useState<
     "songs" | "lineups" | "shared"
   >("songs");
+
+  // Sync selectedTab with URL
+  useEffect(() => {
+    if (location.pathname.includes("/lineups")) {
+      setSelectedTab("lineups");
+    } else if (location.search.includes("tab=lineups")) {
+      setSelectedTab("lineups");
+    } else if (location.search.includes("tab=shared")) {
+      setSelectedTab("shared");
+    } else {
+      setSelectedTab("songs");
+    }
+  }, [location.pathname, location.search]);
   const navigate = useNavigate();
 
   // --- סטייטים של טאב השירים ---
@@ -732,7 +746,6 @@ function MyContent(): JSX.Element {
           }`}
           onClick={() => {
             navigate("/my");
-            setSelectedTab("songs");
           }}
         >
           שירים
@@ -744,8 +757,7 @@ function MyContent(): JSX.Element {
               : "font-bold text-white"
           }`}
           onClick={() => {
-            navigate("/my");
-            setSelectedTab("lineups");
+            navigate("/my?tab=lineups");
           }}
         >
           ליינאפים
@@ -757,11 +769,10 @@ function MyContent(): JSX.Element {
               : "font-bold text-white "
           }`}
           onClick={() => {
-            navigate("/my");
-            setSelectedTab("shared");
+            navigate("/my?tab=shared");
           }}
         >
-          משותפים
+          אמנים שלי
         </button>
       </div>
 
@@ -871,39 +882,36 @@ function MyContent(): JSX.Element {
             keysType={keysType}
           />
           {/* מודאל צפייה בצ'ארט */}
-          {viewingChart && (
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-              <div className="bg-neutral-900 rounded-2xl w-full max-w-6xl h-[90vh] relative border border-neutral-800 shadow-2xl flex flex-col">
-                <div className="flex items-center justify-between p-4 border-b border-neutral-800">
-                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                    <FileText size={20} className="text-cyan-400" />
-                    צפייה בצ'ארט
-                  </h3>
-                  <button
-                    onClick={() => setViewingChart(null)}
-                    className="text-neutral-400 hover:text-white hover:bg-neutral-800 p-2 rounded-full"
-                  >
-                    <X size={24} />
-                  </button>
-                </div>
-                <div className="flex-1 overflow-auto p-4">
-                  {viewingChart.match(/\.(jpg|jpeg|png|gif)$/i) ? (
-                    <img
-                      src={viewingChart}
-                      alt="צ'ארט"
-                      className="max-w-full h-auto mx-auto rounded-lg"
-                    />
-                  ) : (
-                    <iframe
-                      src={viewingChart}
-                      className="w-full h-full rounded-lg border border-neutral-700"
-                      title="PDF Viewer"
-                    />
-                  )}
-                </div>
-              </div>
+          <BaseModal
+            open={!!viewingChart}
+            onClose={() => setViewingChart(null)}
+            title="צפייה בצ'ארט"
+            maxWidth="max-w-6xl"
+            containerClassName="h-[90vh] flex flex-col"
+            padding="p-0"
+          >
+            <div className="flex items-center justify-between p-4 border-b border-neutral-800">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <FileText size={20} className="text-cyan-400" />
+                צפייה בצ'ארט
+              </h3>
             </div>
-          )}
+            <div className="flex-1 overflow-auto p-4">
+              {viewingChart && viewingChart.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                <img
+                  src={viewingChart}
+                  alt="צ'ארט"
+                  className="max-w-full h-auto mx-auto rounded-lg"
+                />
+              ) : (
+                <iframe
+                  src={viewingChart || ""}
+                  className="w-full h-full rounded-lg border border-neutral-700"
+                  title="PDF Viewer"
+                />
+              )}
+            </div>
+          </BaseModal>
         </>
       ) : selectedTab === "lineups" ? (
         <>
@@ -1056,87 +1064,36 @@ function MyContent(): JSX.Element {
                           .includes(sharedSearch.toLowerCase())
                     )
                     .map((artist) => (
-                      <div
+                      <ArtistCard
                         key={artist.id}
-                        className="bg-neutral-800 rounded-2xl p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center"
-                      >
-                        {/* תמונת פרופיל */}
-                        <div className="w-36 h-36 shrink-0 rounded-full overflow-hidden border-2 border-brand-orange">
-                          {artist.avatar ? (
-                            <img
-                              src={artist.avatar}
-                              alt={artist.full_name}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.target.style.display = "none";
-                                if (e.target.nextSibling) {
-                                  e.target.nextSibling.style.display = "flex";
-                                }
-                              }}
-                            />
-                          ) : null}
-                          <div
-                            className="w-16 h-16 rounded-full bg-neutral-700 border-2 border-brand-orange flex items-center justify-center"
-                            style={{ display: artist.avatar ? "none" : "flex" }}
-                          >
-                            <User size={24} className="text-neutral-500" />
-                          </div>
-                        </div>
-                        {/* פרטי האמן */}
-                        <div className="flex-1 min-w-0 text-right">
-                          <h3 className="text-lg font-bold text-white mb-1">
-                            {artist.full_name || "אמן ללא שם"}
-                          </h3>
-                          {artist.artist_role && (
-                            <div className="mb-2">
-                              <span className="flex flex-row-reverse inline-flex items-center gap-1 px-2 py-1 bg-brand-orange rounded-2xl text-black font-semibold text-xs">
-                                <Music size={12} />
-                                {artist.artist_role}
-                              </span>
-                            </div>
-                          )}
-                          {artist.email && (
-                            <p className="w-fit bg-neutral-900 px-2 py-1 bg-neutral-800 rounded-2xl text-white text-xs">
-                              {artist.email}
-                            </p>
-                          )}
-                        </div>
-                        {/* כפתור ביטול שיתוף */}
-                        <div className="flex m-4 gap-6 flex-row-reverse items-center">
-                          <button
-                            onClick={async () => {
-                              const ok = await confirm({
-                                title: "ביטול שיתוף",
-                                message: `בטוח שאתה רוצה לבטל את השיתוף עם ${
-                                  artist.full_name || "האמן"
-                                }? האמן לא יוכל עוד לצפות בליינאפים והשירים שלך.`,
-                              });
-                              if (!ok) return;
+                        artist={artist}
+                        disableActions={inviteLoading}
+                        onUninvite={async () => {
+                          const ok = await confirm({
+                            title: "ביטול שיתוף",
+                            message: `בטוח שאתה רוצה לבטל את השיתוף עם ${
+                              artist.full_name || "האמן"
+                            }? האמן לא יוכל עוד לצפות בליינאפים והשירים שלך.`,
+                          });
+                          if (!ok) return;
 
-                              setInviteLoading(true);
-                              try {
-                                await api.post("/users/uninvite-artist", {
-                                  artist_id: artist.id,
-                                });
-                                showToast("השיתוף בוטל בהצלחה", "success");
-                                loadMyInvitedArtists();
-                              } catch (err) {
-                                const errorMsg =
-                                  err?.response?.data?.message ||
-                                  "שגיאה בביטול השיתוף";
-                                showToast(errorMsg, "error");
-                              } finally {
-                                setInviteLoading(false);
-                              }
-                            }}
-                            disabled={inviteLoading}
-                            className="w-6 h-6 text-red-500 hover:text-red-400"
-                            title="בטל שיתוף מאגר"
-                          >
-                            <Trash2 size={20} />
-                          </button>
-                        </div>
-                      </div>
+                          setInviteLoading(true);
+                          try {
+                            await api.post("/users/uninvite-artist", {
+                              artist_id: artist.id,
+                            });
+                            showToast("השיתוף בוטל בהצלחה", "success");
+                            loadMyInvitedArtists();
+                          } catch (err) {
+                            const errorMsg =
+                              err?.response?.data?.message ||
+                              "שגיאה בביטול השיתוף";
+                            showToast(errorMsg, "error");
+                          } finally {
+                            setInviteLoading(false);
+                          }
+                        }}
+                      />
                     ))}
                 </div>
               )}
@@ -1146,60 +1103,54 @@ function MyContent(): JSX.Element {
       ) : null}
 
       {/* מודאל הזמנת אמן */}
-      {showInviteModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-          <div className="bg-neutral-900 rounded-2xl w-full max-w-md p-6 relative shadow-xl">
-            <button
-              onClick={() => {
-                setShowInviteModal(false);
-                setInviteEmail("");
-              }}
-              className="absolute top-3 left-3 text-neutral-400 hover:text-white"
-            >
-              <X size={22} />
-            </button>
+      <BaseModal
+        open={showInviteModal}
+        onClose={() => {
+          setShowInviteModal(false);
+          setInviteEmail("");
+        }}
+        title="הזמן אמן למאגר שלך"
+        maxWidth="max-w-md"
+      >
+        <h2 className="text-xl font-bold mb-4 text-center">
+          הזמן אמן למאגר שלך
+        </h2>
 
-            <h2 className="text-xl font-bold mb-4 text-center">
-              הזמן אמן למאגר שלך
-            </h2>
+        <p className="text-neutral-400 text-sm mb-4 text-center">
+          הזן את כתובת האימייל של האמן. הוא יקבל מייל עם קישור להצטרפות למאגר
+          שלך.
+        </p>
 
-            <p className="text-neutral-400 text-sm mb-4 text-center">
-              הזן את כתובת האימייל של האמן. הוא יקבל מייל עם קישור להצטרפות
-              למאגר שלך.
-            </p>
-
-            <form onSubmit={sendInvitation} className="space-y-4">
-              <div>
-                <input
-                  type="email"
-                  placeholder="artist@example.com"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
-                  dir="ltr"
-                  required
-                  disabled={inviteLoading}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={inviteLoading}
-                className="w-full p-2 bg-brand-orange text-black hover:text-black font-semibold py-2 rounded-2xl mt-2"
-              >
-                {inviteLoading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    שולח...
-                  </>
-                ) : (
-                  <>שלח הזמנה</>
-                )}
-              </button>
-            </form>
+        <form onSubmit={sendInvitation} className="space-y-4">
+          <div>
+            <input
+              type="email"
+              placeholder="artist@example.com"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
+              dir="ltr"
+              required
+              disabled={inviteLoading}
+            />
           </div>
-        </div>
-      )}
+
+          <button
+            type="submit"
+            disabled={inviteLoading}
+            className="w-full p-2 bg-brand-orange text-black hover:text-black font-semibold py-2 rounded-2xl mt-2"
+          >
+            {inviteLoading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                שולח...
+              </>
+            ) : (
+              <>שלח הזמנה</>
+            )}
+          </button>
+        </form>
+      </BaseModal>
     </div>
   );
 }

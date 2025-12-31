@@ -1,13 +1,33 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { LogOut, Settings } from "lucide-react";
+import {
+  Check,
+  CheckCircle2,
+  CheckIcon,
+  LogOut,
+  Settings,
+  Trash2,
+  User,
+  X,
+} from "lucide-react";
 import { getNavItems } from "@/modules/shared/components/navConfig.tsx";
+import BaseModal from "@/modules/shared/components/BaseModal.tsx";
+import { useToast } from "@/modules/shared/components/ToastProvider.jsx";
 import { usePendingInvitations } from "@/modules/shared/hooks/usePendingInvitations.ts";
 import { useCurrentUser } from "@/modules/shared/hooks/useCurrentUser.ts";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
+import api from "@/modules/shared/lib/api.js";
+import AcceptInvitation from "../../auth/pages/AcceptInvitation";
 
 interface HeaderProps {
   rightActions?: React.ReactNode;
+}
+
+interface PendingInvitation {
+  id: number;
+  full_name?: string | null;
+  avatar?: string | null;
+  artist_role?: string | null;
 }
 
 // Pure presentational header: title/logo on the left, optional actions on the right.
@@ -15,7 +35,15 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
   const { user } = useCurrentUser();
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [pendingModalOpen, setPendingModalOpen] = useState(false);
+  const [pendingInvitations, setPendingInvitations] = useState<
+    PendingInvitation[]
+  >([]);
+  const [pendingLoading, setPendingLoading] = useState(false);
+  const [processingId, setProcessingId] = useState<number | null>(null);
+  const [displayPendingCount, setDisplayPendingCount] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const role = user?.role || "user";
@@ -25,6 +53,35 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
   const initials = (user?.full_name || user?.email || "A")
     .slice(0, 1)
     .toUpperCase();
+
+  const loadPendingInvitations = useCallback(async () => {
+    if (!user?.id) {
+      setPendingInvitations([]);
+      return;
+    }
+
+    setPendingLoading(true);
+    try {
+      const { data } = await api.get("/users/pending-invitation", {
+        skipErrorToast: true,
+      });
+      setPendingInvitations(Array.isArray(data) ? data : []);
+    } catch (error) {
+      setPendingInvitations([]);
+    } finally {
+      setPendingLoading(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    setDisplayPendingCount(pendingCount || 0);
+  }, [pendingCount]);
+
+  useEffect(() => {
+    if (pendingModalOpen || (pendingCount && pendingCount > 0)) {
+      loadPendingInvitations();
+    }
+  }, [pendingModalOpen, pendingCount, loadPendingInvitations]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -54,8 +111,48 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
     setMenuOpen(false);
   };
 
+  const handleInvitationHandled = (hostId: number) => {
+    setPendingInvitations((prev) => {
+      const updated = prev.filter((inv) => inv.id !== hostId);
+      if (updated.length === 0) {
+        setPendingModalOpen(false);
+      }
+      return updated;
+    });
+    setDisplayPendingCount((prev) => Math.max(prev - 1, 0));
+    window.dispatchEvent(new CustomEvent("pending-invitations-updated"));
+  };
+
+  const handleAcceptInvitation = async (hostId: number) => {
+    try {
+      setProcessingId(hostId);
+      await api.post("/users/accept-invitation", { hostId });
+      showToast("הזמנה אושרה", "success");
+      handleInvitationHandled(hostId);
+    } catch (error: any) {
+      const message = error?.response?.data?.message || "שגיאה באישור ההזמנה";
+      showToast(message, "error");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleRejectInvitation = async (hostId: number) => {
+    try {
+      setProcessingId(hostId);
+      await api.post("/users/reject-invitation", { hostId });
+      showToast("הזמנה נדחתה", "success");
+      handleInvitationHandled(hostId);
+    } catch (error: any) {
+      const message = error?.response?.data?.message || "שגיאה בדחיית ההזמנה";
+      showToast(message, "error");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   return (
-    <div className="fixed top-0 left-0 right-0 z-40 w-full h-16 bg-neutral-800/80 backdrop-blur-md">
+    <div className=" w-full h-16 bg-neutral-800/80">
       <div className="h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between md:grid md:grid-cols-3">
         {/* Left: Logo */}
         <div className="flex items-center gap-2">
@@ -90,26 +187,47 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
         <div className="md:justify-self-end flex items-center gap-3 relative">
           {rightActions}
           <div ref={menuRef} className="relative">
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="h-8 w-8 rounded-full overflow-hidden border border-brand-orange flex items-center justify-center text-white text-sm"
-            >
-              {user?.avatar ? (
-                <img
-                  src={user.avatar}
-                  alt="Avatar"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <span className="h-full w-full flex items-center justify-center bg-neutral-700">
-                  {initials}
+            <div className="relative">
+              {displayPendingCount > 0 && (
+                <span className="absolute -top-[6px] -right-[6px] z-10 bg-red-500 text-white text-[11px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center border border-neutral-900">
+                  {displayPendingCount > 99
+                    ? "99+"
+                    : displayPendingCount > 9
+                    ? "9+"
+                    : displayPendingCount}
                 </span>
               )}
-            </button>
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="h-8 w-8 rounded-full overflow-hidden border border-brand-orange flex items-center justify-center text-white text-sm"
+              >
+                {user?.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt="Avatar"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="h-full w-full flex items-center justify-center bg-neutral-700">
+                    {initials}
+                  </span>
+                )}
+              </button>
+            </div>
 
             {/* Dropdown menu */}
             {menuOpen && (
               <div className="absolute left-0 top-10 bg-neutral-800 rounded-2xl shadow-lg z-50 min-w-max">
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setPendingModalOpen(true);
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:text-brand-orange"
+                >
+                  <User size={16} />
+                  הזמנות ממתינות
+                </button>
                 <button
                   onClick={handleSettings}
                   className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:text-brand-orange"
@@ -129,6 +247,83 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
           </div>
         </div>
       </div>
+
+      <BaseModal
+        open={pendingModalOpen}
+        onClose={() => setPendingModalOpen(false)}
+        title="הזמנות ממתינות"
+        maxWidth="max-w-2xl"
+      >
+        <div className="flex flex-col items-center text-center w-full">
+          <h2 className="text-xl font-bold text-brand-orange mb-2">
+            הזמנות ממתינות
+          </h2>
+          <p className="text-neutral-400 text-sm mb-4">
+            בחר הזמנה לאישור או דחייה
+          </p>
+
+          <div className="w-full max-w-xl space-y-3 max-h-[60vh] overflow-y-auto mx-auto">
+            {pendingLoading ? (
+              <div className="text-neutral-400 text-sm">טוען הזמנות...</div>
+            ) : pendingInvitations.length === 0 ? (
+              <div className="text-neutral-400 text-sm">אין הזמנות ממתינות</div>
+            ) : (
+              pendingInvitations.map((invitation) => (
+                <div
+                  key={invitation.id}
+                  className="bg-neutral-800 rounded-xl p-4"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 text-right">
+                      <div className="h-24 w-24 rounded-full bg-neutral-800 border-2 border-brand-orange overflow-hidden flex items-center justify-center">
+                        {invitation.avatar ? (
+                          <img
+                            src={invitation.avatar}
+                            alt={invitation.full_name || "Avatar"}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <User size={20} className="text-neutral-400" />
+                        )}
+                      </div>
+                      <div className="flex flex-col items-start gap-1">
+                        <span className="text-sm font-semibold text-white">
+                          {invitation.full_name || "משתמש"}
+                        </span>
+                        {invitation.artist_role && (
+                          <span className="inline-flex items-center px-1 bg-brand-orange rounded-lg text-black font-semibold text-xs">
+                            {invitation.artist_role}
+                          </span>
+                        )}
+                        <span className="text-xs text-neutral-300">
+                          מזמין אותך להצטרף למאגר שלו
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex m-4 gap-6 items-center">
+                      <button
+                        onClick={() => handleAcceptInvitation(invitation.id)}
+                        disabled={processingId === invitation.id}
+                        className="w-6 h-6 text-white hover:text-brand-orange"
+                      >
+                        <Check size={25} />
+                      </button>
+                      <button
+                        onClick={() => handleRejectInvitation(invitation.id)}
+                        disabled={processingId === invitation.id}
+                        className="w-6 h-6 text-red-500 hover:text-red-400"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </BaseModal>
     </div>
   );
 }

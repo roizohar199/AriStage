@@ -32,7 +32,7 @@ const BlockLineup: React.FC<BlockLineupProps> = ({
     <div
       role="button"
       onClick={onOpen}
-      className="relative aspect-square bg-neutral-800 backdrop-blur rounded-2xl hover:shadow-lg transition p-4 flex flex-col justify-center items-center text-center select-none"
+      className="relative aspect-square bg-neutral-800 p-4 rounded-2xl flex flex-col justify-center items-center text-center select-none"
     >
       {/* מספור – תמיד נראה */}
       {typeof index === "number" && (
@@ -41,13 +41,13 @@ const BlockLineup: React.FC<BlockLineupProps> = ({
         </div>
       )}
 
-      <div className="w-full flex-1 flex flex-col justify-center items-center gap-2">
+      <div className="w-full flex-1 flex flex-col justify-center items-center gap-0">
         <p className="font-semibold text-lg line-clamp-2 break-words">
           {lineup?.title}
         </p>
 
         {/* תאריך */}
-        <div className="flex items-center justify-left gap-2 mt-3 text-xs w-full">
+        <div className="flex items-center justify-left gap-2 mt-3 text-xs w-fit">
           <span className="flex items-center gap-1 px-2 py-1 bg-neutral-900 rounded-2xl flex-row-reverse w-full justify-center">
             <CalendarDays size={14} />
             {formatForDisplay(lineup?.date)}
@@ -55,7 +55,7 @@ const BlockLineup: React.FC<BlockLineupProps> = ({
         </div>
 
         {/* שעה */}
-        <div className="flex items-center justify-left gap-2 mt-2 text-xs w-full">
+        <div className="flex items-center justify-left gap-2 mt-2 text-xs w-fit">
           <span className="flex items-center gap-1 px-2 py-1 bg-neutral-900 rounded-2xl flex-row-reverse w-full justify-center">
             <Clock size={14} />
             {normalizeTime(lineup?.time) || "לא צוין שעה"}
@@ -63,7 +63,7 @@ const BlockLineup: React.FC<BlockLineupProps> = ({
         </div>
 
         {/* מיקום */}
-        <div className="flex items-center justify-left gap-2 mt-2 text-xs w-full">
+        <div className="flex items-center justify-left gap-2 mt-2 text-xs w-fit">
           <span className="flex flex-row-reverse items-center gap-1 px-2 py-1 bg-brand-orange rounded-2xl text-black font-semibold w-full justify-center">
             <MapPin size={14} />
             {lineup?.location || "לא צוין מיקום"}

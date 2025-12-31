@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Home, ListMusic, Music, Users, User } from "lucide-react";
+import { Home, ListMusic, Music, Shield, Users, User } from "lucide-react";
 
 export function getStoredUser() {
   try {
@@ -19,21 +19,12 @@ export type NavItem = {
 
 export function getNavItems(role: string, pendingCount: number): NavItem[] {
   return [
-    { to: "/home", label: "בית", icon: <Home size={22} /> },
     { to: "/my", label: "אישי", icon: <User size={22} /> },
-    { to: "/MyArtist", label: "אמנים", icon: <Users size={22} /> },
-    { to: "/songs", label: "שירים", icon: <Music size={22} /> },
-    { to: "/lineup", label: "ליינאפ", icon: <ListMusic size={22} /> },
-    ...(role === "admin" || role === "manager"
-      ? [
-          {
-            to: "/users",
-            label: "משתמשים",
-            icon: <Users size={22} />,
-            badge: pendingCount,
-          },
-        ]
+    { to: "/MyArtist", label: "משותפים", icon: <Users size={22} /> },
+    ...(role === "admin"
+      ? [{ to: "/admin", label: "אדמין", icon: <Shield size={22} /> }]
       : []),
+    // Removed /users nav item (Users.tsx removed)
     // settings removed per request
   ];
 }

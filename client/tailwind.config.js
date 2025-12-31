@@ -1,3 +1,21 @@
+import plugin from "tailwindcss/plugin";
+
+const hexToRgbChannels = (hex) => {
+  if (!hex) return null;
+  const normalized = hex.replace("#", "");
+  if (normalized.length === 3) {
+    const [r, g, b] = normalized.split("").map((c) => parseInt(c + c, 16));
+    return [r, g, b];
+  }
+  if (normalized.length === 6) {
+    const r = parseInt(normalized.slice(0, 2), 16);
+    const g = parseInt(normalized.slice(2, 4), 16);
+    const b = parseInt(normalized.slice(4, 6), 16);
+    return [r, g, b];
+  }
+  return null;
+};
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
@@ -5,8 +23,8 @@ export default {
     extend: {
       colors: {
         brand: {
-          orange: "#e879f9", // 🍊 צבע כתום עיקרי
-          orangeLight: "#e879f9", // ✨ צבע כתום בהיר להובר/הארה
+          orange: "#F59E0B", // 🍊 צבע כתום עיקרי
+          orangeLight: "#FDBA74", // ✨ צבע כתום בהיר להובר/הארה
           dark: "#0A0A0A", // 🖤 רקע כהה ראשי
           mid: "#1C1C1E", // 🌑 אפור כהה
           light: "#F2F2F7", // ☁️ טקסט/רקע בהיר
@@ -59,5 +77,17 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    plugin(({ addBase, theme }) => {
+      const brandOrange = theme("colors.brand.orange");
+      const channels = hexToRgbChannels(brandOrange);
+      if (!channels) return;
+
+      addBase({
+        ":root": {
+          "--tw-color-brand-orange": channels.join(" "),
+        },
+      });
+    }),
+  ],
 };
