@@ -18,13 +18,16 @@ export type NavItem = {
 };
 
 export function getNavItems(role: string, pendingCount: number): NavItem[] {
-  return [
+  let items: NavItem[] = [
     { to: "/my", label: "אישי", icon: <User size={22} /> },
     { to: "/MyArtist", label: "משותפים", icon: <Users size={22} /> },
-    ...(role === "admin"
-      ? [{ to: "/admin", label: "אדמין", icon: <Shield size={22} /> }]
-      : []),
-    // Removed /users nav item (Users.tsx removed)
-    // settings removed per request
   ];
+  // הסתרה לאדמין
+  if (role === "admin") {
+    items = items.filter(
+      (item) => item.to !== "/my" && item.to !== "/MyArtist"
+    );
+    items.push({ to: "/admin", label: "אדמין", icon: <Shield size={22} /> });
+  }
+  return items;
 }

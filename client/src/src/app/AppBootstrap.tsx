@@ -7,6 +7,10 @@ import api from "@/modules/shared/lib/api.js";
 
 import ProtectedRoute from "@/modules/shared/components/ProtectedRoute.tsx";
 import Splash from "@/modules/shared/components/Splash.tsx";
+import {
+  RoleRoute,
+  GuestOnlyRoute,
+} from "@/modules/shared/components/RoleRoute.tsx";
 
 import { publicRoutes, protectedRoutes } from "../modules/routes.js";
 import LineupDetails from "../modules/lineups/pages/LineupDetails.tsx";
@@ -171,13 +175,74 @@ export default function AppBootstrap(): JSX.Element {
       hideNav={hideNav}
     >
       <Routes>
-        {publicRoutes.map(({ path, component: Component }) => (
+        {/* GuestOnlyRoute: חוסם דפי אורח למשתמשים מחוברים */}
+        {(() => {
+          const LandingComponent = publicRoutes[0].component;
+          return (
+            <Route
+              path="/"
+              element={
+                <GuestOnlyRoute redirectTo="/my">
+                  <LandingComponent />
+                </GuestOnlyRoute>
+              }
+            />
+          );
+        })()}
+        {(() => {
+          const LoginComponent = publicRoutes[1].component;
+          return (
+            <Route
+              path="/login"
+              element={
+                <GuestOnlyRoute redirectTo="/my">
+                  <LoginComponent />
+                </GuestOnlyRoute>
+              }
+            />
+          );
+        })()}
+        {/* שאר דפי public */}
+        {publicRoutes.slice(2).map(({ path, component: Component }) => (
           <Route key={path} path={path} element={<Component />} />
         ))}
 
-        {protectedRoutes.map(
-          ({ path, component: Component, roles = undefined }) => {
-            // Special handling for ArtistProfile with nested LineupDetails route
+        {/* RoleRoute: חוסם דפי My ו-MyArtist לאדמין */}
+        {(() => {
+          const MyComponent = protectedRoutes[0].component;
+          return (
+            <Route
+              path="/my/*"
+              element={
+                <RoleRoute denyRoles={["admin"]} redirectTo="/admin">
+                  <ProtectedRoute>
+                    <MyComponent />
+                  </ProtectedRoute>
+                </RoleRoute>
+              }
+            />
+          );
+        })()}
+        {(() => {
+          const MyArtistComponent = protectedRoutes[1].component;
+          return (
+            <Route
+              path="/MyArtist"
+              element={
+                <RoleRoute denyRoles={["admin"]} redirectTo="/admin">
+                  <ProtectedRoute>
+                    <MyArtistComponent />
+                  </ProtectedRoute>
+                </RoleRoute>
+              }
+            />
+          );
+        })()}
+
+        {/* שאר דפי protected */}
+        {protectedRoutes
+          .slice(2)
+          .map(({ path, component: Component, roles = undefined }) => {
             if (path === "/artist/:id/*") {
               return (
                 <Route
@@ -193,7 +258,6 @@ export default function AppBootstrap(): JSX.Element {
                 </Route>
               );
             }
-
             return (
               <Route
                 key={path}
@@ -205,8 +269,7 @@ export default function AppBootstrap(): JSX.Element {
                 }
               />
             );
-          }
-        )}
+          })}
 
         <Route path="*" element={<Navigate to="/my" replace />} />
       </Routes>
