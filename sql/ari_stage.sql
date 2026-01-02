@@ -61,7 +61,7 @@ CREATE TABLE `lineup_shares` (
   UNIQUE KEY `share_token` (`share_token`),
   KEY `lineup_id` (`lineup_id`),
   CONSTRAINT `lineup_shares_ibfk_1` FOREIGN KEY (`lineup_id`) REFERENCES `lineups` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=77 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -70,7 +70,6 @@ CREATE TABLE `lineup_shares` (
 
 LOCK TABLES `lineup_shares` WRITE;
 /*!40000 ALTER TABLE `lineup_shares` DISABLE KEYS */;
-INSERT INTO `lineup_shares` VALUES (49,28,'289c7ace65d8e6727c6fd1fd02ecf94b',0,'2025-12-19 08:25:16'),(50,28,'98f6ae4b7e90a5eb86d9f72f6296f0c8',0,'2025-12-19 08:30:56');
 /*!40000 ALTER TABLE `lineup_shares` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -92,7 +91,7 @@ CREATE TABLE `lineup_songs` (
   KEY `song_id` (`song_id`),
   CONSTRAINT `lineup_songs_ibfk_1` FOREIGN KEY (`lineup_id`) REFERENCES `lineups` (`id`) ON DELETE CASCADE,
   CONSTRAINT `lineup_songs_ibfk_2` FOREIGN KEY (`song_id`) REFERENCES `songs` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=251 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=295 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -101,7 +100,7 @@ CREATE TABLE `lineup_songs` (
 
 LOCK TABLES `lineup_songs` WRITE;
 /*!40000 ALTER TABLE `lineup_songs` DISABLE KEYS */;
-INSERT INTO `lineup_songs` VALUES (233,25,51,1,'/uploads/charts/19/chart-233-1765178008981.pdf'),(234,25,52,2,NULL),(235,26,52,1,NULL),(236,27,56,1,NULL),(237,27,55,2,NULL),(238,27,54,3,NULL),(249,28,58,2,NULL),(250,28,57,1,NULL);
+INSERT INTO `lineup_songs` VALUES (233,25,51,1,'/uploads/charts/19/chart-233-1765178008981.pdf'),(234,25,52,2,NULL),(235,26,52,1,NULL),(236,27,56,1,NULL),(237,27,55,2,NULL),(238,27,54,3,NULL),(292,42,78,3,NULL),(293,42,77,1,NULL),(294,42,76,2,NULL);
 /*!40000 ALTER TABLE `lineup_songs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -125,7 +124,7 @@ CREATE TABLE `lineups` (
   PRIMARY KEY (`id`),
   KEY `created_by` (`created_by`),
   CONSTRAINT `lineups_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=44 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -134,7 +133,7 @@ CREATE TABLE `lineups` (
 
 LOCK TABLES `lineups` WRITE;
 /*!40000 ALTER TABLE `lineups` DISABLE KEYS */;
-INSERT INTO `lineups` VALUES (25,'אשדוד','2025-12-24','10:06:00','אשדוד','',19,'2025-12-08 07:06:35',NULL),(26,'באר שבע','2025-12-20','14:13:00','באר שבע ','',19,'2025-12-08 09:13:44',NULL),(27,'באר שבע',NULL,NULL,'','',23,'2025-12-18 19:16:26',NULL),(28,'באר',NULL,NULL,'','',22,'2025-12-19 07:27:06',NULL),(29,'טסט 1',NULL,NULL,'','',21,'2025-12-19 08:29:41',NULL);
+INSERT INTO `lineups` VALUES (25,'אשדוד','2025-12-24','10:06:00','אשדוד','',19,'2025-12-08 07:06:35',NULL),(26,'באר שבע','2025-12-20','14:13:00','באר שבע ','',19,'2025-12-08 09:13:44',NULL),(27,'באר שבע',NULL,NULL,'','',23,'2025-12-18 19:16:26',NULL),(42,'מנורה','2026-01-07','23:41:00','היכל מנורה','',22,'2025-12-31 18:41:34',NULL);
 /*!40000 ALTER TABLE `lineups` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -196,6 +195,43 @@ LOCK TABLES `notifications` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `payments`
+--
+
+DROP TABLE IF EXISTS `payments`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `payments` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `provider` enum('mock','stripe','paypal') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'mock',
+  `transaction_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `plan` enum('trial','pro') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `billing_period` enum('monthly','yearly') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'monthly',
+  `amount` int NOT NULL COMMENT 'amount in ILS',
+  `currency` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'ILS',
+  `status` enum('pending','paid','failed','refunded') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'pending',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `paid_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  KEY `status` (`status`),
+  KEY `provider` (`provider`),
+  CONSTRAINT `payments_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `payments`
+--
+
+LOCK TABLES `payments` WRITE;
+/*!40000 ALTER TABLE `payments` DISABLE KEYS */;
+INSERT INTO `payments` VALUES (1,21,'mock','mock_1767391922114_31z48o2d','pro','monthly',37,'ILS','paid','2026-01-02 22:12:02','2026-01-02 22:12:02'),(2,21,'mock','mock_1767394032128_rh8vnh42','pro','yearly',444,'ILS','paid','2026-01-02 22:47:12','2026-01-02 22:47:12');
+/*!40000 ALTER TABLE `payments` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `song_charts`
 --
 
@@ -213,7 +249,7 @@ CREATE TABLE `song_charts` (
   KEY `user_id` (`user_id`),
   CONSTRAINT `song_charts_ibfk_1` FOREIGN KEY (`song_id`) REFERENCES `songs` (`id`) ON DELETE CASCADE,
   CONSTRAINT `song_charts_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -222,7 +258,7 @@ CREATE TABLE `song_charts` (
 
 LOCK TABLES `song_charts` WRITE;
 /*!40000 ALTER TABLE `song_charts` DISABLE KEYS */;
-INSERT INTO `song_charts` VALUES (1,56,21,'C:\\AriStage\\server\\uploads\\charts\\21\\song-chart-56-1766089453480.jpeg','2025-12-18 22:24:13'),(3,56,23,'C:\\AriStage\\server\\uploads\\charts\\23\\song-chart-56-1766089503770.jpeg','2025-12-18 22:25:03'),(17,56,22,'uploads/charts/22/song-chart-56-1766144739787.jpeg','2025-12-19 13:45:39'),(18,58,22,'uploads/charts/22/song-chart-58-1766146461917.jpeg','2025-12-19 14:14:21'),(25,63,22,'uploads/charts/22/song-chart-63-1766340497988.jpeg','2025-12-21 20:08:17'),(27,65,22,'uploads/charts/22/song-chart-65-1766347556799.jpeg','2025-12-21 22:05:56'),(28,65,22,'uploads/charts/22/song-chart-65-1766347559253.jpeg','2025-12-21 22:05:59'),(29,65,22,'uploads/charts/22/song-chart-65-1766347589609.jpeg','2025-12-21 22:06:29');
+INSERT INTO `song_charts` VALUES (1,56,21,'C:\\AriStage\\server\\uploads\\charts\\21\\song-chart-56-1766089453480.jpeg','2025-12-18 22:24:13'),(3,56,23,'C:\\AriStage\\server\\uploads\\charts\\23\\song-chart-56-1766089503770.jpeg','2025-12-18 22:25:03'),(17,56,22,'uploads/charts/22/song-chart-56-1766144739787.jpeg','2025-12-19 13:45:39');
 /*!40000 ALTER TABLE `song_charts` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -247,7 +283,7 @@ CREATE TABLE `songs` (
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `songs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=68 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=81 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -256,8 +292,35 @@ CREATE TABLE `songs` (
 
 LOCK TABLES `songs` WRITE;
 /*!40000 ALTER TABLE `songs` DISABLE KEYS */;
-INSERT INTO `songs` VALUES (51,'צליל מיתר','אייל גולן',80,'C Major','3:00','שקט',NULL,19,'2025-12-08 06:32:53'),(52,'משוגעת','שרית חדד',120,'C Major','4:00','קצבי','/uploads/charts/20/song-chart-52-1765194627366.pdf',19,'2025-12-08 07:14:13'),(54,'אהבת רק אותי','',NULL,'C Major','00:00','',NULL,23,'2025-12-16 10:51:14'),(55,'חסרהל י במרות','',NULL,'C Major','00:00','',NULL,23,'2025-12-18 19:16:16'),(56,'אני ואתה','',NULL,'C Major','00:00','שמח',NULL,23,'2025-12-18 19:16:21'),(57,'טסט 2','טסט 2',85,'C# Major','3:00','קצבי',NULL,22,'2025-12-18 19:36:13'),(58,'טסט 1','טסט 1',80,'C# Major','2:00','שמח',NULL,22,'2025-12-19 07:50:04'),(59,'טסט 1','',NULL,'C Major','00:00','',NULL,21,'2025-12-19 08:29:37'),(63,'ttt','',NULL,'D Major','00:00','שמח',NULL,22,'2025-12-21 10:38:27'),(65,'בדיקה עצמית','נחום בגין',85,'D Melodic Minor','00:03','קצבי',NULL,22,'2025-12-21 10:51:31');
+INSERT INTO `songs` VALUES (51,'צליל מיתר','אייל גולן',80,'C Major','3:00','שקט',NULL,19,'2025-12-08 06:32:53'),(52,'משוגעת','שרית חדד',120,'C Major','4:00','קצבי','/uploads/charts/20/song-chart-52-1765194627366.pdf',19,'2025-12-08 07:14:13'),(54,'אהבת רק אותי','',NULL,'C Major','00:00','',NULL,23,'2025-12-16 10:51:14'),(55,'חסרהל י במרות','',NULL,'C Major','00:00','',NULL,23,'2025-12-18 19:16:16'),(56,'אני ואתה','',NULL,'C Major','00:00','שמח',NULL,23,'2025-12-18 19:16:21'),(76,'מאמי זה נגמר','עומר אדם',80,'D Major','00:02','קליל',NULL,22,'2025-12-31 18:40:34'),(77,'תהום','עומר אדם',78,'D# Major','00:04','שקט',NULL,22,'2025-12-31 18:40:46'),(78,'אקדח','עומר אדם',90,'A# Melodic Minor','7:01','קליל',NULL,22,'2025-12-31 18:41:09');
 /*!40000 ALTER TABLE `songs` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `subscriptions_settings`
+--
+
+DROP TABLE IF EXISTS `subscriptions_settings`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `subscriptions_settings` (
+  `id` int NOT NULL,
+  `is_enabled` tinyint(1) NOT NULL DEFAULT '1',
+  `price_ils` int NOT NULL DEFAULT '29',
+  `trial_days` int NOT NULL DEFAULT '14',
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `subscriptions_settings`
+--
+
+LOCK TABLES `subscriptions_settings` WRITE;
+/*!40000 ALTER TABLE `subscriptions_settings` DISABLE KEYS */;
+INSERT INTO `subscriptions_settings` VALUES (1,1,37,14,'2026-01-02 13:07:54');
+/*!40000 ALTER TABLE `subscriptions_settings` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -282,7 +345,7 @@ CREATE TABLE `user_hosts` (
   KEY `idx_host_status` (`host_id`,`invitation_status`),
   CONSTRAINT `user_hosts_ibfk_1` FOREIGN KEY (`guest_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `user_hosts_ibfk_2` FOREIGN KEY (`host_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -291,7 +354,7 @@ CREATE TABLE `user_hosts` (
 
 LOCK TABLES `user_hosts` WRITE;
 /*!40000 ALTER TABLE `user_hosts` DISABLE KEYS */;
-INSERT INTO `user_hosts` VALUES (1,20,19,'accepted','2025-12-08 13:45:01',NULL),(5,22,23,'accepted','2025-12-19 08:39:20',NULL),(11,22,21,'pending','2025-12-19 09:07:07',NULL),(12,21,22,'accepted','2025-12-20 21:25:36',NULL);
+INSERT INTO `user_hosts` VALUES (1,20,19,'accepted','2025-12-08 13:45:01',NULL),(18,21,22,'accepted','2025-12-31 20:40:26',NULL);
 /*!40000 ALTER TABLE `user_hosts` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -341,6 +404,9 @@ CREATE TABLE `users` (
   `password_hash` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
   `role` enum('admin','manager','user') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'user',
   `subscription_type` enum('trial','pro') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'trial',
+  `subscription_status` enum('trial','active','expired') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'trial',
+  `subscription_started_at` datetime DEFAULT NULL,
+  `subscription_expires_at` datetime DEFAULT NULL,
   `theme` enum('light','dark') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT 'dark',
   `invited_by` int DEFAULT NULL,
   `invitation_status` enum('pending','accepted','rejected') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
@@ -354,7 +420,7 @@ CREATE TABLE `users` (
   UNIQUE KEY `email` (`email`),
   KEY `invited_by` (`invited_by`),
   CONSTRAINT `users_ibfk_1` FOREIGN KEY (`invited_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -363,7 +429,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (19,'רועי','roizohar111@gmail.com','$2a$10$RGCdXZP1wM7PEOXFzWAcXeyifbcG6DGyHW.J14OdGqbCdchCAyoUC','user','trial','dark',NULL,NULL,'2025-12-08 06:03:56',NULL,NULL,NULL,'קלידן',NULL),(20,'יוסי','yosiyoviv@gmail.com','$2a$10$28l2Hg4sJVrRiCTBepqHOegUYWusrNW/vLtQjYtYfx1zR/Kbm1ALO','user','trial','dark',19,'accepted','2025-12-08 06:24:31',NULL,NULL,NULL,'בסיסט',NULL),(21,'משה סבוני','sabonimoshe@gmail.com','$2a$10$/DHRVYxaXiqQ/.HXJptFeuRdsLP17Ik0ZmDfUJbyew9z.qbgQhDwO','user','trial','dark',NULL,NULL,'2025-12-16 10:43:13',NULL,NULL,NULL,'הזה שנקרע לו המכנס','/uploads/users/21/avatar.jpeg'),(22,'ארי סבוני','moshesaboniofficial@gmail.com','$2a$10$KxIEVMOb2yLr1TpT086rZ.wx.AQ2vu7hIBMYv0ye7C525BKAwIRii','user','trial','dark',NULL,NULL,'2025-12-16 10:43:42',NULL,NULL,NULL,'הבייבי שלי','/uploads/users/22/avatar.jpeg'),(23,'שירז סבוני','shiraz00012000@gmail.com','$2a$10$P2G4DktbdysJJh/aCXtW1e0mHT7StM8nm8KzW417wg8NGTsxF98sK','user','trial','dark',NULL,NULL,'2025-12-16 10:44:01',NULL,NULL,NULL,'זמרת','/uploads/users/23/avatar.jpeg');
+INSERT INTO `users` VALUES (19,'רועי','roizohar111@gmail.com','$2a$10$RGCdXZP1wM7PEOXFzWAcXeyifbcG6DGyHW.J14OdGqbCdchCAyoUC','user','trial','trial','2026-01-01 23:05:47','2026-01-15 23:05:47','dark',NULL,NULL,'2025-12-08 06:03:56',NULL,NULL,NULL,'קלידן',NULL),(20,'יוסי','yosiyoviv@gmail.com','$2a$10$28l2Hg4sJVrRiCTBepqHOegUYWusrNW/vLtQjYtYfx1zR/Kbm1ALO','user','trial','trial','2026-01-01 23:05:47','2026-01-15 23:05:47','dark',19,'accepted','2025-12-08 06:24:31',NULL,NULL,NULL,'בסיסט',NULL),(21,'משה סבוני','sabonimoshe@gmail.com','$2a$10$/DHRVYxaXiqQ/.HXJptFeuRdsLP17Ik0ZmDfUJbyew9z.qbgQhDwO','user','pro','expired','2026-01-03 00:47:12','2027-01-03 00:47:12','dark',NULL,NULL,'2025-12-16 10:43:13','2026-01-02 22:48:00',NULL,NULL,'קלידן','/uploads/users/21/avatar.jpeg'),(22,'עומר אדם ','moshesaboniofficial@gmail.com','$2a$10$miwrSoBdp01Hjsiwb7njSuwIMCiDRUm0cumLLFVjiuhTVVILt7d2e','user','pro','trial','2026-01-01 23:05:47','2026-02-01 22:30:52','dark',NULL,NULL,'2025-12-16 10:43:42','2026-01-02 22:45:06',NULL,NULL,'זמר','/uploads/users/22/avatar.jpg'),(23,'שירז סבוני','shiraz00012000@gmail.com','$2a$10$P2G4DktbdysJJh/aCXtW1e0mHT7StM8nm8KzW417wg8NGTsxF98sK','admin','trial','trial','2026-01-01 23:05:47','2026-02-01 21:24:27','dark',NULL,NULL,'2025-12-16 10:44:01','2026-01-02 21:24:27',NULL,NULL,'זמרת','/uploads/users/23/avatar.jpeg');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -376,4 +442,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-12-21 22:25:08
+-- Dump completed on 2026-01-03  1:00:56

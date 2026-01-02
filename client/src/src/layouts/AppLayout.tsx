@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Footer from "@/modules/shared/components/Footer.tsx";
 import Header from "@/modules/shared/components/Header.tsx";
 import BottomNav from "@/modules/shared/components/BottomNav.tsx";
-import SubscriptionBlockedModal from "@/modules/shared/components/SubscriptionBlockedModal.tsx";
+import UpgradeModal from "@/modules/shared/components/UpgradeModal.tsx";
 import { useCurrentUser } from "@/modules/shared/hooks/useCurrentUser.ts";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 
@@ -145,8 +145,8 @@ export default function AppLayout({
       {/* Bottom nav for mobile */}
       {!hideNav && <BottomNav />}
 
-      {/* Subscription Blocked Modal */}
-      <SubscriptionBlockedModal
+      {/* Subscription Upgrade Modal */}
+      <UpgradeModal
         open={isUpgradeModalOpen}
         onClose={() => setIsUpgradeModalOpen(false)}
       />

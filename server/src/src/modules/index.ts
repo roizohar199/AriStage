@@ -9,6 +9,7 @@ import { shareRouter } from "./share/share.routes.js";
 import { supportRouter } from "./support/support.routes.js";
 import { healthRouter } from "./health/health.routes.js";
 import { subscriptionsRouter } from "./subscriptions/subscriptions.routes.js";
+import { paymentsRouter } from "./payments/payments.routes.js";
 
 import adminRouter from "../../routes/admin.js";
 
@@ -16,6 +17,7 @@ export function registerModules(app) {
   app.use("/api/health", healthRouter);
   app.use("/api/auth", authRouter);
   app.use("/api/subscriptions", subscriptionsRouter);
+  app.use("/api/payments", paymentsRouter);
   app.use("/api/admin", adminRouter);
   app.use("/api/songs", songsRouter);
   app.use("/api/lineups", lineupsRouter);

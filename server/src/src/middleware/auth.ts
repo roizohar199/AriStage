@@ -1,5 +1,7 @@
 import { verifyToken } from "../modules/auth/token.service.js";
 import { AppError } from "../core/errors.js";
+import { env } from "../config/env.js";
+import { isKnownRole } from "../types/roles.js";
 
 import type { NextFunction, Request, Response } from "express";
 
@@ -20,6 +22,11 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     }
 
     const decoded: any = verifyToken(token);
+
+    // Dev-only safety net: warn if JWT contains an unknown role.
+    if (env.nodeEnv !== "production" && !isKnownRole(decoded.role)) {
+      console.warn("[Auth] Unknown role in JWT payload:", decoded.role);
+    }
 
     req.user = {
       id: decoded.id,

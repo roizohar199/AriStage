@@ -22,7 +22,8 @@ export function getNavItems(role: string, pendingCount: number): NavItem[] {
     { to: "/my", label: "אישי", icon: <User size={22} /> },
     { to: "/MyArtist", label: "משותפים", icon: <Users size={22} /> },
   ];
-  // הסתרה לאדמין
+  // הסתרה לאדמין – החלטת UX בצד הלקוח בלבד.
+  // בצד השרת admin עדיין יכול לגשת לאותם APIs בדיוק כמו user.
   if (role === "admin") {
     items = items.filter(
       (item) => item.to !== "/my" && item.to !== "/MyArtist"

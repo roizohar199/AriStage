@@ -1,10 +1,13 @@
 import { pool } from "../../database/pool.js";
+import { isElevatedRole } from "../../types/roles.js";
 
 export async function listFiles(role, userId) {
   let query = "SELECT * FROM files";
   const params: any[] = [];
 
-  if (role === "user") {
+  // Only admin/manager are considered elevated. Any unknown role is
+  // treated as a regular artist (scoped like "user").
+  if (!isElevatedRole(role)) {
     query += " WHERE user_id = ?";
     params.push(userId);
   }

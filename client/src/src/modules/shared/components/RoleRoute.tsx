@@ -9,8 +9,10 @@ interface RoleRouteProps {
 }
 
 /**
- * חוסם גישה למשתמשים עם role מסוים (denyRoles)
- * מבצע redirect ל-redirectTo אם המשתמש חסום
+ * חוסם גישה למשתמשים עם role מסוים (denyRoles).
+ * שים לב: מערכת התפקידים עצמה היא admin/manager/user בלבד; "guest"
+ * הוא מצב יחסים (user_hosts) בצד השרת ולא role נפרד.
+ * מבצע redirect ל-redirectTo אם המשתמש חסום.
  */
 export function RoleRoute({
   children,
@@ -31,8 +33,9 @@ interface GuestOnlyRouteProps {
 }
 
 /**
- * חוסם גישה למשתמשים מחוברים (יש user)
- * מבצע redirect ל-redirectTo אם המשתמש מחובר
+ * חוסם גישה למשתמשים מחוברים (יש user).
+ * אין role בשם "guest" – זהו מצב יחסי בלבד.
+ * מבצע redirect ל-redirectTo אם המשתמש מחובר.
  */
 export function GuestOnlyRoute({
   children,

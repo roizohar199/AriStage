@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "@/modules/shared/lib/api.ts";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
+import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 
 type PublicSettings = {
   is_enabled: number;
@@ -9,6 +10,7 @@ type PublicSettings = {
 };
 
 export default function SubscriptionBlocked() {
+  const { user } = useAuth();
   const [settings, setSettings] = useState<PublicSettings | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -40,6 +42,30 @@ export default function SubscriptionBlocked() {
       ? `${settings.price_ils}₪`
       : "—";
 
+  let expiredLine: string | null = null;
+  if (
+    user &&
+    user.subscription_status === "expired" &&
+    user.subscription_expires_at
+  ) {
+    try {
+      const raw = String(user.subscription_expires_at).trim();
+      if (raw) {
+        const normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
+        const d = new Date(normalized);
+        const ms = d.getTime();
+        if (!Number.isNaN(ms)) {
+          const day = String(d.getDate()).padStart(2, "0");
+          const month = String(d.getMonth() + 1).padStart(2, "0");
+          const year = d.getFullYear();
+          expiredLine = `תוקף המנוי הסתיים בתאריך ${day}/${month}/${year}`;
+        }
+      }
+    } catch {
+      expiredLine = null;
+    }
+  }
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
       <div className="bg-neutral-800 rounded-2xl p-6 border border-neutral-700">
@@ -49,6 +75,10 @@ export default function SubscriptionBlocked() {
           <br />
           ניתן לעבור לתשלום כדי להמשיך להשתמש במערכת.
         </p>
+
+        {expiredLine && (
+          <p className="text-red-400 mt-2 text-sm">{expiredLine}</p>
+        )}
 
         <div className="mt-6 bg-neutral-900 rounded-2xl p-4 border border-neutral-800">
           <div className="flex items-center justify-between">
@@ -67,8 +97,7 @@ export default function SubscriptionBlocked() {
         <div className="mt-6">
           <DesignActionButton
             onClick={() => {
-              // Placeholder בלבד לפי הדרישה
-              alert("לתשלום (placeholder)");
+              window.openUpgradeModal?.();
             }}
           >
             לתשלום

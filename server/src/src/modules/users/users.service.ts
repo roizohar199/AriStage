@@ -135,36 +135,62 @@ export async function updateUserAccount(requestingUser, id, payload) {
     throw new AppError(403, "אין לך הרשאה לעדכן משתמש זה");
   }
 
-  const nextTypeLower =
-    payload.subscription_type !== undefined
-      ? String(payload.subscription_type ?? "").toLowerCase()
-      : undefined;
+  const isAdmin = requestingUser.role === "admin";
 
-  if (nextTypeLower && nextTypeLower !== "trial" && nextTypeLower !== "pro") {
-    throw new AppError(400, `Invalid subscription_type: ${nextTypeLower}`);
+  const updates: any = {};
+
+  if (payload.full_name !== undefined) {
+    updates.full_name = payload.full_name;
   }
-  const isPaidTier = nextTypeLower === "pro";
 
-  // If admin changes tier via legacy endpoint, keep consistency with enforcement rules
-  const subscription_status =
-    requestingUser.role === "admin" && nextTypeLower
-      ? isPaidTier
-        ? "active"
-        : "trial"
-      : undefined;
+  // תפקיד ניתן לשינוי בעיקר דרך אדמין
+  if (payload.role !== undefined && isAdmin) {
+    updates.role = payload.role;
+  }
 
-  const subscription_expires_at =
-    requestingUser.role === "admin" && nextTypeLower
-      ? addDaysMysqlDateTime(30)
-      : undefined;
+  // ✅ טיפול במסלול (tier) – שומר על ההתנהגות הקודמת
+  let nextTypeLower: string | undefined;
+  if (payload.subscription_type !== undefined) {
+    nextTypeLower = String(payload.subscription_type ?? "").toLowerCase();
 
-  await updateUserRecord(id, {
-    full_name: payload.full_name,
-    role: payload.role,
-    subscription_type: nextTypeLower,
-    subscription_status,
-    subscription_expires_at,
-  });
+    if (nextTypeLower && nextTypeLower !== "trial" && nextTypeLower !== "pro") {
+      throw new AppError(400, `Invalid subscription_type: ${nextTypeLower}`);
+    }
+
+    updates.subscription_type = nextTypeLower;
+
+    // אם אדמין משנה מסלול דרך ה-endpoint הישן, נשמור על כללי האכיפה
+    if (isAdmin) {
+      const isPaidTier = nextTypeLower === "pro";
+
+      // רק אם לא נשלח subscription_status מפורש בבקשה – נגזור מתוך ה-tier
+      if (payload.subscription_status === undefined) {
+        updates.subscription_status = isPaidTier ? "active" : "trial";
+      }
+
+      // רק אם לא נשלח subscription_expires_at מפורש – נגדיר ברירת מחדל ל-30 יום
+      if (payload.subscription_expires_at === undefined) {
+        updates.subscription_expires_at = addDaysMysqlDateTime(30);
+      }
+    }
+  }
+
+  // ✅ שדות מנוי מפורשים מה-Admin (סטטוס ותאריכים)
+  if (isAdmin) {
+    if (payload.subscription_status !== undefined) {
+      updates.subscription_status = payload.subscription_status;
+    }
+
+    if (payload.subscription_started_at !== undefined) {
+      updates.subscription_started_at = payload.subscription_started_at;
+    }
+
+    if (payload.subscription_expires_at !== undefined) {
+      updates.subscription_expires_at = payload.subscription_expires_at;
+    }
+  }
+
+  await updateUserRecord(id, updates);
 }
 
 export function removeUserAccount(id) {
@@ -303,6 +329,8 @@ export async function rejectInvitationStatus(userId, hostId) {
 }
 
 // ⭐ בדיקה אם משתמש הוא אורח - מחזיר רשימת מארחים
+// הערה: "guest" הוא מצב יחסים בטבלת user_hosts (guest_id/host_id)
+// ולא role חדש. שדה role ב-users נשאר אחד מ-"admin"/"manager"/"user" בלבד.
 export async function checkIfGuest(userId) {
   const hostIds = await isGuest(userId);
   return hostIds.length > 0 ? hostIds : null; // מחזיר null אם אין מארחים, או רשימה

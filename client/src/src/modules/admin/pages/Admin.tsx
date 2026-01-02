@@ -32,11 +32,13 @@ import { useToast } from "@/modules/shared/components/ToastProvider";
 import CardSong from "@/modules/shared/components/cardsong";
 import BlockLineup from "@/modules/shared/components/blocklineup";
 import { normalizeSubscriptionType } from "@/modules/shared/hooks/useSubscription.ts";
+import AdminPayments from "../components/AdminPayments";
 
 type AdminTab =
   | "users"
   | "repos"
   | "subscriptions"
+  | "payments"
   | "files"
   | "logs"
   | "errors"
@@ -48,6 +50,7 @@ const TABS: Array<{ key: AdminTab; label: string }> = [
   { key: "users", label: "משתמשים" },
   { key: "repos", label: "מאגרים" },
   { key: "subscriptions", label: "מנויים" },
+  { key: "payments", label: "תשלומים" },
   { key: "plans", label: "מסלולים" },
   { key: "files", label: "קבצים" },
   { key: "logs", label: "לוגים" },
@@ -171,7 +174,89 @@ type AdminUser = {
   email: string;
   role: string;
   subscription_type?: string;
+  // Optional subscription fields from backend; do not infer.
+  subscription_status?: string;
+  subscription_started_at?: string | null;
+  subscription_expires_at?: string | null;
 };
+
+type SubscriptionEdit = {
+  subscription_type: string;
+  subscription_status: string;
+  subscription_started_at: string;
+  subscription_expires_at: string;
+};
+
+function formatSubscriptionDate(raw?: string | null): string {
+  if (!raw) return "—";
+  try {
+    const trimmed = String(raw).trim();
+    if (!trimmed) return "—";
+    const normalized = trimmed.includes("T")
+      ? trimmed
+      : trimmed.replace(" ", "T");
+    const d = new Date(normalized);
+    const ms = d.getTime();
+    if (Number.isNaN(ms)) return "—";
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, "0");
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  } catch {
+    return "—";
+  }
+}
+
+// Normalize raw DB/ISO date string for <input type="date"> (YYYY-MM-DD)
+function toDateInput(raw?: string | null): string {
+  if (!raw) return "";
+  const trimmed = String(raw).trim();
+  if (!trimmed) return "";
+
+  // Common formats already start with YYYY-MM-DD
+  if (trimmed.length >= 10) {
+    return trimmed.slice(0, 10);
+  }
+
+  // Fallback: parse and format
+  const d = new Date(trimmed);
+  const ms = d.getTime();
+  if (Number.isNaN(ms)) return "";
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+// Normalize raw DB/ISO date string for <input type="datetime-local"> (YYYY-MM-DDTHH:mm)
+function toDateTimeLocalInput(raw?: string | null): string {
+  if (!raw) return "";
+  const trimmed = String(raw).trim();
+  if (!trimmed) return "";
+
+  // Handle common MySQL and ISO formats
+  let normalized = trimmed.replace(" ", "T");
+  if (normalized.endsWith("Z")) {
+    normalized = normalized.slice(0, -1);
+  }
+
+  if (normalized.length >= 16) {
+    return normalized.slice(0, 16);
+  }
+
+  // Fallback: parse and format
+  const d = new Date(trimmed);
+  const ms = d.getTime();
+  if (Number.isNaN(ms)) return "";
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
 
 type Song = {
   id: number;
@@ -299,6 +384,7 @@ export default function AdminReal() {
     users: "",
     repos: "",
     subscriptions: "",
+    payments: "",
     files: "",
     invitations: "",
     logs: "",
@@ -372,6 +458,13 @@ export default function AdminReal() {
   const [subscriptionTypeLocked, setSubscriptionTypeLocked] = useState(false);
   const [subscriptionTypeOriginal, setSubscriptionTypeOriginal] = useState<
     string | null
+  >(null);
+
+  const [subscriptionEdits, setSubscriptionEdits] = useState<
+    Record<number, SubscriptionEdit>
+  >({});
+  const [editingSubscriptionUserId, setEditingSubscriptionUserId] = useState<
+    number | null
   >(null);
 
   const openEditUser = (u: AdminUser) => {
@@ -1382,55 +1475,247 @@ export default function AdminReal() {
                   .toLowerCase()
                   .includes(q);
               })
-              .map((u) => (
-                <CardContainer key={`sub-${u.id}`}>
-                  <div className="flex-1 min-w-0 text-right">
-                    <h3 className="text-lg font-bold text-white mb-1">
-                      {u.full_name || "משתמש ללא שם"}
-                    </h3>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      <SmallBadge icon={<Mail size={14} />}>
-                        {u.email}
-                      </SmallBadge>
-                      <SmallBadge
-                        icon={<BadgeCheck size={14} />}
-                        variant="brand"
-                      >
-                        {normalizeSubscriptionType(u.subscription_type)}
-                      </SmallBadge>
-                    </div>
-                  </div>
+              .map((u) => {
+                const isEditing = editingSubscriptionUserId === u.id;
 
-                  <div className="flex flex-col gap-2 items-start">
-                    <label className="text-xs text-neutral-300 font-bold">
-                      override admin
-                    </label>
-                    <select
-                      value={normalizeSubscriptionType(u.subscription_type)}
-                      onChange={async (e) => {
-                        try {
-                          await api.put(`/users/${u.id}`, {
-                            subscription_type: e.target.value,
-                          });
-                          await reload();
-                        } catch (err: any) {
-                          const msg =
-                            err?.response?.data?.message || "שגיאה בעדכון מנוי";
-                          showToast(msg, "error");
-                        }
-                      }}
-                      className="w-full bg-neutral-900 border border-neutral-800 p-2 rounded-2xl text-sm"
-                    >
-                      <option value="trial">trial</option>
-                      <option value="pro">pro</option>
-                    </select>
-                    <p className="text-[11px] text-neutral-500">
-                      אם צריך endpoint ייעודי → TODO: admin subscription
-                      override
-                    </p>
-                  </div>
-                </CardContainer>
-              ))
+                // subscription_status is the source of truth for admin UI – do not infer from subscription_type
+                const rawStatus = u.subscription_status;
+                const statusLabel =
+                  typeof rawStatus === "string" && rawStatus.trim()
+                    ? rawStatus
+                    : "—";
+
+                const startedLabel = formatSubscriptionDate(
+                  u.subscription_started_at ?? null
+                );
+                const expiresLabel = formatSubscriptionDate(
+                  u.subscription_expires_at ?? null
+                );
+
+                const baseSubForm: SubscriptionEdit = {
+                  subscription_type: normalizeSubscriptionType(
+                    u.subscription_type
+                  ),
+                  subscription_status:
+                    typeof rawStatus === "string" && rawStatus.trim()
+                      ? rawStatus
+                      : "",
+                  subscription_started_at: u.subscription_started_at || "",
+                  subscription_expires_at: u.subscription_expires_at || "",
+                };
+
+                const subForm = subscriptionEdits[u.id] ?? baseSubForm;
+
+                return (
+                  <CardContainer key={`sub-${u.id}`}>
+                    <div className="flex-1 min-w-0 text-right">
+                      <h3 className="text-lg font-bold text-white mb-1">
+                        {u.full_name || "משתמש ללא שם"}
+                      </h3>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <SmallBadge icon={<Mail size={14} />}>
+                          {u.email}
+                        </SmallBadge>
+                        <SmallBadge
+                          icon={<BadgeCheck size={14} />}
+                          variant="brand"
+                        >
+                          {normalizeSubscriptionType(u.subscription_type)}
+                        </SmallBadge>
+                        <SmallBadge>{statusLabel}</SmallBadge>
+                        <SmallBadge>{startedLabel}</SmallBadge>
+                        <SmallBadge>{expiresLabel}</SmallBadge>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2 items-start">
+                      {!isEditing ? (
+                        <DesignActionButton
+                          type="button"
+                          onClick={() => {
+                            setEditingSubscriptionUserId(u.id);
+                            setSubscriptionEdits((prev) => ({
+                              ...prev,
+                              [u.id]: baseSubForm,
+                            }));
+                          }}
+                        >
+                          ערוך מנוי
+                        </DesignActionButton>
+                      ) : (
+                        <>
+                          <label className="text-xs text-neutral-300 font-bold">
+                            מסלול מנוי
+                          </label>
+                          <select
+                            value={subForm.subscription_type}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setSubscriptionEdits((prev) => {
+                                const current = prev[u.id] ?? baseSubForm;
+                                return {
+                                  ...prev,
+                                  [u.id]: {
+                                    ...current,
+                                    subscription_type: value,
+                                  },
+                                };
+                              });
+                            }}
+                            className="w-full bg-neutral-900 border border-neutral-800 p-2 rounded-2xl text-sm"
+                          >
+                            <option value="trial">trial</option>
+                            <option value="pro">pro</option>
+                          </select>
+
+                          <label className="text-xs text-neutral-300 font-bold mt-2">
+                            סטטוס מנוי
+                          </label>
+                          <select
+                            value={subForm.subscription_status}
+                            onChange={async (e) => {
+                              const value = e.target.value;
+
+                              // Update local edit state so UI reflects the selection immediately
+                              setSubscriptionEdits((prev) => {
+                                const current = prev[u.id] ?? baseSubForm;
+                                return {
+                                  ...prev,
+                                  [u.id]: {
+                                    ...current,
+                                    subscription_status: value,
+                                  },
+                                };
+                              });
+
+                              try {
+                                // Explicitly update only subscription_status on the backend
+                                await api.put(`/users/${u.id}`, {
+                                  subscription_status: value,
+                                });
+                                showToast(
+                                  "Subscription status updated",
+                                  "success"
+                                );
+                                await reload();
+                              } catch (err: any) {
+                                // TODO: backend must accept subscription_status in PUT /users/:id
+                                const msg =
+                                  err?.response?.data?.message ||
+                                  "שגיאה בעדכון סטטוס המנוי";
+                                showToast(msg, "error");
+                              }
+                            }}
+                            className="w-full bg-neutral-900 border border-neutral-800 p-2 rounded-2xl text-sm"
+                          >
+                            <option value="active">active</option>
+                            <option value="trial">trial</option>
+                            <option value="expired">expired</option>
+                          </select>
+
+                          <label className="text-xs text-neutral-300 font-bold mt-2">
+                            תאריכי מנוי (start / end)
+                          </label>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+                            <input
+                              type="datetime-local"
+                              placeholder="subscription_started_at"
+                              value={toDateTimeLocalInput(
+                                subForm.subscription_started_at || ""
+                              )}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setSubscriptionEdits((prev) => {
+                                  const current = prev[u.id] ?? baseSubForm;
+                                  return {
+                                    ...prev,
+                                    [u.id]: {
+                                      ...current,
+                                      subscription_started_at: value,
+                                    },
+                                  };
+                                });
+                              }}
+                              className="w-full bg-neutral-900 border border-neutral-800 p-2 rounded-2xl text-xs"
+                            />
+                            <input
+                              type="datetime-local"
+                              placeholder="subscription_expires_at"
+                              value={toDateTimeLocalInput(
+                                subForm.subscription_expires_at || ""
+                              )}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setSubscriptionEdits((prev) => {
+                                  const current = prev[u.id] ?? baseSubForm;
+                                  return {
+                                    ...prev,
+                                    [u.id]: {
+                                      ...current,
+                                      subscription_expires_at: value,
+                                    },
+                                  };
+                                });
+                              }}
+                              className="w-full bg-neutral-900 border border-neutral-800 p-2 rounded-2xl text-xs"
+                            />
+                          </div>
+
+                          <div className="flex gap-2 mt-2">
+                            <DesignActionButton
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  const payload: any = {
+                                    subscription_type:
+                                      subForm.subscription_type,
+                                    subscription_status:
+                                      subForm.subscription_status,
+                                    subscription_started_at:
+                                      subForm.subscription_started_at || null,
+                                    subscription_expires_at:
+                                      subForm.subscription_expires_at || null,
+                                  };
+                                  await api.put(`/users/${u.id}`, payload);
+                                  showToast("Subscription updated", "success");
+                                  setEditingSubscriptionUserId(null);
+                                  await reload();
+                                } catch (err: any) {
+                                  const msg =
+                                    err?.response?.data?.message ||
+                                    "שגיאה בעדכון מנוי";
+                                  showToast(msg, "error");
+                                }
+                              }}
+                            >
+                              שמור מנוי
+                            </DesignActionButton>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingSubscriptionUserId(null);
+                                setSubscriptionEdits((prev) => {
+                                  const next = { ...prev };
+                                  delete next[u.id];
+                                  return next;
+                                });
+                              }}
+                              className="text-xs text-neutral-400 hover:text-neutral-200"
+                            >
+                              ביטול
+                            </button>
+                          </div>
+
+                          <p className="text-[11px] text-neutral-500">
+                            שינוי זה מעדכן רק שדות מנוי של המשתמש (plan/status/
+                            start/end) ולא משנה מחירי מסלולים.
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </CardContainer>
+                );
+              })
           )}
         </div>
       ) : selectedTab === "plans" ? (
@@ -1516,6 +1801,8 @@ export default function AdminReal() {
             ))
           )}
         </div>
+      ) : selectedTab === "payments" ? (
+        <AdminPayments />
       ) : selectedTab === "files" ? (
         <div className="space-y-3">
           {filesLoading ? (
@@ -1909,9 +2196,7 @@ export default function AdminReal() {
               onClick={() => reload()}
               className="text-brand-orange font-bold"
               type="button"
-            >
-              רענן
-            </button>
+            ></button>
           </div>
 
           <section className="space-y-3">

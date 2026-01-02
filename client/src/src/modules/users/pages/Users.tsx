@@ -356,6 +356,9 @@ export default function Users() {
             onChange={(e) => setForm({ ...form, role: e.target.value })}
             className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm focus:border-orange-500 outline-none"
           >
+            {/* manager חולק חלק מההרשאות המוגבהות בצד השרת (مثل יצירת משתמשים
+                וצפייה ברשימת כל המשתמשים), גם אם כרגע אין לו ממשק ניהול
+                נפרד בצד הלקוח. */}
             <option value="admin">Admin</option>
             <option value="manager">Manager</option>
             <option value="user">User</option>

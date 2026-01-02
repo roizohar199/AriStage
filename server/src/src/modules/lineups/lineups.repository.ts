@@ -1,10 +1,13 @@
 import { pool } from "../../database/pool.js";
+import { isElevatedRole } from "../../types/roles.js";
 
 export async function listLineups(role, userId, hostId = null) {
   let query = "SELECT * FROM lineups";
   const params: any[] = [];
 
-  if (role === "user") {
+  // Only admin/manager are considered elevated. Any unknown role is
+  // treated as a regular artist (scoped like "user").
+  if (!isElevatedRole(role)) {
     // בדף הליינאפים - הצג רק את הליינאפים שהמשתמש יצר בעצמו
     // הליינאפים של המארח יראו רק בדף פרופיל האמן
     query += " WHERE created_by = ?";

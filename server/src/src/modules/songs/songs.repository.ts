@@ -1,4 +1,5 @@
 import { pool } from "../../database/pool.js";
+import { isElevatedRole } from "../../types/roles.js";
 import fs from "fs";
 import path from "path";
 
@@ -20,7 +21,9 @@ export async function listSongs(
   `;
   const params: any[] = [];
 
-  if (role === "user") {
+  // Only admin/manager are considered elevated. Any unknown role is
+  // treated as a regular artist (scoped like "user").
+  if (!isElevatedRole(role)) {
     // אם המשתמש הוא אורח (יש לו מארחים), הצג את השירים שלו וגם של כל המארחים
     if (hostIds && hostIds.length > 0) {
       const placeholders = hostIds.map(() => "?").join(", ");

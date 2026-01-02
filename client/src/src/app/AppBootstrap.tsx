@@ -221,7 +221,9 @@ export default function AppBootstrap(): JSX.Element {
             <Route key={path} path={path} element={<Component />} />
           ))}
 
-          {/* RoleRoute: חוסם דפי My ו-MyArtist לאדמין */}
+          {/* RoleRoute: חוסם דפי My ו-MyArtist לאדמין.
+              הערה: זהו החלטת UX בצד הלקוח בלבד.
+              בצד השרת admin עדיין יכול לגשת לאותם APIs בדיוק כמו user. */}
           {(() => {
             const MyComponent = protectedRoutes[0].component;
             return (
