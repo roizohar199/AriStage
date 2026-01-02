@@ -31,6 +31,7 @@ import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "@/modules/shared/components/ToastProvider";
 import CardSong from "@/modules/shared/components/cardsong";
 import BlockLineup from "@/modules/shared/components/blocklineup";
+import { normalizeSubscriptionType } from "@/modules/shared/hooks/useSubscription.ts";
 
 type AdminTab =
   | "users"
@@ -40,12 +41,14 @@ type AdminTab =
   | "logs"
   | "errors"
   | "featureFlags"
-  | "monitoring";
+  | "monitoring"
+  | "plans";
 
 const TABS: Array<{ key: AdminTab; label: string }> = [
   { key: "users", label: "משתמשים" },
   { key: "repos", label: "מאגרים" },
   { key: "subscriptions", label: "מנויים" },
+  { key: "plans", label: "מסלולים" },
   { key: "files", label: "קבצים" },
   { key: "logs", label: "לוגים" },
   { key: "errors", label: "תקלות" },
@@ -252,15 +255,38 @@ type FeatureFlagRow = {
 type PrivateChart = { id: number; file_path: string };
 
 export default function AdminReal() {
+  // Plans state
+  const [plans, setPlans] = useState<any[]>([]);
+  const [plansLoading, setPlansLoading] = useState(false);
+  const [plansError, setPlansError] = useState<string | null>(null);
+  const [editPrice, setEditPrice] = useState<{ [tier: string]: number }>({});
+  const { showToast } = useToast();
+
+  const loadPlans = useCallback(async () => {
+    setPlansLoading(true);
+    setPlansError(null);
+    try {
+      const { data } = await api.get("/subscriptions/plans");
+      setPlans(data);
+    } catch (err: any) {
+      setPlansError("שגיאה בטעינת מסלולים");
+      setPlans([]);
+    } finally {
+      setPlansLoading(false);
+    }
+  }, []);
+
   const location = useLocation();
   const navigate = useNavigate();
   const confirm = useConfirm();
-  const { showToast } = useToast();
-
   const selectedTab = useMemo(
     () => getTabFromLocationSearch(location.search),
     [location.search]
   );
+  useEffect(() => {
+    if (selectedTab === "plans") loadPlans();
+  }, [selectedTab, loadPlans]);
+  console.log("ADMIN RENDERED");
 
   const setTab = useCallback(
     (tab: AdminTab) => {
@@ -343,14 +369,26 @@ export default function AdminReal() {
     role: "user",
     subscription_type: "trial",
   });
+  const [subscriptionTypeLocked, setSubscriptionTypeLocked] = useState(false);
+  const [subscriptionTypeOriginal, setSubscriptionTypeOriginal] = useState<
+    string | null
+  >(null);
 
   const openEditUser = (u: AdminUser) => {
     setEditingUserId(u.id);
+    const normalizedType = normalizeSubscriptionType(u.subscription_type);
+    const rawType = (u.subscription_type || "").toLowerCase();
+    const isIllegalType = !!rawType && rawType !== "trial" && rawType !== "pro";
+
     setUserForm({
       full_name: u.full_name || "",
       role: u.role,
-      subscription_type: u.subscription_type || "trial",
+      subscription_type: normalizedType,
     });
+    setSubscriptionTypeLocked(isIllegalType);
+    setSubscriptionTypeOriginal(
+      isIllegalType ? u.subscription_type || null : null
+    );
     setUserModalOpen(true);
   };
 
@@ -359,7 +397,16 @@ export default function AdminReal() {
     if (!editingUserId) return;
 
     try {
-      await api.put(`/users/${editingUserId}`, userForm);
+      const payload: any = {
+        full_name: userForm.full_name,
+        role: userForm.role,
+      };
+
+      if (!subscriptionTypeLocked) {
+        payload.subscription_type = userForm.subscription_type;
+      }
+
+      await api.put(`/users/${editingUserId}`, payload);
       setUserModalOpen(false);
       await reload();
     } catch (err: any) {
@@ -1349,7 +1396,7 @@ export default function AdminReal() {
                         icon={<BadgeCheck size={14} />}
                         variant="brand"
                       >
-                        {u.subscription_type || "trial"}
+                        {normalizeSubscriptionType(u.subscription_type)}
                       </SmallBadge>
                     </div>
                   </div>
@@ -1359,7 +1406,7 @@ export default function AdminReal() {
                       override admin
                     </label>
                     <select
-                      value={u.subscription_type || "trial"}
+                      value={normalizeSubscriptionType(u.subscription_type)}
                       onChange={async (e) => {
                         try {
                           await api.put(`/users/${u.id}`, {
@@ -1375,9 +1422,7 @@ export default function AdminReal() {
                       className="w-full bg-neutral-900 border border-neutral-800 p-2 rounded-2xl text-sm"
                     >
                       <option value="trial">trial</option>
-                      <option value="basic">basic</option>
                       <option value="pro">pro</option>
-                      <option value="vip">vip</option>
                     </select>
                     <p className="text-[11px] text-neutral-500">
                       אם צריך endpoint ייעודי → TODO: admin subscription
@@ -1386,6 +1431,89 @@ export default function AdminReal() {
                   </div>
                 </CardContainer>
               ))
+          )}
+        </div>
+      ) : selectedTab === "plans" ? (
+        <div className="space-y-3">
+          {plansLoading ? (
+            <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-6 text-center text-neutral-400">
+              טוען מסלולים...
+            </div>
+          ) : plansError ? (
+            <div className="bg-neutral-800 rounded-2xl p-6 text-center">
+              <BadgeCheck size={32} className="mx-auto mb-3 text-neutral-600" />
+              <p className="text-neutral-400 text-sm">{plansError}</p>
+            </div>
+          ) : plans.length === 0 ? (
+            <div className="bg-neutral-800 rounded-2xl p-6 text-center">
+              <BadgeCheck size={32} className="mx-auto mb-3 text-neutral-600" />
+              <p className="text-neutral-400 text-sm">אין מסלולים להצגה</p>
+            </div>
+          ) : (
+            plans.map((plan) => (
+              <CardContainer key={plan.tier}>
+                <div className="flex-1 min-w-0 text-right">
+                  <h3 className="text-lg font-bold text-white mb-1">
+                    {plan.tier}
+                  </h3>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <SmallBadge variant="brand">{plan.currency}</SmallBadge>
+                    <SmallBadge>{plan.billing_period || "monthly"}</SmallBadge>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 items-start">
+                  <label className="text-xs text-neutral-300 font-bold">
+                    מחיר
+                  </label>
+                  {typeof plan.monthlyPrice === "number" ? (
+                    <input
+                      type="number"
+                      value={editPrice[plan.tier] ?? plan.monthlyPrice}
+                      onChange={(e) =>
+                        setEditPrice((prev) => ({
+                          ...prev,
+                          [plan.tier]: Number(e.target.value),
+                        }))
+                      }
+                      className="w-24 bg-neutral-900 border border-neutral-800 p-2 rounded-2xl text-sm"
+                    />
+                  ) : (
+                    <span>{plan.monthlyPrice}</span>
+                  )}
+                  <button
+                    className="bg-brand-orange text-black px-3 py-1 rounded-2xl text-xs font-bold mt-1"
+                    onClick={async () => {
+                      try {
+                        await api.put("/subscriptions/settings", {
+                          price_ils: editPrice[plan.tier] ?? plan.monthlyPrice,
+                        });
+                        showToast("Subscription price updated", "success");
+                        await loadPlans();
+                      } catch (err) {
+                        showToast("שגיאה בעדכון מחיר המנוי", "error");
+                      }
+                    }}
+                    disabled={typeof plan.monthlyPrice !== "number"}
+                  >
+                    שמור מחיר
+                  </button>
+                  {typeof plan.enabled === "boolean" ? (
+                    <label className="flex items-center gap-2 mt-2">
+                      <input
+                        type="checkbox"
+                        checked={plan.enabled}
+                        disabled
+                        className="accent-brand-orange"
+                      />
+                      <span>Enabled</span>
+                      <span className="text-xs text-neutral-500">
+                        TODO: אין endpoint לעריכת enabled
+                      </span>
+                    </label>
+                  ) : null}
+                </div>
+              </CardContainer>
+            ))
           )}
         </div>
       ) : selectedTab === "files" ? (
@@ -1748,13 +1876,18 @@ export default function AdminReal() {
                     subscription_type: e.target.value,
                   }))
                 }
-                className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
+                disabled={subscriptionTypeLocked}
+                className="w-full bg-neutral-800 p-2 rounded-2xl text-sm disabled:opacity-60"
               >
                 <option value="trial">trial</option>
-                <option value="basic">basic</option>
                 <option value="pro">pro</option>
-                <option value="vip">vip</option>
               </select>
+              {subscriptionTypeLocked && subscriptionTypeOriginal && (
+                <p className="text-[11px] text-red-400 mt-1">
+                  ערך מנוי לא חוקי מהשרת ("{subscriptionTypeOriginal}")
+                   a0 a0 a0מוצג כ‑trial לקריאה בלבד. אי אפשר לערוך מפה.
+                </p>
+              )}
             </div>
           </div>
 

@@ -1,6 +1,9 @@
 import axios from "axios";
 import { emitToast } from "./toastBus.ts";
-import { authLogoutEvent } from "@/modules/shared/contexts/AuthContext.tsx";
+import {
+  authLogoutEvent,
+  subscriptionBlockedEvent,
+} from "@/modules/shared/contexts/AuthContext.tsx";
 
 // קובע את ה-baseURL לפי המכשיר שנכנס
 function getBaseURL(): string {
@@ -87,6 +90,18 @@ api.interceptors.response.use(
 
   (err) => {
     const config = err.config || {};
+
+    // ✅ Subscription blocked (Payment Required)
+    // Handle before skipErrorToast so bootstrap calls can still set blocked state.
+    if (
+      err?.response?.status === 402 &&
+      err?.response?.data?.code === "SUBSCRIPTION_REQUIRED"
+    ) {
+      subscriptionBlockedEvent.dispatchEvent(
+        new CustomEvent("blocked", { detail: err.response.data })
+      );
+      return Promise.reject(err);
+    }
 
     // דילוג על שגיאות לפי בקשה
     if (config.skipErrorToast) return Promise.reject(err);

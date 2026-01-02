@@ -1,15 +1,37 @@
-import React, { useEffect, useState } from "react";
-import { LogOut } from "lucide-react";
+import { useEffect, useState } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import api from "@/modules/shared/lib/api.js";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
-import ContactForm from "@/modules/shared/components/ContactForm.jsx";
+import { useSubscription } from "@/modules/shared/hooks/useSubscription.ts";
+
+type SubscriptionPlan = {
+  tier: string;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  currency: string;
+};
+
+type SettingsFormState = {
+  full_name: string;
+  email: string;
+  newPass: string;
+  theme: string;
+  artist_role: string;
+  avatar: File | null;
+};
 
 export default function Settings() {
-  const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { user } = useAuth();
+  const subscription = useSubscription();
 
-  const [form, setForm] = useState({
+  const isSubscriptionActive =
+    user?.role === "admin" ||
+    subscription?.status === "active" ||
+    subscription?.status === "trial";
+
+  const shouldShowUpgrade = !isSubscriptionActive;
+
+  const [form, setForm] = useState<SettingsFormState>({
     full_name: "",
     email: "",
     newPass: "",
@@ -18,11 +40,43 @@ export default function Settings() {
     avatar: null, // קובץ תמונה חדש
   });
 
-  const [preview, setPreview] = useState(null); // תצוגה מקדימה
+  const [preview, setPreview] = useState<string | null>(null); // תצוגה מקדימה
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState(null);
-  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [plansLoading, setPlansLoading] = useState(false);
+
+  useEffect(() => {
+    if (!shouldShowUpgrade) {
+      setPlans([]);
+      setPlansLoading(false);
+      return;
+    }
+
+    let mounted = true;
+    setPlansLoading(true);
+
+    (api as any)
+      .get("/subscriptions/plans", { skipErrorToast: true })
+      .then(({ data }: any) => {
+        if (!mounted) return;
+        setPlans(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setPlans([]);
+      })
+      .finally(() => {
+        if (mounted) setPlansLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [shouldShowUpgrade]);
 
   // 📥 טעינת פרטי משתמש
   useEffect(() => {
@@ -53,7 +107,7 @@ export default function Settings() {
   }, []);
 
   // 💾 שמירת נתונים
-  const submit = async (e) => {
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
@@ -66,7 +120,7 @@ export default function Settings() {
       fd.append("theme", form.theme);
       fd.append("artist_role", form.artist_role);
 
-      if (form.avatar instanceof File) {
+      if (form.avatar) {
         fd.append("avatar", form.avatar);
       }
 
@@ -95,18 +149,21 @@ export default function Settings() {
       window.dispatchEvent(
         new CustomEvent("user-updated", { detail: userData })
       );
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      const isSubscriptionBlocked =
+        err?.response?.status === 402 &&
+        err?.response?.data?.code === "SUBSCRIPTION_REQUIRED";
+
+      if (isSubscriptionBlocked) {
+        setError("המנוי אינו פעיל. כדי לשמור שינויים יש לשדרג מנוי.");
+        return;
+      }
+
       setError(err.response?.data?.error || "שגיאה בעדכון הנתונים");
     } finally {
       setSaving(false);
     }
-  };
-
-  // 🚪 התנתקות
-  const handleLogout = () => {
-    logout(); // This clears state and localStorage
-    navigate("/login");
   };
 
   if (loading)
@@ -118,6 +175,86 @@ export default function Settings() {
       <header className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">הגדרות מערכת</h1>
       </header>
+
+      {(error || success) && (
+        <div className="mb-6 space-y-2">
+          {error && (
+            <div className="bg-neutral-950/50 border border-neutral-800 rounded-2xl p-4 text-white">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="bg-neutral-950/50 border border-neutral-800 rounded-2xl p-4 text-white">
+              {success}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Subscription info (always visible) */}
+      <div className="bg-neutral-950/50 rounded-2xl p-6 mb-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-sm text-neutral-400">סטטוס מנוי</div>
+            <div className="text-lg font-semibold">
+              {isSubscriptionActive ? "פעיל" : "הסתיים"}
+            </div>
+          </div>
+          <div>
+            <div className="text-sm text-neutral-400">מסלול נוכחי</div>
+            <div className="text-lg font-semibold" dir="ltr">
+              {subscription?.plan ?? "trial"}
+            </div>
+          </div>
+        </div>
+
+        {shouldShowUpgrade && (
+          <div className="pt-4 border-t border-neutral-800 space-y-4">
+            <div>
+              <div className="text-sm text-neutral-400">שדרוג מנוי</div>
+              <div className="text-base text-neutral-200">
+                בחר מסלול וחזור לשימוש מלא במערכת
+              </div>
+            </div>
+
+            {plansLoading ? (
+              <div className="bg-neutral-900 rounded-2xl p-4 text-neutral-400">
+                טוען מחירים...
+              </div>
+            ) : plans[0] ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-neutral-900 rounded-2xl p-5 border border-neutral-800">
+                  <div className="font-semibold mb-2">מסלול חודשי</div>
+                  <div className="text-2xl font-bold" dir="ltr">
+                    {plans[0].monthlyPrice} ₪
+                    <span className="text-sm text-neutral-400"> / חודש</span>
+                  </div>
+                </div>
+
+                <div className="bg-neutral-900 rounded-2xl p-5 border border-brand-orange/50">
+                  <div className="font-semibold mb-2">מסלול שנתי</div>
+                  <div className="text-2xl font-bold" dir="ltr">
+                    {plans[0].yearlyPrice} ₪
+                    <span className="text-sm text-neutral-400"> / שנה</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-neutral-900 rounded-2xl p-4 text-neutral-400">
+                לא הצלחנו לטעון מחירים כרגע
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => window.openUpgradeModal?.()}
+              className="w-full cursor-pointer bg-brand-orange text-black font-semibold px-4 py-2 rounded-2xl shadow-innerIos transition text-sm"
+            >
+              שדרג מנוי
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* כרטיס מרכזי - זהה למבנה Home */}
       <div className="space-y-1 rounded-2xl flex flex-col ">
@@ -148,8 +285,8 @@ export default function Settings() {
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files[0];
+                onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                  const file = e.target.files?.[0] ?? null;
                   setForm({ ...form, avatar: file });
                   if (file) setPreview(URL.createObjectURL(file));
                 }}

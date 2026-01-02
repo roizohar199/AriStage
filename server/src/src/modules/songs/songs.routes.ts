@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../../middleware/auth.js";
+import { requireActiveSubscription } from "../../middleware/subscription.js";
 import { emitRefreshOnMutation } from "../../middleware/refresh.js";
 import { songsController } from "./songs.controller.js";
 import { uploadSongChartPdf } from "../shared/upload.js";
@@ -7,6 +8,7 @@ import { uploadSongChartPdf } from "../shared/upload.js";
 const router = Router();
 
 router.use(requireAuth);
+router.use(requireActiveSubscription);
 
 // כל פעולה של POST/PUT/DELETE במודול Songs תגרום ל־global:refresh
 router.use(emitRefreshOnMutation);

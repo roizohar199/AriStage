@@ -8,10 +8,15 @@ import { dashboardRouter } from "./dashboard/dashboard.routes.js";
 import { shareRouter } from "./share/share.routes.js";
 import { supportRouter } from "./support/support.routes.js";
 import { healthRouter } from "./health/health.routes.js";
+import { subscriptionsRouter } from "./subscriptions/subscriptions.routes.js";
+
+import adminRouter from "../../routes/admin.js";
 
 export function registerModules(app) {
   app.use("/api/health", healthRouter);
   app.use("/api/auth", authRouter);
+  app.use("/api/subscriptions", subscriptionsRouter);
+  app.use("/api/admin", adminRouter);
   app.use("/api/songs", songsRouter);
   app.use("/api/lineups", lineupsRouter);
   app.use("/api/users", usersRouter);
@@ -21,4 +26,3 @@ export function registerModules(app) {
   app.use("/api/share", shareRouter);
   app.use("/support", supportRouter);
 }
-

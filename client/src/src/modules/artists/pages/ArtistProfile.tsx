@@ -24,12 +24,14 @@ import Search from "@/modules/shared/components/Search";
 import BlockLineup from "@/modules/shared/components/blocklineup";
 import CardSong from "@/modules/shared/components/cardsong";
 import Charts from "@/modules/shared/components/Charts";
+import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 
 export default function ArtistProfile() {
   const confirm = useConfirm();
   const { showToast } = useToast();
   const { id } = useParams();
   const navigate = useNavigate();
+  const { subscriptionBlocked } = useAuth();
   const location = useLocation();
   const isLineupRoute = /^\/artist\/\d+\/lineups\/\d+/.test(location.pathname);
   const [artist, setArtist] = useState(null);
@@ -337,7 +339,13 @@ export default function ArtistProfile() {
                     {error || "אמן לא נמצא"}
                   </p>
                   <button
-                    onClick={() => navigate("/my")}
+                    onClick={() => {
+                      if (subscriptionBlocked) {
+                        window.openUpgradeModal?.();
+                        return;
+                      }
+                      navigate("/my");
+                    }}
                     className="bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold px-6 py-3 rounded-lg"
                   >
                     חזרה לדף הבית
@@ -354,6 +362,10 @@ export default function ArtistProfile() {
         <div className="flex justify-between mt-8 bg-neutral-800 rounded-2xl mb-6 overflow-hidden w-fit">
           <button
             onClick={() => {
+              if (subscriptionBlocked) {
+                window.openUpgradeModal?.();
+                return;
+              }
               navigate(`/artist/${id}`);
             }}
             className={`px-6 py-2 transition font-bold flex items-center gap-2 ${
@@ -367,6 +379,10 @@ export default function ArtistProfile() {
 
           <button
             onClick={() => {
+              if (subscriptionBlocked) {
+                window.openUpgradeModal?.();
+                return;
+              }
               navigate(`/artist/${id}?tab=songs`);
             }}
             className={`px-6 py-2 transition font-bold flex items-center gap-2 ${

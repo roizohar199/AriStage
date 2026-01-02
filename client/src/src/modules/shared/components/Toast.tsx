@@ -28,7 +28,7 @@ export default function Toast({
   return (
     <div
       className={`
-        fixed left-1/2 -translate-x-1/2 z-50
+        fixed left-1/2 -translate-x-1/2 z-[9999]
         px-4 py-2
         rounded-2xl
         backdrop-blur-xl shadow-lg

@@ -1,12 +1,17 @@
 import { verifyToken } from "../modules/auth/token.service.js";
 import { AppError } from "../core/errors.js";
 
-export function requireAuth(req, res, next) {
+import type { NextFunction, Request, Response } from "express";
+
+export function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
     const header = req.headers.authorization || "";
 
     if (!header.startsWith("Bearer ")) {
-      throw new AppError(401, "Unauthorized - Missing or invalid Authorization header");
+      throw new AppError(
+        401,
+        "Unauthorized - Missing or invalid Authorization header"
+      );
     }
 
     const token = header.split(" ")[1];
@@ -14,7 +19,7 @@ export function requireAuth(req, res, next) {
       throw new AppError(401, "Unauthorized - Missing token");
     }
 
-    const decoded = verifyToken(token);
+    const decoded: any = verifyToken(token);
 
     req.user = {
       id: decoded.id,
@@ -24,19 +29,19 @@ export function requireAuth(req, res, next) {
     };
 
     next();
-  } catch (err) {
-    if (err.name === "TokenExpiredError") {
+  } catch (err: any) {
+    if (err?.name === "TokenExpiredError") {
       return next(new AppError(401, "Token expired"));
     }
-    if (err.name === "JsonWebTokenError") {
+    if (err?.name === "JsonWebTokenError") {
       return next(new AppError(401, "Invalid token"));
     }
     next(err);
   }
 }
 
-export function requireRoles(roles = []) {
-  return (req, res, next) => {
+export function requireRoles(roles: string[] = []) {
+  return (req: Request, res: Response, next: NextFunction) => {
     if (!roles.length) return next();
 
     if (!req.user || !roles.includes(req.user.role)) {
@@ -46,4 +51,3 @@ export function requireRoles(roles = []) {
     next();
   };
 }
-

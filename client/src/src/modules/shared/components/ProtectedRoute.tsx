@@ -1,73 +1,51 @@
-import React, { useEffect, useState, ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { useEffect, type ReactNode } from "react";
+import { Navigate, useLocation } from "react-router-dom";
 import api from "@/modules/shared/lib/api.ts";
-
-interface User {
-  id: number;
-  email: string;
-  full_name?: string;
-  role: string;
-  subscription_type?: string;
-}
+import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 
 interface ProtectedRouteProps {
   children: ReactNode;
   roles?: string[];
 }
 
-export default function ProtectedRoute({ children, roles = [] }: ProtectedRouteProps): JSX.Element {
-  const [ready, setReady] = useState<boolean>(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isImpersonating, setIsImpersonating] = useState<boolean>(false);
+export default function ProtectedRoute({
+  children,
+  roles = [],
+}: ProtectedRouteProps): ReactNode {
+  const location = useLocation();
+  const { user, loading, subscriptionBlocked } = useAuth();
 
+  let token: string | null = null;
+  try {
+    token = localStorage.getItem("ari_token");
+  } catch {
+    token = null;
+  }
+
+  const isImpersonating = !!localStorage.getItem("ari_original_user");
+  const authLock = localStorage.getItem("ari_auth_lock");
+
+  // Keep existing behavior: set default auth header when token exists.
   useEffect(() => {
-    try {
-      // 🔒 בדיקה אם יש נעילת ייצוג (מונע קפיצה בזמן שינוי משתמש)
-      const authLock = localStorage.getItem("ari_auth_lock");
-      if (authLock) {
-        // לא טוען משתמש, לא בודק כלום — מונע זריקה ל-login
-        setReady(true);
-        return;
-      }
-
-      const rawUser = localStorage.getItem("ari_user");
-      const storedUser = rawUser ? JSON.parse(rawUser) : null;
-      const storedToken = localStorage.getItem("ari_token");
-
-      const originalUser = localStorage.getItem("ari_original_user");
-      setIsImpersonating(!!originalUser);
-
-      // 🧠 הזרקת הטוקן
-      if (storedToken) {
-        api.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
-      }
-
-      if (storedUser && storedToken) {
-        setUser(storedUser);
-        setToken(storedToken);
-      }
-
-      setReady(true);
-    } catch (err) {
-      console.error("ProtectedRoute error:", err);
-      setReady(true);
+    if (token) {
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     }
-  }, []);
+  }, [token]);
 
   /* -----------------------------------------
      ⏳ טעינה / נעילת ייצוג
   ----------------------------------------- */
-  if (!ready) return null;
+  if (loading) return null;
 
   // 🔒 בזמן impersonation lock → לא בודקים ולא זורקים
-  if (localStorage.getItem("ari_auth_lock")) {
+  if (authLock) {
     return null;
   }
 
   /* -----------------------------------------
      ❌ לא מחובר כלל
   ----------------------------------------- */
+  // B) no user OR no token → redirect to /login
   if (!user || !token) {
     return <Navigate to="/login" replace />;
   }
@@ -75,7 +53,11 @@ export default function ProtectedRoute({ children, roles = [] }: ProtectedRouteP
   /* -----------------------------------------
      ❌ הגבלת הרשאות — אבל לא בזמן ייצוג
   ----------------------------------------- */
-  if (!isImpersonating && roles.length > 0 && !roles.includes(user.role)) {
+  if (
+    !isImpersonating &&
+    roles.length > 0 &&
+    !roles.includes((user.role ?? "") as string)
+  ) {
     return <Navigate to="/home" replace />;
   }
 

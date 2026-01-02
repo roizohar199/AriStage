@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../../middleware/auth.js";
+import { requireActiveSubscription } from "../../middleware/subscription.js";
 import { emitRefreshOnMutation } from "../../middleware/refresh.js";
 import { lineupsController } from "./lineups.controller.js";
 
@@ -8,6 +9,7 @@ const router = Router();
 router.get("/public/:token", lineupsController.public);
 
 router.use(requireAuth);
+router.use(requireActiveSubscription);
 
 // כל פעולה של POST/PUT/DELETE במודול Lineups תגרום ל־global:refresh
 router.use(emitRefreshOnMutation);

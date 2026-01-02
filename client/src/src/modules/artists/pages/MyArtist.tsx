@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import api from "@/modules/shared/lib/api.js";
 import { useToast } from "@/modules/shared/components/ToastProvider.jsx";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
+import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import SharedArtistsStats from "../components/SharedArtistsStats";
 import ArtistCard from "@/modules/shared/components/ArtistCard";
 
@@ -36,6 +37,7 @@ export default function MyArtist() {
   const { showToast } = useToast();
   const confirm = useConfirm();
   const navigate = useNavigate();
+  const { subscriptionBlocked } = useAuth();
   // הזמנות ממתינות הוסרו
   const [artists, setArtists] = useState<Artist[]>([]);
   const [artistsLoading, setArtistsLoading] = useState(true);
@@ -230,9 +232,20 @@ export default function MyArtist() {
                   aria-label={`מעבר לעמוד של ${
                     artist.full_name || "אמן ללא שם"
                   }`}
-                  onClick={() => navigate(`/artist/${artist.id}`)}
+                  onClick={() => {
+                    if (subscriptionBlocked) {
+                      window.openUpgradeModal?.();
+                      return;
+                    }
+                    navigate(`/artist/${artist.id}`);
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
+                      if (subscriptionBlocked) {
+                        e.preventDefault();
+                        window.openUpgradeModal?.();
+                        return;
+                      }
                       navigate(`/artist/${artist.id}`);
                     }
                   }}

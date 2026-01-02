@@ -11,18 +11,26 @@ import {
 export const lineupSongsController = {
   list: asyncHandler(async (req, res) => {
     const songs = await getLineupSongs(req.params.lineupId, req.user);
-    
+
     // בדיקה אם הליינאפ שייך למשתמש או למארח שלו (אם הוא אורח)
-    const { lineupBelongsToUser } = await import("../lineups/lineups.repository.js");
+    const { lineupBelongsToUser } = await import(
+      "../lineups/lineups.repository.js"
+    );
     const { checkIfGuest } = await import("../users/users.service.js");
     const lineupId = parseInt(req.params.lineupId);
-    
-    let isLineupOwner = req.user.role === "admin" || await lineupBelongsToUser(lineupId, req.user.id);
-    
+
+    let isLineupOwner =
+      req.user.role === "admin" ||
+      (await lineupBelongsToUser(lineupId, req.user.id));
+
     // אם לא, בדיקה אם המשתמש הוא אורח והליינאפ שייך לאחד מהמארחים שלו
     if (!isLineupOwner) {
       const hostIds = await checkIfGuest(req.user.id);
-      const hostIdsArray: number[] = Array.isArray(hostIds) ? hostIds : (hostIds ? [hostIds] : []);
+      const hostIdsArray: number[] = Array.isArray(hostIds)
+        ? hostIds
+        : hostIds
+        ? [hostIds]
+        : [];
       for (const hostId of hostIdsArray) {
         if (await lineupBelongsToUser(lineupId, hostId)) {
           isLineupOwner = true;
@@ -30,26 +38,28 @@ export const lineupSongsController = {
         }
       }
     }
-    
+
     // בדיקה אם המשתמש הוא הבעלים (לא אורח)
-    const isActualOwner = req.user.role === "admin" || await lineupBelongsToUser(lineupId, req.user.id);
-    
+    const isActualOwner =
+      req.user.role === "admin" ||
+      (await lineupBelongsToUser(lineupId, req.user.id));
+
     // הוספת URL מלא לקבצי PDF וסימון ownership
     const songsWithMetadata = songs.map((song) => {
       if (song.chart_pdf) {
         const protocol = req.protocol;
-        const host = req.get("host");
+        const host = req.get("host") ?? "localhost";
         const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
         const cleanPdf = song.chart_pdf.replace(/^\/uploads\//, "");
         song.chart_pdf_url = `${baseUrl}/uploads/${cleanPdf}`;
       }
-      
+
       // המשתמש יכול לערוך רק אם הוא הבעלים של הליינאפ (לא אורח)
       song.can_edit = isActualOwner;
-      
+
       return song;
     });
-    
+
     res.json(songsWithMetadata);
   }),
   create: asyncHandler(async (req, res) => {
@@ -71,22 +81,26 @@ export const lineupSongsController = {
 
     const lineupSongId = parseInt(req.params.lineupSongId);
     const filePath = `/uploads/charts/${req.user.id}/${req.file.filename}`;
-    
-    const lineupSong = await uploadChartPdfForSong(lineupSongId, req.user, filePath);
-    
+
+    const lineupSong = await uploadChartPdfForSong(
+      lineupSongId,
+      req.user,
+      filePath
+    );
+
     const protocol = req.protocol;
-    const host = req.get("host");
+    const host = req.get("host") ?? "localhost";
     const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
     const pdfUrl = `${baseUrl}${filePath}`;
-    
+
     // הוספת URL מלא לנתונים שנשלחים
     if (lineupSong) {
       lineupSong.chart_pdf_url = pdfUrl;
     }
-    
-    res.json({ 
+
+    res.json({
       message: "✅ קובץ PDF הועלה בהצלחה",
-      chart_pdf_url: pdfUrl 
+      chart_pdf_url: pdfUrl,
     });
   }),
   deleteChart: asyncHandler(async (req, res) => {
@@ -97,14 +111,13 @@ export const lineupSongsController = {
       }
 
       await removeChartPdfForSong(lineupSongId, req.user);
-      
-      res.json({ 
-        message: "✅ קובץ PDF נמחק בהצלחה"
+
+      res.json({
+        message: "✅ קובץ PDF נמחק בהצלחה",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ שגיאה במחיקת PDF:", error);
       throw error;
     }
   }),
 };
-

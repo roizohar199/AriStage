@@ -4,6 +4,7 @@ import api from "@/modules/shared/lib/api.js";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { Mail, User, Star } from "lucide-react";
 import BaseModal from "@/modules/shared/components/BaseModal.tsx";
+import { normalizeSubscriptionType } from "@/modules/shared/hooks/useSubscription.ts";
 
 export default function Users() {
   const confirm = useConfirm();
@@ -74,7 +75,7 @@ export default function Users() {
       email: u.email,
       password: "",
       role: u.role,
-      subscription_type: u.subscription_type,
+      subscription_type: normalizeSubscriptionType(u.subscription_type),
     });
     setShowModal(true);
   };
@@ -249,7 +250,8 @@ export default function Users() {
 
                 {/* מנוי */}
                 <span className="flex flex-row-reverse items-center gap-1 px-2 py-1 bg-brand-orange rounded-lg text-black font-semibold">
-                  <Star size={14} /> {u.subscription_type || "trial"}
+                  <Star size={14} />
+                  {normalizeSubscriptionType(u.subscription_type)}
                 </span>
 
                 {/* אינדיקציה אם האמן כבר מוזמן */}

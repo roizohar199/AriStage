@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { reloadAuth } from "@/modules/shared/lib/authReload.js";
 import { emitToast } from "@/modules/shared/lib/toastBus.js";
 import { io } from "socket.io-client";
 import api from "@/modules/shared/lib/api.js";
+import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 
 import ProtectedRoute from "@/modules/shared/components/ProtectedRoute.tsx";
 import Splash from "@/modules/shared/components/Splash.tsx";
@@ -57,15 +58,7 @@ function exitImpersonation(): void {
 
 export default function AppBootstrap(): JSX.Element {
   const location = useLocation();
-
-  /* -----------------------------------------
-     🔥 Ghost Fix — טעינה חלקה (moved from App.tsx)
-  ----------------------------------------- */
-  const [loading, setLoading] = useState<boolean>(true);
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(timer);
-  }, []);
+  const { user: ctxUser, loading: authLoading, subscriptionStatus } = useAuth();
 
   /* -----------------------------------------
      🟦 המשתמש הנוכחי (moved from App.tsx)
@@ -73,6 +66,22 @@ export default function AppBootstrap(): JSX.Element {
   const currentUser: User = JSON.parse(
     localStorage.getItem("ari_user") || "{}"
   );
+
+  const effectiveUser = (ctxUser?.id ? ctxUser : currentUser) as any;
+  const isAdminUser = effectiveUser?.role === "admin";
+
+  const isAuthenticated = (() => {
+    try {
+      const token = localStorage.getItem("ari_token");
+      if (token) return true;
+      const raw = localStorage.getItem("ari_user");
+      if (!raw) return !!effectiveUser?.id;
+      const parsed = JSON.parse(raw);
+      return !!parsed?.token || !!effectiveUser?.id;
+    } catch {
+      return !!effectiveUser?.id;
+    }
+  })();
 
   /* -----------------------------------------
      🔥 Socket גלובלי אחד לכל האפליקציה (moved from App.tsx)
@@ -150,7 +159,9 @@ export default function AppBootstrap(): JSX.Element {
   /* -----------------------------------------
      🔥 Early return רק אחרי כל ה-hooks (moved from App.tsx)
   ----------------------------------------- */
-  if (loading) return <Splash />;
+  if (isAuthenticated && (authLoading || subscriptionStatus === null)) {
+    return <Splash />;
+  }
 
   /* -----------------------------------------
      🟥 הסתרת ניווט תחתון (moved from App.tsx)
@@ -159,6 +170,7 @@ export default function AppBootstrap(): JSX.Element {
     location.pathname === "/login" ||
     location.pathname.startsWith("/reset") ||
     location.pathname.startsWith("/share") ||
+    location.pathname === "/billing" ||
     location.pathname === "/" || // דף Landing
     !currentUser?.id;
 
@@ -175,75 +187,94 @@ export default function AppBootstrap(): JSX.Element {
       hideNav={hideNav}
     >
       <Routes>
-        {/* GuestOnlyRoute: חוסם דפי אורח למשתמשים מחוברים */}
-        {(() => {
-          const LandingComponent = publicRoutes[0].component;
-          return (
-            <Route
-              path="/"
-              element={
-                <GuestOnlyRoute redirectTo="/my">
-                  <LandingComponent />
-                </GuestOnlyRoute>
-              }
-            />
-          );
-        })()}
-        {(() => {
-          const LoginComponent = publicRoutes[1].component;
-          return (
-            <Route
-              path="/login"
-              element={
-                <GuestOnlyRoute redirectTo="/my">
-                  <LoginComponent />
-                </GuestOnlyRoute>
-              }
-            />
-          );
-        })()}
-        {/* שאר דפי public */}
-        {publicRoutes.slice(2).map(({ path, component: Component }) => (
-          <Route key={path} path={path} element={<Component />} />
-        ))}
+        {/* All routes available - subscription blocking is UI-only (Banner + action guards) */}
+        <>
+          {/* GuestOnlyRoute: חוסם דפי אורח למשתמשים מחוברים */}
+          {(() => {
+            const LandingComponent = publicRoutes[0].component;
+            return (
+              <Route
+                path="/"
+                element={
+                  <GuestOnlyRoute redirectTo="/my">
+                    <LandingComponent />
+                  </GuestOnlyRoute>
+                }
+              />
+            );
+          })()}
+          {(() => {
+            const LoginComponent = publicRoutes[1].component;
+            return (
+              <Route
+                path="/login"
+                element={
+                  <GuestOnlyRoute redirectTo="/my">
+                    <LoginComponent />
+                  </GuestOnlyRoute>
+                }
+              />
+            );
+          })()}
+          {/* שאר דפי public */}
+          {publicRoutes.slice(2).map(({ path, component: Component }) => (
+            <Route key={path} path={path} element={<Component />} />
+          ))}
 
-        {/* RoleRoute: חוסם דפי My ו-MyArtist לאדמין */}
-        {(() => {
-          const MyComponent = protectedRoutes[0].component;
-          return (
-            <Route
-              path="/my/*"
-              element={
-                <RoleRoute denyRoles={["admin"]} redirectTo="/admin">
-                  <ProtectedRoute>
-                    <MyComponent />
-                  </ProtectedRoute>
-                </RoleRoute>
-              }
-            />
-          );
-        })()}
-        {(() => {
-          const MyArtistComponent = protectedRoutes[1].component;
-          return (
-            <Route
-              path="/MyArtist"
-              element={
-                <RoleRoute denyRoles={["admin"]} redirectTo="/admin">
-                  <ProtectedRoute>
-                    <MyArtistComponent />
-                  </ProtectedRoute>
-                </RoleRoute>
-              }
-            />
-          );
-        })()}
+          {/* RoleRoute: חוסם דפי My ו-MyArtist לאדמין */}
+          {(() => {
+            const MyComponent = protectedRoutes[0].component;
+            return (
+              <Route
+                path="/my/*"
+                element={
+                  <RoleRoute denyRoles={["admin"]} redirectTo="/admin">
+                    <ProtectedRoute>
+                      <MyComponent />
+                    </ProtectedRoute>
+                  </RoleRoute>
+                }
+              />
+            );
+          })()}
+          {(() => {
+            const MyArtistComponent = protectedRoutes[1].component;
+            return (
+              <Route
+                path="/MyArtist"
+                element={
+                  <RoleRoute denyRoles={["admin"]} redirectTo="/admin">
+                    <ProtectedRoute>
+                      <MyArtistComponent />
+                    </ProtectedRoute>
+                  </RoleRoute>
+                }
+              />
+            );
+          })()}
 
-        {/* שאר דפי protected */}
-        {protectedRoutes
-          .slice(2)
-          .map(({ path, component: Component, roles = undefined }) => {
-            if (path === "/artist/:id/*") {
+          {/* שאר דפי protected */}
+          {protectedRoutes
+            .slice(2)
+            .map(({ path, component: Component, roles = undefined }) => {
+              if (path === "/artist/:id/*") {
+                return (
+                  <Route
+                    key={path}
+                    path={path}
+                    element={
+                      <ProtectedRoute roles={roles}>
+                        <Component />
+                      </ProtectedRoute>
+                    }
+                  >
+                    <Route
+                      path="lineups/:lineupId"
+                      element={<LineupDetails />}
+                    />
+                  </Route>
+                );
+              }
               return (
                 <Route
                   key={path}
@@ -253,25 +284,12 @@ export default function AppBootstrap(): JSX.Element {
                       <Component />
                     </ProtectedRoute>
                   }
-                >
-                  <Route path="lineups/:lineupId" element={<LineupDetails />} />
-                </Route>
+                />
               );
-            }
-            return (
-              <Route
-                key={path}
-                path={path}
-                element={
-                  <ProtectedRoute roles={roles}>
-                    <Component />
-                  </ProtectedRoute>
-                }
-              />
-            );
-          })}
+            })}
 
-        <Route path="*" element={<Navigate to="/my" replace />} />
+          <Route path="*" element={<Navigate to="/my" replace />} />
+        </>
       </Routes>
     </AppLayout>
   );

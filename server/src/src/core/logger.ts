@@ -1,14 +1,21 @@
-const levels = ["debug", "info", "warn", "error"];
+const levels = ["debug", "info", "warn", "error"] as const;
 
-function format(level, message, meta) {
+type LogLevel = (typeof levels)[number];
+
+export type Logger = Record<
+  LogLevel,
+  (message: string, meta?: unknown) => void
+>;
+
+function format(level: LogLevel, message: string, meta?: unknown) {
   const ts = new Date().toISOString();
   return `[${ts}] [${level.toUpperCase()}] ${message}${
     meta ? ` | ${JSON.stringify(meta)}` : ""
   }`;
 }
 
-export const logger = levels.reduce((acc, level) => {
-  acc[level] = (message, meta) => {
+export const logger: Logger = levels.reduce((acc, level) => {
+  acc[level] = (message: string, meta?: unknown) => {
     const line = format(level, message, meta);
     if (level === "error") {
       console.error(line);
@@ -19,5 +26,4 @@ export const logger = levels.reduce((acc, level) => {
     }
   };
   return acc;
-}, {});
-
+}, {} as Logger);

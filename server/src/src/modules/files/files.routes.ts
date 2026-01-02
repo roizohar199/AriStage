@@ -1,11 +1,13 @@
 import { Router } from "express";
 import { requireAuth } from "../../middleware/auth.js";
+import { requireActiveSubscription } from "../../middleware/subscription.js";
 import { emitRefreshOnMutation } from "../../middleware/refresh.js";
 import { filesController } from "./files.controller.js";
 
 const router = Router();
 
 router.use(requireAuth);
+router.use(requireActiveSubscription);
 
 // כל פעולה של POST/PUT/DELETE במודול Files תגרום ל־global:refresh
 router.use(emitRefreshOnMutation);
@@ -16,4 +18,3 @@ router.put("/:id", filesController.update);
 router.delete("/:id", filesController.remove);
 
 export const filesRouter = router;
-

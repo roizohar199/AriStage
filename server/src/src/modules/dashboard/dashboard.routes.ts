@@ -1,10 +1,12 @@
 import { Router } from "express";
 import { requireAuth } from "../../middleware/auth.js";
+import { requireActiveSubscription } from "../../middleware/subscription.js";
 import { dashboardController } from "./dashboard.controller.js";
 
 const router = Router();
 
 router.use(requireAuth);
+router.use(requireActiveSubscription);
 
 router.get("/", dashboardController.stats);
 router.get("/shared", dashboardController.sharedStats);

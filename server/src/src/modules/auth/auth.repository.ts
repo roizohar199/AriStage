@@ -13,14 +13,16 @@ export async function createUser({
   password_hash,
   role,
   subscription_type,
+  subscription_status,
+  subscription_expires_at,
   artist_role,
   avatar,
 }) {
   const [result] = await pool.query(
     `
     INSERT INTO users 
-      (full_name, email, password_hash, role, subscription_type, artist_role, avatar)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+      (full_name, email, password_hash, role, subscription_type, subscription_status, subscription_expires_at, artist_role, avatar)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     [
       full_name,
@@ -28,6 +30,8 @@ export async function createUser({
       password_hash,
       role,
       subscription_type,
+      subscription_status,
+      subscription_expires_at,
       artist_role,
       avatar,
     ]

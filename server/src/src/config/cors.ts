@@ -1,4 +1,4 @@
-import { corsMethods, env } from "./env.ts";
+import { corsMethods, env } from "./env.js";
 
 function normalizeOrigin(origin: string = ""): string {
   return origin.replace(/\/$/, "");

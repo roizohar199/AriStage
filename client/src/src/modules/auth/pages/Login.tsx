@@ -38,11 +38,20 @@ export default function Login() {
       const { data } = await api.post("/auth/login", { email, password });
 
       if (data.token) {
+        // Save user to localStorage BEFORE calling login
+        // This ensures user is available even if /users/me returns 402
+        try {
+          localStorage.setItem("ari_user", JSON.stringify(data));
+        } catch (err) {
+          console.error("Failed to save user to localStorage:", err);
+        }
+
         // Use the login method from AuthContext to set token and fetch user
         await login(data.token);
       }
 
-      navigate("/my");
+      // Navigate to home - let the app routing decide the destination
+      navigate("/");
     } catch (err) {
       setError(err?.response?.data?.message || "שגיאה בהתחברות");
     } finally {

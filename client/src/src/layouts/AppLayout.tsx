@@ -1,8 +1,16 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Footer from "@/modules/shared/components/Footer.tsx";
 import Header from "@/modules/shared/components/Header.tsx";
 import BottomNav from "@/modules/shared/components/BottomNav.tsx";
+import SubscriptionBlockedModal from "@/modules/shared/components/SubscriptionBlockedModal.tsx";
 import { useCurrentUser } from "@/modules/shared/hooks/useCurrentUser.ts";
+import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
+
+declare global {
+  interface Window {
+    openUpgradeModal?: () => void;
+  }
+}
 
 interface User {
   id: number;
@@ -26,11 +34,31 @@ export default function AppLayout({
   onExitImpersonation,
   hideNav,
   children,
-}: AppLayoutProps): JSX.Element {
+}: AppLayoutProps) {
   const scrollAreaRef = useRef<HTMLElement | null>(null);
-  const scrollTimeoutRef = useRef<number | undefined>();
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { user } = useCurrentUser();
+  const { subscriptionBlocked } = useAuth();
   const isAuthenticated = !!user?.id;
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [hasShownUpgradeModalOnLoad, setHasShownUpgradeModalOnLoad] =
+    useState(false);
+
+  useEffect(() => {
+    window.openUpgradeModal = () => setIsUpgradeModalOpen(true);
+    return () => {
+      delete window.openUpgradeModal;
+    };
+  }, []);
+
+  // Open modal when subscription is blocked
+  useEffect(() => {
+    if (window.location.pathname === "/settings") return;
+    if (subscriptionBlocked && isAuthenticated && !hasShownUpgradeModalOnLoad) {
+      setIsUpgradeModalOpen(true);
+      setHasShownUpgradeModalOnLoad(true);
+    }
+  }, [subscriptionBlocked, isAuthenticated, hasShownUpgradeModalOnLoad]);
 
   useEffect(() => {
     const mainEl = scrollAreaRef.current;
@@ -39,10 +67,10 @@ export default function AppLayout({
     const handleScroll = () => {
       mainEl.classList.add("scrolling");
       if (scrollTimeoutRef.current) {
-        window.clearTimeout(scrollTimeoutRef.current);
+        clearTimeout(scrollTimeoutRef.current);
       }
 
-      scrollTimeoutRef.current = window.setTimeout(() => {
+      scrollTimeoutRef.current = setTimeout(() => {
         mainEl.classList.remove("scrolling");
       }, 1500);
     };
@@ -52,7 +80,7 @@ export default function AppLayout({
     return () => {
       mainEl.removeEventListener("scroll", handleScroll);
       if (scrollTimeoutRef.current) {
-        window.clearTimeout(scrollTimeoutRef.current);
+        clearTimeout(scrollTimeoutRef.current);
       }
       mainEl.classList.remove("scrolling");
     };
@@ -87,14 +115,25 @@ export default function AppLayout({
       {/* Header - Fixed top */}
       {isAuthenticated && <Header />}
 
-      {/* Main content - Only element that scrolls */}
+      {/* Main content - Blur applied only when modal is open */}
       <main
         ref={scrollAreaRef}
         dir="ltr"
-        className="flex-1 overflow-y-auto relative app-scroll bg-neutral-900 pt-16 pb-20 md:pb-0"
+        className={`flex-1 overflow-y-auto relative app-scroll bg-neutral-900 pt-16 pb-20 md:pb-0 transition-all duration-300 ${
+          isUpgradeModalOpen ? "blur-sm" : ""
+        }`}
       >
         <div
           dir="rtl"
+          onClickCapture={(e) => {
+            if (window.location.pathname === "/settings") return;
+            if (!subscriptionBlocked) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            window.openUpgradeModal?.();
+          }}
           className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
         >
           {children}
@@ -105,6 +144,12 @@ export default function AppLayout({
       </main>
       {/* Bottom nav for mobile */}
       {!hideNav && <BottomNav />}
+
+      {/* Subscription Blocked Modal */}
+      <SubscriptionBlockedModal
+        open={isUpgradeModalOpen}
+        onClose={() => setIsUpgradeModalOpen(false)}
+      />
     </div>
   );
 }

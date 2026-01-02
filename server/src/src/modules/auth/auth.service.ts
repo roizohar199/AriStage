@@ -16,10 +16,20 @@ import {
 import { transporter } from "../../integrations/mail/transporter.js";
 import { env } from "../../config/env.js";
 import { logger } from "../../core/logger.js";
+import { resolveSubscriptionStatus } from "../subscriptions/resolveSubscriptionStatus.js";
 
 export const resetSafeResponse = {
   message: "אם המייל קיים — נשלח אליו קישור לאיפוס",
 };
+
+function toMysqlDateTime(date: Date): string {
+  return date.toISOString().slice(0, 19).replace("T", " ");
+}
+
+function addDaysMysqlDateTime(days: number): string {
+  const ms = Date.now() + days * 24 * 60 * 60 * 1000;
+  return toMysqlDateTime(new Date(ms));
+}
 
 //
 // ======================= LOGIN =======================
@@ -48,6 +58,8 @@ export async function loginUser(email, password) {
     artist_role: user.artist_role || null,
   });
 
+  const subscription_status = resolveSubscriptionStatus(user);
+
   return {
     id: user.id,
     full_name: user.full_name || "",
@@ -55,7 +67,9 @@ export async function loginUser(email, password) {
     role: user.role,
     artist_role: user.artist_role || null,
     avatar: user.avatar || null,
-    subscription_status: user.subscription_status || "trial",
+    subscription_type: user.subscription_type ?? null,
+    subscription_status,
+    subscription_expires_at: user.subscription_expires_at ?? null,
     token,
   };
 }
@@ -75,7 +89,11 @@ export async function registerUser(payload) {
   });
 
   if (!full_name || !email || !password) {
-    logger.error("❌ [REGISTER] שדות חסרים", { full_name, email, hasPassword: !!password });
+    logger.error("❌ [REGISTER] שדות חסרים", {
+      full_name,
+      email,
+      hasPassword: !!password,
+    });
     throw new AppError(400, "נא למלא את כל השדות");
   }
 
@@ -97,13 +115,15 @@ export async function registerUser(payload) {
     password_hash,
     role: "user",
     subscription_type: "trial",
+    subscription_status: "trial",
+    subscription_expires_at: addDaysMysqlDateTime(30),
     artist_role: artist_role || null,
     avatar: null,
   });
 
   logger.info("✅ [REGISTER] משתמש נוצר", { userId });
 
-  let finalAvatarPath = null;
+  let finalAvatarPath: string | null = null;
 
   // 2️⃣ אם המשתמש העלה תמונה → העבר אותה לתיקיית המשתמש
   if (tempAvatar) {

@@ -21,6 +21,7 @@ import {
   sendArtistInvitation,
   acceptInvitation,
 } from "./users.service.js";
+import { resolveSubscriptionStatus } from "../subscriptions/resolveSubscriptionStatus.js";
 
 /* -------------------------------------------------------
    ⭐ פונקציה אחידה לתיקון URL של תמונה — פתרון לבעיה שלך
@@ -66,6 +67,11 @@ export const usersController = {
   // ⭐ פרופיל משתמש
   me: asyncHandler(async (req, res) => {
     const user = await getProfile(req.user.id);
+
+    if (user) {
+      // Ensure subscription status is correct on initial app load.
+      user.subscription_status = resolveSubscriptionStatus(user);
+    }
 
     if (user?.avatar) {
       user.avatar = fixAvatar(req, user.avatar);

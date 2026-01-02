@@ -2,7 +2,19 @@ import bcrypt from "bcryptjs";
 import { AppError } from "../../core/errors.js";
 import { signToken } from "../auth/token.service.js";
 
-import { findMyCollection, findConnectedToMe, inviteArtist as inviteArtistRepo, uninviteArtist as uninviteArtistRepo, leaveCollection as leaveCollectionRepo, isGuest, saveInvitation, findInvitationByToken, markInvitationAsUsed, acceptInvitationStatus as acceptInvitationStatusRepo, rejectInvitationStatus as rejectInvitationStatusRepo } from "./users.repository.js";
+import {
+  findMyCollection,
+  findConnectedToMe,
+  inviteArtist as inviteArtistRepo,
+  uninviteArtist as uninviteArtistRepo,
+  leaveCollection as leaveCollectionRepo,
+  isGuest,
+  saveInvitation,
+  findInvitationByToken,
+  markInvitationAsUsed,
+  acceptInvitationStatus as acceptInvitationStatusRepo,
+  rejectInvitationStatus as rejectInvitationStatusRepo,
+} from "./users.repository.js";
 import {
   deleteUserById,
   findUserByEmail,
@@ -17,6 +29,15 @@ import {
 import crypto from "crypto";
 import { transporter } from "../../integrations/mail/transporter.js";
 import { env } from "../../config/env.js";
+
+function toMysqlDateTime(date: Date): string {
+  return date.toISOString().slice(0, 19).replace("T", " ");
+}
+
+function addDaysMysqlDateTime(days: number): string {
+  const ms = Date.now() + days * 24 * 60 * 60 * 1000;
+  return toMysqlDateTime(new Date(ms));
+}
 
 export function getProfile(userId) {
   return getCurrentUser(userId);
@@ -84,12 +105,27 @@ export async function createUserAccount(currentUser, payload) {
   }
 
   const hash = await bcrypt.hash(payload.password, 10);
+
+  const nextTypeRaw =
+    payload.subscription_type !== undefined
+      ? payload.subscription_type
+      : "trial";
+  const nextTypeLower = String(nextTypeRaw ?? "").toLowerCase();
+  if (nextTypeLower && nextTypeLower !== "trial" && nextTypeLower !== "pro") {
+    throw new AppError(400, `Invalid subscription_type: ${nextTypeLower}`);
+  }
+  const isPaidTier = nextTypeLower === "pro";
+  const subscription_status = isPaidTier ? "active" : "trial";
+  const subscription_expires_at = addDaysMysqlDateTime(30);
+
   await insertUser({
     full_name: payload.full_name,
     email: payload.email,
     password_hash: hash,
     role: payload.role || "user",
-    subscription_type: payload.subscription_type || "trial",
+    subscription_type: nextTypeLower ? nextTypeLower : "trial",
+    subscription_status,
+    subscription_expires_at,
     // לא צריך invited_by יותר - נשתמש בטבלת user_hosts
   });
 }
@@ -99,10 +135,35 @@ export async function updateUserAccount(requestingUser, id, payload) {
     throw new AppError(403, "אין לך הרשאה לעדכן משתמש זה");
   }
 
+  const nextTypeLower =
+    payload.subscription_type !== undefined
+      ? String(payload.subscription_type ?? "").toLowerCase()
+      : undefined;
+
+  if (nextTypeLower && nextTypeLower !== "trial" && nextTypeLower !== "pro") {
+    throw new AppError(400, `Invalid subscription_type: ${nextTypeLower}`);
+  }
+  const isPaidTier = nextTypeLower === "pro";
+
+  // If admin changes tier via legacy endpoint, keep consistency with enforcement rules
+  const subscription_status =
+    requestingUser.role === "admin" && nextTypeLower
+      ? isPaidTier
+        ? "active"
+        : "trial"
+      : undefined;
+
+  const subscription_expires_at =
+    requestingUser.role === "admin" && nextTypeLower
+      ? addDaysMysqlDateTime(30)
+      : undefined;
+
   await updateUserRecord(id, {
     full_name: payload.full_name,
     role: payload.role,
-    subscription_type: payload.subscription_type,
+    subscription_type: nextTypeLower,
+    subscription_status,
+    subscription_expires_at,
   });
 }
 
@@ -185,15 +246,22 @@ export async function uninviteArtistFromMyCollection(hostId, artistId) {
 }
 
 // ⭐ אורח מבטל את השתתפותו במאגר (כל המארחים או מארח ספציפי)
-export async function leaveMyCollection(artistId, hostId = null) {
+export async function leaveMyCollection(
+  artistId,
+  hostId: number | null = null
+) {
   const { isGuest } = await import("./users.repository.js");
   const existingHosts = await isGuest(artistId);
-  const existingHostsArray: number[] = Array.isArray(existingHosts) ? existingHosts : (existingHosts ? [existingHosts] : []);
-  
+  const existingHostsArray: number[] = Array.isArray(existingHosts)
+    ? existingHosts
+    : existingHosts
+    ? [existingHosts]
+    : [];
+
   if (existingHostsArray.length === 0) {
     throw new AppError(400, "אינך אורח במאגר - אין לך השתתפות לבטל");
   }
-  
+
   if (hostId && !existingHostsArray.includes(hostId)) {
     throw new AppError(400, "אינך אורח במאגר הזה");
   }
@@ -203,7 +271,11 @@ export async function leaveMyCollection(artistId, hostId = null) {
     throw new AppError(400, "ביטול ההשתתפות נכשל");
   }
 
-  return { message: hostId ? "השתתפותך במאגר בוטלה בהצלחה" : "כל השתתפויותיך במאגרים בוטלו בהצלחה" };
+  return {
+    message: hostId
+      ? "השתתפותך במאגר בוטלה בהצלחה"
+      : "כל השתתפויותיך במאגרים בוטלו בהצלחה",
+  };
 }
 
 // ⭐ קבלת הזמנות ממתינות לאישור
@@ -255,14 +327,14 @@ export async function sendArtistInvitation(hostId, hostName, email) {
     if (existingUser.id === hostId) {
       throw new AppError(400, "לא ניתן להזמין את עצמך");
     }
-    
+
     // בדיקה אם כבר מוזמן על ידי המארח הזה
     const { isGuest } = await import("./users.repository.js");
     const existingHosts = await isGuest(existingUser.id);
     if (existingHosts.includes(hostId)) {
       throw new AppError(400, "האמן כבר מוזמן על ידי המארח הזה");
     }
-    
+
     // הזמנה ישירה
     await inviteArtistRepo(existingUser.id, hostId);
     return { message: "האמן הוזמן בהצלחה למאגר שלך", isExistingUser: true };
@@ -330,14 +402,19 @@ export async function acceptInvitation(token) {
   const existingUser = await findUserByEmail(invitation.email);
   if (existingUser) {
     await inviteArtistRepo(existingUser.id, invitation.host_id);
-    return { message: "הזמנה נשלחה - אנא אשר את ההזמנה", userId: existingUser.id, needsLogin: true, needsApproval: true };
+    return {
+      message: "הזמנה נשלחה - אנא אשר את ההזמנה",
+      userId: existingUser.id,
+      needsLogin: true,
+      needsApproval: true,
+    };
   }
 
   // אם המשתמש לא קיים, נחזיר את המידע להרשמה
-  return { 
-    message: "הצטרף למאגר", 
-    email: invitation.email, 
+  return {
+    message: "הצטרף למאגר",
+    email: invitation.email,
     hostId: invitation.host_id,
-    needsRegistration: true 
+    needsRegistration: true,
   };
 }

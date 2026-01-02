@@ -4,9 +4,10 @@ import Login from "./auth/pages/Login.tsx";
 import ResetPassword from "./auth/pages/ResetPassword.tsx";
 import AcceptInvitation from "./auth/pages/AcceptInvitation.tsx";
 import ShareLineup from "./share/pages/ShareLineup.tsx";
-// Removed unused Home, Songs, Lineup imports
+import Logout from "./auth/pages/Logout.tsx";
+import SubscriptionBlocked from "./billing/pages/SubscriptionBlocked.tsx";
+
 import LineupDetails from "./lineups/pages/LineupDetails.tsx";
-// import Users from "./users/pages/Users.tsx";
 import Settings from "./settings/pages/Settings.tsx";
 import Artists from "./artists/pages/Artists.tsx";
 import MyArtist from "./artists/pages/MyArtist.tsx";
@@ -40,6 +41,8 @@ export const protectedRoutes: ProtectedRoute[] = [
   { path: "/MyArtist", component: MyArtist },
   { path: "/artist/:id/*", component: ArtistProfile },
   { path: "/settings", component: Settings },
+  { path: "/billing", component: SubscriptionBlocked },
+  { path: "/logout", component: Logout },
   // { path: "/users", component: Users, roles: ["admin", "manager"] },
   { path: "/admin", component: Admin, roles: ["admin"] },
 ];

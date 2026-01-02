@@ -10,20 +10,27 @@ import {
   deleteLineupSongChartPdf,
   getLineupSongByLineupAndSong,
 } from "./lineupSongs.repository.js";
-import { lineupBelongsToUser, findLineupById } from "../lineups/lineups.repository.js";
+import {
+  lineupBelongsToUser,
+  findLineupById,
+} from "../lineups/lineups.repository.js";
 import { checkIfGuest } from "../users/users.service.js";
 import { emitToUserAndHost } from "../../core/socket.js";
 
 async function ensureAccess(lineupId, user) {
   if (user.role === "admin") return true;
-  
+
   // בדיקה אם הליינאפ שייך למשתמש
   const hasAccess = await lineupBelongsToUser(lineupId, user.id);
   if (hasAccess) return true;
-  
+
   // אם לא, בדיקה אם המשתמש הוא אורח והליינאפ שייך לאחד מהמארחים שלו
   const hostIds = await checkIfGuest(user.id);
-  const hostIdsArray: number[] = Array.isArray(hostIds) ? hostIds : (hostIds ? [hostIds] : []);
+  const hostIdsArray: number[] = Array.isArray(hostIds)
+    ? hostIds
+    : hostIds
+    ? [hostIds]
+    : [];
   if (hostIdsArray.length > 0) {
     // בדיקה אם אחד מהמארחים הוא הבעלים של הליינאפ
     for (const hostId of hostIdsArray) {
@@ -31,21 +38,21 @@ async function ensureAccess(lineupId, user) {
       if (hostHasAccess) return true;
     }
   }
-  
+
   throw new AppError(403, "אין לך הרשאה לפעולה בליינאפ הזה");
 }
 
 const emitUpdate = async (lineupId, event = "lineup-updated", data = {}) => {
   if (!global.io) return;
-  
+
   const payload = { lineupId, ...data };
-  
+
   // שליחה לחדר של הליינאפ הספציפי
   global.io.to(`lineup_${lineupId}`).emit("lineup-updated", payload);
   if (event !== "lineup-updated") {
     global.io.to(`lineup_${lineupId}`).emit(event, payload);
   }
-  
+
   // שליחה גם לחדר של המארח שיצר את הליינאפ (כדי שכל האמנים שלו יקבלו את העדכון)
   try {
     const lineup = await findLineupById(lineupId);
@@ -57,7 +64,7 @@ const emitUpdate = async (lineupId, event = "lineup-updated", data = {}) => {
         await emitToHost(global.io, lineup.created_by, event, payload);
       }
     }
-  } catch (err) {
+  } catch (err: any) {
     // אם יש שגיאה, רק לוג - לא לשבור את הפעולה
     console.warn("⚠️ Warning: Could not emit to host room:", err.message);
   }
@@ -80,22 +87,22 @@ export async function addSongToLineup(lineupId, user, songId) {
 
   // קבלת הנתונים המלאים של השיר שנוסף
   const lineupSong = await getLineupSongByLineupAndSong(lineupId, songId);
-  
+
   // שליחה לחדר של הליינאפ הספציפי
   await emitUpdate(lineupId, "lineup-song:added", { songId, lineupSong });
-  
+
   // שליחה גם למשתמש ולמארח שלו (אם יש) כדי לרענן דפים אחרים
   if (global.io) {
     const lineup = await findLineupById(lineupId);
     if (lineup) {
       // שליחה למשתמש שביצע את הפעולה ולמארח שלו (אם הוא אורח)
-      await emitToUserAndHost(
-        global.io,
-        user.id,
-        "lineup-song:added",
-        { lineupId, songId, lineupSong, userId: user.id }
-      );
-      
+      await emitToUserAndHost(global.io, user.id, "lineup-song:added", {
+        lineupId,
+        songId,
+        lineupSong,
+        userId: user.id,
+      });
+
       // שליחה גם למארח שיצר את הליינאפ (אם הוא שונה מהמשתמש שביצע את הפעולה)
       // זה מבטיח שגם אם מארח משנה משהו, האורחים שלו מקבלים את זה
       if (lineup.created_by !== user.id) {
@@ -129,20 +136,19 @@ export async function reorderLineupSongs(lineupId, user, songs) {
 
   // שליחה לחדר של הליינאפ הספציפי
   await emitUpdate(lineupId, "lineup-song:reordered", { songs });
-  
+
   // שליחה גם למשתמש ולמארח שלו (אם יש) כדי לרענן דפים אחרים
   if (global.io) {
     // קבלת פרטי הליינאפ כדי לדעת מי יצר אותו
     const lineup = await findLineupById(lineupId);
     if (lineup) {
       // שליחה למשתמש שביצע את הפעולה ולמארח שלו
-      await emitToUserAndHost(
-        global.io,
-        user.id,
-        "lineup-song:reordered",
-        { lineupId, songs, userId: user.id }
-      );
-      
+      await emitToUserAndHost(global.io, user.id, "lineup-song:reordered", {
+        lineupId,
+        songs,
+        userId: user.id,
+      });
+
       // שליחה גם למשתמש שיצר את הליינאפ (אם הוא שונה מהמשתמש שביצע את הפעולה)
       if (lineup.created_by !== user.id) {
         await emitToUserAndHost(
@@ -166,18 +172,17 @@ export async function removeSong(lineupId, user, songId) {
 
   // שליחה לחדר של הליינאפ הספציפי
   await emitUpdate(lineupId, "lineup-song:removed", { songId });
-  
+
   // שליחה גם למשתמש ולמארח שלו (אם יש) כדי לרענן דפים אחרים
   if (global.io) {
     const lineup = await findLineupById(lineupId);
     if (lineup) {
-      await emitToUserAndHost(
-        global.io,
-        user.id,
-        "lineup-song:removed",
-        { lineupId, songId, userId: user.id }
-      );
-      
+      await emitToUserAndHost(global.io, user.id, "lineup-song:removed", {
+        lineupId,
+        songId,
+        userId: user.id,
+      });
+
       if (lineup.created_by !== user.id) {
         await emitToUserAndHost(
           global.io,
@@ -199,17 +204,17 @@ export async function uploadChartPdfForSong(lineupSongId, user, filePath) {
   await ensureAccess(lineupSong.lineup_id, user);
 
   await updateChartPdf(lineupSongId, filePath);
-  
+
   // קבלת הנתונים המלאים של השיר שעודכן (עם ה-PDF החדש)
   const updatedLineupSong = await getLineupSongById(lineupSongId);
-  
+
   // שליחה לחדר של הליינאפ הספציפי
-  await emitUpdate(lineupSong.lineup_id, "lineup-song:chart-uploaded", { 
-    lineupSongId, 
+  await emitUpdate(lineupSong.lineup_id, "lineup-song:chart-uploaded", {
+    lineupSongId,
     songId: lineupSong.song_id,
-    lineupSong: updatedLineupSong 
+    lineupSong: updatedLineupSong,
   });
-  
+
   // שליחה גם למשתמש ולמארח שלו (אם יש) כדי לרענן דפים אחרים
   if (global.io) {
     const lineup = await findLineupById(lineupSong.lineup_id);
@@ -218,26 +223,26 @@ export async function uploadChartPdfForSong(lineupSongId, user, filePath) {
         global.io,
         user.id,
         "lineup-song:chart-uploaded",
-        { 
-          lineupId: lineupSong.lineup_id, 
-          lineupSongId, 
-          songId: lineupSong.song_id, 
+        {
+          lineupId: lineupSong.lineup_id,
+          lineupSongId,
+          songId: lineupSong.song_id,
           lineupSong: updatedLineupSong,
-          userId: user.id 
+          userId: user.id,
         }
       );
-      
+
       if (lineup.created_by !== user.id) {
         await emitToUserAndHost(
           global.io,
           lineup.created_by,
           "lineup-song:chart-uploaded",
-          { 
-            lineupId: lineupSong.lineup_id, 
-            lineupSongId, 
-            songId: lineupSong.song_id, 
+          {
+            lineupId: lineupSong.lineup_id,
+            lineupSongId,
+            songId: lineupSong.song_id,
             lineupSong: updatedLineupSong,
-            userId: user.id 
+            userId: user.id,
           }
         );
       }
@@ -259,32 +264,39 @@ export async function removeChartPdfForSong(lineupSongId, user) {
   if (!deleted) {
     throw new AppError(404, "קובץ PDF לא נמצא");
   }
-  
+
   // שליחה לחדר של הליינאפ הספציפי
-  await emitUpdate(lineupSong.lineup_id, "lineup-song:chart-deleted", { lineupSongId, songId: lineupSong.song_id });
-  
+  await emitUpdate(lineupSong.lineup_id, "lineup-song:chart-deleted", {
+    lineupSongId,
+    songId: lineupSong.song_id,
+  });
+
   // שליחה גם למשתמש ולמארח שלו (אם יש) כדי לרענן דפים אחרים
   if (global.io) {
     const lineup = await findLineupById(lineupSong.lineup_id);
     if (lineup) {
-      await emitToUserAndHost(
-        global.io,
-        user.id,
-        "lineup-song:chart-deleted",
-        { lineupId: lineupSong.lineup_id, lineupSongId, songId: lineupSong.song_id, userId: user.id }
-      );
-      
+      await emitToUserAndHost(global.io, user.id, "lineup-song:chart-deleted", {
+        lineupId: lineupSong.lineup_id,
+        lineupSongId,
+        songId: lineupSong.song_id,
+        userId: user.id,
+      });
+
       if (lineup.created_by !== user.id) {
         await emitToUserAndHost(
           global.io,
           lineup.created_by,
           "lineup-song:chart-deleted",
-          { lineupId: lineupSong.lineup_id, lineupSongId, songId: lineupSong.song_id, userId: user.id }
+          {
+            lineupId: lineupSong.lineup_id,
+            lineupSongId,
+            songId: lineupSong.song_id,
+            userId: user.id,
+          }
         );
       }
     }
   }
-  
+
   return lineupSong;
 }
-

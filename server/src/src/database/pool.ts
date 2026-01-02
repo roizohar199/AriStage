@@ -40,19 +40,24 @@ if (env.database.password && env.database.password.trim() !== "") {
   poolConfig.password = env.database.password;
 }
 
-const pool = mysql.createPool(poolConfig);
+// NOTE: This project uses raw SQL extensively; exporting an `any`-typed pool
+// keeps TypeScript from failing builds due to mysql2's very strict result unions.
+const pool: any = mysql.createPool(poolConfig as any) as any;
 
 // פונקציה להגדרת charset לכל חיבור חדש
-async function configureConnection(connection) {
+async function configureConnection(connection: any) {
   try {
     await connection.query("SET NAMES utf8mb4 COLLATE utf8mb4_general_ci");
     await connection.query("SET CHARACTER SET utf8mb4");
     await connection.query("SET character_set_connection=utf8mb4");
     await connection.query("SET character_set_client=utf8mb4");
     await connection.query("SET character_set_results=utf8mb4");
-  } catch (err) {
+  } catch (err: any) {
     // אם יש שגיאה, רק לוג - לא לשבור את החיבור
-    console.warn("⚠️ Warning: Could not set charset for connection:", err.message);
+    console.warn(
+      "⚠️ Warning: Could not set charset for connection:",
+      err.message
+    );
   }
 }
 
@@ -73,7 +78,7 @@ async function verifyConnection() {
     await configureConnection(connection);
     console.log("✅ MySQL connected successfully with utf8mb4 encoding!");
     connection.release();
-  } catch (err) {
+  } catch (err: any) {
     console.error("❌ Database connection failed:");
     console.error(err.message);
     process.exit(1);
@@ -87,9 +92,8 @@ process.on("SIGINT", async () => {
     await pool.end();
     console.log("🧱 MySQL pool closed gracefully.");
     process.exit(0);
-  } catch (err) {
+  } catch (err: any) {
     console.error("❌ Error closing MySQL pool:", err);
     process.exit(1);
   }
 });
-

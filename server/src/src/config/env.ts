@@ -23,7 +23,7 @@ const allowedOrigins = [
   ...extraOrigins,
   ...devNetworkOrigins, // Dev-only extension for local + network development
 ]
-  .filter(Boolean)
+  .filter((origin): origin is string => Boolean(origin))
   .map((origin) => origin.replace(/\/$/, ""));
 
 interface EnvConfig {

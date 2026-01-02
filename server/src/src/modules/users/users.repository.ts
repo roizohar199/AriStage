@@ -3,7 +3,7 @@ import { pool } from "../../database/pool.js";
 // ✔ משוך את המשתמש כולל השדות החדשים
 export async function getCurrentUser(id) {
   const [rows] = await pool.query(
-    "SELECT id, full_name, email, role, theme, artist_role, avatar FROM users WHERE id=?",
+    "SELECT id, full_name, email, role, theme, artist_role, avatar, subscription_type, subscription_status, subscription_expires_at FROM users WHERE id=?",
     [id]
   );
   return rows[0];
@@ -11,8 +11,8 @@ export async function getCurrentUser(id) {
 
 // ⭐ עדכון פרטי משתמש כולל תמונה ותיאור תפקיד
 export async function updateSettings(id, fields) {
-  const clauses = [];
-  const values = [];
+  const clauses: string[] = [];
+  const values: any[] = [];
 
   // ⭐ full_name יכול להיות "" או טקסט → נבדוק אחרת
   if (fields.full_name !== undefined) {
@@ -70,7 +70,7 @@ export async function updatePassword(id, hash) {
 export async function listUsers(role, userId) {
   let query =
     "SELECT id, full_name, email, role, subscription_type, created_at FROM users";
-  const params = [];
+  const params: any[] = [];
 
   if (role === "user") {
     query += " WHERE id = ?";
@@ -93,23 +93,56 @@ export async function findUserByEmail(email) {
 // ✔ יצירת משתמש
 export async function insertUser(data) {
   await pool.query(
-    `INSERT INTO users (full_name, email, password_hash, role, subscription_type)
-     VALUES (?, ?, ?, ?, ?)`,
+    `INSERT INTO users (full_name, email, password_hash, role, subscription_type, subscription_status, subscription_expires_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [
       data.full_name,
       data.email,
       data.password_hash,
       data.role,
       data.subscription_type,
+      data.subscription_status ?? null,
+      data.subscription_expires_at ?? null,
     ]
   );
 }
 
 // ✔ עדכון משתמש ע"י מנהל
 export async function updateUserRecord(id, data) {
+  const userId = Number(id);
+  if (!Number.isFinite(userId) || userId <= 0) {
+    throw new Error("Invalid userId for updateUserRecord");
+  }
+
+  const clauses: string[] = [];
+  const values: any[] = [];
+
+  if (data.full_name !== undefined) {
+    clauses.push("full_name=?");
+    values.push(data.full_name);
+  }
+  if (data.role !== undefined) {
+    clauses.push("role=?");
+    values.push(data.role);
+  }
+  if (data.subscription_type !== undefined) {
+    clauses.push("subscription_type=?");
+    values.push(data.subscription_type);
+  }
+  if (data.subscription_status !== undefined) {
+    clauses.push("subscription_status=?");
+    values.push(data.subscription_status);
+  }
+  if (data.subscription_expires_at !== undefined) {
+    clauses.push("subscription_expires_at=?");
+    values.push(data.subscription_expires_at);
+  }
+
+  if (!clauses.length) return;
+
   await pool.query(
-    `UPDATE users SET full_name=?, role=?, subscription_type=?, updated_at=NOW() WHERE id=?`,
-    [data.full_name, data.role, data.subscription_type, id]
+    `UPDATE users SET ${clauses.join(", ")}, updated_at=NOW() WHERE id=?`,
+    [...values, userId]
   );
 }
 
@@ -181,7 +214,7 @@ export async function uninviteArtist(artistId, hostId) {
 }
 
 // ⭐ אורח מבטל את השתתפותו במאגר - מחיקה מטבלת user_hosts
-export async function leaveCollection(artistId, hostId = null) {
+export async function leaveCollection(artistId, hostId: number | null = null) {
   if (hostId) {
     // ביטול השתתפות במארח ספציפי
     const [result] = await pool.query(
@@ -223,7 +256,7 @@ export async function isGuest(userId) {
     "SELECT host_id FROM user_hosts WHERE guest_id = ? AND invitation_status = 'accepted'",
     [userId]
   );
-  return rows.map(row => row.host_id); // מחזיר רשימת מארחים
+  return rows.map((row) => row.host_id); // מחזיר רשימת מארחים
 }
 
 // ⭐ בדיקה אם משתמש הוא מארח (יש לו אמנים שהוזמנו)
@@ -242,7 +275,7 @@ export async function saveInvitation(email, hostId, token) {
     "SELECT id FROM user_invitations WHERE email = ? AND host_id = ? AND is_used = 0",
     [email, hostId]
   );
-  
+
   if (existing.length > 0) {
     // עדכון הזמנה קיימת
     await pool.query(
@@ -271,8 +304,7 @@ export async function findInvitationByToken(token) {
 
 // ⭐ סימון הזמנה כמשומשת
 export async function markInvitationAsUsed(token) {
-  await pool.query(
-    "UPDATE user_invitations SET is_used = 1 WHERE token = ?",
-    [token]
-  );
+  await pool.query("UPDATE user_invitations SET is_used = 1 WHERE token = ?", [
+    token,
+  ]);
 }

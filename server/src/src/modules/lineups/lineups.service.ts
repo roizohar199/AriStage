@@ -3,11 +3,6 @@ import { AppError } from "../../core/errors.js";
 import { env } from "../../config/env.js";
 import { getSharedLineup } from "../share/share.service.js";
 import {
-  deleteLineupRecord,
-  lineupBelongsToUser,
-} from "./lineups.repository.js";
-
-import {
   deactivateShare,
   findActiveShare,
   findLineupById,
@@ -17,6 +12,7 @@ import {
   listLineups,
   listLineupsByUserId,
   listSharedLineups,
+  deleteLineupRecord,
   updateLineupRecord,
 } from "./lineups.repository.js";
 import { checkIfGuest } from "../users/users.service.js";
@@ -35,7 +31,7 @@ const emitLineupEvent = async (lineupId, event, payload) => {
       const { emitToHost } = await import("../../core/socket.js");
       await emitToHost(global.io, lineup.created_by, event, payload);
     }
-  } catch (err) {
+  } catch (err: any) {
     // אם יש שגיאה, רק לוג - לא לשבור את הפעולה
     console.warn("⚠️ Warning: Could not emit to host room:", err.message);
   }
@@ -206,7 +202,7 @@ export async function disableShareLink(lineupId) {
 
 export async function deleteLineup(userId, lineupId) {
   const allowed = await lineupBelongsToUser(lineupId, userId);
-  if (!allowed) throw new AppError("Not allowed", 403);
+  if (!allowed) throw new AppError(403, "Not allowed");
 
   await deleteLineupRecord(lineupId);
 

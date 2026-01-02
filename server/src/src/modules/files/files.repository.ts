@@ -2,7 +2,7 @@ import { pool } from "../../database/pool.js";
 
 export async function listFiles(role, userId) {
   let query = "SELECT * FROM files";
-  const params = [];
+  const params: any[] = [];
 
   if (role === "user") {
     query += " WHERE user_id = ?";
@@ -47,4 +47,3 @@ export async function findFileById(id) {
   const [rows] = await pool.query("SELECT * FROM files WHERE id = ?", [id]);
   return rows[0];
 }
-

@@ -31,7 +31,7 @@ export const songsController = {
 
     // הוספת URL מלא לכל צ'ארט
     const protocol = req.protocol;
-    const host = req.get("host");
+    const host = req.get("host") ?? "localhost";
     const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
 
     const chartsWithUrl = charts.map((chart) => {
@@ -91,7 +91,7 @@ export const songsController = {
       // הוספת URL ל-PDF
       if (song.chart_pdf) {
         const protocol = req.protocol;
-        const host = req.get("host");
+        const host = req.get("host") ?? "localhost";
         const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
         const cleanPdf = song.chart_pdf.replace(/^\/uploads\//, "");
         song.chart_pdf_url = `${baseUrl}/uploads/${cleanPdf}`;
@@ -103,7 +103,7 @@ export const songsController = {
       // הוספת URL מלא לאווטאר של הבעלים אם צריך
       if (song.owner_avatar && !/^https?:\/\//.test(song.owner_avatar)) {
         const protocol = req.protocol;
-        const host = req.get("host");
+        const host = req.get("host") ?? "localhost";
         const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
         const cleanAvatar = song.owner_avatar.replace(/^\/uploads\//, "");
         song.owner_avatar = `${baseUrl}/uploads/${cleanAvatar}`;
@@ -123,7 +123,7 @@ export const songsController = {
     // הוספת URL מלא ל-PDF אם קיים
     if (fullSong && fullSong.chart_pdf) {
       const protocol = req.protocol;
-      const host = req.get("host");
+      const host = req.get("host") ?? "localhost";
       const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
       const cleanPdf = fullSong.chart_pdf.replace(/^\/uploads\//, "");
       fullSong.chart_pdf_url = `${baseUrl}/uploads/${cleanPdf}`;
@@ -141,7 +141,7 @@ export const songsController = {
       !/^https?:\/\//.test(fullSong.owner_avatar)
     ) {
       const protocol = req.protocol;
-      const host = req.get("host");
+      const host = req.get("host") ?? "localhost";
       const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
       const cleanAvatar = fullSong.owner_avatar.replace(/^\/uploads\//, "");
       fullSong.owner_avatar = `${baseUrl}/uploads/${cleanAvatar}`;
@@ -178,7 +178,7 @@ export const songsController = {
     // הוספת URL מלא ל-PDF אם קיים
     if (fullSong && fullSong.chart_pdf) {
       const protocol = req.protocol;
-      const host = req.get("host");
+      const host = req.get("host") ?? "localhost";
       const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
       const cleanPdf = fullSong.chart_pdf.replace(/^\/uploads\//, "");
       fullSong.chart_pdf_url = `${baseUrl}/uploads/${cleanPdf}`;
@@ -196,7 +196,7 @@ export const songsController = {
       !/^https?:\/\//.test(fullSong.owner_avatar)
     ) {
       const protocol = req.protocol;
-      const host = req.get("host");
+      const host = req.get("host") ?? "localhost";
       const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
       const cleanAvatar = fullSong.owner_avatar.replace(/^\/uploads\//, "");
       fullSong.owner_avatar = `${baseUrl}/uploads/${cleanAvatar}`;
@@ -249,7 +249,7 @@ export const songsController = {
       await uploadChartPdfForSong(songId, req.user, filePath);
 
       const protocol = req.protocol;
-      const host = req.get("host");
+      const host = req.get("host") ?? "localhost";
       const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
       const pdfUrl = `${baseUrl}${filePath}`;
 
@@ -266,7 +266,7 @@ export const songsController = {
         message: "✅ קובץ PDF הועלה בהצלחה",
         chart_pdf_url: pdfUrl,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ שגיאה בהעלאת PDF:", error);
       console.error("Stack:", error.stack);
 
@@ -281,7 +281,7 @@ export const songsController = {
       }
 
       // החזר שגיאה ברורה יותר
-      if (error.message && error.message.includes("chart_pdf")) {
+      if (error?.message && error.message.includes("chart_pdf")) {
         return res.status(500).json({
           message: "השדה chart_pdf לא קיים בטבלה. נא להריץ את ה-SQL migration.",
           error: error.message,
@@ -311,7 +311,7 @@ export const songsController = {
       res.json({
         message: "✅ קובץ PDF נמחק בהצלחה",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ שגיאה במחיקת PDF:", error);
       throw error;
     }

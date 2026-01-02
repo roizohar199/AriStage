@@ -2,7 +2,11 @@ import { pool } from "../../database/pool.js";
 import fs from "fs";
 import path from "path";
 
-export async function listSongs(role, userId, hostIds = []) {
+export async function listSongs(
+  role: string,
+  userId: number,
+  hostIds: number[] = []
+) {
   let query = `
     SELECT
       songs.*,
@@ -14,7 +18,7 @@ export async function listSongs(role, userId, hostIds = []) {
     FROM songs
     JOIN users ON users.id = songs.user_id
   `;
-  const params = [];
+  const params: any[] = [];
 
   if (role === "user") {
     // אם המשתמש הוא אורח (יש לו מארחים), הצג את השירים שלו וגם של כל המארחים
@@ -40,7 +44,7 @@ export async function updateSongChartPdf(songId, chartPdfPath) {
       chartPdfPath,
       songId,
     ]);
-  } catch (error) {
+  } catch (error: any) {
     // אם השדה לא קיים, נזרוק שגיאה ברורה יותר
     if (
       error.code === "ER_BAD_FIELD_ERROR" ||

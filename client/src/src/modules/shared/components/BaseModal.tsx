@@ -75,7 +75,7 @@ export default function BaseModal({
         {showCloseButton && (
           <button
             onClick={onClose}
-            className="absolute top-3 left-3 text-neutral-400 hover:text-white transition-colors p-1 hover:bg-neutral-800 rounded-md"
+            className="absolute top-3 left-3 text-neutral-400 hover:text-white transition-colors p-1 hover:bg-neutral-800 rounded-md z-10"
             aria-label="Close modal"
             type="button"
           >

@@ -2,7 +2,7 @@ import { pool } from "../../database/pool.js";
 
 export async function listLineups(role, userId, hostId = null) {
   let query = "SELECT * FROM lineups";
-  const params = [];
+  const params: any[] = [];
 
   if (role === "user") {
     // בדף הליינאפים - הצג רק את הליינאפים שהמשתמש יצר בעצמו

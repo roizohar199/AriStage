@@ -1,5 +1,8 @@
 export class AppError extends Error {
-  constructor(statusCode, message, details) {
+  statusCode: number;
+  details?: unknown;
+
+  constructor(statusCode: number, message: string, details?: unknown) {
     super(message);
     this.statusCode = statusCode;
     this.details = details;
@@ -17,4 +20,3 @@ export const throwUnauthorized = (message = "Unauthorized") => {
 export const throwForbidden = (message = "Forbidden") => {
   throw new AppError(403, message);
 };
-

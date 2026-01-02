@@ -38,6 +38,7 @@ import CardSong from "../../shared/components/cardsong";
 import BlockLineup from "../../shared/components/blocklineup";
 import LineupDetails from "../../lineups/pages/LineupDetails.tsx";
 import api from "@/modules/shared/lib/api.js";
+import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import DesignActionButton from "../../shared/components/DesignActionButton";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "../../shared/components/ToastProvider";
@@ -96,6 +97,12 @@ export default function My(): JSX.Element {
 function MyContent(): JSX.Element {
   const location = useLocation();
   const isLineupRoute = /^\/my\/lineups\/\d+/.test(location.pathname);
+  const { subscriptionBlocked, subscriptionStatus, user } = useAuth();
+
+  const canCreateOrMutate =
+    user?.role === "admin" ||
+    subscriptionStatus === "active" ||
+    subscriptionStatus === "trial";
 
   // --- סטייטים כלליים ---
   const [stats, setStats] = useState<any>(null);
@@ -466,6 +473,10 @@ function MyContent(): JSX.Element {
       if (editingId) {
         await api.put(`/songs/${editingId}`, cleanForm);
       } else {
+        if (!canCreateOrMutate) {
+          window.openUpgradeModal?.();
+          return;
+        }
         await api.post("/songs", cleanForm);
       }
       setForm({
@@ -674,6 +685,10 @@ function MyContent(): JSX.Element {
       if (isEditingLineup && editLineupId) {
         await api.put(`/lineups/${editLineupId}`, lineupForm);
       } else {
+        if (!canCreateOrMutate) {
+          window.openUpgradeModal?.();
+          return;
+        }
         await api.post("/lineups", lineupForm);
       }
 
@@ -745,6 +760,10 @@ function MyContent(): JSX.Element {
               : "font-bold text-white"
           }`}
           onClick={() => {
+            if (subscriptionBlocked) {
+              window.openUpgradeModal?.();
+              return;
+            }
             navigate("/my");
           }}
         >
@@ -757,6 +776,10 @@ function MyContent(): JSX.Element {
               : "font-bold text-white"
           }`}
           onClick={() => {
+            if (subscriptionBlocked) {
+              window.openUpgradeModal?.();
+              return;
+            }
             navigate("/my?tab=lineups");
           }}
         >
@@ -769,6 +792,10 @@ function MyContent(): JSX.Element {
               : "font-bold text-white "
           }`}
           onClick={() => {
+            if (subscriptionBlocked) {
+              window.openUpgradeModal?.();
+              return;
+            }
             navigate("/my?tab=shared");
           }}
         >
@@ -850,6 +877,10 @@ function MyContent(): JSX.Element {
                 if (editId) {
                   await api.put(`/songs/${editId}`, cleanForm);
                 } else {
+                  if (!canCreateOrMutate) {
+                    window.openUpgradeModal?.();
+                    return;
+                  }
                   await api.post("/songs", cleanForm);
                 }
                 setForm({
@@ -948,7 +979,13 @@ function MyContent(): JSX.Element {
                 key={l.id}
                 lineup={l}
                 index={i}
-                onOpen={() => navigate(`/my/lineups/${l.id}`)}
+                onOpen={() => {
+                  if (subscriptionBlocked) {
+                    window.openUpgradeModal?.();
+                    return;
+                  }
+                  navigate(`/my/lineups/${l.id}`);
+                }}
                 onEdit={() => openEditLineupModal(l)}
                 onDelete={() => removeLineup(l.id)}
               />
@@ -980,6 +1017,10 @@ function MyContent(): JSX.Element {
                     location,
                   });
                 } else {
+                  if (!canCreateOrMutate) {
+                    window.openUpgradeModal?.();
+                    return;
+                  }
                   await api.post("/lineups", {
                     title: name,
                     description,
