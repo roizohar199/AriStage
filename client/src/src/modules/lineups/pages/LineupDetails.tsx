@@ -32,6 +32,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "@/modules/shared/components/ToastProvider.jsx";
+import { API_ORIGIN } from "@/config/apiConfig";
 import { io } from "socket.io-client";
 import CardSong from "../../shared/components/cardsong";
 import Charts from "../../shared/components/Charts";
@@ -339,16 +340,14 @@ export default function LineupDetails() {
   const socketRef = useRef<any>(null);
   useEffect(() => {
     if (!socketRef.current) {
-      const url = import.meta.env.VITE_API_URL;
-      if (url) {
-        socketRef.current = io(url, {
-          transports: ["websocket", "polling"],
-          reconnection: true,
-          reconnectionAttempts: Infinity,
-          reconnectionDelay: 1000,
-          timeout: 20000,
-        });
-      }
+      socketRef.current = io(API_ORIGIN, {
+        transports: ["websocket", "polling"],
+        withCredentials: true,
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000,
+        timeout: 20000,
+      });
     }
     return () => {
       // Don't disconnect socket, keep singleton

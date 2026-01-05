@@ -1,28 +1,14 @@
 import axios from "axios";
+import { API_BASE_URL } from "@/config/apiConfig";
 import { emitToast } from "./toastBus.ts";
 import {
   authLogoutEvent,
   subscriptionBlockedEvent,
 } from "@/modules/shared/contexts/AuthContext.tsx";
 
-// קובע את ה-baseURL לפי המכשיר שנכנס
-function getBaseURL(): string {
-  // אם זה פרודקשן
-  if (import.meta.env.MODE === "production") {
-    return "https://lightpink-tiger-187044.hostingersite.com/api";
-  }
-
-  // אם נפתחה מה-LOCALHOST
-  if (window.location.hostname === "localhost") {
-    return "http://localhost:5000/api";
-  }
-
-  // fallback — אם יש מקרה מוזר
-  return "http://localhost:5000/api";
-}
-
-const api = axios.create({
-  baseURL: getBaseURL(),
+export const api = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",

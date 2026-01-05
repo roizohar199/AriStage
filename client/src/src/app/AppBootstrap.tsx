@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { reloadAuth } from "@/modules/shared/lib/authReload.js";
 import { emitToast } from "@/modules/shared/lib/toastBus.js";
 import { io } from "socket.io-client";
+import { API_ORIGIN } from "@/config/apiConfig";
 import api from "@/modules/shared/lib/api.js";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 
@@ -87,13 +88,9 @@ export default function AppBootstrap(): JSX.Element {
      🔥 Socket גלובלי אחד לכל האפליקציה (moved from App.tsx)
   ----------------------------------------- */
   const socket = useMemo(() => {
-    const url = import.meta.env.VITE_API_URL;
-    if (!url) {
-      console.error("VITE_API_URL is not defined");
-      return null;
-    }
-    return io(url, {
+    return io(API_ORIGIN, {
       transports: ["websocket", "polling"],
+      withCredentials: true,
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,

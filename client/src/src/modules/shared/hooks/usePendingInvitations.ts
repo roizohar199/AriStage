@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import api from "@/modules/shared/lib/api.js";
+import { API_ORIGIN } from "@/config/apiConfig";
 import { io, Socket } from "socket.io-client";
 
 let socketInstance: Socket | null = null;
@@ -11,14 +12,8 @@ export function usePendingInvitations(userId?: number | null) {
   useEffect(() => {
     if (!userId) return;
 
-    const url = import.meta.env.VITE_API_URL;
-    if (!url) {
-      console.error("VITE_API_URL is not defined");
-      return;
-    }
-
     if (!socketInstance) {
-      socketInstance = io(url, {
+      socketInstance = io(API_ORIGIN, {
         transports: ["websocket"],
         withCredentials: true,
         reconnection: true,

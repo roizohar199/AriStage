@@ -308,7 +308,7 @@ CREATE TABLE `songs` (
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `songs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=82 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=83 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -388,19 +388,18 @@ DROP TABLE IF EXISTS `system_logs`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `system_logs` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `action` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `user` varchar(512) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `entity` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `meta` json DEFAULT NULL,
-  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `level` enum('info','warn','error') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'info',
+  `action` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL,
   `message` text COLLATE utf8mb4_unicode_ci,
   `context` json DEFAULT NULL,
   `userId` int DEFAULT NULL,
-  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `createdAt` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `idx_system_logs_created_at` (`created_at`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  KEY `idx_system_logs_createdAt` (`createdAt`),
+  KEY `idx_system_logs_level_createdAt` (`level`,`createdAt`),
+  KEY `idx_system_logs_userId_createdAt` (`userId`,`createdAt`),
+  KEY `idx_system_logs_action_createdAt` (`action`,`createdAt`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -409,7 +408,7 @@ CREATE TABLE `system_logs` (
 
 LOCK TABLES `system_logs` WRITE;
 /*!40000 ALTER TABLE `system_logs` DISABLE KEYS */;
-INSERT INTO `system_logs` VALUES (1,'ADMIN_LOGIN',NULL,NULL,NULL,'2026-01-05 22:26:17','info','Admin login success','{\"email\": \"shiraz00012000@gmail.com\"}',23,'2026-01-05 20:26:17');
+INSERT INTO `system_logs` VALUES (1,'info','db_test','system_logs table is working',NULL,NULL,'2026-01-05 22:57:48'),(2,'info','shiraz','fix',NULL,NULL,'2026-01-05 23:05:24'),(3,'info','ADMIN_LOGIN','Admin login success','{\"email\": \"shiraz00012000@gmail.com\"}',23,'2026-01-05 23:17:32');
 /*!40000 ALTER TABLE `system_logs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -532,4 +531,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-05 22:29:07
+-- Dump completed on 2026-01-05 23:20:30

@@ -38,6 +38,7 @@ import CardSong from "../../shared/components/cardsong";
 import BlockLineup from "../../shared/components/blocklineup";
 import LineupDetails from "../../lineups/pages/LineupDetails.tsx";
 import api from "@/modules/shared/lib/api.js";
+import { API_ORIGIN } from "@/config/apiConfig";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import DesignActionButton from "../../shared/components/DesignActionButton";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
@@ -319,13 +320,9 @@ function MyContent(): JSX.Element {
     }
   }, [songs]);
   const socket = useMemo(() => {
-    const url = import.meta.env.VITE_API_URL;
-    if (!url) {
-      console.error("VITE_API_URL is not defined");
-      return null;
-    }
-    return io(url, {
+    return io(API_ORIGIN, {
       transports: ["websocket", "polling"],
+      withCredentials: true,
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
