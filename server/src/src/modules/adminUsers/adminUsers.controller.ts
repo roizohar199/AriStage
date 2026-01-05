@@ -1,5 +1,6 @@
 import { asyncHandler } from "../../core/asyncHandler.js";
 import { AppError } from "../../core/errors.js";
+import { logSystemEvent } from "../../utils/systemLogger.js";
 import {
   getUserSubscriptionFields,
   listUsers,
@@ -174,6 +175,18 @@ export const adminUsersController = {
     if (!updated) {
       throw new AppError(404, "User not found", undefined);
     }
+
+    void logSystemEvent(
+      "info",
+      "ADMIN_SUBSCRIPTION_UPDATE",
+      "Admin updated user subscription",
+      {
+        userId,
+        newStatus: updated.subscription_status ?? null,
+        expiresAt: updated.subscription_expires_at ?? null,
+      },
+      (req as any).user?.id
+    );
 
     res.json(updated);
   }),

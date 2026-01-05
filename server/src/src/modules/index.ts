@@ -10,6 +10,9 @@ import { supportRouter } from "./support/support.routes.js";
 import { healthRouter } from "./health/health.routes.js";
 import { subscriptionsRouter } from "./subscriptions/subscriptions.routes.js";
 import { paymentsRouter } from "./payments/payments.routes.js";
+import { logsRouter } from "./logs/logs.routes.js";
+import { errorsRouter } from "./errors/errors.routes.js";
+import { featureFlagsRouter } from "./featureFlags/featureFlags.routes.js";
 
 import adminRouter from "../../routes/admin.js";
 
@@ -19,6 +22,9 @@ export function registerModules(app) {
   app.use("/api/subscriptions", subscriptionsRouter);
   app.use("/api/payments", paymentsRouter);
   app.use("/api/admin", adminRouter);
+  app.use("/api/logs", logsRouter);
+  app.use("/api/errors", errorsRouter);
+  app.use("/api/feature-flags", featureFlagsRouter);
   app.use("/api/songs", songsRouter);
   app.use("/api/lineups", lineupsRouter);
   app.use("/api/users", usersRouter);

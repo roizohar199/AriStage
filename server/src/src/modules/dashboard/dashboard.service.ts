@@ -1,6 +1,56 @@
 import { AppError } from "../../core/errors.js";
 import { countAll, countWhere } from "./dashboard.repository.js";
 import { pool } from "../../database/pool.js";
+import os from "os";
+
+let lastCpuUsage = process.cpuUsage();
+let lastHrtime = process.hrtime.bigint();
+
+function getProcessCpuPercent(): number {
+  const nowUsage = process.cpuUsage();
+  const nowTime = process.hrtime.bigint();
+
+  const cpuDiffUs =
+    nowUsage.user - lastCpuUsage.user + (nowUsage.system - lastCpuUsage.system);
+  const timeDiffUs = Number(nowTime - lastHrtime) / 1000;
+
+  lastCpuUsage = nowUsage;
+  lastHrtime = nowTime;
+
+  const cores = os.cpus()?.length || 1;
+  if (!timeDiffUs || timeDiffUs <= 0) return 0;
+
+  const percent = (cpuDiffUs / (timeDiffUs * cores)) * 100;
+  const rounded = Math.round(percent * 10) / 10;
+  return Number.isFinite(rounded) ? Math.max(0, rounded) : 0;
+}
+
+function getMemorySnapshot() {
+  const total = os.totalmem();
+  const free = os.freemem();
+  const used = Math.max(0, total - free);
+
+  const toMb = (bytes: number) => Math.round((bytes / (1024 * 1024)) * 10) / 10;
+  const usedMb = toMb(used);
+  const totalMb = toMb(total);
+  const percent = total ? Math.round((used / total) * 1000) / 10 : 0;
+
+  return {
+    used_mb: usedMb,
+    total_mb: totalMb,
+    percent,
+    label: `${usedMb} MB / ${totalMb} MB (${percent}%)`,
+  };
+}
+
+function getActiveUsersCount(): number {
+  const counts: any = (global as any).activeUserSocketCounts;
+  if (counts && typeof counts.size === "number") return counts.size;
+
+  const io: any = (global as any).io;
+  const fallback = io?.engine?.clientsCount;
+  return typeof fallback === "number" ? fallback : 0;
+}
 
 export async function getDashboardPayload(user) {
   if (!user?.id) {
@@ -19,8 +69,24 @@ export async function getDashboardPayload(user) {
         countWhere("users", "role", "admin"),
       ]);
 
+    const cpuPercent = getProcessCpuPercent();
+    const mem = getMemorySnapshot();
+    const activeUsers = getActiveUsersCount();
+    const uptimeSeconds = Math.round(process.uptime());
+
     return {
       role: user.role,
+      // Monitoring (Admin tab)
+      activeUsers,
+      active_users: activeUsers,
+      cpu: cpuPercent,
+      cpu_percent: cpuPercent,
+      memory: mem.label,
+      memory_used: mem.used_mb,
+      memory_used_mb: mem.used_mb,
+      memory_total_mb: mem.total_mb,
+      memory_percent: mem.percent,
+      uptime_seconds: uptimeSeconds,
       stats: {
         songs,
         lineups,

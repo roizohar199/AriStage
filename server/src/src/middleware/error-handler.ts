@@ -1,9 +1,26 @@
 import { AppError } from "../core/errors.js";
 import { logger } from "../core/logger.js";
+import { recordSystemErrorBestEffort } from "../modules/errors/errors.service.js";
 
 export function errorHandler(err, req, res, next) {
   if (res.headersSent) {
     return next(err);
+  }
+
+  const statusCode = err instanceof AppError ? err.statusCode : 500;
+  const shouldPersist = statusCode >= 500;
+  if (shouldPersist) {
+    const userLabel = req?.user
+      ? `${req.user.id || ""} ${req.user.email || ""}`.trim()
+      : null;
+
+    void recordSystemErrorBestEffort({
+      message: String(err?.message || "Internal server error"),
+      route: `${req?.method || ""} ${req?.originalUrl || ""}`.trim(),
+      user: userLabel,
+      status: statusCode,
+      stack: err?.stack ? String(err.stack) : null,
+    });
   }
 
   if (err instanceof AppError) {
@@ -24,4 +41,3 @@ export function errorHandler(err, req, res, next) {
 
   res.status(500).json({ error: "Internal server error" });
 }
-

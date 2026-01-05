@@ -8,10 +8,22 @@ import {
 } from "./auth.service.js";
 import { logger } from "../../core/logger.js";
 import { Request, Response } from "express";
+import { logSystemEvent } from "../../utils/systemLogger.js";
 
 export const authController = {
   login: asyncHandler(async (req: Request, res: Response) => {
     const payload = await loginUser(req.body.email, req.body.password);
+
+    if (payload?.role === "admin") {
+      void logSystemEvent(
+        "info",
+        "ADMIN_LOGIN",
+        "Admin login success",
+        { email: payload.email },
+        payload.id
+      );
+    }
+
     res.json(payload);
   }),
 
@@ -31,7 +43,10 @@ export const authController = {
         tempAvatar, // שולחים את התמונה הזמנית ל-service
       });
 
-      logger.info("✅ [REGISTER] הרשמה הצליחה", { userId: newUser.id, email: newUser.email });
+      logger.info("✅ [REGISTER] הרשמה הצליחה", {
+        userId: newUser.id,
+        email: newUser.email,
+      });
       res.json({ message: "נוצר בהצלחה", user: newUser });
     } catch (error: any) {
       logger.error("❌ [REGISTER] שגיאה בהרשמה", {

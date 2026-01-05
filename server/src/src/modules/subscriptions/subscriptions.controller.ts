@@ -65,8 +65,8 @@ export const subscriptionsController = {
   updateSettings: asyncHandler(async (req, res) => {
     const { price_ils, is_enabled } = req.body || {};
     // Minimal update query
-    const clauses = [];
-    const values = [];
+    const clauses: string[] = [];
+    const values: any[] = [];
     if (price_ils !== undefined) {
       clauses.push("price_ils = ?");
       values.push(Number(price_ils));
