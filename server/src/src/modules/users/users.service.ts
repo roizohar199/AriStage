@@ -158,37 +158,10 @@ export async function updateUserAccount(requestingUser, id, payload) {
     }
 
     updates.subscription_type = nextTypeLower;
-
-    // אם אדמין משנה מסלול דרך ה-endpoint הישן, נשמור על כללי האכיפה
-    if (isAdmin) {
-      const isPaidTier = nextTypeLower === "pro";
-
-      // רק אם לא נשלח subscription_status מפורש בבקשה – נגזור מתוך ה-tier
-      if (payload.subscription_status === undefined) {
-        updates.subscription_status = isPaidTier ? "active" : "trial";
-      }
-
-      // רק אם לא נשלח subscription_expires_at מפורש – נגדיר ברירת מחדל ל-30 יום
-      if (payload.subscription_expires_at === undefined) {
-        updates.subscription_expires_at = addDaysMysqlDateTime(30);
-      }
-    }
   }
 
-  // ✅ שדות מנוי מפורשים מה-Admin (סטטוס ותאריכים)
-  if (isAdmin) {
-    if (payload.subscription_status !== undefined) {
-      updates.subscription_status = payload.subscription_status;
-    }
-
-    if (payload.subscription_started_at !== undefined) {
-      updates.subscription_started_at = payload.subscription_started_at;
-    }
-
-    if (payload.subscription_expires_at !== undefined) {
-      updates.subscription_expires_at = payload.subscription_expires_at;
-    }
-  }
+  // Subscription updates are intentionally handled via AdminUsers API only.
+  // Ignore any subscription_status/subscription_started_at/subscription_expires_at in this endpoint.
 
   await updateUserRecord(id, updates);
 }

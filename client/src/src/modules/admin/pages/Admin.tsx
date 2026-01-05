@@ -409,7 +409,7 @@ export default function AdminReal() {
       setUsersLoading(true);
       setUsersUnsupported(false);
 
-      const { data } = await api.get("/users", {
+      const { data } = await api.get("/admin/users", {
         skipErrorToast: true,
       } as any);
       setUsers(Array.isArray(data) ? data : []);
@@ -490,16 +490,16 @@ export default function AdminReal() {
     if (!editingUserId) return;
 
     try {
-      const payload: any = {
+      await api.put(`/users/${editingUserId}`, {
         full_name: userForm.full_name,
         role: userForm.role,
-      };
+      });
 
       if (!subscriptionTypeLocked) {
-        payload.subscription_type = userForm.subscription_type;
+        await api.put(`/admin/users/${editingUserId}/subscription`, {
+          subscription_type: userForm.subscription_type,
+        });
       }
-
-      await api.put(`/users/${editingUserId}`, payload);
       setUserModalOpen(false);
       await reload();
     } catch (err: any) {
@@ -1590,16 +1590,19 @@ export default function AdminReal() {
 
                               try {
                                 // Explicitly update only subscription_status on the backend
-                                await api.put(`/users/${u.id}`, {
-                                  subscription_status: value,
-                                });
+                                await api.put(
+                                  `/admin/users/${u.id}/subscription`,
+                                  {
+                                    subscription_status: value,
+                                  }
+                                );
                                 showToast(
                                   "Subscription status updated",
                                   "success"
                                 );
                                 await reload();
                               } catch (err: any) {
-                                // TODO: backend must accept subscription_status in PUT /users/:id
+                                // Subscription updates are intentionally handled via /admin/users/:id/subscription
                                 const msg =
                                   err?.response?.data?.message ||
                                   "שגיאה בעדכון סטטוס המנוי";
@@ -1676,7 +1679,10 @@ export default function AdminReal() {
                                     subscription_expires_at:
                                       subForm.subscription_expires_at || null,
                                   };
-                                  await api.put(`/users/${u.id}`, payload);
+                                  await api.put(
+                                    `/admin/users/${u.id}/subscription`,
+                                    payload
+                                  );
                                   showToast("Subscription updated", "success");
                                   setEditingSubscriptionUserId(null);
                                   await reload();
@@ -1769,7 +1775,7 @@ export default function AdminReal() {
                     className="bg-brand-orange text-black px-3 py-1 rounded-2xl text-xs font-bold mt-1"
                     onClick={async () => {
                       try {
-                        await api.put("/subscriptions/settings", {
+                        await api.put("/admin/subscriptions/settings", {
                           price_ils: editPrice[plan.tier] ?? plan.monthlyPrice,
                         });
                         showToast("Subscription price updated", "success");

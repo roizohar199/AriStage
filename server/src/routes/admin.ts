@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { requireAuth, requireRoles } from "../src/middleware/auth.js";
 import { listPaymentsWithUsers } from "../src/modules/payments/payments.repository.js";
+import { adminUsersRouter } from "../src/modules/adminUsers/adminUsers.routes.js";
+import { adminSubscriptionsRouter } from "../src/modules/adminSubscriptions/adminSubscriptions.routes.js";
 
 const router = Router();
 
@@ -36,6 +38,14 @@ router.get(
       res.status(500).json({ error: "Failed to load payments" });
     }
   }
+);
+
+router.use("/users", requireAuth, requireRoles(["admin"]), adminUsersRouter);
+router.use(
+  "/subscriptions",
+  requireAuth,
+  requireRoles(["admin"]),
+  adminSubscriptionsRouter
 );
 
 export default router;

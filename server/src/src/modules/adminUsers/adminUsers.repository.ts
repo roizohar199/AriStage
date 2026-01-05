@@ -57,3 +57,10 @@ export async function getUserSubscriptionFields(userId: number) {
   );
   return (rows as any[])[0] || null;
 }
+
+export async function listUsers() {
+  const [rows] = await pool.query(
+    "SELECT id, full_name, email, role, subscription_status, subscription_type, subscription_started_at, subscription_expires_at, created_at FROM users ORDER BY created_at DESC"
+  );
+  return rows as any[];
+}

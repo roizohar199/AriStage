@@ -2,6 +2,7 @@ import { asyncHandler } from "../../core/asyncHandler.js";
 import { AppError } from "../../core/errors.js";
 import {
   getUserSubscriptionFields,
+  listUsers,
   updateUserSubscription,
 } from "./adminUsers.repository.js";
 
@@ -51,6 +52,11 @@ function addDaysMysqlDateTime(days: number): string {
 }
 
 export const adminUsersController = {
+  listUsers: asyncHandler(async (_req: any, res: any) => {
+    const rows = await listUsers();
+    res.json(Array.isArray(rows) ? rows : []);
+  }),
+
   getSubscription: asyncHandler(async (req: any, res: any) => {
     const userId = Number(req.params.id);
     if (!userId) {
