@@ -7,8 +7,6 @@ const router = Router();
 router.use(requireAuth);
 router.use(requireRoles(["admin"]));
 
-router.get("/settings", adminSubscriptionsController.getSettings);
-router.put("/settings", adminSubscriptionsController.updateSettings);
-router.get("/users", adminSubscriptionsController.listUsers);
+router.get("/", adminSubscriptionsController.listSubscriptions);
 
 export const adminSubscriptionsRouter = router;

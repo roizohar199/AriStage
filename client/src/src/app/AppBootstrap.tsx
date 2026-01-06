@@ -14,6 +14,8 @@ import {
   GuestOnlyRoute,
 } from "@/modules/shared/components/RoleRoute.tsx";
 
+import { AdminGuard } from "@/modules/admin/components/AdminGuard.tsx";
+
 import { publicRoutes, protectedRoutes } from "../modules/routes.js";
 import LineupDetails from "../modules/lineups/pages/LineupDetails.tsx";
 import AppLayout from "../layouts/AppLayout.tsx";
@@ -272,6 +274,21 @@ export default function AppBootstrap(): JSX.Element {
                       element={<LineupDetails />}
                     />
                   </Route>
+                );
+              }
+              if (path === "/admin") {
+                return (
+                  <Route
+                    key={path}
+                    path={path}
+                    element={
+                      <ProtectedRoute>
+                        <AdminGuard>
+                          <Component />
+                        </AdminGuard>
+                      </ProtectedRoute>
+                    }
+                  />
                 );
               }
               return (

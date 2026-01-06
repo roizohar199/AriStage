@@ -1,26 +1,67 @@
 import { pool } from "../../database/pool.js";
 
-export type UpdateUserSubscriptionPayload = {
-  subscription_type?: string;
-  subscription_status?: string;
+export type AdminUserListRow = {
+  id: number;
+  email: string;
+  name: string | null;
+  role: string;
+  createdAt: Date | string | null;
+  subscription_status: string | null;
+  subscription_expires_at: Date | string | null;
+};
+
+export type AdminUserSubscriptionRow = {
+  subscription_status: string | null;
+  subscription_expires_at: Date | string | null;
+};
+
+export type AdminUpdateUserSubscriptionPayload = {
+  subscription_status?: string | null;
   subscription_expires_at?: string | null;
 };
 
-export async function updateUserSubscription(
+async function listUsers(
+  limit?: number,
+  offset?: number
+): Promise<AdminUserListRow[]> {
+  const values: any[] = [];
+  let sql =
+    "SELECT id, email, full_name AS name, role, created_at AS createdAt, subscription_status, subscription_expires_at FROM users ORDER BY created_at DESC";
+
+  if (Number.isFinite(limit) && (limit as number) > 0) {
+    sql += " LIMIT ?";
+    values.push(limit);
+
+    if (Number.isFinite(offset) && (offset as number) >= 0) {
+      sql += " OFFSET ?";
+      values.push(offset);
+    }
+  }
+
+  const [rows] = await pool.query(sql, values);
+  return rows as AdminUserListRow[];
+}
+
+async function getUserSubscription(
+  userId: number
+): Promise<AdminUserSubscriptionRow | null> {
+  const [rows] = await pool.query(
+    "SELECT subscription_status, subscription_expires_at FROM users WHERE id = ? LIMIT 1",
+    [userId]
+  );
+  return (rows as any[])[0] || null;
+}
+
+async function updateUserSubscription(
   userId: number,
-  payload: UpdateUserSubscriptionPayload
-) {
+  payload: AdminUpdateUserSubscriptionPayload
+): Promise<number> {
   if (!Number.isFinite(userId) || userId <= 0) {
     throw new Error("Invalid userId for subscription update");
   }
 
   const clauses: string[] = [];
   const values: any[] = [];
-
-  if (payload.subscription_type !== undefined) {
-    clauses.push("subscription_type = ?");
-    values.push(payload.subscription_type);
-  }
 
   if (payload.subscription_status !== undefined) {
     clauses.push("subscription_status = ?");
@@ -32,35 +73,22 @@ export async function updateUserSubscription(
     values.push(payload.subscription_expires_at);
   }
 
-  if (!clauses.length) {
-    return 0;
-  }
+  if (!clauses.length) return 0;
 
   clauses.push("updated_at = NOW()");
   values.push(userId);
 
   const sql = `UPDATE users SET ${clauses.join(", ")} WHERE id = ?`;
-  // Safety net: never run UPDATE without WHERE
   if (!/\bWHERE\s+id\s*=\s*\?/i.test(sql)) {
     throw new Error("Unsafe subscription update query (missing WHERE id = ?)");
   }
 
   const [result] = await pool.query(sql, values);
-
   return (result as any).affectedRows || 0;
 }
 
-export async function getUserSubscriptionFields(userId: number) {
-  const [rows] = await pool.query(
-    "SELECT id, email, role, subscription_type, subscription_status, subscription_expires_at FROM users WHERE id = ? LIMIT 1",
-    [userId]
-  );
-  return (rows as any[])[0] || null;
-}
-
-export async function listUsers() {
-  const [rows] = await pool.query(
-    "SELECT id, full_name, email, role, subscription_status, subscription_type, subscription_started_at, subscription_expires_at, created_at FROM users ORDER BY created_at DESC"
-  );
-  return rows as any[];
-}
+export const adminUsersRepository = {
+  listUsers,
+  getUserSubscription,
+  updateUserSubscription,
+};

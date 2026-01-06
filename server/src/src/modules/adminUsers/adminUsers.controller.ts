@@ -2,16 +2,46 @@ import { asyncHandler } from "../../core/asyncHandler.js";
 import { AppError } from "../../core/errors.js";
 import { logSystemEvent } from "../../utils/systemLogger.js";
 import {
-  getUserSubscriptionFields,
-  listUsers,
-  updateUserSubscription,
+  adminUsersRepository,
+  type AdminUserListRow,
+  type AdminUserSubscriptionRow,
 } from "./adminUsers.repository.js";
+
+import type { Request, Response } from "express";
+
+type AdminUsersListQuery = {
+  limit?: string;
+  offset?: string;
+};
+
+type AdminUserIdParams = {
+  id: string;
+};
+
+type UpdateSubscriptionBody = {
+  // preferred
+  subscription_status?: string | null;
+  subscription_expires_at?: string | null;
+  // backwards/alternate client naming
+  status?: string | null;
+  expiresAt?: string | null;
+};
 
 function toMysqlDateTime(date: Date): string {
   return date.toISOString().slice(0, 19).replace("T", " ");
 }
 
-function parseNullableIsoDate(value: any): string | null | undefined {
+function toIsoOrNull(value: unknown): string | null {
+  if (value === null || value === undefined || value === "") return null;
+  if (value instanceof Date) return value.toISOString();
+  const raw = String(value).trim();
+  if (!raw) return null;
+  const normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
+  const d = new Date(normalized);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+function parseNullableIsoDate(value: unknown): string | null | undefined {
   if (value === undefined) return undefined;
   if (value === null || value === "") return null;
   const date = new Date(String(value));
@@ -26,168 +56,191 @@ function parseNullableIsoDate(value: any): string | null | undefined {
   return toMysqlDateTime(date);
 }
 
-function parseExistingMysqlDateTime(value: any): string | null {
-  if (value === null || value === undefined || value === "") return null;
-  if (value instanceof Date) return toMysqlDateTime(value);
-  const s = String(value).trim();
-  if (!s) return null;
-  // already mysql datetime
-  if (/^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}$/.test(s)) return s;
-  // iso
-  const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return null;
-  return toMysqlDateTime(d);
+function parseUserIdParam(raw: string): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) {
+    throw new AppError(400, "Invalid user id", undefined);
+  }
+  return n;
 }
 
-function isFutureMysqlDateTime(value: string | null): boolean {
-  if (!value) return false;
-  const normalized = value.includes("T") ? value : value.replace(" ", "T");
-  const ms = new Date(normalized).getTime();
-  if (Number.isNaN(ms)) return false;
-  return ms > Date.now();
+function parseOptionalLimitOffset(query: AdminUsersListQuery): {
+  limit?: number;
+  offset?: number;
+} {
+  const rawLimit = query.limit;
+  const rawOffset = query.offset;
+
+  if (rawLimit === undefined && rawOffset === undefined) return {};
+
+  const limitNum = rawLimit !== undefined ? Number(rawLimit) : NaN;
+  const offsetNum = rawOffset !== undefined ? Number(rawOffset) : 0;
+
+  if (!Number.isFinite(limitNum) || limitNum <= 0) {
+    throw new AppError(400, "limit must be a positive number", undefined);
+  }
+
+  if (!Number.isFinite(offsetNum) || offsetNum < 0) {
+    throw new AppError(400, "offset must be a non-negative number", undefined);
+  }
+
+  const limitCapped = Math.min(Math.floor(limitNum), 200);
+  const offsetFloored = Math.floor(offsetNum);
+
+  return { limit: limitCapped, offset: offsetFloored };
 }
 
-function addDaysMysqlDateTime(days: number): string {
-  const ms = Date.now() + days * 24 * 60 * 60 * 1000;
-  return toMysqlDateTime(new Date(ms));
+const ALLOWED_SUBSCRIPTION_STATUSES = new Set(["active", "trial", "expired"]);
+
+function normalizeStatus(value: unknown): string | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || value === "") return null;
+  const s = String(value).trim().toLowerCase();
+  if (!ALLOWED_SUBSCRIPTION_STATUSES.has(s)) {
+    throw new AppError(
+      400,
+      `subscription_status must be one of: ${Array.from(
+        ALLOWED_SUBSCRIPTION_STATUSES
+      ).join(", ")}`,
+      undefined
+    );
+  }
+  return s;
+}
+
+function mapListRowToDto(row: AdminUserListRow) {
+  return {
+    id: Number(row.id),
+    email: row.email,
+    name: row.name ?? null,
+    role: row.role,
+    createdAt: toIsoOrNull(row.createdAt),
+    subscription_status: row.subscription_status ?? null,
+    subscription_expires_at: toIsoOrNull(row.subscription_expires_at),
+  };
+}
+
+function mapSubscriptionRowToDto(row: AdminUserSubscriptionRow) {
+  return {
+    subscription_status: row.subscription_status ?? null,
+    subscription_expires_at: toIsoOrNull(row.subscription_expires_at),
+  };
 }
 
 export const adminUsersController = {
-  listUsers: asyncHandler(async (_req: any, res: any) => {
-    const rows = await listUsers();
-    res.json(Array.isArray(rows) ? rows : []);
+  listUsers: asyncHandler(async (req: Request, res: Response) => {
+    const { limit, offset } = parseOptionalLimitOffset(
+      req.query as unknown as AdminUsersListQuery
+    );
+    const rows = await adminUsersRepository.listUsers(limit, offset);
+    const payload = Array.isArray(rows) ? rows.map(mapListRowToDto) : [];
+    res.json(payload);
   }),
 
-  getSubscription: asyncHandler(async (req: any, res: any) => {
-    const userId = Number(req.params.id);
-    if (!userId) {
-      throw new AppError(400, "Invalid user id", undefined);
-    }
-
-    const row = await getUserSubscriptionFields(userId);
-    if (!row) {
-      throw new AppError(404, "User not found", undefined);
-    }
-
-    res.json(row);
+  getSubscription: asyncHandler(async (req: Request, res: Response) => {
+    const params = req.params as unknown as AdminUserIdParams;
+    const userId = parseUserIdParam(params.id);
+    const row = await adminUsersRepository.getUserSubscription(userId);
+    if (!row) throw new AppError(404, "User not found", undefined);
+    res.json(mapSubscriptionRowToDto(row));
   }),
 
-  updateSubscription: asyncHandler(async (req: any, res: any) => {
-    const userId = Number(req.params.id);
-    if (!userId) {
-      throw new AppError(400, "Invalid user id", undefined);
+  updateSubscription: asyncHandler(async (req: Request, res: Response) => {
+    const params = req.params as unknown as AdminUserIdParams;
+    const body = (req.body || {}) as UpdateSubscriptionBody;
+
+    const targetUserId = parseUserIdParam(params.id);
+
+    const adminUserIdRaw = (req as any).user?.id;
+    const adminUserId = Number(adminUserIdRaw);
+    if (!Number.isFinite(adminUserId) || adminUserId <= 0) {
+      throw new AppError(401, "Unauthorized", undefined);
     }
 
-    const current = await getUserSubscriptionFields(userId);
-    if (!current) {
-      throw new AppError(404, "User not found", undefined);
-    }
+    const existing = await adminUsersRepository.getUserSubscription(
+      targetUserId
+    );
+    if (!existing) throw new AppError(404, "User not found", undefined);
 
-    const body = req.body || {};
-
-    const incomingTypeRaw =
-      body.subscription_type !== undefined
-        ? String(body.subscription_type)
-        : undefined;
-    const incomingStatusRaw =
+    const incomingStatus =
       body.subscription_status !== undefined
-        ? String(body.subscription_status)
+        ? normalizeStatus(body.subscription_status)
+        : body.status !== undefined
+        ? normalizeStatus(body.status)
         : undefined;
-    const incomingExpiresRaw = parseNullableIsoDate(
-      body.subscription_expires_at
-    );
 
-    const nextType =
-      incomingTypeRaw !== undefined
-        ? incomingTypeRaw
-        : current.subscription_type ?? null;
-    const nextTypeLower = nextType ? String(nextType).toLowerCase() : "";
+    const incomingExpires =
+      body.subscription_expires_at !== undefined
+        ? parseNullableIsoDate(body.subscription_expires_at)
+        : body.expiresAt !== undefined
+        ? parseNullableIsoDate(body.expiresAt)
+        : undefined;
 
-    const nextStatus =
-      incomingStatusRaw !== undefined
-        ? incomingStatusRaw
-        : current.subscription_status ?? null;
-
-    const currentExpires = parseExistingMysqlDateTime(
-      current.subscription_expires_at
-    );
-    const nextExpires =
-      incomingExpiresRaw !== undefined ? incomingExpiresRaw : currentExpires;
-
-    if (nextTypeLower && nextTypeLower !== "trial" && nextTypeLower !== "pro") {
-      throw new AppError(400, `Invalid subscription_type: ${nextTypeLower}`);
-    }
-    const isPaidTier = nextTypeLower === "pro";
-
-    const payload: any = {};
-
-    // Always apply explicit incoming fields
-    if (incomingTypeRaw !== undefined)
-      payload.subscription_type = nextTypeLower;
-    if (incomingStatusRaw !== undefined)
-      payload.subscription_status = nextStatus;
-    if (incomingExpiresRaw !== undefined)
-      payload.subscription_expires_at = nextExpires;
-
-    // Enforce consistency: paid tier cannot be trial/expired; must be active with future expiry
-    if (isPaidTier) {
-      payload.subscription_type = nextTypeLower;
-      payload.subscription_status = "active";
-
-      if (!isFutureMysqlDateTime(nextExpires)) {
-        // If admin explicitly provided expires and it's invalid/past, fail loudly
-        if (incomingExpiresRaw !== undefined) {
-          throw new AppError(
-            400,
-            "subscription_expires_at must be a future date for paid subscriptions",
-            undefined
-          );
-        }
-        // Otherwise, default to +30 days
-        payload.subscription_expires_at = addDaysMysqlDateTime(30);
-      } else {
-        payload.subscription_expires_at = nextExpires;
-      }
+    if (incomingStatus === undefined && incomingExpires === undefined) {
+      throw new AppError(400, "No subscription fields provided", undefined);
     }
 
-    // If status is being set to active explicitly, require future expiry
-    if (!isPaidTier && incomingStatusRaw === "active") {
-      if (!isFutureMysqlDateTime(nextExpires)) {
+    // Minimal validation: if status is being set to active/trial, require a valid future expiry.
+    if (incomingStatus === "active" || incomingStatus === "trial") {
+      if (incomingExpires === undefined) {
         throw new AppError(
           400,
-          "subscription_expires_at must be a future date when subscription_status is active",
+          "subscription_expires_at is required when subscription_status is active or trial",
+          undefined
+        );
+      }
+      if (incomingExpires === null) {
+        throw new AppError(
+          400,
+          "subscription_expires_at must be a future date when subscription_status is active or trial",
+          undefined
+        );
+      }
+      const expiresMs = new Date(incomingExpires.replace(" ", "T")).getTime();
+      if (!Number.isFinite(expiresMs) || expiresMs <= Date.now()) {
+        throw new AppError(
+          400,
+          "subscription_expires_at must be a future date when subscription_status is active or trial",
           undefined
         );
       }
     }
 
-    if (!Object.keys(payload).length) {
-      throw new AppError(400, "No subscription fields provided", undefined);
-    }
+    const affected = await adminUsersRepository.updateUserSubscription(
+      targetUserId,
+      {
+        ...(incomingStatus !== undefined
+          ? { subscription_status: incomingStatus }
+          : {}),
+        ...(incomingExpires !== undefined
+          ? { subscription_expires_at: incomingExpires }
+          : {}),
+      }
+    );
 
-    const affected = await updateUserSubscription(userId, payload);
     if (!affected) {
-      // No updates requested is treated as 400 to surface client issues
       throw new AppError(400, "No subscription fields provided", undefined);
     }
 
-    const updated = await getUserSubscriptionFields(userId);
-    if (!updated) {
-      throw new AppError(404, "User not found", undefined);
-    }
+    const updated = await adminUsersRepository.getUserSubscription(
+      targetUserId
+    );
+    if (!updated) throw new AppError(404, "User not found", undefined);
+
+    const updatedDto = mapSubscriptionRowToDto(updated);
 
     void logSystemEvent(
       "info",
-      "ADMIN_SUBSCRIPTION_UPDATE",
+      "admin_update_subscription",
       "Admin updated user subscription",
       {
-        userId,
-        newStatus: updated.subscription_status ?? null,
-        expiresAt: updated.subscription_expires_at ?? null,
+        targetUserId,
+        newStatus: updatedDto.subscription_status,
+        newExpiresAt: updatedDto.subscription_expires_at,
       },
-      (req as any).user?.id
+      adminUserId
     );
 
-    res.json(updated);
+    res.json(updatedDto);
   }),
 };

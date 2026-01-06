@@ -44,5 +44,5 @@ export const protectedRoutes: ProtectedRoute[] = [
   { path: "/billing", component: SubscriptionBlocked },
   { path: "/logout", component: Logout },
   // { path: "/users", component: Users, roles: ["admin", "manager"] },
-  { path: "/admin", component: Admin, roles: ["admin"] },
+  { path: "/admin", component: Admin },
 ];
