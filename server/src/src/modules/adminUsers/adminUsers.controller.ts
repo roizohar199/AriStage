@@ -18,7 +18,10 @@ type AdminUserIdParams = {
   id: string;
 };
 
+type SubscriptionType = "trial" | "pro";
+
 type UpdateSubscriptionBody = {
+  subscription_type?: SubscriptionType;
   // preferred
   subscription_status?: string | null;
   subscription_expires_at?: string | null;

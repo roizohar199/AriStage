@@ -3,30 +3,38 @@ import api from "@/modules/shared/lib/api.ts";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 
-type PublicSettings = {
-  is_enabled: number;
-  price_ils: number;
-  trial_days: number;
+type AvailablePlan = {
+  id: number;
+  key: string;
+  name: string;
+  description: string | null;
+  currency: string;
+  monthly_price: number;
+  yearly_price: number;
+  enabled: boolean;
 };
 
 export default function SubscriptionBlocked() {
   const { user } = useAuth();
-  const [settings, setSettings] = useState<PublicSettings | null>(null);
+  const [plans, setPlans] = useState<AvailablePlan[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
     setLoading(true);
+    setError(null);
 
     api
-      .get("/subscriptions/public", { skipErrorToast: true } as any)
+      .get("/plans/available", { skipErrorToast: true } as any)
       .then(({ data }) => {
         if (!mounted) return;
-        setSettings(data || null);
+        setPlans(Array.isArray(data) ? (data as AvailablePlan[]) : []);
       })
       .catch(() => {
         if (!mounted) return;
-        setSettings(null);
+        setPlans([]);
+        setError("שגיאה בטעינת מסלולים");
       })
       .finally(() => {
         if (mounted) setLoading(false);
@@ -37,10 +45,7 @@ export default function SubscriptionBlocked() {
     };
   }, []);
 
-  const priceText =
-    settings && typeof settings.price_ils === "number"
-      ? `${settings.price_ils}₪`
-      : "—";
+  const hasPlans = plans.length > 0;
 
   let expiredLine: string | null = null;
   if (
@@ -82,15 +87,36 @@ export default function SubscriptionBlocked() {
 
         <div className="mt-6 bg-neutral-900 rounded-2xl p-4 border border-neutral-800">
           <div className="flex items-center justify-between">
-            <span className="text-neutral-300">מחיר מנוי (Pro)</span>
+            <span className="text-neutral-300">מסלולים זמינים</span>
             <span className="text-white font-bold">
-              {loading ? "טוען..." : priceText}
+              {loading ? "טוען..." : ""}
             </span>
           </div>
-          {settings?.trial_days ? (
+
+          {!loading && error ? (
+            <p className="text-red-300 text-sm mt-2">{error}</p>
+          ) : null}
+
+          {!loading && !error && !hasPlans ? (
             <p className="text-neutral-500 text-sm mt-2">
-              תקופת ניסיון: {settings.trial_days} ימים
+              אין מסלולים זמינים כרגע
             </p>
+          ) : null}
+
+          {!loading && !error && hasPlans ? (
+            <div className="mt-3 space-y-2">
+              {plans.map((p) => (
+                <div
+                  key={p.id}
+                  className="flex items-center justify-between text-sm"
+                >
+                  <span className="text-neutral-200">{p.name}</span>
+                  <span className="text-neutral-100 font-semibold" dir="ltr">
+                    {p.currency} {p.monthly_price} / {p.yearly_price}
+                  </span>
+                </div>
+              ))}
+            </div>
           ) : null}
         </div>
 

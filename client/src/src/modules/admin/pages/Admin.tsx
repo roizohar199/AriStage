@@ -19,13 +19,12 @@ import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "@/modules/shared/components/ToastProvider";
 import { normalizeSubscriptionType } from "@/modules/shared/hooks/useSubscription.ts";
 import AdminSubscriptionsTab from "../tabs/AdminSubscriptionsTab";
-import AdminPayments from "../components/AdminPayments";
 import AdminUsersTab from "../tabs/AdminUsersTab";
+import AdminPlansTab from "../tabs/AdminPlansTab";
 
 type AdminTab =
   | "users"
   | "subscriptions"
-  | "payments"
   | "files"
   | "logs"
   | "errors"
@@ -36,7 +35,6 @@ type AdminTab =
 const TABS: Array<{ key: AdminTab; label: string }> = [
   { key: "users", label: "משתמשים" },
   { key: "subscriptions", label: "מנויים" },
-  { key: "payments", label: "תשלומים" },
   { key: "plans", label: "מסלולים" },
   { key: "files", label: "קבצים" },
   { key: "logs", label: "לוגים" },
@@ -253,26 +251,7 @@ type FeatureFlagRow = {
 };
 
 export default function AdminReal() {
-  // Plans state
-  const [plans, setPlans] = useState<any[]>([]);
-  const [plansLoading, setPlansLoading] = useState(false);
-  const [plansError, setPlansError] = useState<string | null>(null);
-  const [editPrice, setEditPrice] = useState<{ [tier: string]: number }>({});
   const { showToast } = useToast();
-
-  const loadPlans = useCallback(async () => {
-    setPlansLoading(true);
-    setPlansError(null);
-    try {
-      const { data } = await api.get("/subscriptions/plans");
-      setPlans(data);
-    } catch (err: any) {
-      setPlansError("שגיאה בטעינת מסלולים");
-      setPlans([]);
-    } finally {
-      setPlansLoading(false);
-    }
-  }, []);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -281,9 +260,6 @@ export default function AdminReal() {
     () => getTabFromLocationSearch(location.search),
     [location.search]
   );
-  useEffect(() => {
-    if (selectedTab === "plans") loadPlans();
-  }, [selectedTab, loadPlans]);
   console.log("ADMIN RENDERED");
 
   const setTab = useCallback(
@@ -296,7 +272,6 @@ export default function AdminReal() {
   const [searchByTab, setSearchByTab] = useState<Record<AdminTab, string>>({
     users: "",
     subscriptions: "",
-    payments: "",
     files: "",
     logs: "",
     errors: "",
@@ -931,90 +906,7 @@ export default function AdminReal() {
           api={api}
         />
       ) : selectedTab === "plans" ? (
-        <div className="space-y-3">
-          {plansLoading ? (
-            <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-6 text-center text-neutral-400">
-              טוען מסלולים...
-            </div>
-          ) : plansError ? (
-            <div className="bg-neutral-800 rounded-2xl p-6 text-center">
-              <BadgeCheck size={32} className="mx-auto mb-3 text-neutral-600" />
-              <p className="text-neutral-400 text-sm">{plansError}</p>
-            </div>
-          ) : plans.length === 0 ? (
-            <div className="bg-neutral-800 rounded-2xl p-6 text-center">
-              <BadgeCheck size={32} className="mx-auto mb-3 text-neutral-600" />
-              <p className="text-neutral-400 text-sm">אין מסלולים להצגה</p>
-            </div>
-          ) : (
-            plans.map((plan) => (
-              <CardContainer key={plan.tier}>
-                <div className="flex-1 min-w-0 text-right">
-                  <h3 className="text-lg font-bold text-white mb-1">
-                    {plan.tier}
-                  </h3>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    <SmallBadge variant="brand">{plan.currency}</SmallBadge>
-                    <SmallBadge>{plan.billing_period || "monthly"}</SmallBadge>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2 items-start">
-                  <label className="text-xs text-neutral-300 font-bold">
-                    מחיר
-                  </label>
-                  {typeof plan.monthlyPrice === "number" ? (
-                    <input
-                      type="number"
-                      value={editPrice[plan.tier] ?? plan.monthlyPrice}
-                      onChange={(e) =>
-                        setEditPrice((prev) => ({
-                          ...prev,
-                          [plan.tier]: Number(e.target.value),
-                        }))
-                      }
-                      className="w-24 bg-neutral-900 border border-neutral-800 p-2 rounded-2xl text-sm"
-                    />
-                  ) : (
-                    <span>{plan.monthlyPrice}</span>
-                  )}
-                  <button
-                    className="bg-brand-orange text-black px-3 py-1 rounded-2xl text-xs font-bold mt-1"
-                    onClick={async () => {
-                      try {
-                        await api.put("/admin/subscriptions/settings", {
-                          price_ils: editPrice[plan.tier] ?? plan.monthlyPrice,
-                        });
-                        showToast("Subscription price updated", "success");
-                        await loadPlans();
-                      } catch (err) {
-                        showToast("שגיאה בעדכון מחיר המנוי", "error");
-                      }
-                    }}
-                    disabled={typeof plan.monthlyPrice !== "number"}
-                  >
-                    שמור מחיר
-                  </button>
-                  {typeof plan.enabled === "boolean" ? (
-                    <label className="flex items-center gap-2 mt-2">
-                      <input
-                        type="checkbox"
-                        checked={plan.enabled}
-                        disabled
-                        className="accent-brand-orange"
-                      />
-                      <span>Enabled</span>
-                      <span className="text-xs text-neutral-500">
-                        TODO: אין endpoint לעריכת enabled
-                      </span>
-                    </label>
-                  ) : null}
-                </div>
-              </CardContainer>
-            ))
-          )}
-        </div>
-      ) : selectedTab === "payments" ? (
-        <AdminPayments />
+        <AdminPlansTab />
       ) : selectedTab === "files" ? (
         <div className="space-y-3">
           {filesLoading ? (

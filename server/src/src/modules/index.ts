@@ -13,12 +13,14 @@ import { paymentsRouter } from "./payments/payments.routes.js";
 import { logsRouter } from "./logs/logs.routes.js";
 import { errorsRouter } from "./errors/errors.routes.js";
 import { featureFlagsRouter } from "./featureFlags/featureFlags.routes.js";
+import { plansRouter } from "./plans/plans.routes.js";
 
 import adminRouter from "../../routes/admin.js";
 
 export function registerModules(app) {
   app.use("/api/health", healthRouter);
   app.use("/api/auth", authRouter);
+  app.use("/api/plans", plansRouter);
   app.use("/api/subscriptions", subscriptionsRouter);
   app.use("/api/payments", paymentsRouter);
   app.use("/api/admin", adminRouter);

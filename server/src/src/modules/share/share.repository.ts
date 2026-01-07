@@ -2,7 +2,7 @@ import { pool } from "../../database/pool.js";
 
 export async function findActiveShareToken(token) {
   const [rows] = await pool.query(
-    "SELECT lineup_id FROM lineup_shares WHERE share_token = ? AND is_active = 1 LIMIT 1",
+    "SELECT lineup_id FROM lineup_shares WHERE share_token = ? LIMIT 1",
     [token]
   );
   return rows[0];

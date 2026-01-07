@@ -72,7 +72,7 @@ export async function lineupBelongsToUser(id, userId) {
 
 export async function findActiveShare(lineupId) {
   const [rows] = await pool.query(
-    "SELECT share_token FROM lineup_shares WHERE lineup_id = ? AND is_active = 1 LIMIT 1",
+    "SELECT share_token FROM lineup_shares WHERE lineup_id = ? ORDER BY id DESC LIMIT 1",
     [lineupId]
   );
   return rows[0];
@@ -80,17 +80,14 @@ export async function findActiveShare(lineupId) {
 
 export async function insertShareToken(lineupId, token) {
   await pool.query(
-    "INSERT INTO lineup_shares (lineup_id, share_token, is_active) VALUES (?, ?, 1)",
+    "INSERT INTO lineup_shares (lineup_id, share_token) VALUES (?, ?)",
     [lineupId, token]
   );
   return token;
 }
 
 export async function deactivateShare(lineupId) {
-  await pool.query(
-    "UPDATE lineup_shares SET is_active = 0 WHERE lineup_id = ? AND is_active = 1",
-    [lineupId]
-  );
+  await pool.query("DELETE FROM lineup_shares WHERE lineup_id = ?", [lineupId]);
 }
 
 export async function deleteLineupRecord(id) {

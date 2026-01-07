@@ -18,7 +18,10 @@ export type AdminUserSubscriptionRow = {
   subscription_expires_at: Date | string | null;
 };
 
+type SubscriptionType = "trial" | "pro";
+
 export type AdminUpdateUserSubscriptionPayload = {
+  subscription_type?: SubscriptionType;
   subscription_status?: string | null;
   subscription_expires_at?: string | null;
 };

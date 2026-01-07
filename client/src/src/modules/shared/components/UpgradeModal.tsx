@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import BaseModal from "./BaseModal.tsx";
 import api from "@/modules/shared/lib/api.ts";
@@ -12,18 +12,24 @@ interface UpgradeModalProps {
 
 type BillingPeriod = "monthly" | "yearly";
 
-type SubscriptionSettings = {
-  is_enabled: number;
-  price_ils: number;
-  trial_days: number;
+type AvailablePlan = {
+  id: number;
+  key: string;
+  name: string;
+  description: string | null;
+  currency: string;
+  monthly_price: number;
+  yearly_price: number;
+  enabled: boolean;
 };
 
 export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
   const { subscriptionBlockedPayload, refreshUser } = useAuth();
   const subscription = useSubscription();
 
-  const [settings, setSettings] = useState<SubscriptionSettings | null>(null);
+  const [plans, setPlans] = useState<AvailablePlan[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [selectedBillingPeriod, setSelectedBillingPeriod] =
     useState<BillingPeriod>("monthly");
   const [submitting, setSubmitting] = useState(false);
@@ -34,16 +40,25 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
 
     let mounted = true;
     setLoading(true);
+    setError(null);
 
     api
-      .get("/subscriptions/settings", { skipErrorToast: true } as any)
+      .get("/plans/available", { skipErrorToast: true } as any)
       .then(({ data }) => {
         if (!mounted) return;
-        setSettings(data || null);
+        const nextPlans = Array.isArray(data) ? (data as AvailablePlan[]) : [];
+        setPlans(nextPlans);
+
+        // Keep selection if still exists; otherwise pick first.
+        setSelectedPlanId((prev) => {
+          if (prev && nextPlans.some((p) => p.id === prev)) return prev;
+          return nextPlans[0]?.id ?? null;
+        });
       })
       .catch(() => {
         if (!mounted) return;
-        setSettings(null);
+        setPlans([]);
+        setSelectedPlanId(null);
       })
       .finally(() => {
         if (mounted) setLoading(false);
@@ -71,21 +86,36 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
   const expiryDate = formatDate(subscriptionBlockedPayload?.expires_at);
   const currentTier = subscription?.plan ?? "trial";
 
+  const selectedPlan = useMemo(() => {
+    if (!plans.length) return null;
+    if (selectedPlanId) {
+      return plans.find((p) => p.id === selectedPlanId) || null;
+    }
+    return plans[0] || null;
+  }, [plans, selectedPlanId]);
+
   const monthlyPrice =
-    settings && typeof settings.price_ils === "number"
-      ? settings.price_ils
+    selectedPlan && typeof selectedPlan.monthly_price === "number"
+      ? selectedPlan.monthly_price
       : null;
-  const yearlyPrice = monthlyPrice !== null ? monthlyPrice * 12 : null;
+  const yearlyPrice =
+    selectedPlan && typeof selectedPlan.yearly_price === "number"
+      ? selectedPlan.yearly_price
+      : null;
 
   const handleUpgrade = async () => {
     if (submitting) return;
+    if (!selectedPlan) {
+      setError("אין מסלול זמין לשדרוג כרגע");
+      return;
+    }
 
     setSubmitting(true);
     setError(null);
 
     try {
       const { data } = await api.post("/payments/create", {
-        plan: "pro",
+        plan: selectedPlan.key,
         billing_period: selectedBillingPeriod,
       } as any);
 
@@ -157,71 +187,110 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
         {/* Upgrade Options */}
         {loading ? (
           <div className="bg-neutral-800 rounded-xl p-8">
-            <p className="text-neutral-400">טוען מחירים...</p>
+            <p className="text-neutral-400">טוען מסלולים...</p>
           </div>
-        ) : monthlyPrice !== null && yearlyPrice !== null ? (
+        ) : plans.length ? (
           <div className="space-y-4">
             <p className="text-sm font-semibold text-neutral-400 uppercase tracking-wide">
               אפשרויות שדרוג
             </p>
 
+            {/* Plans list (no filtering by user) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Monthly plan */}
-              <div
-                className={`rounded-xl p-6 border transition cursor-pointer ${
-                  selectedBillingPeriod === "monthly"
-                    ? "bg-neutral-800 border-brand-orange"
-                    : "bg-neutral-800 border-neutral-700 hover:border-brand-orange/50"
-                }`}
-                onClick={() => setSelectedBillingPeriod("monthly")}
-              >
-                <h3 className="font-semibold text-white mb-2">מסלול חודשי</h3>
-                <div className="mb-4">
-                  <span className="text-3xl font-bold text-white">
-                    {monthlyPrice}
-                  </span>
-                  <span className="text-neutral-400 text-sm"> ₪ לחודש</span>
-                </div>
-                <p className="text-xs text-neutral-500">
-                  חידוש אוטומטי כל חודש
-                </p>
-              </div>
+              {plans.map((plan) => {
+                const isSelected = selectedPlan?.id === plan.id;
+                return (
+                  <div
+                    key={plan.id}
+                    className={`rounded-xl p-6 border transition cursor-pointer ${
+                      isSelected
+                        ? "bg-neutral-800 border-brand-orange"
+                        : "bg-neutral-800 border-neutral-700 hover:border-brand-orange/50"
+                    }`}
+                    onClick={() => setSelectedPlanId(plan.id)}
+                  >
+                    <h3 className="font-semibold text-white mb-1">
+                      {plan.name}
+                    </h3>
+                    {plan.description ? (
+                      <p className="text-xs text-neutral-500 mb-3">
+                        {plan.description}
+                      </p>
+                    ) : (
+                      <div className="mb-3" />
+                    )}
 
-              {/* Yearly plan */}
-              <div
-                className={`bg-gradient-to-br rounded-xl p-6 border relative cursor-pointer ${
-                  selectedBillingPeriod === "yearly"
-                    ? "from-brand-orange/30 to-transparent border-brand-orange"
-                    : "from-brand-orange/20 to-transparent border-brand-orange/50"
-                }`}
-                onClick={() => setSelectedBillingPeriod("yearly")}
-              >
-                <div className="absolute top-2 right-2 bg-brand-orange text-black text-xs font-bold px-2 py-1 rounded">
-                  {monthlyPrice !== null
-                    ? `חיסכון ${monthlyPrice * 2} ₪`
-                    : "הכי משתלם"}
+                    <div className="text-sm text-neutral-200" dir="ltr">
+                      {plan.currency} {plan.monthly_price} / month
+                    </div>
+                    <div className="text-sm text-neutral-300" dir="ltr">
+                      {plan.currency} {plan.yearly_price} / year
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Billing period selection (applies to selected plan) */}
+            {monthlyPrice !== null && yearlyPrice !== null ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Monthly */}
+                <div
+                  className={`rounded-xl p-6 border transition cursor-pointer ${
+                    selectedBillingPeriod === "monthly"
+                      ? "bg-neutral-800 border-brand-orange"
+                      : "bg-neutral-800 border-neutral-700 hover:border-brand-orange/50"
+                  }`}
+                  onClick={() => setSelectedBillingPeriod("monthly")}
+                >
+                  <h3 className="font-semibold text-white mb-2">חודשי</h3>
+                  <div className="mb-2">
+                    <span className="text-3xl font-bold text-white">
+                      {monthlyPrice}
+                    </span>
+                    <span className="text-neutral-400 text-sm"> ₪ לחודש</span>
+                  </div>
                 </div>
-                <h3 className="font-semibold text-white mb-2">מסלול שנתי</h3>
-                <div className="mb-4">
-                  <span className="text-3xl font-bold text-white">
-                    {yearlyPrice}
-                  </span>
-                  <span className="text-neutral-400 text-sm"> ₪ בשנה</span>
-                </div>
-                {monthlyPrice !== null && (
+
+                {/* Yearly */}
+                <div
+                  className={`bg-gradient-to-br rounded-xl p-6 border relative cursor-pointer ${
+                    selectedBillingPeriod === "yearly"
+                      ? "from-brand-orange/30 to-transparent border-brand-orange"
+                      : "from-brand-orange/20 to-transparent border-brand-orange/50"
+                  }`}
+                  onClick={() => setSelectedBillingPeriod("yearly")}
+                >
+                  <div className="absolute top-2 right-2 bg-brand-orange text-black text-xs font-bold px-2 py-1 rounded">
+                    {(() => {
+                      const savings = monthlyPrice * 12 - yearlyPrice;
+                      return savings > 0 ? `חיסכון ${savings} ₪` : "הכי משתלם";
+                    })()}
+                  </div>
+                  <h3 className="font-semibold text-white mb-2">שנתי</h3>
+                  <div className="mb-2">
+                    <span className="text-3xl font-bold text-white">
+                      {yearlyPrice}
+                    </span>
+                    <span className="text-neutral-400 text-sm"> ₪ בשנה</span>
+                  </div>
                   <p className="text-xs text-neutral-500">
                     {monthlyPrice} × 12 חודשים
                   </p>
-                )}
+                </div>
               </div>
-            </div>
+            ) : null}
           </div>
-        ) : null}
+        ) : (
+          <div className="bg-neutral-800 rounded-xl p-6">
+            <p className="text-neutral-300">אין מסלולים זמינים כרגע.</p>
+          </div>
+        )}
 
         {/* CTA Button */}
         <button
           onClick={handleUpgrade}
-          disabled={submitting}
+          disabled={submitting || !selectedPlan}
           className="w-full px-6 py-3 bg-brand-orange hover:bg-orange-600 disabled:opacity-70 disabled:cursor-not-allowed text-black font-semibold rounded-lg transition-colors"
         >
           {submitting ? "מבצע שדרוג (בדיקה)..." : "שדרג מנוי"}
