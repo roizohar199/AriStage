@@ -51,8 +51,11 @@ export const subscriptionsController = {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const resolvedStatus = resolveSubscriptionStatus(user);
-
+    let resolvedStatus = user.subscription_status;
+    // Admin is authoritative — do not auto-resolve if set by admin
+    if (!(user.subscription_type === "pro" || user.role === "admin")) {
+      resolvedStatus = resolveSubscriptionStatus(user);
+    }
     res.json({
       subscription_type: user.subscription_type ?? null,
       subscription_status: resolvedStatus,

@@ -69,8 +69,10 @@ export const usersController = {
     const user = await getProfile(req.user.id);
 
     if (user) {
-      // Ensure subscription status is correct on initial app load.
-      user.subscription_status = resolveSubscriptionStatus(user);
+      // Admin is authoritative — do not auto-resolve if set by admin
+      if (!(user.subscription_type === "pro" || req.user?.role === "admin")) {
+        user.subscription_status = resolveSubscriptionStatus(user);
+      }
     }
 
     if (user?.avatar) {
@@ -97,10 +99,16 @@ export const usersController = {
   list: asyncHandler(async (req, res) => {
     const users = await getUsers(req.user);
 
-    const fixed = users.map((u) => ({
-      ...u,
-      avatar: u.avatar ? fixAvatar(req, u.avatar) : null,
-    }));
+    const fixed = users.map((u) => {
+      // Admin is authoritative — do not auto-resolve if set by admin
+      if (!(u.subscription_type === "pro" || u.role === "admin")) {
+        u.subscription_status = resolveSubscriptionStatus(u);
+      }
+      return {
+        ...u,
+        avatar: u.avatar ? fixAvatar(req, u.avatar) : null,
+      };
+    });
 
     res.json(fixed);
   }),

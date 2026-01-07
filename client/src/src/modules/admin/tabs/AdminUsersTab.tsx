@@ -158,21 +158,21 @@ export default function AdminUsersTab({
 
                 <div className="flex gap-6 items-center">
                   <button
-                    onClick={() => openEditUser(u)}
-                    className="w-6 h-6 text-white hover:text-brand-orange"
-                    title="עריכה"
-                    type="button"
-                  >
-                    <Pencil size={20} />
-                  </button>
-
-                  <button
                     onClick={() => impersonateUser(u.id)}
                     className="w-6 h-6 text-white hover:text-brand-orange"
                     title="ייצוג"
                     type="button"
                   >
                     <UserCog size={20} />
+                  </button>
+
+                  <button
+                    onClick={() => openEditUser(u)}
+                    className="w-6 h-6 text-white hover:text-brand-orange"
+                    title="עריכה"
+                    type="button"
+                  >
+                    <Pencil size={20} />
                   </button>
 
                   <button

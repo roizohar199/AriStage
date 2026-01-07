@@ -10,6 +10,14 @@ export function emitRefreshOnMutation(
   res: Response,
   next: NextFunction
 ) {
+  console.log(
+    "[TEMP][REFRESH] emitRefreshOnMutation",
+    req.method,
+    req.path,
+    req.body,
+    "user:",
+    req.user
+  );
   const methodsToWatch = ["POST", "PUT", "PATCH", "DELETE"];
 
   // רק פעולות כתיבה
@@ -28,15 +36,30 @@ export function emitRefreshOnMutation(
   const originalUrl = req.originalUrl || req.path || "";
   let type: string;
 
-  if (originalUrl.includes("/api/songs") || originalUrl.startsWith("/api/songs")) {
+  if (
+    originalUrl.includes("/api/songs") ||
+    originalUrl.startsWith("/api/songs")
+  ) {
     type = "song";
-  } else if (originalUrl.includes("/api/lineups") || originalUrl.startsWith("/api/lineups")) {
+  } else if (
+    originalUrl.includes("/api/lineups") ||
+    originalUrl.startsWith("/api/lineups")
+  ) {
     type = "lineup";
-  } else if (originalUrl.includes("/api/lineup-songs") || originalUrl.startsWith("/api/lineup-songs")) {
+  } else if (
+    originalUrl.includes("/api/lineup-songs") ||
+    originalUrl.startsWith("/api/lineup-songs")
+  ) {
     type = "lineup-song";
-  } else if (originalUrl.includes("/api/users") || originalUrl.startsWith("/api/users")) {
+  } else if (
+    originalUrl.includes("/api/users") ||
+    originalUrl.startsWith("/api/users")
+  ) {
     type = "user";
-  } else if (originalUrl.includes("/api/files") || originalUrl.startsWith("/api/files")) {
+  } else if (
+    originalUrl.includes("/api/files") ||
+    originalUrl.startsWith("/api/files")
+  ) {
     type = "file";
   } else {
     type = "global";
@@ -57,4 +80,3 @@ export function emitRefreshOnMutation(
 
   next();
 }
-

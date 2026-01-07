@@ -62,7 +62,11 @@ export async function loginUser(email, password) {
     artist_role: user.artist_role || null,
   });
 
-  const subscription_status = resolveSubscriptionStatus(user);
+  let subscription_status = user.subscription_status;
+  // Admin is authoritative — do not auto-resolve if set by admin
+  if (!(user.subscription_type === "pro" || user.role === "admin")) {
+    subscription_status = resolveSubscriptionStatus(user);
+  }
 
   return {
     id: user.id,

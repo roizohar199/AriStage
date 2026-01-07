@@ -114,8 +114,12 @@ function mapListRowToDto(row: AdminUserListRow) {
     full_name: row.full_name ?? "",
     email: row.email,
     role: row.role,
-    created_at: toIsoOrNull(row.created_at),
+    subscription_type: row.subscription_type ?? null,
+    subscription_status: row.subscription_status ?? null,
+    subscription_started_at: toIsoOrNull(row.subscription_started_at),
+    subscription_expires_at: toIsoOrNull(row.subscription_expires_at),
     last_seen_at: toIsoOrNull(row.last_seen_at),
+    created_at: toIsoOrNull(row.created_at),
   };
 }
 
@@ -147,6 +151,8 @@ export const adminUsersController = {
   updateSubscription: asyncHandler(async (req: Request, res: Response) => {
     const params = req.params as unknown as AdminUserIdParams;
     const body = (req.body || {}) as UpdateSubscriptionBody;
+    console.log("[ADMIN SUB UPDATE] params:", params);
+    console.log("[ADMIN SUB UPDATE] body:", body);
 
     const targetUserId = parseUserIdParam(params.id);
 
@@ -205,16 +211,21 @@ export const adminUsersController = {
       }
     }
 
+    const payload = {
+      ...(body.subscription_type !== undefined
+        ? { subscription_type: body.subscription_type }
+        : {}),
+      ...(incomingStatus !== undefined
+        ? { subscription_status: incomingStatus }
+        : {}),
+      ...(incomingExpires !== undefined
+        ? { subscription_expires_at: incomingExpires }
+        : {}),
+    };
+    console.log("[ADMIN SUB PASS TO REPO]", payload);
     const affected = await adminUsersRepository.updateUserSubscription(
       targetUserId,
-      {
-        ...(incomingStatus !== undefined
-          ? { subscription_status: incomingStatus }
-          : {}),
-        ...(incomingExpires !== undefined
-          ? { subscription_expires_at: incomingExpires }
-          : {}),
-      }
+      payload
     );
 
     if (!affected) {

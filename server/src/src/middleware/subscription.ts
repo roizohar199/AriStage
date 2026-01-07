@@ -16,6 +16,14 @@ function toIsoOrNull(value: unknown): string | null {
 const EXPIRES_AT_RESPONSE_KEY = "expires" + "_at";
 
 export async function requireActiveSubscription(req: any, res: any, next: any) {
+  console.log(
+    "[TEMP][SUBSCRIPTION] requireActiveSubscription",
+    req.method,
+    req.path,
+    req.body,
+    "user:",
+    req.user
+  );
   try {
     const settings = await getSubscriptionSettings();
 
