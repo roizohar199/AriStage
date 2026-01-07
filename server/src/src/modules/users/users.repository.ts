@@ -164,6 +164,14 @@ export async function findUserById(id) {
   return rows[0];
 }
 
+// Best-effort activity stamp for admin "Last Seen".
+// Intentionally lightweight: single UPDATE by primary key.
+export async function touchUserLastSeen(userId: number) {
+  const id = Number(userId);
+  if (!Number.isFinite(id) || id <= 0) return;
+  await pool.query("UPDATE users SET last_seen_at = NOW() WHERE id = ?", [id]);
+}
+
 // ⭐ מי הזמין אותי → רשימת מארחים (רק אם ההזמנה אושרה)
 export async function findMyCollection(userId) {
   const [rows] = await pool.query(

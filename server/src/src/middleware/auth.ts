@@ -2,6 +2,7 @@ import { verifyToken } from "../modules/auth/token.service.js";
 import { AppError } from "../core/errors.js";
 import { env } from "../config/env.js";
 import { isKnownRole } from "../types/roles.js";
+import { touchUserLastSeen } from "../modules/users/users.repository.js";
 
 import type { NextFunction, Request, Response } from "express";
 
@@ -34,6 +35,9 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
       role: decoded.role,
       full_name: decoded.full_name || "",
     };
+
+    // Non-blocking: admin "Last Seen" tracking.
+    void touchUserLastSeen(req.user.id).catch(() => undefined);
 
     next();
   } catch (err: any) {

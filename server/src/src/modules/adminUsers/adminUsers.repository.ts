@@ -3,11 +3,10 @@ import { pool } from "../../database/pool.js";
 export type AdminUserListRow = {
   id: number;
   email: string;
-  name: string | null;
+  full_name: string | null;
   role: string;
-  createdAt: Date | string | null;
-  subscription_status: string | null;
-  subscription_expires_at: Date | string | null;
+  created_at: Date | string | null;
+  last_seen_at: Date | string | null;
 };
 
 export type AdminUserSubscriptionRow = {
@@ -26,7 +25,7 @@ async function listUsers(
 ): Promise<AdminUserListRow[]> {
   const values: any[] = [];
   let sql =
-    "SELECT id, email, full_name AS name, role, created_at AS createdAt, subscription_status, subscription_expires_at FROM users ORDER BY created_at DESC";
+    "SELECT id, email, full_name, role, created_at, last_seen_at FROM users ORDER BY created_at DESC";
 
   if (Number.isFinite(limit) && (limit as number) > 0) {
     sql += " LIMIT ?";
@@ -38,8 +37,34 @@ async function listUsers(
     }
   }
 
-  const [rows] = await pool.query(sql, values);
-  return rows as AdminUserListRow[];
+  try {
+    const [rows] = await pool.query(sql, values);
+    return rows as AdminUserListRow[];
+  } catch (err: any) {
+    // Backwards compatibility: if DB hasn't been migrated yet.
+    if (err?.code === "ER_BAD_FIELD_ERROR") {
+      const fallbackValues: any[] = [];
+      let fallbackSql =
+        "SELECT id, email, full_name, role, created_at FROM users ORDER BY created_at DESC";
+
+      if (Number.isFinite(limit) && (limit as number) > 0) {
+        fallbackSql += " LIMIT ?";
+        fallbackValues.push(limit);
+
+        if (Number.isFinite(offset) && (offset as number) >= 0) {
+          fallbackSql += " OFFSET ?";
+          fallbackValues.push(offset);
+        }
+      }
+
+      const [fallbackRows] = await pool.query(fallbackSql, fallbackValues);
+      return (fallbackRows as any[]).map((r) => ({
+        ...r,
+        last_seen_at: null,
+      })) as AdminUserListRow[];
+    }
+    throw err;
+  }
 }
 
 async function getUserSubscription(

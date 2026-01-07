@@ -17,6 +17,7 @@ import { transporter } from "../../integrations/mail/transporter.js";
 import { env } from "../../config/env.js";
 import { logger } from "../../core/logger.js";
 import { resolveSubscriptionStatus } from "../subscriptions/resolveSubscriptionStatus.js";
+import { touchUserLastSeen } from "../users/users.repository.js";
 
 export const resetSafeResponse = {
   message: "אם המייל קיים — נשלח אליו קישור לאיפוס",
@@ -48,6 +49,9 @@ export async function loginUser(email, password) {
   if (!isMatch) {
     throw new AppError(401, "סיסמה שגויה");
   }
+
+  // Best-effort activity stamp (do not block login on DB issues).
+  void touchUserLastSeen(user.id).catch(() => undefined);
 
   const token = signToken({
     id: user.id,

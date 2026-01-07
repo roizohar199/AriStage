@@ -1,46 +1,32 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AlertCircle,
   BadgeCheck,
   ClipboardList,
-  Database,
   Files,
   Flag,
   Mail,
-  Pencil,
-  Shield,
   ToggleLeft,
   ToggleRight,
   Trash2,
-  UserCog,
   Users, // icon only
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Search from "@/modules/shared/components/Search";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
-import BaseModal from "@/modules/shared/components/BaseModal";
 import api from "@/modules/shared/lib/api.ts";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "@/modules/shared/components/ToastProvider";
-import CardSong from "@/modules/shared/components/cardsong";
-import BlockLineup from "@/modules/shared/components/blocklineup";
 import { normalizeSubscriptionType } from "@/modules/shared/hooks/useSubscription.ts";
 import AdminPayments from "../components/AdminPayments";
+import AdminUsersTab from "../tabs/AdminUsersTab";
 
 type AdminTab =
   | "users"
-  | "repos"
   | "subscriptions"
   | "payments"
   | "files"
-  | "invitations"
   | "logs"
   | "errors"
   | "featureFlags"
@@ -49,12 +35,10 @@ type AdminTab =
 
 const TABS: Array<{ key: AdminTab; label: string }> = [
   { key: "users", label: "משתמשים" },
-  { key: "repos", label: "מאגרים" },
   { key: "subscriptions", label: "מנויים" },
   { key: "payments", label: "תשלומים" },
   { key: "plans", label: "מסלולים" },
   { key: "files", label: "קבצים" },
-  { key: "invitations", label: "הזמנות" },
   { key: "logs", label: "לוגים" },
   { key: "errors", label: "תקלות" },
   { key: "featureFlags", label: "Feature Flags" },
@@ -110,10 +94,8 @@ function AdminStats({
 }: {
   stats: {
     users: number;
-    repos: number;
     activeSubscriptions: number;
     files: number;
-    pendingInvitations: number;
     openIssues: number;
   };
 }) {
@@ -124,14 +106,6 @@ function AdminStats({
         <div className="flex flex-col">
           <span className="text-xl font-bold">{stats.users}</span>
           <span className="text-sm text-neutral-300">משתמשים</span>
-        </div>
-      </div>
-
-      <div className="bg-neutral-800 rounded-2xl p-4 flex items-center gap-4">
-        <Database size={32} className="text-brand-orange shrink-0" />
-        <div className="flex flex-col">
-          <span className="text-xl font-bold">{stats.repos}</span>
-          <span className="text-sm text-neutral-300">מאגרים</span>
         </div>
       </div>
 
@@ -152,14 +126,6 @@ function AdminStats({
       </div>
 
       <div className="bg-neutral-800 rounded-2xl p-4 flex items-center gap-4">
-        <Mail size={32} className="text-brand-orange shrink-0" />
-        <div className="flex flex-col">
-          <span className="text-xl font-bold">{stats.pendingInvitations}</span>
-          <span className="text-sm text-neutral-300">הזמנות ממתינות</span>
-        </div>
-      </div>
-
-      <div className="bg-neutral-800 rounded-2xl p-4 flex items-center gap-4">
         <AlertCircle size={32} className="text-brand-orange shrink-0" />
         <div className="flex flex-col">
           <span className="text-xl font-bold">{stats.openIssues}</span>
@@ -170,14 +136,17 @@ function AdminStats({
   );
 }
 
-type AdminUser = {
+export type AdminUser = {
   id: number;
-  full_name?: string;
+  full_name: string | null;
   email: string;
   role: string;
-  subscription_type?: string;
-  // Optional subscription fields from backend; do not infer.
-  subscription_status?: string;
+  is_active: boolean;
+  is_connected?: boolean | null;
+  created_at: string;
+  last_seen_at?: string | null;
+  subscription_type?: string | null;
+  subscription_status?: string | null;
   subscription_started_at?: string | null;
   subscription_expires_at?: string | null;
 };
@@ -239,48 +208,6 @@ function toDateTimeLocalInput(raw?: string | null): string {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
-type Song = {
-  id: number;
-  title: string;
-  artist: string;
-  bpm: number;
-  key_sig: string;
-  duration_sec: number;
-  notes?: string;
-  owner_id?: number;
-  owner_name?: string;
-  owner_email?: string;
-};
-
-type Lineup = {
-  id: number;
-  title: string;
-  date?: string;
-  time?: string;
-  location?: string;
-  description?: string;
-  owner_id?: number;
-  created_by?: number;
-  owner_name?: string;
-  owner_email?: string;
-};
-
-type RepoSummary = {
-  ownerId: number;
-  ownerName: string;
-  ownerEmail?: string;
-  songsCount: number;
-  lineupsCount: number;
-};
-
-type ConnectedArtist = {
-  id: number;
-  full_name?: string;
-  email?: string;
-  artist_role?: string;
-  avatar?: string;
-};
-
 type FileRow = {
   id: number;
   name?: string;
@@ -327,8 +254,6 @@ type FeatureFlagRow = {
   enabled?: boolean;
 };
 
-type PrivateChart = { id: number; file_path: string };
-
 export default function AdminReal() {
   // Plans state
   const [plans, setPlans] = useState<any[]>([]);
@@ -372,11 +297,9 @@ export default function AdminReal() {
 
   const [searchByTab, setSearchByTab] = useState<Record<AdminTab, string>>({
     users: "",
-    repos: "",
     subscriptions: "",
     payments: "",
     files: "",
-    invitations: "",
     logs: "",
     errors: "",
     featureFlags: "",
@@ -432,9 +355,7 @@ export default function AdminReal() {
     const q = searchByTab.users.trim().toLowerCase();
     if (!q) return users;
     return users.filter((u) =>
-      `${u.full_name || ""} ${u.email} ${u.role} ${u.subscription_type || ""}`
-        .toLowerCase()
-        .includes(q)
+      `${u.full_name || ""} ${u.email} ${u.role}`.toLowerCase().includes(q)
     );
   }, [users, searchByTab.users]);
 
@@ -444,12 +365,7 @@ export default function AdminReal() {
   const [userForm, setUserForm] = useState({
     full_name: "",
     role: "user",
-    subscription_type: "trial",
   });
-  const [subscriptionTypeLocked, setSubscriptionTypeLocked] = useState(false);
-  const [subscriptionTypeOriginal, setSubscriptionTypeOriginal] = useState<
-    string | null
-  >(null);
 
   const [subscriptionEdits, setSubscriptionEdits] = useState<
     Record<number, SubscriptionEdit>
@@ -460,19 +376,10 @@ export default function AdminReal() {
 
   const openEditUser = (u: AdminUser) => {
     setEditingUserId(u.id);
-    const normalizedType = normalizeSubscriptionType(u.subscription_type);
-    const rawType = (u.subscription_type || "").toLowerCase();
-    const isIllegalType = !!rawType && rawType !== "trial" && rawType !== "pro";
-
     setUserForm({
       full_name: u.full_name || "",
       role: u.role,
-      subscription_type: normalizedType,
     });
-    setSubscriptionTypeLocked(isIllegalType);
-    setSubscriptionTypeOriginal(
-      isIllegalType ? u.subscription_type || null : null
-    );
     setUserModalOpen(true);
   };
 
@@ -485,12 +392,6 @@ export default function AdminReal() {
         full_name: userForm.full_name,
         role: userForm.role,
       });
-
-      if (!subscriptionTypeLocked) {
-        await api.put(`/admin/users/${editingUserId}/subscription`, {
-          subscription_type: userForm.subscription_type,
-        });
-      }
       setUserModalOpen(false);
       await reload();
     } catch (err: any) {
@@ -545,368 +446,6 @@ export default function AdminReal() {
     } catch (err: any) {
       localStorage.removeItem("ari_auth_lock");
       const msg = err?.response?.data?.message || "שגיאה בייצוג משתמש";
-      showToast(msg, "error");
-    }
-  };
-
-  // ------------------------
-  // Songs + Lineups (Repositories)
-  // ------------------------
-  const [songs, setSongs] = useState<Song[]>([]);
-  const [songsLoading, setSongsLoading] = useState(true);
-  const [lineups, setLineups] = useState<Lineup[]>([]);
-  const [lineupsLoading, setLineupsLoading] = useState(true);
-
-  const loadSongs = useCallback(async () => {
-    try {
-      setSongsLoading(true);
-      const { data } = await api.get("/songs", { skipErrorToast: true } as any);
-      setSongs(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Admin loadSongs failed", err);
-      setSongs([]);
-    } finally {
-      setSongsLoading(false);
-    }
-  }, []);
-
-  const loadLineups = useCallback(async () => {
-    try {
-      setLineupsLoading(true);
-      const { data } = await api.get("/lineups", {
-        skipErrorToast: true,
-      } as any);
-      setLineups(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Admin loadLineups failed", err);
-      setLineups([]);
-    } finally {
-      setLineupsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (selectedTab === "repos") {
-      loadSongs();
-      loadLineups();
-    }
-  }, [selectedTab, loadSongs, loadLineups]);
-
-  const repos = useMemo<RepoSummary[]>(() => {
-    const byOwner = new Map<number, RepoSummary>();
-
-    const ensure = (
-      ownerId: number,
-      ownerName: string,
-      ownerEmail?: string
-    ) => {
-      const existing = byOwner.get(ownerId);
-      if (existing) {
-        if (!existing.ownerEmail && ownerEmail)
-          existing.ownerEmail = ownerEmail;
-        if (!existing.ownerName && ownerName) existing.ownerName = ownerName;
-        return existing;
-      }
-      const created: RepoSummary = {
-        ownerId,
-        ownerName: ownerName || `user:${ownerId}`,
-        ownerEmail,
-        songsCount: 0,
-        lineupsCount: 0,
-      };
-      byOwner.set(ownerId, created);
-      return created;
-    };
-
-    songs.forEach((s) => {
-      const ownerId = Number(s.owner_id ?? 0);
-      if (!ownerId) return;
-      const rec = ensure(
-        ownerId,
-        s.owner_name || `user:${ownerId}`,
-        s.owner_email
-      );
-      rec.songsCount += 1;
-    });
-
-    lineups.forEach((l) => {
-      const ownerId = Number(l.owner_id ?? l.created_by ?? 0);
-      if (!ownerId) return;
-      const rec = ensure(
-        ownerId,
-        l.owner_name || `user:${ownerId}`,
-        l.owner_email
-      );
-      rec.lineupsCount += 1;
-    });
-
-    return Array.from(byOwner.values());
-  }, [songs, lineups]);
-
-  const filteredRepos = useMemo(() => {
-    const q = searchByTab.repos.trim().toLowerCase();
-    if (!q) return repos;
-    return repos.filter((r) =>
-      `${r.ownerName} ${r.ownerEmail || ""}`.toLowerCase().includes(q)
-    );
-  }, [repos, searchByTab.repos]);
-
-  // Repo manage modal
-  const [repoModalOpen, setRepoModalOpen] = useState(false);
-  const [repoOwnerId, setRepoOwnerId] = useState<number | null>(null);
-  const [chartsBySong, setChartsBySong] = useState<
-    Record<number, PrivateChart[]>
-  >({});
-  const chartsLoadAbortRef = useRef({ aborted: false });
-
-  const openRepoManage = (ownerId: number) => {
-    setRepoOwnerId(ownerId);
-    setRepoModalOpen(true);
-  };
-
-  const closeRepoManage = () => {
-    setRepoModalOpen(false);
-    setRepoOwnerId(null);
-    setChartsBySong({});
-  };
-
-  const repoSongs = useMemo(() => {
-    if (!repoOwnerId) return [];
-    return songs.filter((s) => Number(s.owner_id) === repoOwnerId);
-  }, [songs, repoOwnerId]);
-
-  const repoLineups = useMemo(() => {
-    if (!repoOwnerId) return [];
-    return lineups.filter(
-      (l) => Number(l.owner_id ?? l.created_by) === repoOwnerId
-    );
-  }, [lineups, repoOwnerId]);
-
-  const loadRepoCharts = useCallback(async () => {
-    if (!repoOwnerId) return;
-
-    chartsLoadAbortRef.current.aborted = false;
-    const localAbort = chartsLoadAbortRef.current;
-
-    try {
-      const results = await Promise.all(
-        repoSongs.map(async (s) => {
-          try {
-            const { data } = await api.get(`/songs/${s.id}/private-charts`, {
-              skipErrorToast: true,
-            } as any);
-            const charts = Array.isArray(data?.charts)
-              ? data.charts
-              : Array.isArray(data)
-              ? data
-              : [];
-            return { songId: s.id, charts };
-          } catch {
-            return { songId: s.id, charts: [] };
-          }
-        })
-      );
-
-      if (localAbort.aborted) return;
-      setChartsBySong((prev) => {
-        const next = { ...prev };
-        results.forEach(({ songId, charts }) => {
-          next[songId] = charts;
-        });
-        return next;
-      });
-    } catch (err) {
-      console.error("Admin loadRepoCharts failed", err);
-    }
-  }, [repoOwnerId, repoSongs]);
-
-  useEffect(() => {
-    if (!repoModalOpen) return;
-    loadRepoCharts();
-    return () => {
-      chartsLoadAbortRef.current.aborted = true;
-    };
-  }, [repoModalOpen, loadRepoCharts]);
-
-  // Song edit
-  const [songModalOpen, setSongModalOpen] = useState(false);
-  const [editingSong, setEditingSong] = useState<Song | null>(null);
-  const [songForm, setSongForm] = useState({
-    title: "",
-    artist: "",
-    bpm: "",
-    key_sig: "C Major",
-    duration_sec: "00:00",
-    notes: "",
-  });
-
-  const openSongEdit = (song: Song) => {
-    setEditingSong(song);
-    setSongForm({
-      title: song.title || "",
-      artist: song.artist || "",
-      bpm: String(song.bpm ?? ""),
-      key_sig: song.key_sig || "C Major",
-      duration_sec: String(song.duration_sec ?? "00:00"),
-      notes: song.notes || "",
-    });
-    setSongModalOpen(true);
-  };
-
-  const saveSong = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingSong) return;
-    try {
-      await api.put(`/songs/${editingSong.id}`, songForm);
-      setSongModalOpen(false);
-      setEditingSong(null);
-      await reload();
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || "שגיאה בעריכת השיר";
-      showToast(msg, "error");
-    }
-  };
-
-  const deleteSong = async (songId: number) => {
-    const ok = await confirm({ title: "מחיקה", message: "בטוח למחוק שיר זה?" });
-    if (!ok) return;
-    try {
-      await api.delete(`/songs/${songId}`);
-      await reload();
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || "שגיאה במחיקת השיר";
-      showToast(msg, "error");
-    }
-  };
-
-  // Lineup edit
-  const [lineupModalOpen, setLineupModalOpen] = useState(false);
-  const [editingLineup, setEditingLineup] = useState<Lineup | null>(null);
-  const [lineupForm, setLineupForm] = useState({
-    title: "",
-    date: "",
-    time: "",
-    location: "",
-    description: "",
-  });
-
-  const openLineupEdit = (lineup: Lineup) => {
-    setEditingLineup(lineup);
-    setLineupForm({
-      title: lineup.title || "",
-      date: lineup.date ? String(lineup.date).slice(0, 10) : "",
-      time: lineup.time ? String(lineup.time).slice(0, 5) : "",
-      location: lineup.location || "",
-      description: lineup.description || "",
-    });
-    setLineupModalOpen(true);
-  };
-
-  const saveLineup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingLineup) return;
-    try {
-      await api.put(`/lineups/${editingLineup.id}`, lineupForm);
-      setLineupModalOpen(false);
-      setEditingLineup(null);
-      await reload();
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || "שגיאה בעריכת הליינאפ";
-      showToast(msg, "error");
-    }
-  };
-
-  const deleteLineup = async (lineupId: number) => {
-    const ok = await confirm({
-      title: "מחיקה",
-      message: "בטוח למחוק ליינאפ זה?",
-    });
-    if (!ok) return;
-    try {
-      await api.delete(`/lineups/${lineupId}`);
-      await reload();
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || "שגיאה במחיקת הליינאפ";
-      showToast(msg, "error");
-    }
-  };
-
-  // ------------------------
-  // Invitations
-  // ------------------------
-  const [invitedArtists, setInvitedArtists] = useState<ConnectedArtist[]>([]);
-  const [invitedArtistsLoading, setInvitedArtistsLoading] = useState(true);
-
-  const loadInvitations = useCallback(async () => {
-    try {
-      setInvitedArtistsLoading(true);
-      const { data } = await api.get("/users/connected-to-me", {
-        skipErrorToast: true,
-      } as any);
-      setInvitedArtists(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Admin loadInvitations failed", err);
-      setInvitedArtists([]);
-    } finally {
-      setInvitedArtistsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (selectedTab === "invitations") {
-      loadInvitations();
-    }
-  }, [selectedTab, loadInvitations]);
-
-  const filteredInvitedArtists = useMemo(() => {
-    const q = searchByTab.invitations.trim().toLowerCase();
-    if (!q) return invitedArtists;
-    return invitedArtists.filter((a) =>
-      `${a.full_name || ""} ${a.email || ""} ${a.artist_role || ""}`
-        .toLowerCase()
-        .includes(q)
-    );
-  }, [invitedArtists, searchByTab.invitations]);
-
-  const [inviteModalOpen, setInviteModalOpen] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteLoading, setInviteLoading] = useState(false);
-
-  const sendInvitation = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inviteEmail || !inviteEmail.includes("@")) {
-      showToast("נא להזין כתובת אימייל תקינה", "error");
-      return;
-    }
-
-    try {
-      setInviteLoading(true);
-      await api.post("/users/send-invitation", { email: inviteEmail });
-      setInviteEmail("");
-      setInviteModalOpen(false);
-      await reload();
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || "שגיאה בשליחת ההזמנה";
-      showToast(msg, "error");
-    } finally {
-      setInviteLoading(false);
-    }
-  };
-
-  const uninviteArtist = async (artistId: number, artistName?: string) => {
-    const ok = await confirm({
-      title: "ביטול שיתוף",
-      message: `בטוח שאתה רוצה לבטל את השיתוף עם ${
-        artistName || "האמן"
-      }? האמן לא יוכל עוד לצפות בליינאפים והשירים שלך.`,
-    });
-    if (!ok) return;
-
-    try {
-      await api.post("/users/uninvite-artist", { artist_id: artistId });
-      await reload();
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || "שגיאה בביטול השיתוף";
       showToast(msg, "error");
     }
   };
@@ -1265,19 +804,17 @@ export default function AdminReal() {
   const stats = useMemo(() => {
     return {
       users: users.length,
-      repos: repos.length,
       activeSubscriptions: users.filter(
         (u) => (u.subscription_type || "trial") !== "trial"
       ).length,
       files: files.length,
-      pendingInvitations: 0, // TODO: אין endpoint מפורש ל-count גלובלי
       openIssues: errors.filter(
         (e) =>
           (e.status || (e.resolved ? "resolved" : "open")) === "open" ||
           e.resolved === false
       ).length,
     };
-  }, [users, repos, files, errors]);
+  }, [users, files, errors]);
 
   // ------------------------
   // reload() per spec
@@ -1285,16 +822,6 @@ export default function AdminReal() {
   const reload = useCallback(async () => {
     if (selectedTab === "users" || selectedTab === "subscriptions") {
       await loadUsers();
-      return;
-    }
-
-    if (selectedTab === "repos") {
-      await Promise.all([loadSongs(), loadLineups()]);
-      return;
-    }
-
-    if (selectedTab === "invitations") {
-      await loadInvitations();
       return;
     }
 
@@ -1325,9 +852,6 @@ export default function AdminReal() {
   }, [
     selectedTab,
     loadUsers,
-    loadSongs,
-    loadLineups,
-    loadInvitations,
     loadFiles,
     loadLogs,
     loadErrors,
@@ -1371,168 +895,24 @@ export default function AdminReal() {
             setSearchValue(e.target.value)
           }
         />
-
-        {selectedTab === "invitations" && (
-          <DesignActionButton onClick={() => setInviteModalOpen(true)}>
-            <Mail size={18} />
-            הזמן אמן
-          </DesignActionButton>
-        )}
       </div>
 
       {selectedTab === "users" ? (
-        <div className="space-y-3">
-          {usersLoading ? (
-            <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-6 text-center text-neutral-400">
-              טוען משתמשים...
-            </div>
-          ) : usersUnsupported ? (
-            <div className="bg-neutral-800 rounded-2xl p-6 text-center">
-              <Users size={32} className="mx-auto mb-3 text-neutral-600" />
-              <p className="text-neutral-400 text-sm">Admin endpoint missing</p>
-              <p className="text-neutral-500 text-xs mt-1">GET /admin/users</p>
-            </div>
-          ) : filteredUsers.length === 0 ? (
-            <div className="bg-neutral-800 rounded-2xl p-6 text-center">
-              <Users size={32} className="mx-auto mb-3 text-neutral-600" />
-              <p className="text-neutral-400 text-sm">אין משתמשים להצגה</p>
-            </div>
-          ) : (
-            filteredUsers.map((u) => (
-              <CardContainer key={u.id}>
-                <div className="flex-1 min-w-0 text-right">
-                  <h3 className="text-lg font-bold text-white mb-1">
-                    {u.full_name || "משתמש ללא שם"}
-                  </h3>
-
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    <SmallBadge icon={<Mail size={14} />}>{u.email}</SmallBadge>
-                    <SmallBadge icon={<Shield size={14} />} variant="brand">
-                      {u.role}
-                    </SmallBadge>
-                    <SmallBadge icon={<BadgeCheck size={14} />} variant="brand">
-                      {u.subscription_type || "trial"}
-                    </SmallBadge>
-                  </div>
-                </div>
-
-                <div className="flex gap-6 items-center">
-                  <button
-                    onClick={() => openEditUser(u)}
-                    className="w-6 h-6 text-white hover:text-brand-orange"
-                    title="עריכה"
-                    type="button"
-                  >
-                    <Pencil size={20} />
-                  </button>
-
-                  <button
-                    onClick={() => impersonateUser(u.id)}
-                    className="w-6 h-6 text-white hover:text-brand-orange"
-                    title="ייצוג"
-                    type="button"
-                  >
-                    <UserCog size={20} />
-                  </button>
-
-                  <button
-                    onClick={() => deleteUser(u.id)}
-                    className="w-6 h-6 text-red-500 hover:text-red-400"
-                    title="מחיקה"
-                    type="button"
-                  >
-                    <Trash2 size={20} />
-                  </button>
-                </div>
-              </CardContainer>
-            ))
-          )}
-        </div>
-      ) : selectedTab === "repos" ? (
-        <div className="space-y-3">
-          {songsLoading || lineupsLoading ? (
-            <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-6 text-center text-neutral-400">
-              טוען מאגרים...
-            </div>
-          ) : filteredRepos.length === 0 ? (
-            <div className="bg-neutral-800 rounded-2xl p-6 text-center">
-              <Database size={32} className="mx-auto mb-3 text-neutral-600" />
-              <p className="text-neutral-400 text-sm">אין מאגרים להצגה</p>
-              <p className="text-neutral-500 text-xs mt-1">
-                נגזר מ-GET /songs ו-GET /lineups
-              </p>
-            </div>
-          ) : (
-            filteredRepos.map((r) => (
-              <CardContainer key={r.ownerId}>
-                <div className="flex-1 min-w-0 text-right">
-                  <h3 className="text-lg font-bold text-white mb-1">
-                    {r.ownerName}
-                  </h3>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {r.ownerEmail && (
-                      <SmallBadge icon={<Mail size={14} />}>
-                        {r.ownerEmail}
-                      </SmallBadge>
-                    )}
-                    <SmallBadge icon={<BadgeCheck size={14} />} variant="brand">
-                      {r.songsCount} שירים
-                    </SmallBadge>
-                    <SmallBadge icon={<BadgeCheck size={14} />} variant="brand">
-                      {r.lineupsCount} ליינאפים
-                    </SmallBadge>
-                  </div>
-                </div>
-
-                <div className="flex gap-6 items-center">
-                  <button
-                    onClick={() => openRepoManage(r.ownerId)}
-                    className="w-6 h-6 text-white hover:text-brand-orange"
-                    title="ניהול"
-                    type="button"
-                  >
-                    <Pencil size={20} />
-                  </button>
-
-                  <button
-                    onClick={async () => {
-                      const ok = await confirm({
-                        title: "השבתה",
-                        message: "TODO: אין endpoint קיים להשבתה/הפעלה של מאגר",
-                      });
-                      if (!ok) return;
-                      showToast(
-                        "TODO: אין endpoint קיים להשבתה/הפעלה של מאגר",
-                        "info"
-                      );
-                    }}
-                    className="w-6 h-6 text-white hover:text-brand-orange"
-                    title="השבת"
-                    type="button"
-                  >
-                    <ToggleLeft size={22} />
-                  </button>
-
-                  <button
-                    onClick={async () => {
-                      const ok = await confirm({
-                        title: "מחיקה",
-                        message: "TODO: אין endpoint קיים למחיקת מאגר",
-                      });
-                      if (!ok) return;
-                      showToast("TODO: אין endpoint קיים למחיקת מאגר", "info");
-                    }}
-                    className="w-6 h-6 text-red-500 hover:text-red-400"
-                    title="מחיקה"
-                    type="button"
-                  >
-                    <Trash2 size={20} />
-                  </button>
-                </div>
-              </CardContainer>
-            ))
-          )}
-        </div>
+        <AdminUsersTab
+          usersLoading={usersLoading}
+          usersUnsupported={usersUnsupported}
+          filteredUsers={filteredUsers}
+          openEditUser={openEditUser}
+          impersonateUser={impersonateUser}
+          deleteUser={deleteUser}
+          userModalOpen={userModalOpen}
+          setUserModalOpen={setUserModalOpen}
+          userForm={userForm}
+          setUserForm={setUserForm}
+          saveUser={saveUser}
+          CardContainer={CardContainer}
+          SmallBadge={SmallBadge}
+        />
       ) : selectedTab === "subscriptions" ? (
         <div className="space-y-3">
           {usersLoading ? (
@@ -1948,58 +1328,6 @@ export default function AdminReal() {
                     onClick={() => deleteFile(f.id)}
                     className="w-6 h-6 text-red-500 hover:text-red-400"
                     title="מחיקה"
-                    type="button"
-                  >
-                    <Trash2 size={20} />
-                  </button>
-                </div>
-              </CardContainer>
-            ))
-          )}
-        </div>
-      ) : selectedTab === "invitations" ? (
-        <div className="space-y-3">
-          {invitedArtistsLoading ? (
-            <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-6 text-center text-neutral-400">
-              טוען הזמנות...
-            </div>
-          ) : filteredInvitedArtists.length === 0 ? (
-            <div className="bg-neutral-800 rounded-2xl p-6 text-center">
-              <Mail size={32} className="mx-auto mb-3 text-neutral-600" />
-              <p className="text-neutral-400 text-sm">אין הזמנות להצגה</p>
-              <p className="text-neutral-500 text-xs mt-1">
-                GET /users/connected-to-me
-              </p>
-            </div>
-          ) : (
-            filteredInvitedArtists.map((a) => (
-              <CardContainer key={a.id}>
-                <div className="flex-1 min-w-0 text-right">
-                  <h3 className="text-lg font-bold text-white mb-1">
-                    {a.full_name || "אמן ללא שם"}
-                  </h3>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {a.email && (
-                      <SmallBadge icon={<Mail size={14} />}>
-                        {a.email}
-                      </SmallBadge>
-                    )}
-                    {a.artist_role && (
-                      <SmallBadge
-                        icon={<BadgeCheck size={14} />}
-                        variant="brand"
-                      >
-                        {a.artist_role}
-                      </SmallBadge>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex gap-6 flex-row-reverse items-center">
-                  <button
-                    onClick={() => uninviteArtist(a.id, a.full_name)}
-                    className="w-6 h-6 text-red-500 hover:text-red-400"
-                    title="ביטול שיתוף"
                     type="button"
                   >
                     <Trash2 size={20} />
@@ -2568,291 +1896,6 @@ export default function AdminReal() {
           </div>
         </div>
       )}
-
-      {/* User modal */}
-      <BaseModal
-        open={userModalOpen}
-        onClose={() => setUserModalOpen(false)}
-        title="עריכת משתמש"
-        maxWidth="max-w-md"
-      >
-        <form onSubmit={saveUser} className="flex flex-col gap-4">
-          <h2 className="text-xl font-bold">עריכת משתמש</h2>
-
-          <input
-            value={userForm.full_name}
-            onChange={(e) =>
-              setUserForm((p) => ({ ...p, full_name: e.target.value }))
-            }
-            placeholder="שם"
-            className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
-          />
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex flex-col gap-2">
-              <label className="text-xs text-neutral-300 font-bold">role</label>
-              <select
-                value={userForm.role}
-                onChange={(e) =>
-                  setUserForm((p) => ({ ...p, role: e.target.value }))
-                }
-                className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
-              >
-                <option value="user">user</option>
-                <option value="manager">manager</option>
-                <option value="admin">admin</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-xs text-neutral-300 font-bold">
-                subscription
-              </label>
-              <select
-                value={userForm.subscription_type}
-                onChange={(e) =>
-                  setUserForm((p) => ({
-                    ...p,
-                    subscription_type: e.target.value,
-                  }))
-                }
-                disabled={subscriptionTypeLocked}
-                className="w-full bg-neutral-800 p-2 rounded-2xl text-sm disabled:opacity-60"
-              >
-                <option value="trial">trial</option>
-                <option value="pro">pro</option>
-              </select>
-              {subscriptionTypeLocked && subscriptionTypeOriginal && (
-                <p className="text-[11px] text-red-400 mt-1">
-                  ערך מנוי לא חוקי מהשרת ("{subscriptionTypeOriginal}")
-                   a0 a0 a0מוצג כ‑trial לקריאה בלבד. אי אפשר לערוך מפה.
-                </p>
-              )}
-            </div>
-          </div>
-
-          <DesignActionButton type="submit">שמור</DesignActionButton>
-        </form>
-      </BaseModal>
-
-      {/* Repo management modal */}
-      <BaseModal
-        open={repoModalOpen}
-        onClose={closeRepoManage}
-        title="ניהול מאגר"
-        maxWidth="max-w-3xl"
-      >
-        <div className="flex flex-col gap-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold">ניהול מאגר</h2>
-            <button
-              onClick={() => reload()}
-              className="text-brand-orange font-bold"
-              type="button"
-            ></button>
-          </div>
-
-          <section className="space-y-3">
-            <h3 className="text-lg font-bold">שירים</h3>
-            {repoSongs.length === 0 ? (
-              <div className="bg-neutral-800 rounded-2xl p-6 text-center">
-                <p className="text-neutral-400 text-sm">אין שירים במאגר</p>
-              </div>
-            ) : (
-              repoSongs.map((s, idx) => (
-                <CardSong
-                  key={s.id}
-                  song={{ ...s, is_owner: true }}
-                  index={idx}
-                  safeKey={(k: unknown) => String(k || "").trim() || "-"}
-                  safeDuration={(d: unknown) => String(d ?? "-")}
-                  onEdit={() => openSongEdit(s)}
-                  onRemove={() => deleteSong(s.id)}
-                  chartsComponent={
-                    <div className="mt-2">
-                      <SmallBadge icon={<Files size={14} />}>
-                        צ'ארטים פרטיים: {(chartsBySong[s.id] || []).length}
-                      </SmallBadge>
-                    </div>
-                  }
-                />
-              ))
-            )}
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-lg font-bold">ליינאפים</h3>
-            {repoLineups.length === 0 ? (
-              <div className="bg-neutral-800 rounded-2xl p-6 text-center">
-                <p className="text-neutral-400 text-sm">אין ליינאפים במאגר</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {repoLineups.map((l, idx) => (
-                  <BlockLineup
-                    key={l.id}
-                    lineup={{ ...l, is_owner: true }}
-                    index={idx}
-                    onEdit={() => openLineupEdit(l)}
-                    onDelete={() => deleteLineup(l.id)}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
-      </BaseModal>
-
-      {/* Invite modal */}
-      <BaseModal
-        open={inviteModalOpen}
-        onClose={() => {
-          setInviteModalOpen(false);
-          setInviteEmail("");
-        }}
-        title="הזמן אמן"
-        maxWidth="max-w-md"
-      >
-        <h2 className="text-xl font-bold mb-4 text-center">הזמן אמן</h2>
-        <p className="text-neutral-400 text-sm mb-4 text-center">
-          הזן את כתובת האימייל של האמן.
-        </p>
-        <form onSubmit={sendInvitation} className="flex flex-col gap-3">
-          <input
-            value={inviteEmail}
-            onChange={(e) => setInviteEmail(e.target.value)}
-            placeholder="אימייל"
-            className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
-          />
-          <DesignActionButton type="submit" disabled={inviteLoading}>
-            {inviteLoading ? "שולח..." : "שלח הזמנה"}
-          </DesignActionButton>
-        </form>
-      </BaseModal>
-
-      {/* Song edit modal */}
-      <BaseModal
-        open={songModalOpen}
-        onClose={() => {
-          setSongModalOpen(false);
-          setEditingSong(null);
-        }}
-        title="עריכת שיר"
-        maxWidth="max-w-md"
-      >
-        <form onSubmit={saveSong} className="flex flex-col gap-4">
-          <h2 className="text-xl font-bold">עריכת שיר</h2>
-          <input
-            value={songForm.title}
-            onChange={(e) =>
-              setSongForm((p) => ({ ...p, title: e.target.value }))
-            }
-            placeholder="שם השיר"
-            className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
-          />
-          <input
-            value={songForm.artist}
-            onChange={(e) =>
-              setSongForm((p) => ({ ...p, artist: e.target.value }))
-            }
-            placeholder="אמן"
-            className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <input
-              value={songForm.bpm}
-              onChange={(e) =>
-                setSongForm((p) => ({ ...p, bpm: e.target.value }))
-              }
-              placeholder="BPM"
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
-            />
-            <input
-              value={songForm.key_sig}
-              onChange={(e) =>
-                setSongForm((p) => ({ ...p, key_sig: e.target.value }))
-              }
-              placeholder="Key"
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
-            />
-          </div>
-          <input
-            value={songForm.duration_sec}
-            onChange={(e) =>
-              setSongForm((p) => ({ ...p, duration_sec: e.target.value }))
-            }
-            placeholder="Duration"
-            className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
-          />
-          <input
-            value={songForm.notes}
-            onChange={(e) =>
-              setSongForm((p) => ({ ...p, notes: e.target.value }))
-            }
-            placeholder="Notes"
-            className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
-          />
-          <DesignActionButton type="submit">שמור</DesignActionButton>
-        </form>
-      </BaseModal>
-
-      {/* Lineup edit modal */}
-      <BaseModal
-        open={lineupModalOpen}
-        onClose={() => {
-          setLineupModalOpen(false);
-          setEditingLineup(null);
-        }}
-        title="עריכת ליינאפ"
-        maxWidth="max-w-md"
-      >
-        <form onSubmit={saveLineup} className="flex flex-col gap-4">
-          <h2 className="text-xl font-bold">עריכת ליינאפ</h2>
-          <input
-            value={lineupForm.title}
-            onChange={(e) =>
-              setLineupForm((p) => ({ ...p, title: e.target.value }))
-            }
-            placeholder="כותרת"
-            className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <input
-              value={lineupForm.date}
-              onChange={(e) =>
-                setLineupForm((p) => ({ ...p, date: e.target.value }))
-              }
-              type="date"
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
-            />
-            <input
-              value={lineupForm.time}
-              onChange={(e) =>
-                setLineupForm((p) => ({ ...p, time: e.target.value }))
-              }
-              type="time"
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
-            />
-          </div>
-          <input
-            value={lineupForm.location}
-            onChange={(e) =>
-              setLineupForm((p) => ({ ...p, location: e.target.value }))
-            }
-            placeholder="מיקום"
-            className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
-          />
-          <input
-            value={lineupForm.description}
-            onChange={(e) =>
-              setLineupForm((p) => ({ ...p, description: e.target.value }))
-            }
-            placeholder="תיאור"
-            className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
-          />
-          <DesignActionButton type="submit">שמור</DesignActionButton>
-        </form>
-      </BaseModal>
     </div>
   );
 }

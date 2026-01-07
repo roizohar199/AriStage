@@ -111,12 +111,11 @@ function normalizeStatus(value: unknown): string | null | undefined {
 function mapListRowToDto(row: AdminUserListRow) {
   return {
     id: Number(row.id),
+    full_name: row.full_name ?? "",
     email: row.email,
-    name: row.name ?? null,
     role: row.role,
-    createdAt: toIsoOrNull(row.createdAt),
-    subscription_status: row.subscription_status ?? null,
-    subscription_expires_at: toIsoOrNull(row.subscription_expires_at),
+    created_at: toIsoOrNull(row.created_at),
+    last_seen_at: toIsoOrNull(row.last_seen_at),
   };
 }
 
