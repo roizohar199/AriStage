@@ -27,5 +27,6 @@ router.post("/:id/share", lineupsController.generateShare);
 router.delete("/:id/share", lineupsController.disableShare);
 
 router.post("/:id/download-charts", lineupsController.downloadCharts);
+router.post("/:id/download-lyrics", lineupsController.downloadLyrics);
 
 export const lineupsRouter = router;

@@ -35,6 +35,7 @@ import CreateLineup from "../../shared/components/Createlineup";
 import Search from "../../shared/components/Search";
 import Charts from "../../shared/components/Charts";
 import CardSong from "../../shared/components/cardsong";
+import SongLyrics from "../../shared/components/SongLyrics";
 import BlockLineup from "../../shared/components/blocklineup";
 import LineupDetails from "../../lineups/pages/LineupDetails.tsx";
 import api from "@/modules/shared/lib/api.js";
@@ -203,7 +204,7 @@ function MyContent(): JSX.Element {
     owner_email?: string;
   }
   const [privateCharts, setPrivateCharts] = useState<Record<number, Chart[]>>(
-    {}
+    {},
   );
   const [songs, setSongs] = useState<Song[]>([]);
   const [search, setSearch] = useState("");
@@ -375,7 +376,7 @@ function MyContent(): JSX.Element {
         api
           .get(`/songs/${songId}`, { skipErrorToast: true })
           .then(({ data }) =>
-            setSongs((prev) => prev.map((s) => (s.id === songId ? data : s)))
+            setSongs((prev) => prev.map((s) => (s.id === songId ? data : s))),
           )
           .catch(() => load());
       } else {
@@ -389,7 +390,10 @@ function MyContent(): JSX.Element {
       api
         .get(`/songs/${songId}/private-charts`)
         .then(({ data }) =>
-          setPrivateCharts((prev) => ({ ...prev, [songId]: data.charts || [] }))
+          setPrivateCharts((prev) => ({
+            ...prev,
+            [songId]: data.charts || [],
+          })),
         )
         .catch(() => console.error("שגיאה בטעינת צ'ארטים"));
     });
@@ -397,12 +401,15 @@ function MyContent(): JSX.Element {
       api
         .get(`/songs/${songId}/private-charts`)
         .then(({ data }) =>
-          setPrivateCharts((prev) => ({ ...prev, [songId]: data.charts || [] }))
+          setPrivateCharts((prev) => ({
+            ...prev,
+            [songId]: data.charts || [],
+          })),
         )
         .catch(() => console.error("שגיאה בטעינת צ'ארטים"));
     });
     const handleDataRefresh = (
-      event: CustomEvent<{ type: string; action: string }>
+      event: CustomEvent<{ type: string; action: string }>,
     ) => {
       const { type } = event.detail || {};
       if (type === "song") {
@@ -490,7 +497,7 @@ function MyContent(): JSX.Element {
       window.dispatchEvent(
         new CustomEvent("data-refresh", {
           detail: { type: "song", action: editingId ? "updated" : "created" },
-        })
+        }),
       );
     } catch (err) {
       console.error("שגיאה בשמירה:", err);
@@ -507,7 +514,7 @@ function MyContent(): JSX.Element {
     window.dispatchEvent(
       new CustomEvent("data-refresh", {
         detail: { type: "song", action: "deleted" },
-      })
+      }),
     );
   };
   const edit = (song: Song) => {
@@ -596,7 +603,7 @@ function MyContent(): JSX.Element {
 
       if (lineup) {
         setLineups((prev) =>
-          prev.map((l) => (l.id === lineup.id ? lineup : l))
+          prev.map((l) => (l.id === lineup.id ? lineup : l)),
         );
       } else {
         api.get(`/lineups/${lineupId}`).then(({ data }) => {
@@ -614,8 +621,8 @@ function MyContent(): JSX.Element {
         prev.map((l) =>
           l.id === lineupId
             ? { ...l, songs_count: (l.songs_count || 0) + 1 }
-            : l
-        )
+            : l,
+        ),
       );
     });
 
@@ -624,8 +631,8 @@ function MyContent(): JSX.Element {
         prev.map((l) =>
           l.id === lineupId
             ? { ...l, songs_count: Math.max((l.songs_count || 1) - 1, 0) }
-            : l
-        )
+            : l,
+        ),
       );
     });
 
@@ -720,7 +727,7 @@ function MyContent(): JSX.Element {
       l.title?.toLowerCase().includes(lineupSearch.toLowerCase()) ||
       l.location?.toLowerCase().includes(lineupSearch.toLowerCase()) ||
       l.date?.toLowerCase().includes(lineupSearch.toLowerCase()) ||
-      l.description?.toLowerCase().includes(lineupSearch.toLowerCase())
+      l.description?.toLowerCase().includes(lineupSearch.toLowerCase()),
   );
 
   // --- רנדר ---
@@ -854,6 +861,16 @@ function MyContent(): JSX.Element {
                     onConfirm={confirm}
                   />
                 }
+                lyricsComponent={
+                  <SongLyrics
+                    songId={s.id}
+                    songTitle={s.title}
+                    lyricsText={s.lyrics_text}
+                    canEdit={!!s.is_owner}
+                    onConfirm={confirm}
+                    onChanged={load}
+                  />
+                }
               />
             ))}
           </div>
@@ -897,7 +914,7 @@ function MyContent(): JSX.Element {
                       type: "song",
                       action: editId ? "updated" : "created",
                     },
-                  })
+                  }),
                 );
               } catch (err) {
                 console.error("שגיאה בשמירה:", err);
@@ -1099,7 +1116,7 @@ function MyContent(): JSX.Element {
                           .includes(sharedSearch.toLowerCase()) ||
                         artist.artist_role
                           ?.toLowerCase()
-                          .includes(sharedSearch.toLowerCase())
+                          .includes(sharedSearch.toLowerCase()),
                     )
                     .map((artist) => (
                       <ArtistCard

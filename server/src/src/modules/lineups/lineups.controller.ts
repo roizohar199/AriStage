@@ -13,6 +13,7 @@ import {
   deleteLineup,
 } from "./lineups.service.js";
 import { emitToUserAndHost, emitToUserUpdates } from "../../core/socket.js";
+import { listLineupSongsForLyricsExport } from "../lineupSongs/lineupSongs.repository.js";
 
 export const lineupsController = {
   public: asyncHandler(async (req, res) => {
@@ -62,8 +63,8 @@ export const lineupsController = {
     const hostIdsArray: number[] = Array.isArray(hostIds)
       ? hostIds
       : hostIds
-      ? [hostIds]
-      : [];
+        ? [hostIds]
+        : [];
 
     if (hostIdsArray.length === 0 || !hostIdsArray.includes(targetUserId)) {
       return res
@@ -145,7 +146,7 @@ export const lineupsController = {
           global.io,
           lineup.created_by,
           "lineup:updated",
-          { lineup, lineupId, userId: req.user.id }
+          { lineup, lineupId, userId: req.user.id },
         );
       }
 
@@ -338,13 +339,170 @@ export const lineupsController = {
       res.contentType("application/pdf");
       res.setHeader(
         "Content-Disposition",
-        'attachment; filename="lineup-charts.pdf"'
+        'attachment; filename="lineup-charts.pdf"',
       );
       res.send(pdfBuffer);
     } catch (err) {
       console.error("שגיאה ביצירת PDF:", err);
       if (browser) {
         await browser.close();
+      }
+      res.status(500).json({ message: "שגיאה ביצירת ה-PDF" });
+    }
+  }),
+
+  downloadLyrics: asyncHandler(async (req, res) => {
+    const puppeteer = await import("puppeteer");
+
+    const lineupId = parseInt(req.params.id);
+    if (isNaN(lineupId)) {
+      return res.status(400).json({ message: "ID ליינאפ לא תקין" });
+    }
+
+    // enforce access (owner or invited guest)
+    const lineup = await getLineupById(lineupId, req.user);
+
+    let rows: any[];
+    try {
+      rows = (await listLineupSongsForLyricsExport(lineupId)) as any[];
+    } catch (error: any) {
+      return res
+        .status(400)
+        .json({ message: error?.message || "שגיאה בטעינת מילים" });
+    }
+
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ message: "לא נמצאו שירים בליינאפ" });
+    }
+
+    const esc = (s: string) =>
+      s
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+
+    const title = String(lineup?.title || "Lineup");
+    let htmlContent = `
+      <!DOCTYPE html>
+      <html dir="rtl" lang="he">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${esc(title)} - Lyrics</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body {
+            font-family: Arial, sans-serif;
+            direction: rtl;
+            line-height: 1.6;
+            background: white;
+            padding: 20px;
+            color: #111;
+          }
+          .header {
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #eee;
+          }
+          .header-title {
+            font-size: 22px;
+            font-weight: bold;
+          }
+          .song-container {
+            page-break-after: always;
+            margin-bottom: 28px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid #eee;
+          }
+          .song-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 6px;
+          }
+          .song-meta {
+            font-size: 12px;
+            color: #444;
+            margin-bottom: 10px;
+          }
+          .lyrics {
+            white-space: pre-wrap;
+            font-size: 13px;
+            background: #fafafa;
+            border: 1px solid #eee;
+            padding: 12px;
+            border-radius: 6px;
+          }
+          .no-lyrics {
+            font-size: 13px;
+            color: #777;
+            font-style: italic;
+            background: #fafafa;
+            border: 1px dashed #ddd;
+            padding: 12px;
+            border-radius: 6px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="header-title">${esc(title)}</div>
+        </div>
+    `;
+
+    for (let i = 0; i < rows.length; i++) {
+      const r: any = rows[i];
+      const songTitle = String(r.title || `Song #${i + 1}`);
+      const artist = String(r.artist || "");
+      const lyricsText = r.lyrics_text ? String(r.lyrics_text) : "";
+
+      htmlContent += `
+        <div class="song-container">
+          <div class="song-title">${i + 1}. ${esc(songTitle)}</div>
+          <div class="song-meta">${artist ? `<strong>אמן:</strong> ${esc(artist)}` : ""}</div>
+          ${
+            lyricsText.trim()
+              ? `<div class="lyrics">${esc(lyricsText)}</div>`
+              : `<div class="no-lyrics">אין מילים לשיר זה</div>`
+          }
+        </div>
+      `;
+    }
+
+    htmlContent += `
+      </body>
+      </html>
+    `;
+
+    let browser;
+    try {
+      browser = await puppeteer.default.launch({
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
+      const page = await browser.newPage();
+      await page.setContent(htmlContent, { waitUntil: "networkidle0" });
+
+      const pdfBuffer = await page.pdf({
+        format: "A4",
+        margin: { top: "20px", bottom: "20px", left: "20px", right: "20px" },
+      });
+
+      await browser.close();
+
+      res.contentType("application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        'attachment; filename="lineup-lyrics.pdf"',
+      );
+      res.send(pdfBuffer);
+    } catch (err) {
+      console.error("שגיאה ביצירת PDF מילים:", err);
+      if (browser) {
+        try {
+          await browser.close();
+        } catch {}
       }
       res.status(500).json({ message: "שגיאה ביצירת ה-PDF" });
     }

@@ -28,11 +28,11 @@ router.post(
       next();
     });
   },
-  songsController.uploadPrivateChart
+  songsController.uploadPrivateChart,
 );
 router.delete(
   "/:id/private-charts/:chartId",
-  songsController.deletePrivateChart
+  songsController.deletePrivateChart,
 );
 router.put("/:id", songsController.update);
 router.delete("/:id", songsController.remove);
@@ -48,8 +48,11 @@ router.post(
       next();
     });
   },
-  songsController.uploadChart
+  songsController.uploadChart,
 );
 router.delete("/:id/delete-chart", songsController.deleteChart);
+
+router.put("/:id/lyrics", songsController.upsertLyrics);
+router.delete("/:id/lyrics", songsController.deleteLyrics);
 
 export const songsRouter = router;

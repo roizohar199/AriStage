@@ -9,6 +9,8 @@ import {
   updateSongDetails,
   uploadChartPdfForSong,
   removeChartPdfForSong,
+  setLyricsForSong,
+  removeLyricsForSong,
 } from "./songs.service.js";
 import { getSongById } from "./songs.repository.js";
 import { emitToUserAndHost, emitToUserUpdates } from "../../core/socket.js";
@@ -79,7 +81,7 @@ export const songsController = {
     const chartId = await uploadPrivateChartPdfForSong(
       songId,
       user,
-      relativePath
+      relativePath,
     );
     res.json({ message: "הצ'ארט הועלה בהצלחה", chartId });
   }),
@@ -315,5 +317,49 @@ export const songsController = {
       console.error("❌ שגיאה במחיקת PDF:", error);
       throw error;
     }
+  }),
+
+  upsertLyrics: asyncHandler(async (req, res) => {
+    const songId = parseInt(req.params.id);
+    if (isNaN(songId)) {
+      return res.status(400).json({ message: "ID שיר לא תקין" });
+    }
+
+    const lyricsText = req.body?.lyrics_text ?? "";
+    const updatedSong = await setLyricsForSong(songId, req.user, lyricsText);
+
+    // realtime
+    if (global.io) {
+      await emitToUserAndHost(global.io, req.user.id, "song:lyrics-updated", {
+        songId,
+        userId: req.user.id,
+      });
+    }
+
+    res.json({
+      message: "✅ המילים נשמרו בהצלחה",
+      song: updatedSong,
+    });
+  }),
+
+  deleteLyrics: asyncHandler(async (req, res) => {
+    const songId = parseInt(req.params.id);
+    if (isNaN(songId)) {
+      return res.status(400).json({ message: "ID שיר לא תקין" });
+    }
+
+    const updatedSong = await removeLyricsForSong(songId, req.user);
+
+    if (global.io) {
+      await emitToUserAndHost(global.io, req.user.id, "song:lyrics-deleted", {
+        songId,
+        userId: req.user.id,
+      });
+    }
+
+    res.json({
+      message: "✅ המילים נמחקו בהצלחה",
+      song: updatedSong,
+    });
   }),
 };

@@ -13,9 +13,8 @@ export const lineupSongsController = {
     const songs = await getLineupSongs(req.params.lineupId, req.user);
 
     // בדיקה אם הליינאפ שייך למשתמש או למארח שלו (אם הוא אורח)
-    const { lineupBelongsToUser } = await import(
-      "../lineups/lineups.repository.js"
-    );
+    const { lineupBelongsToUser } =
+      await import("../lineups/lineups.repository.js");
     const { checkIfGuest } = await import("../users/users.service.js");
     const lineupId = parseInt(req.params.lineupId);
 
@@ -29,8 +28,8 @@ export const lineupSongsController = {
       const hostIdsArray: number[] = Array.isArray(hostIds)
         ? hostIds
         : hostIds
-        ? [hostIds]
-        : [];
+          ? [hostIds]
+          : [];
       for (const hostId of hostIdsArray) {
         if (await lineupBelongsToUser(lineupId, hostId)) {
           isLineupOwner = true;
@@ -71,8 +70,15 @@ export const lineupSongsController = {
     res.json({ message: "✅ סדר השירים עודכן בהצלחה" });
   }),
   remove: asyncHandler(async (req, res) => {
-    await removeSong(req.params.lineupId, req.user, req.params.songId);
-    res.json({ message: "🗑️ השיר נמחק מהליינאפ בהצלחה" });
+    const lineupId = parseInt(req.params.lineupId);
+    const songId = parseInt(req.params.songId);
+
+    if (isNaN(lineupId) || isNaN(songId)) {
+      return res.status(400).json({ message: "ID לא תקין" });
+    }
+
+    await removeSong(lineupId, req.user, songId);
+    res.json({ message: "✅ השיר הוסר מהליינאפ" });
   }),
   uploadChart: asyncHandler(async (req, res) => {
     if (!req.file) {
@@ -80,12 +86,15 @@ export const lineupSongsController = {
     }
 
     const lineupSongId = parseInt(req.params.lineupSongId);
-    const filePath = `/uploads/charts/${req.user.id}/${req.file.filename}`;
+    if (isNaN(lineupSongId)) {
+      return res.status(400).json({ message: "ID שיר לא תקין" });
+    }
 
-    const lineupSong = await uploadChartPdfForSong(
+    const filePath = `/uploads/charts/${req.user.id}/${req.file.filename}`;
+    const updatedLineupSong = await uploadChartPdfForSong(
       lineupSongId,
       req.user,
-      filePath
+      filePath,
     );
 
     const protocol = req.protocol;
@@ -93,14 +102,10 @@ export const lineupSongsController = {
     const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
     const pdfUrl = `${baseUrl}${filePath}`;
 
-    // הוספת URL מלא לנתונים שנשלחים
-    if (lineupSong) {
-      lineupSong.chart_pdf_url = pdfUrl;
-    }
-
     res.json({
       message: "✅ קובץ PDF הועלה בהצלחה",
       chart_pdf_url: pdfUrl,
+      lineupSong: updatedLineupSong,
     });
   }),
   deleteChart: asyncHandler(async (req, res) => {

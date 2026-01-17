@@ -17,7 +17,7 @@ router.delete("/:lineupId/:songId", lineupSongsController.remove);
 router.post(
   "/:lineupSongId/upload-chart",
   uploadChartPdf.single("pdf"),
-  lineupSongsController.uploadChart
+  lineupSongsController.uploadChart,
 );
 router.delete("/:lineupSongId/delete-chart", lineupSongsController.deleteChart);
 

@@ -26,6 +26,7 @@ interface CardSongProps {
   onEdit: (song: Song) => void;
   onRemove: (songId: number) => void;
   chartsComponent: React.ReactNode;
+  lyricsComponent?: React.ReactNode;
 }
 
 const CardSong: React.FC<CardSongProps> = ({
@@ -36,6 +37,7 @@ const CardSong: React.FC<CardSongProps> = ({
   onEdit,
   onRemove,
   chartsComponent,
+  lyricsComponent,
 }) => {
   return (
     <div className="bg-neutral-800 rounded-2xl p-4 flex justify-between items-center shadow-sm hover:shadow-lg transition border border-neutral-800">
@@ -60,6 +62,7 @@ const CardSong: React.FC<CardSongProps> = ({
           )}
         </div>
         {chartsComponent}
+        {lyricsComponent}
       </div>
       <div className="flex m-4 gap-6 flex-row-reverse items-center">
         {song.is_owner && (

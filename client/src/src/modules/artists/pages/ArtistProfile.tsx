@@ -24,6 +24,7 @@ import Search from "@/modules/shared/components/Search";
 import BlockLineup from "@/modules/shared/components/blocklineup";
 import CardSong from "@/modules/shared/components/cardsong";
 import Charts from "@/modules/shared/components/Charts";
+import SongLyrics from "@/modules/shared/components/SongLyrics";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 
 export default function ArtistProfile() {
@@ -57,10 +58,12 @@ export default function ArtistProfile() {
     duration_sec: number;
     notes?: string;
     owner_id?: number;
+    lyrics_text?: string;
+    is_owner?: boolean;
   }
   const [songs, setSongs] = useState<Song[]>([]);
   const [privateCharts, setPrivateCharts] = useState<Record<number, Chart[]>>(
-    {}
+    {},
   );
   const [viewingChart, setViewingChart] = useState<string | null>(null);
   const fileInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
@@ -77,7 +80,7 @@ export default function ArtistProfile() {
     return lineups.filter(
       (lineup) =>
         lineup.title?.toLowerCase().includes(query) ||
-        lineup.location?.toLowerCase().includes(query)
+        lineup.location?.toLowerCase().includes(query),
     );
   }, [lineups, searchQuery]);
 
@@ -87,7 +90,7 @@ export default function ArtistProfile() {
     return songs.filter(
       (song) =>
         song.title?.toLowerCase().includes(query) ||
-        song.artist?.toLowerCase().includes(query)
+        song.artist?.toLowerCase().includes(query),
     );
   }, [songs, searchQuery]);
 
@@ -163,7 +166,7 @@ export default function ArtistProfile() {
             "/users/connected-to-me",
             {
               skipErrorToast: true,
-            }
+            },
           );
           const invitedArtist =
             Array.isArray(myConnections) &&
@@ -189,7 +192,7 @@ export default function ArtistProfile() {
         `/lineups/by-user/${targetArtistId}`,
         {
           skipErrorToast: true,
-        }
+        },
       );
       setLineups(lineupsData || []);
 
@@ -505,6 +508,16 @@ export default function ArtistProfile() {
                         viewingChart={viewingChart}
                         setViewingChart={setViewingChart}
                         onConfirm={confirm}
+                      />
+                    }
+                    lyricsComponent={
+                      <SongLyrics
+                        songId={s.id}
+                        songTitle={s.title}
+                        lyricsText={s.lyrics_text}
+                        canEdit={!!s.is_owner}
+                        onConfirm={confirm}
+                        onChanged={() => {}}
                       />
                     }
                   />

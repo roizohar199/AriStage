@@ -29,6 +29,8 @@ import {
   updateSongChartPdf,
   getSongById,
   deleteSongChartPdf,
+  upsertSongLyrics,
+  deleteSongLyrics,
 } from "./songs.repository.js";
 import { checkIfGuest } from "../users/users.service.js";
 
@@ -38,8 +40,8 @@ export async function getSongs(user) {
   const hostIdsArray: number[] = Array.isArray(hostIds)
     ? hostIds
     : hostIds
-    ? [hostIds]
-    : [];
+      ? [hostIds]
+      : [];
   return listSongs(user.role, user.id, hostIdsArray);
 }
 
@@ -121,8 +123,8 @@ export async function uploadChartPdfForSong(songId, user, filePath) {
       const hostIdsArray: number[] = Array.isArray(hostIds)
         ? hostIds
         : hostIds
-        ? [hostIds]
-        : [];
+          ? [hostIds]
+          : [];
       if (hostIdsArray.includes(song.user_id)) {
         // המשתמש הוא אורח והשיר שייך למארח שלו - מותר להעלות PDF
       } else {
@@ -152,8 +154,8 @@ export async function removeChartPdfForSong(songId, user) {
       const hostIdsArray: number[] = Array.isArray(hostIds)
         ? hostIds
         : hostIds
-        ? [hostIds]
-        : [];
+          ? [hostIds]
+          : [];
       if (hostIdsArray.includes(song.user_id)) {
         // המשתמש הוא אורח והשיר שייך למארח שלו - מותר למחוק PDF
       } else {
@@ -168,4 +170,49 @@ export async function removeChartPdfForSong(songId, user) {
   }
 
   return song;
+}
+
+export async function setLyricsForSong(songId, user, lyricsText) {
+  const song = await getSongById(songId);
+  if (!song) {
+    throw new AppError(404, "שיר לא נמצא");
+  }
+
+  // Only owner (or admin) may edit lyrics
+  if (user.role !== "admin") {
+    const ownsSong = await findSongOwnership(songId, user.id);
+    if (!ownsSong) {
+      throw new AppError(403, "רק בעל המאגר יכול להוסיף/לערוך/למחוק מילים");
+    }
+  }
+
+  try {
+    await upsertSongLyrics(songId, lyricsText);
+  } catch (error: any) {
+    throw new AppError(400, error?.message || "שגיאה בשמירת מילים");
+  }
+
+  return await getSongById(songId);
+}
+
+export async function removeLyricsForSong(songId, user) {
+  const song = await getSongById(songId);
+  if (!song) {
+    throw new AppError(404, "שיר לא נמצא");
+  }
+
+  if (user.role !== "admin") {
+    const ownsSong = await findSongOwnership(songId, user.id);
+    if (!ownsSong) {
+      throw new AppError(403, "רק בעל המאגר יכול להוסיף/לערוך/למחוק מילים");
+    }
+  }
+
+  try {
+    await deleteSongLyrics(songId);
+  } catch (error: any) {
+    throw new AppError(400, error?.message || "שגיאה במחיקת מילים");
+  }
+
+  return await getSongById(songId);
 }

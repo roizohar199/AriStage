@@ -29,8 +29,8 @@ async function ensureAccess(lineupId, user) {
   const hostIdsArray: number[] = Array.isArray(hostIds)
     ? hostIds
     : hostIds
-    ? [hostIds]
-    : [];
+      ? [hostIds]
+      : [];
   if (hostIdsArray.length > 0) {
     // בדיקה אם אחד מהמארחים הוא הבעלים של הליינאפ
     for (const hostId of hostIdsArray) {
@@ -110,7 +110,7 @@ export async function addSongToLineup(lineupId, user, songId) {
           global.io,
           lineup.created_by,
           "lineup-song:added",
-          { lineupId, songId, lineupSong, userId: user.id }
+          { lineupId, songId, lineupSong, userId: user.id },
         );
       }
     }
@@ -155,7 +155,7 @@ export async function reorderLineupSongs(lineupId, user, songs) {
           global.io,
           lineup.created_by,
           "lineup-song:reordered",
-          { lineupId, songs, userId: user.id }
+          { lineupId, songs, userId: user.id },
         );
       }
     }
@@ -188,7 +188,7 @@ export async function removeSong(lineupId, user, songId) {
           global.io,
           lineup.created_by,
           "lineup-song:removed",
-          { lineupId, songId, userId: user.id }
+          { lineupId, songId, userId: user.id },
         );
       }
     }
@@ -229,7 +229,7 @@ export async function uploadChartPdfForSong(lineupSongId, user, filePath) {
           songId: lineupSong.song_id,
           lineupSong: updatedLineupSong,
           userId: user.id,
-        }
+        },
       );
 
       if (lineup.created_by !== user.id) {
@@ -243,7 +243,7 @@ export async function uploadChartPdfForSong(lineupSongId, user, filePath) {
             songId: lineupSong.song_id,
             lineupSong: updatedLineupSong,
             userId: user.id,
-          }
+          },
         );
       }
     }
@@ -292,7 +292,7 @@ export async function removeChartPdfForSong(lineupSongId, user) {
             lineupSongId,
             songId: lineupSong.song_id,
             userId: user.id,
-          }
+          },
         );
       }
     }

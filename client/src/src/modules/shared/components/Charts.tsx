@@ -71,7 +71,7 @@ export default function Charts({
         showToast("שגיאה במחיקת הצ'ארט", "error");
       }
     },
-    [song.id, onConfirm, showToast, setPrivateCharts]
+    [song.id, onConfirm, showToast, setPrivateCharts],
   );
 
   const handleDownloadChart = useCallback(
@@ -83,7 +83,7 @@ export default function Charts({
       link.click();
       document.body.removeChild(link);
     },
-    [song.title]
+    [song.title],
   );
 
   const handleUploadChart = useCallback(
@@ -108,7 +108,7 @@ export default function Charts({
         showToast("הקובץ הועלה בהצלחה", "success");
         try {
           const { data: chartsData } = await api.get(
-            `/songs/${song.id}/private-charts`
+            `/songs/${song.id}/private-charts`,
           );
           setPrivateCharts((prev) => ({
             ...prev,
@@ -120,13 +120,13 @@ export default function Charts({
         window.dispatchEvent(
           new CustomEvent("data-refresh", {
             detail: { type: "song", action: "chart-uploaded" },
-          })
+          }),
         );
       } catch (err) {
         showToast("שגיאה בהעלאת הקובץ", "error");
       }
     },
-    [song.id, showToast, setPrivateCharts]
+    [song.id, showToast, setPrivateCharts],
   );
 
   return (
@@ -159,26 +159,20 @@ export default function Charts({
                 >
                   <Eye size={16} />
                 </button>
-                {/* הורדה רק אם יש הרשאה (דוג' is_owner) */}
-                {song.is_owner && (
-                  <button
-                    onClick={() => handleDownloadChart(chart)}
-                    className="w-6 h-6 text-white hover:text-brand-orange"
-                    title="הורדה"
-                  >
-                    <FileDown size={16} />
-                  </button>
-                )}
-                {/* מחיקה רק אם יש הרשאה (דוג' is_owner) */}
-                {song.is_owner && (
-                  <button
-                    onClick={() => handleDeleteChart(chart.id)}
-                    className="w-6 h-6 text-red-500 hover:text-red-400"
-                    title="מחיקה"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                )}
+                <button
+                  onClick={() => handleDownloadChart(chart)}
+                  className="w-6 h-6 text-white hover:text-brand-orange"
+                  title="הורדה"
+                >
+                  <FileDown size={16} />
+                </button>
+                <button
+                  onClick={() => handleDeleteChart(chart.id)}
+                  className="w-6 h-6 text-red-500 hover:text-red-400"
+                  title="מחיקה"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
             ))}
           {/* כפתור העלאה תמיד גלוי */}

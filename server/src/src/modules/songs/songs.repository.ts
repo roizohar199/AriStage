@@ -3,10 +3,18 @@ import { isElevatedRole } from "../../types/roles.js";
 import fs from "fs";
 import path from "path";
 
+function isMissingSongLyricsTableError(error: any): boolean {
+  return (
+    error?.code === "ER_NO_SUCH_TABLE" ||
+    (typeof error?.message === "string" &&
+      error.message.includes("song_lyrics"))
+  );
+}
+
 export async function listSongs(
   role: string,
   userId: number,
-  hostIds: number[] = []
+  hostIds: number[] = [],
 ) {
   let query = `
     SELECT
@@ -15,9 +23,12 @@ export async function listSongs(
       users.full_name AS owner_name,
       users.avatar AS owner_avatar,
       users.artist_role AS owner_role,
-      users.email AS owner_email
+      users.email AS owner_email,
+      sl.lyrics_text,
+      sl.updated_at AS lyrics_updated_at
     FROM songs
     JOIN users ON users.id = songs.user_id
+    LEFT JOIN song_lyrics sl ON sl.song_id = songs.id
   `;
   const params: any[] = [];
 
@@ -37,8 +48,42 @@ export async function listSongs(
   }
 
   query += " ORDER BY songs.id DESC";
-  const [rows] = await pool.query(query, params);
-  return rows;
+  try {
+    const [rows] = await pool.query(query, params);
+    return rows;
+  } catch (error: any) {
+    if (isMissingSongLyricsTableError(error)) {
+      // Backward-compatible: return songs without lyrics fields.
+      let fallbackQuery = `
+        SELECT
+          songs.*,
+          songs.user_id AS owner_id,
+          users.full_name AS owner_name,
+          users.avatar AS owner_avatar,
+          users.artist_role AS owner_role,
+          users.email AS owner_email
+        FROM songs
+        JOIN users ON users.id = songs.user_id
+      `;
+
+      const fallbackParams: any[] = [];
+      if (!isElevatedRole(role)) {
+        if (hostIds && hostIds.length > 0) {
+          const placeholders = hostIds.map(() => "?").join(", ");
+          fallbackQuery += ` WHERE songs.user_id IN (?, ${placeholders})`;
+          fallbackParams.push(userId, ...hostIds);
+        } else {
+          fallbackQuery += " WHERE songs.user_id = ?";
+          fallbackParams.push(userId);
+        }
+      }
+
+      fallbackQuery += " ORDER BY songs.id DESC";
+      const [rows] = await pool.query(fallbackQuery, fallbackParams);
+      return rows;
+    }
+    throw error;
+  }
 }
 
 export async function updateSongChartPdf(songId, chartPdfPath) {
@@ -54,7 +99,7 @@ export async function updateSongChartPdf(songId, chartPdfPath) {
       error.message?.includes("chart_pdf")
     ) {
       throw new Error(
-        "השדה chart_pdf לא קיים בטבלה songs. נא להריץ את ה-SQL migration: sql/add_chart_pdf_to_songs.sql"
+        "השדה chart_pdf לא קיים בטבלה songs. נא להריץ את ה-SQL migration: sql/add_chart_pdf_to_songs.sql",
       );
     }
     throw error;
@@ -65,7 +110,7 @@ export async function updateSongChartPdf(songId, chartPdfPath) {
 export async function insertSongChart({ song_id, user_id, file_path }) {
   const [result] = await pool.query(
     "INSERT INTO song_charts (song_id, user_id, file_path) VALUES (?, ?, ?)",
-    [song_id, user_id, file_path]
+    [song_id, user_id, file_path],
   );
   return result.insertId;
 }
@@ -74,7 +119,7 @@ export async function insertSongChart({ song_id, user_id, file_path }) {
 export async function getSongChartsByUser(song_id, user_id) {
   const [rows] = await pool.query(
     "SELECT * FROM song_charts WHERE song_id = ? AND user_id = ? ORDER BY uploaded_at DESC",
-    [song_id, user_id]
+    [song_id, user_id],
   );
   return rows;
 }
@@ -83,7 +128,7 @@ export async function getSongChartsByUser(song_id, user_id) {
 export async function getSongCharts(song_id) {
   const [rows] = await pool.query(
     "SELECT * FROM song_charts WHERE song_id = ? ORDER BY uploaded_at DESC",
-    [song_id]
+    [song_id],
   );
   return rows;
 }
@@ -93,7 +138,7 @@ export async function deleteSongChart(chartId, userId) {
   // קבלת נתיב הקובץ לפני מחיקה
   const [rows] = await pool.query(
     "SELECT file_path FROM song_charts WHERE id = ? AND user_id = ?",
-    [chartId, userId]
+    [chartId, userId],
   );
   const chart = rows[0];
   if (chart?.file_path) {
@@ -109,28 +154,89 @@ export async function deleteSongChart(chartId, userId) {
   // מחיקה מהמסד
   const [result] = await pool.query(
     "DELETE FROM song_charts WHERE id = ? AND user_id = ?",
-    [chartId, userId]
+    [chartId, userId],
   );
   return result.affectedRows > 0;
 }
 
 export async function getSongById(songId) {
-  const [rows] = await pool.query(
-    `
-    SELECT
-      songs.*,
-      songs.user_id AS owner_id,
-      users.full_name AS owner_name,
-      users.avatar AS owner_avatar,
-      users.artist_role AS owner_role,
-      users.email AS owner_email
-    FROM songs
-    JOIN users ON users.id = songs.user_id
-    WHERE songs.id = ?
-    `,
-    [songId]
-  );
-  return rows[0] || null;
+  try {
+    const [rows] = await pool.query(
+      `
+      SELECT
+        songs.*,
+        songs.user_id AS owner_id,
+        users.full_name AS owner_name,
+        users.avatar AS owner_avatar,
+        users.artist_role AS owner_role,
+        users.email AS owner_email,
+        sl.lyrics_text,
+        sl.updated_at AS lyrics_updated_at
+      FROM songs
+      JOIN users ON users.id = songs.user_id
+      LEFT JOIN song_lyrics sl ON sl.song_id = songs.id
+      WHERE songs.id = ?
+      `,
+      [songId],
+    );
+    return rows[0] || null;
+  } catch (error: any) {
+    if (isMissingSongLyricsTableError(error)) {
+      const [rows] = await pool.query(
+        `
+        SELECT
+          songs.*,
+          songs.user_id AS owner_id,
+          users.full_name AS owner_name,
+          users.avatar AS owner_avatar,
+          users.artist_role AS owner_role,
+          users.email AS owner_email
+        FROM songs
+        JOIN users ON users.id = songs.user_id
+        WHERE songs.id = ?
+        `,
+        [songId],
+      );
+      return rows[0] || null;
+    }
+    throw error;
+  }
+}
+
+export async function upsertSongLyrics(songId, lyricsText) {
+  try {
+    const trimmed = String(lyricsText ?? "").trim();
+    await pool.query(
+      `INSERT INTO song_lyrics (song_id, lyrics_text)
+       VALUES (?, ?)
+       ON DUPLICATE KEY UPDATE lyrics_text = VALUES(lyrics_text), updated_at = CURRENT_TIMESTAMP`,
+      [songId, trimmed],
+    );
+  } catch (error: any) {
+    if (isMissingSongLyricsTableError(error)) {
+      throw new Error(
+        "הטבלה song_lyrics לא קיימת. נא להריץ את ה-SQL migration: sql/create_song_lyrics.sql",
+      );
+    }
+    throw error;
+  }
+}
+
+export async function deleteSongLyrics(songId) {
+  try {
+    const [result] = await pool.query(
+      "DELETE FROM song_lyrics WHERE song_id = ?",
+      [songId],
+    );
+    return result.affectedRows > 0;
+  } catch (error: any) {
+    if (isMissingSongLyricsTableError(error)) {
+      throw new Error(
+        "הטבלה song_lyrics לא קיימת. נא להריץ את ה-SQL migration: sql/create_song_lyrics.sql",
+      );
+    }
+    throw error;
+  }
 }
 
 export async function insertSong(data) {
@@ -144,7 +250,7 @@ export async function insertSong(data) {
       data.duration_sec,
       data.notes,
       data.user_id,
-    ]
+    ],
   );
   return result.insertId;
 }
@@ -160,7 +266,7 @@ export async function updateSong(id, data) {
       data.duration_sec,
       data.notes,
       id,
-    ]
+    ],
   );
   return result.affectedRows;
 }
@@ -173,7 +279,7 @@ export async function deleteSong(id) {
 export async function findSongOwnership(id, userId) {
   const [rows] = await pool.query(
     "SELECT id FROM songs WHERE id = ? AND user_id = ?",
-    [id, userId]
+    [id, userId],
   );
   return rows.length > 0;
 }
@@ -202,7 +308,7 @@ export async function deleteSongChartPdf(songId) {
   // עדכון המסד נתונים
   const [result] = await pool.query(
     "UPDATE songs SET chart_pdf = NULL WHERE id = ?",
-    [songId]
+    [songId],
   );
   return result.affectedRows > 0;
 }

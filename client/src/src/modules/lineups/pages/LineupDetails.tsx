@@ -1,3 +1,4 @@
+import SongLyrics from "@/modules/shared/components/SongLyrics";
 import React, {
   useEffect,
   useState,
@@ -69,6 +70,7 @@ const SongList = memo(function SongList({
   viewingChart,
   setViewingChart,
   onConfirm,
+  onLyricsChanged,
 }: any) {
   const safeKey = (key: string) => key || "N/A";
   const safeDuration = (duration: string | number) => {
@@ -154,6 +156,16 @@ const SongList = memo(function SongList({
                           onConfirm={onConfirm}
                         />
                       }
+                      lyricsComponent={
+                        <SongLyrics
+                          songId={s.song_id}
+                          songTitle={s.title}
+                          lyricsText={s.lyrics_text}
+                          canEdit={!!s.can_edit}
+                          onConfirm={onConfirm}
+                          onChanged={onLyricsChanged}
+                        />
+                      }
                     />
                   </div>
                 )}
@@ -229,7 +241,7 @@ const AddSongModal = memo(function AddSongModal({
                 key={artist.id}
                 onClick={() =>
                   setSelectedArtistId(
-                    selectedArtistId === artist.id ? null : artist.id
+                    selectedArtistId === artist.id ? null : artist.id,
                   )
                 }
                 className={`flex-shrink-0 py-2 px-4 rounded-2xl text-sm font-semibold transition-all whitespace-nowrap ${
@@ -375,7 +387,7 @@ export default function LineupDetails() {
       if (song.song_id) {
         try {
           const { data } = await api.get(
-            `/songs/${song.song_id}/private-charts`
+            `/songs/${song.song_id}/private-charts`,
           );
           chartsMap[song.song_id] = data.charts || [];
         } catch (err) {
@@ -420,13 +432,15 @@ export default function LineupDetails() {
       } catch (err: any) {
         if (!mounted) return;
         setError(
-          err?.response?.data?.message || err?.message || "שגיאה בטעינת הליינאפ"
+          err?.response?.data?.message ||
+            err?.message ||
+            "שגיאה בטעינת הליינאפ",
         );
         showToast(
           err?.response?.data?.message ||
             err?.message ||
             "שגיאה בטעינת הליינאפ",
-          "error"
+          "error",
         );
       } finally {
         if (mounted) setLoading(false);
@@ -484,7 +498,7 @@ export default function LineupDetails() {
         if (updatedLineupId == lineupId && lineup) {
           setLineup((prev: any) => ({ ...prev, ...lineup }));
         }
-      }
+      },
     );
 
     // Cleanup listeners
@@ -503,11 +517,11 @@ export default function LineupDetails() {
   // --- Memoized values ---
   const lineupIds = useMemo(
     () => new Set(songs.map((s) => s.song_id)),
-    [songs]
+    [songs],
   );
   const availableSongs = useMemo(
     () => allSongs.filter((s) => !lineupIds.has(s.id)),
-    [allSongs, lineupIds]
+    [allSongs, lineupIds],
   );
 
   // חלץ אמנים מחוברים מהשירים הזמינים
@@ -539,8 +553,8 @@ export default function LineupDetails() {
         (s) =>
           s.title?.toLowerCase().includes(term) ||
           s.artist?.toLowerCase().includes(term) ||
-          s.notes?.toLowerCase().includes(term)
-      )
+          s.notes?.toLowerCase().includes(term),
+      ),
     );
   }, [songs, searchMain]);
   const filteredModalSongs = useMemo(() => {
@@ -574,7 +588,7 @@ export default function LineupDetails() {
   const totalDuration = useMemo(() => {
     const totalSec = songs.reduce(
       (sum, s) => sum + parseDuration(s.duration_sec),
-      0
+      0,
     );
     const m = Math.floor(totalSec / 60);
     const s = totalSec % 60;
@@ -593,7 +607,7 @@ export default function LineupDetails() {
         showToast("שגיאה בהוספת שיר", "error");
       }
     },
-    [lineupId, showToast, fetchSongs]
+    [lineupId, showToast, fetchSongs],
   );
 
   const removeSong = useCallback(
@@ -605,7 +619,7 @@ export default function LineupDetails() {
         showToast("שגיאה במחיקת שיר", "error");
       }
     },
-    [lineupId, showToast, fetchSongs]
+    [lineupId, showToast, fetchSongs],
   );
 
   const handleDownloadAllCharts = useCallback(async () => {
@@ -634,7 +648,7 @@ export default function LineupDetails() {
 
         try {
           const { data } = await api.get(
-            `/songs/${song.song_id}/private-charts`
+            `/songs/${song.song_id}/private-charts`,
           );
           if (data.charts && data.charts.length > 0) {
             // קח את הצ'ארט הראשון של השיר
@@ -683,7 +697,7 @@ export default function LineupDetails() {
       const { data: mergedPdf } = await api.post(
         `/lineups/${lineupId}/download-charts`,
         { charts: chartsToMerge },
-        { responseType: "blob" }
+        { responseType: "blob" },
       );
 
       // הורדת הקובץ המוזג
@@ -701,10 +715,36 @@ export default function LineupDetails() {
       console.error("שגיאה בהורדת הצ'ארטים:", err);
       showToast(
         err?.response?.data?.message || "שגיאה בהורדת הצ'ארטים",
-        "error"
+        "error",
       );
     }
   }, [songs, lineupId, lineup, showToast]);
+
+  const handleDownloadAllLyrics = useCallback(async () => {
+    try {
+      showToast("מכין קובץ מילים...", "info");
+
+      const { data: pdf } = await api.post(
+        `/lineups/${lineupId}/download-lyrics`,
+        {},
+        { responseType: "blob" },
+      );
+
+      const url = window.URL.createObjectURL(new Blob([pdf]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${lineup?.title || "lineup"}-lyrics.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      showToast("המילים הורדו בהצלחה", "success");
+    } catch (err: any) {
+      console.error("שגיאה בהורדת מילים:", err);
+      showToast(err?.response?.data?.message || "שגיאה בהורדת מילים", "error");
+    }
+  }, [lineupId, lineup, showToast]);
 
   const handleDragEnd = useCallback(
     async (result: any) => {
@@ -724,7 +764,7 @@ export default function LineupDetails() {
         showToast("שגיאה בסידור שירים", "error");
       }
     },
-    [lineup, songs, lineupId, showToast, fetchSongs]
+    [lineup, songs, lineupId, showToast, fetchSongs],
   );
 
   const generateShareLink = useCallback(async () => {
@@ -912,6 +952,16 @@ export default function LineupDetails() {
                     <FileDown size={16} />
                     הורד צ'ארטים
                   </button>
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      handleDownloadAllLyrics();
+                    }}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:text-brand-orange"
+                  >
+                    <FileDown size={16} />
+                    הורד מילים
+                  </button>
                 </div>
               )}
             </div>
@@ -943,6 +993,7 @@ export default function LineupDetails() {
             viewingChart={viewingChart}
             setViewingChart={setViewingChart}
             onConfirm={confirm}
+            onLyricsChanged={fetchSongs}
           />
         </DragDropContext>
       </div>
