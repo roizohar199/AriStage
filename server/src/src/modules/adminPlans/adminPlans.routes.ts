@@ -11,5 +11,6 @@ router.get("/", adminPlansController.list);
 router.post("/", adminPlansController.create);
 router.put("/:id", adminPlansController.update);
 router.patch("/:id/enabled", adminPlansController.toggleEnabled);
+router.delete("/:id", adminPlansController.delete);
 
 export const adminPlansRouter = router;

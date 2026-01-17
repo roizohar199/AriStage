@@ -84,4 +84,4 @@ export const env: EnvConfig = {
   },
 };
 
-export const corsMethods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"];
+export const corsMethods = ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"];

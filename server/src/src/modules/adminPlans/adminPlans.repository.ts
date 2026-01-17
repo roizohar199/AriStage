@@ -103,6 +103,11 @@ export async function setPlanEnabled(
   return await getPlanById(id);
 }
 
+export async function deletePlan(id: number): Promise<boolean> {
+  const [result] = await pool.query("DELETE FROM plans WHERE id = ?", [id]);
+  return (result as any).affectedRows > 0;
+}
+
 export async function getPlanById(id: number): Promise<Plan | null> {
   const [rows] = await pool.query("SELECT * FROM plans WHERE id = ? LIMIT 1", [
     id,

@@ -5,8 +5,9 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { Pencil, Plus, ToggleLeft, ToggleRight } from "lucide-react";
+import { Pencil, Plus, ToggleLeft, ToggleRight, Trash } from "lucide-react";
 import BaseModal from "@/modules/shared/components/BaseModal";
+import ConfirmModal from "@/modules/shared/confirm/ConfirmModal";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
 import { useToast } from "@/modules/shared/components/ToastProvider";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
@@ -75,6 +76,12 @@ async function setPlanEnabled(id: number, enabled: boolean): Promise<Plan> {
   } as any);
 
   return data as Plan;
+}
+
+async function deletePlan(id: number): Promise<void> {
+  await api.delete(`/admin/plans/${id}`, {
+    skipErrorToast: true,
+  } as any);
 }
 
 async function getPayments(): Promise<AdminPaymentRow[]> {
@@ -335,6 +342,7 @@ export default function AdminPlansTab() {
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
 
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [planToDelete, setPlanToDelete] = useState<Plan | null>(null);
 
   const [payments, setPayments] = useState<AdminPaymentRow[]>([]);
   const [paymentsLoading, setPaymentsLoading] = useState<boolean>(true);
@@ -450,6 +458,27 @@ export default function AdminPlansTab() {
     }
   };
 
+  const handleDelete = (plan: Plan) => {
+    if (!canEdit) return;
+    setPlanToDelete(plan);
+  };
+
+  const confirmDelete = async () => {
+    if (!planToDelete) return;
+
+    setTogglingId(planToDelete.id);
+    try {
+      await deletePlan(planToDelete.id);
+      await fetchPlans();
+      showToast("המסלול נמחק בהצלחה", "success");
+    } catch {
+      showToast("שגיאה במחיקת מסלול", "error");
+    } finally {
+      setTogglingId(null);
+      setPlanToDelete(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="space-y-3">
@@ -517,14 +546,14 @@ export default function AdminPlansTab() {
                       <td className="px-3 py-2 whitespace-nowrap text-neutral-200">
                         <span
                           className={
-                            p.enabled ? "text-green-400" : "text-neutral-400"
+                            p.enabled ? "text-brand-orange" : "text-neutral-400"
                           }
                         >
                           {p.enabled ? "כן" : "לא"}
                         </span>
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap">
-                        <div className="flex items-center gap-2 justify-end">
+                        <div className="flex items-center gap-4">
                           {canEdit ? (
                             <button
                               onClick={() => openEdit(p)}
@@ -538,8 +567,20 @@ export default function AdminPlansTab() {
 
                           {canEdit ? (
                             <button
+                              onClick={() => handleDelete(p)}
+                              className="w-7 h-7 text-white hover:text-red-500"
+                              title="מחיקה"
+                              type="button"
+                              disabled={isToggling}
+                            >
+                              <Trash size={18} />
+                            </button>
+                          ) : null}
+
+                          {canEdit ? (
+                            <button
                               onClick={() => disablePlan(p)}
-                              className="text-xs text-white hover:text-brand-orange disabled:opacity-50"
+                              className="text-white"
                               title="השבת מסלול"
                               type="button"
                               disabled={isToggling || !p.enabled}
@@ -551,15 +592,14 @@ export default function AdminPlansTab() {
                           {canEdit ? (
                             <button
                               onClick={() => toggleEnabled(p)}
-                              className="w-7 h-7 text-white hover:text-brand-orange disabled:opacity-50"
                               title="הפעלה / כיבוי"
                               type="button"
                               disabled={isToggling}
                             >
                               {p.enabled ? (
-                                <ToggleRight size={20} />
+                                <ToggleRight className="text-brand-orange" size={25} />
                               ) : (
-                                <ToggleLeft size={20} />
+                                <ToggleLeft className="text-white hover:text-brand-orange" size={25} />
                               )}
                             </button>
                           ) : null}
@@ -653,6 +693,17 @@ export default function AdminPlansTab() {
         initialPlan={editingPlan}
         onSubmit={submit}
         canEdit={canEdit}
+      />
+
+      <ConfirmModal
+        open={!!planToDelete}
+        title="מחיקת מסלול"
+        message={`האם אתה בטוח שברצונך למחוק את המסלול "${planToDelete?.name}"? הפעולה אינה הפיכה.`}
+        confirmLabel="מחק"
+        cancelLabel="ביטול"
+        variant="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setPlanToDelete(null)}
       />
     </div>
   );

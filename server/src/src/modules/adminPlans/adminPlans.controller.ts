@@ -6,6 +6,7 @@ import {
   listPlans,
   setPlanEnabled,
   updatePlan,
+  deletePlan,
   type CreatePlanInput,
   type UpdatePlanInput,
 } from "./adminPlans.repository.js";
@@ -121,5 +122,22 @@ export const adminPlansController = {
     );
 
     res.json(updated);
+  }),
+
+  delete: asyncHandler(async (req: any, res) => {
+    const id = parsePlanId(String(req.params.id));
+
+    const success = await deletePlan(id);
+    if (!success) throw new AppError(404, "Plan not found", undefined);
+
+    void logSystemEvent(
+      "info",
+      "admin_delete_plan",
+      "Admin deleted plan",
+      { planId: id },
+      Number(req.user?.id)
+    );
+
+    res.json({ success: true });
   }),
 };
