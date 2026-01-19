@@ -207,7 +207,14 @@ export default function ShareLineup() {
               <Music4Icon size={14} /> {lineup.songs.length} שירים
             </div>
             <div className="flex items-center gap-1 px-2 py-1 bg-neutral-800 rounded-2xl text-brand-orange font-bold text-sm">
-              <Clock size={14} /> {totalDuration}
+              <Clock size={14} />
+              <span
+                dir="ltr"
+                style={{ unicodeBidi: "isolate" }}
+                className="tabular-nums"
+              >
+                {totalDuration}
+              </span>
             </div>
           </div>
           {/* ⭐ תפריט הדפסה / PDF */}

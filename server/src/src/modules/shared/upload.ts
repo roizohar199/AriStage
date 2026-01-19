@@ -1,10 +1,11 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { joinUploadsPath } from "../../utils/uploadsRoot.js";
 
 // פונקציה לבניית נתיב מוחלט לתיקיית uploads בשורש הפרויקט
 function uploadsRoot(...sub) {
-  return path.join(process.cwd(), "uploads", ...sub);
+  return joinUploadsPath(...sub);
 }
 
 // ⭐ העלאת תמונה בהרשמה — אין userId עדיין

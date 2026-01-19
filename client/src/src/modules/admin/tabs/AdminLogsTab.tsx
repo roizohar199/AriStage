@@ -38,6 +38,36 @@ type Props = {
   }>;
 };
 
+function formatLogTimestamp(raw?: string | null): string {
+  if (!raw) return "—";
+  try {
+    const trimmed = String(raw).trim();
+    if (!trimmed) return "—";
+
+    // Normalize common MySQL format -> ISO-ish so Date can parse it.
+    // Examples:
+    // - "2026-01-05 22:57:48" -> "2026-01-05T22:57:48"
+    // - "2026-01-05T22:57:48.000Z" -> same
+    const normalized = trimmed.includes("T")
+      ? trimmed
+      : trimmed.replace(" ", "T");
+
+    const d = new Date(normalized);
+    const ms = d.getTime();
+    if (Number.isNaN(ms)) return trimmed;
+
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, "0");
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  } catch {
+    return String(raw);
+  }
+}
+
 export default function AdminLogsTab({
   users,
   searchValue,
@@ -357,6 +387,7 @@ export default function AdminLogsTab({
 
             {logs.map((l) => {
               const ts = l.createdAt || l.created_at || "";
+              const tsLabel = formatLogTimestamp(ts);
               const level = (l.level as any) || "info";
               const actor =
                 l.actorLabel || l.user || (l.userId ? `User ${l.userId}` : "System");
@@ -373,7 +404,12 @@ export default function AdminLogsTab({
                   className="w-full text-right px-4 py-3 border-b border-neutral-800 hover:bg-neutral-800/50 transition"
                 >
                   <div className="grid grid-cols-1 md:grid-cols-5 gap-2 items-start">
-                    <div className="text-xs text-neutral-400 break-all">{ts}</div>
+                    <div
+                      className="text-xs text-neutral-400 tabular-nums"
+                      dir="ltr"
+                    >
+                      {tsLabel}
+                    </div>
                     <div>
                       <SmallBadge variant={levelVariant}>{level}</SmallBadge>
                     </div>
@@ -409,7 +445,12 @@ export default function AdminLogsTab({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                 <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-3">
                   <div className="text-xs text-neutral-400">Timestamp</div>
-                  <div className="text-white break-all">
+                  <div className="text-white tabular-nums" dir="ltr">
+                    {formatLogTimestamp(
+                      selectedLog.createdAt || selectedLog.created_at || ""
+                    )}
+                  </div>
+                  <div className="text-[11px] text-neutral-500 mt-1 break-all" dir="ltr">
                     {selectedLog.createdAt || selectedLog.created_at || ""}
                   </div>
                 </div>
@@ -477,14 +518,19 @@ export default function AdminLogsTab({
                 </div>
 
                 <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-3">
-                  <div className="text-xs text-neutral-400">beforeDate (ISO)</div>
+                  <div className="text-xs text-neutral-400">beforeDate</div>
                   <input
-                    type="text"
-                    placeholder="2026-01-01T00:00:00Z"
+                    type="datetime-local"
                     value={cleanupBeforeDate}
                     onChange={(e) => setCleanupBeforeDate(e.target.value)}
                     className="w-full bg-neutral-900 border border-neutral-800 p-2 rounded-2xl text-sm mt-2"
+                    dir="ltr"
                   />
+                  {cleanupBeforeDate.trim() ? (
+                    <div className="text-[11px] text-neutral-400 mt-2 tabular-nums" dir="ltr">
+                      {formatLogTimestamp(cleanupBeforeDate.trim())}
+                    </div>
+                  ) : null}
                   <div className="text-[11px] text-neutral-500 mt-1">
                     אם ממולא — מתעלם מ-olderThanDays.
                   </div>

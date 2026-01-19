@@ -6,7 +6,7 @@ import { errorsController } from "./errors.controller.js";
 export const errorsRouter = Router();
 
 errorsRouter.use(requireAuth);
-errorsRouter.use(requireRoles(["admin"]));
+errorsRouter.use(requireRoles(["admin", "manager"]));
 
 errorsRouter.get("/", adminNoCache, errorsController.list);
 errorsRouter.put("/:id", errorsController.update);

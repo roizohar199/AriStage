@@ -5,6 +5,7 @@ import { adminSubscriptionsRouter } from "../src/modules/adminSubscriptions/admi
 import { logsRouter as adminLogsRouter } from "../src/modules/logs/logs.routes.js";
 import { adminPaymentsRouter } from "../src/modules/adminPayments/adminPayments.routes.js";
 import { adminPlansRouter } from "../src/modules/adminPlans/adminPlans.routes.js";
+import adminFilesRouter from "./admin/files.js";
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use("/subscriptions", adminSubscriptionsRouter);
 router.use("/logs", adminLogsRouter);
 router.use("/payments", adminPaymentsRouter);
 router.use("/plans", adminPlansRouter);
+router.use("/files", adminFilesRouter);
 
 export default router;

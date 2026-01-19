@@ -9,6 +9,7 @@ import { createCorsOptions } from "./config/cors.js";
 import { env } from "./config/env.js";
 import { notFoundHandler } from "./middleware/not-found.js";
 import { errorHandler } from "./middleware/error-handler.js";
+import { getUploadsRoot } from "./utils/uploadsRoot.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -44,7 +45,7 @@ export function createApp(): Application {
             : {}),
         },
       },
-    })
+    }),
   );
 
   app.use(cors(createCorsOptions()));
@@ -56,8 +57,8 @@ export function createApp(): Application {
     app.use(morgan("dev"));
   }
 
-  // ⭐ מגיש את תיקיית uploads הנכונה (root של השרת)
-  app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+  // ⭐ מגיש את תיקיית uploads בצורה יציבה (לא תלוי CWD)
+  app.use("/uploads", express.static(getUploadsRoot()));
 
   // טעינת המודולים
   registerModules(app);

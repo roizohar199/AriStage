@@ -12,8 +12,8 @@ type ErrorRow = {
   message?: string;
   route?: string;
   user?: string;
-  status?: string;
-  resolved?: boolean;
+  status?: string | number; // HTTP status code (e.g. 500)
+  resolved?: boolean | number | string | null;
   created_at?: string;
 };
 
@@ -45,7 +45,9 @@ export default function AdminErrorsTab({
     try {
       setErrorsLoading(true);
       setErrorsUnsupported(false);
-      const { data } = await api.get("/errors", { skipErrorToast: true } as any);
+      const { data } = await api.get("/errors", {
+        skipErrorToast: true,
+      } as any);
       setErrors(Array.isArray(data) ? data : []);
     } catch (err: any) {
       if (err?.response?.status === 404) setErrorsUnsupported(true);
@@ -66,7 +68,7 @@ export default function AdminErrorsTab({
     return errors.filter((e) =>
       `${e.message || ""} ${e.route || ""} ${e.user || ""} ${e.status || ""}`
         .toLowerCase()
-        .includes(q)
+        .includes(q),
     );
   }, [errors, searchValue]);
 
@@ -81,10 +83,7 @@ export default function AdminErrorsTab({
       await api.put(`/errors/${errorId}`, { resolved: true });
       await loadErrors();
     } catch (err: any) {
-      if (err?.response?.status === 404) {
-        showToast("TODO: backend endpoint required: PUT /errors/:id", "info");
-        return;
-      }
+      if (err?.response?.status === 404) return;
       const msg = err?.response?.data?.message || "שגיאה בסגירת התקלה";
       showToast(msg, "error");
     }
@@ -99,7 +98,9 @@ export default function AdminErrorsTab({
       ) : errorsUnsupported ? (
         <div className="bg-neutral-800 rounded-2xl p-6 text-center">
           <AlertCircle size={32} className="mx-auto mb-3 text-neutral-600" />
-          <p className="text-neutral-400 text-sm">TODO: backend endpoint required</p>
+          <p className="text-neutral-400 text-sm">
+            TODO: backend endpoint required
+          </p>
           <p className="text-neutral-500 text-xs mt-1">GET /errors</p>
         </div>
       ) : filteredErrors.length === 0 ? (
@@ -118,9 +119,17 @@ export default function AdminErrorsTab({
         </div>
       ) : (
         filteredErrors.map((e) => {
-          const status =
-            e.status || (e.resolved ? "resolved" : "open") || "open";
-          const isOpen = status === "open" || e.resolved === false;
+          const isResolved =
+            e.resolved === true ||
+            e.resolved === 1 ||
+            e.resolved === "1" ||
+            e.resolved === "true";
+
+          const stateLabel = isResolved ? "resolved" : "open";
+          const httpStatusLabel =
+            e.status != null && String(e.status).trim()
+              ? `HTTP ${String(e.status).trim()}`
+              : null;
 
           return (
             <CardContainer key={e.id}>
@@ -133,11 +142,14 @@ export default function AdminErrorsTab({
                   {e.user && (
                     <SmallBadge icon={<Users size={14} />}>{e.user}</SmallBadge>
                   )}
+                  {httpStatusLabel ? (
+                    <SmallBadge variant="neutral">{httpStatusLabel}</SmallBadge>
+                  ) : null}
                   <SmallBadge
                     icon={<AlertCircle size={14} />}
-                    variant={isOpen ? "danger" : "success"}
+                    variant={isResolved ? "success" : "danger"}
                   >
-                    {status}
+                    {stateLabel}
                   </SmallBadge>
                 </div>
               </div>
@@ -145,9 +157,9 @@ export default function AdminErrorsTab({
               <div className="flex gap-6 flex-row-reverse items-center">
                 <button
                   onClick={() => resolveError(e.id)}
-                  disabled={!isOpen}
+                  disabled={isResolved}
                   className={`w-6 h-6 ${
-                    isOpen
+                    !isResolved
                       ? "text-brand-orange hover:text-white"
                       : "text-neutral-500"
                   }`}

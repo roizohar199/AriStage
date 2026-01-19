@@ -69,10 +69,10 @@ function SmallBadge({
     variant === "brand"
       ? "bg-brand-orange text-black font-semibold"
       : variant === "success"
-      ? "bg-green-600 text-white font-semibold"
-      : variant === "danger"
-      ? "bg-red-600 text-white font-semibold"
-      : "bg-neutral-900 text-white";
+        ? "bg-green-600 text-white font-semibold"
+        : variant === "danger"
+          ? "bg-red-600 text-white font-semibold"
+          : "bg-neutral-900 text-white";
 
   return (
     <span
@@ -209,7 +209,7 @@ export default function AdminReal() {
   const confirm = useConfirm();
   const selectedTab = useMemo(
     () => getTabFromLocationSearch(location.search),
-    [location.search]
+    [location.search],
   );
   console.log("ADMIN RENDERED");
 
@@ -217,7 +217,7 @@ export default function AdminReal() {
     (tab: AdminTab) => {
       navigate(`/admin?tab=${tab}`);
     },
-    [navigate]
+    [navigate],
   );
 
   const [searchByTab, setSearchByTab] = useState<Record<AdminTab, string>>({
@@ -279,7 +279,7 @@ export default function AdminReal() {
     const q = searchByTab.users.trim().toLowerCase();
     if (!q) return users;
     return users.filter((u) =>
-      `${u.full_name || ""} ${u.email} ${u.role}`.toLowerCase().includes(q)
+      `${u.full_name || ""} ${u.email} ${u.role}`.toLowerCase().includes(q),
     );
   }, [users, searchByTab.users]);
 
@@ -394,8 +394,8 @@ export default function AdminReal() {
         e.filter(
           (row: any) =>
             (row.status || (row.resolved ? "resolved" : "open")) === "open" ||
-            row.resolved === false
-        ).length
+            row.resolved === false,
+        ).length,
       );
     } catch {
       setFilesCount(0);
@@ -412,7 +412,7 @@ export default function AdminReal() {
     return {
       users: users.length,
       activeSubscriptions: users.filter(
-        (u) => (u.subscription_type || "trial") !== "trial"
+        (u) => (u.subscription_type || "trial") !== "trial",
       ).length,
       files: filesCount,
       openIssues: openIssuesCount,
@@ -504,6 +504,7 @@ export default function AdminReal() {
         <AdminFilesTab
           searchValue={searchValue}
           setSearchValue={setSearchValue}
+          users={users}
           CardContainer={CardContainer}
           SmallBadge={SmallBadge}
         />

@@ -8,7 +8,17 @@ import {
 
 export const filesController = {
   list: asyncHandler(async (req, res) => {
-    const files = await getFiles(req.user);
+    const rawUserId = req.query?.userId;
+    const userIdFilter =
+      typeof rawUserId === "string" && rawUserId.trim()
+        ? Number(rawUserId)
+        : undefined;
+
+    const files = await getFiles(req.user, {
+      userId: Number.isFinite(userIdFilter as number)
+        ? (userIdFilter as number)
+        : undefined,
+    });
     res.json(files);
   }),
   create: asyncHandler(async (req, res) => {
@@ -20,8 +30,10 @@ export const filesController = {
     res.json(file);
   }),
   remove: asyncHandler(async (req, res) => {
-    await removeFile(req.user, req.params.id);
+    const rawDisk = req.query?.disk;
+    const deleteFromDisk = rawDisk === "1" || rawDisk === "true";
+
+    await removeFile(req.user, req.params.id, { deleteFromDisk });
     res.json({ message: "✅ הקובץ נמחק בהצלחה" });
   }),
 };
-

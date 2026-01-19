@@ -300,9 +300,8 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
               onChange={(e) =>
                 setForm({
                   ...form,
-                  duration_sec: `${getMinutes(form.duration_sec)}:${
-                    e.target.value
-                  }`,
+                  duration_sec: `${getMinutes(form.duration_sec)}:${e.target.value
+                    }`,
                 })
               }
               className="w-fit bg-neutral-800 p-2 rounded-2xl text-sm text-center"
@@ -319,11 +318,10 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
                 type="button"
                 key={tag}
                 onClick={() => setForm({ ...form, notes: tag })}
-                className={`px-3 py-1 rounded-2xl text-sm ${
-                  form.notes === tag
+                className={`px-3 py-1 rounded-2xl text-sm ${form.notes === tag
                     ? "bg-brand-orange border-brand-orange text-black"
                     : "bg-neutral-800 text-neutral-300"
-                }`}
+                  }`}
               >
                 {tag}
               </button>

@@ -7,7 +7,7 @@ interface Song {
   artist: string;
   bpm: number;
   key_sig: string;
-  duration_sec: number;
+  duration_sec: string | number;
   notes?: string;
   is_owner?: boolean;
   owner_id?: number;
@@ -39,6 +39,8 @@ const CardSong: React.FC<CardSongProps> = ({
   chartsComponent,
   lyricsComponent,
 }) => {
+  const durationText = safeDuration(song.duration_sec);
+
   return (
     <div className="bg-neutral-800 rounded-2xl p-4 flex justify-between items-center shadow-sm hover:shadow-lg transition border border-neutral-800">
       <div>
@@ -53,7 +55,9 @@ const CardSong: React.FC<CardSongProps> = ({
             {song.bpm} BPM
           </span>
           <span className="bg-neutral-900 px-2 py-1 bg-neutral-800 rounded-2xl">
-            {safeDuration(song.duration_sec)}
+            <bdi dir="ltr" className="tabular-nums">
+              {durationText}
+            </bdi>
           </span>
           {song.notes && (
             <span className="inline-block px-2 py-1 text-xs bg-brand-orange rounded-2xl text-black font-semibold">

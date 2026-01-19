@@ -288,7 +288,13 @@ const AddSongModal = memo(function AddSongModal({
                   {s.key_sig || "-"}
                 </p>
                 <p className="px-2 py-1 bg-neutral-900 rounded-2xl">
-                  {s.duration_sec || "00:00"}
+                  <span
+                    dir="ltr"
+                    style={{ unicodeBidi: "isolate" }}
+                    className="tabular-nums"
+                  >
+                    {s.duration_sec || "00:00"}
+                  </span>
                 </p>
                 {s.notes && (
                   <span className="inline-block px-2 py-1 text-xs bg-brand-orange rounded-2xl text-black font-semibold">
@@ -918,7 +924,13 @@ export default function LineupDetails() {
             <h1 className="text-3xl font-bold text-white">{lineup.title}</h1>
             <div className="flex items-center gap-1 px-2 py-1 bg-neutral-800 rounded-2xl text-brand-orange font-bold text-sm">
               <Clock size={18} />
-              {totalDuration}
+              <span
+                dir="ltr"
+                style={{ unicodeBidi: "isolate" }}
+                className="tabular-nums"
+              >
+                {totalDuration}
+              </span>
             </div>
             <div className="flex items-center gap-1 px-2 py-1 bg-neutral-800 rounded-2xl text-brand-orange font-bold text-sm">
               <Music4Icon size={18} />
