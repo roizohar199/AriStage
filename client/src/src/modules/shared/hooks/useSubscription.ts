@@ -6,8 +6,8 @@ export type SubscriptionPermissions = {
   canExport: boolean;
 };
 
-// Trial / Pro are the only legal subscription tiers in the system.
-export type SubscriptionPlan = "trial" | "pro";
+// Plan keys are dynamic (come from DB `plans.key`); keep "trial" as the default.
+export type SubscriptionPlan = string;
 
 export type SubscriptionModel = {
   status: "active" | "trial" | "expired";
@@ -31,12 +31,11 @@ function parseExpiresAt(raw: unknown): Date | null {
   }
 }
 
-// Normalize any raw subscription_type value into a legal tier.
-// Any unknown or legacy value is treated as "trial" (read-only semantics).
+// Normalize any raw subscription_type value into a stable plan key.
+// Keep legacy/empty values as "trial" for backward compatibility.
 export function normalizeSubscriptionType(value: unknown): SubscriptionPlan {
-  const raw = String(value ?? "").toLowerCase();
-  if (raw === "pro") return "pro";
-  return "trial";
+  const raw = String(value ?? "").trim().toLowerCase();
+  return raw || "trial";
 }
 
 /**
@@ -44,7 +43,7 @@ export function normalizeSubscriptionType(value: unknown): SubscriptionPlan {
  *
  * Source of truth:
  * - status: comes from server-resolved `subscription_status` via AuthContext
- * - plan: normalized view of `subscription_type` (trial | pro)
+ * - plan: plan key from `subscription_type`
  * - expiresAt: parsed from `subscription_expires_at` for display only
  * - permissions: mirrors current server behavior (requireActiveSubscription)
  */

@@ -24,7 +24,8 @@ type AvailablePlan = {
 };
 
 export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
-  const { subscriptionBlockedPayload, refreshUser } = useAuth();
+  const { subscriptionBlockedPayload, refreshUser, user, subscriptionStatus } =
+    useAuth();
   const subscription = useSubscription();
 
   const [plans, setPlans] = useState<AvailablePlan[]>([]);
@@ -69,10 +70,10 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
     };
   }, [open]);
 
-  const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) return "—";
+  const formatDate = (raw: unknown) => {
+    if (!raw) return "—";
     try {
-      const date = new Date(dateString);
+      const date = raw instanceof Date ? raw : new Date(String(raw));
       return date.toLocaleDateString("he-IL", {
         year: "numeric",
         month: "long",
@@ -83,7 +84,16 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
     }
   };
 
-  const expiryDate = formatDate(subscriptionBlockedPayload?.expires_at);
+  const effectiveStatus = subscription?.status ?? subscriptionStatus ?? null;
+  const isTrial = effectiveStatus === "trial";
+  const isExpired = effectiveStatus === "expired";
+
+  const expiryDate = formatDate(
+    subscriptionBlockedPayload?.expires_at ??
+      user?.subscription_expires_at ??
+      subscription?.expiresAt ??
+      null
+  );
   const currentTier = subscription?.plan ?? "trial";
 
   const selectedPlan = useMemo(() => {
@@ -165,7 +175,9 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
         </div>
 
         {/* Title */}
-        <h2 className="text-3xl font-bold text-white">תקופת הניסיון הסתיימה</h2>
+        <h2 className="text-3xl font-bold text-white">
+          {isExpired ? "המנוי פג תוקף" : isTrial ? "את/ה בתקופת ניסיון" : "שדרוג מנוי"}
+        </h2>
 
         {/* Current Status */}
         <div className="space-y-4">
@@ -177,7 +189,13 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
           </div>
 
           <div className="bg-neutral-800 rounded-xl p-4">
-            <p className="text-sm text-neutral-400">תוקף המנוי הסתיים בתאריך</p>
+            <p className="text-sm text-neutral-400">
+              {isExpired
+                ? "תוקף המנוי הסתיים בתאריך"
+                : isTrial
+                ? "תקופת הניסיון מסתיימת בתאריך"
+                : "תוקף המנוי עד תאריך"}
+            </p>
             <p className="text-lg font-semibold text-white mt-1">
               {expiryDate}
             </p>

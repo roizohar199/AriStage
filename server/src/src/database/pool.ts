@@ -61,6 +61,43 @@ async function configureConnection(connection: any) {
   }
 }
 
+async function ensureDynamicPlanKeysSchema() {
+  try {
+    const [rows] = await pool.query(
+      "SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND ((TABLE_NAME = 'users' AND COLUMN_NAME = 'subscription_type') OR (TABLE_NAME = 'payments' AND COLUMN_NAME = 'plan'))"
+    );
+
+    const list = Array.isArray(rows) ? (rows as any[]) : [];
+
+    const usersType = list.find(
+      (r) => r?.TABLE_NAME === "users" && r?.COLUMN_NAME === "subscription_type"
+    )?.DATA_TYPE;
+    const paymentsType = list.find(
+      (r) => r?.TABLE_NAME === "payments" && r?.COLUMN_NAME === "plan"
+    )?.DATA_TYPE;
+
+    if (String(usersType).toLowerCase() === "enum") {
+      await pool.query(
+        "ALTER TABLE `users` MODIFY COLUMN `subscription_type` VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'trial'"
+      );
+      console.log("✅ DB migrated: users.subscription_type -> VARCHAR(64)");
+    }
+
+    if (String(paymentsType).toLowerCase() === "enum") {
+      await pool.query(
+        "ALTER TABLE `payments` MODIFY COLUMN `plan` VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL"
+      );
+      console.log("✅ DB migrated: payments.plan -> VARCHAR(64)");
+    }
+  } catch (err: any) {
+    // Do not crash the server if schema migration fails; log for debugging.
+    console.warn(
+      "⚠️ Warning: could not ensure dynamic plan keys schema:",
+      err?.message ?? err
+    );
+  }
+}
+
 // Wrapper ל-getConnection כדי להגדיר charset אוטומטית
 const originalGetConnection = pool.getConnection.bind(pool);
 pool.getConnection = async function () {
@@ -77,6 +114,7 @@ async function verifyConnection() {
     // הגדרת charset לחיבור
     await configureConnection(connection);
     console.log("✅ MySQL connected successfully with utf8mb4 encoding!");
+    await ensureDynamicPlanKeysSchema();
     connection.release();
   } catch (err: any) {
     console.error("❌ Database connection failed:");

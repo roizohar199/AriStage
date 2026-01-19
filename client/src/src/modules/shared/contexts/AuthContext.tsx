@@ -141,7 +141,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         nextStatus !== "trial";
 
       // Keep existing behavior for active/trial, but persist expired on refresh.
-      setBlocked(shouldBlock, shouldBlock ? subscriptionBlockedPayload : null);
+      const nextPayload = shouldBlock
+        ? ({
+            code: "SUBSCRIPTION_REQUIRED",
+            ...(subscriptionBlockedPayload ?? {}),
+            expires_at:
+              subscriptionBlockedPayload?.expires_at ??
+              data?.subscription_expires_at ??
+              null,
+          } as SubscriptionBlockedPayload)
+        : null;
+      setBlocked(shouldBlock, nextPayload);
 
       // Sync with localStorage
       try {
@@ -256,10 +266,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           data?.role !== "admin" &&
           nextStatus !== "active" &&
           nextStatus !== "trial";
-        setBlocked(
-          shouldBlock,
-          shouldBlock ? subscriptionBlockedPayload : null
-        );
+        const nextPayload = shouldBlock
+          ? ({
+              code: "SUBSCRIPTION_REQUIRED",
+              ...(subscriptionBlockedPayload ?? {}),
+              expires_at:
+                subscriptionBlockedPayload?.expires_at ??
+                data?.subscription_expires_at ??
+                null,
+            } as SubscriptionBlockedPayload)
+          : null;
+        setBlocked(shouldBlock, nextPayload);
         try {
           localStorage.setItem("ari_user", JSON.stringify(data || {}));
         } catch {}

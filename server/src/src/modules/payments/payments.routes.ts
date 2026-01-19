@@ -5,7 +5,8 @@ import {
   findPaymentById,
   markPaymentPaid,
 } from "./payments.repository.js";
-import { activateProForUser } from "../../services/subscriptionService.js";
+import { getPlanByKey } from "../plans/plans.repository.js";
+import { activatePlanForUser } from "../../services/subscriptionService.js";
 import { AppError } from "../../core/errors.js";
 
 const router = Router();
@@ -19,10 +20,9 @@ router.post("/create", requireAuth, async (req, res, next) => {
 
     const { plan, billing_period, billingPeriod } = req.body || {};
 
-    // For now we only support the existing mock "pro" plan
-    const resolvedPlan = plan || "pro";
-    if (resolvedPlan !== "pro") {
-      throw new AppError(400, "Unsupported plan");
+    const resolvedPlan = String(plan ?? "pro").trim();
+    if (!resolvedPlan) {
+      throw new AppError(400, "plan is required");
     }
 
     const resolvedBillingPeriod = billing_period || billingPeriod || "monthly";
@@ -33,8 +33,17 @@ router.post("/create", requireAuth, async (req, res, next) => {
       throw new AppError(400, "Invalid billing period");
     }
 
+    const planRow = await getPlanByKey(resolvedPlan);
+    if (!planRow) {
+      throw new AppError(400, "Invalid plan");
+    }
+    if (!planRow.enabled) {
+      throw new AppError(400, "Plan is not available");
+    }
+
     const payment = await createMockPayment(
       Number(userId),
+      resolvedPlan,
       resolvedBillingPeriod
     );
 
@@ -80,8 +89,9 @@ router.post("/mock-success", requireAuth, async (req, res, next) => {
     }
 
     await markPaymentPaid(payment.id);
-    await activateProForUser({
+    await activatePlanForUser({
       userId: Number(userId),
+      planKey: payment.plan,
       billingPeriod: payment.billing_period,
     });
 

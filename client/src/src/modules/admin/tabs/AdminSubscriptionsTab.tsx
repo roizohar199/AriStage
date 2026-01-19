@@ -58,6 +58,65 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
   showToast,
   api,
 }) => {
+  const [plans, setPlans] = React.useState<
+    { id: number; key: string; name: string; enabled: boolean }[]
+  >([]);
+
+  React.useEffect(() => {
+    let mounted = true;
+
+    const loadPlans = async () => {
+      // Prefer admin plans (includes disabled). Fallback to public available plans.
+      try {
+        const { data } = await api.get("/admin/plans", {
+          skipErrorToast: true,
+        } as any);
+        const next = Array.isArray(data) ? data : [];
+        if (mounted) setPlans(next);
+        return;
+      } catch {
+        // ignore
+      }
+
+      try {
+        const { data } = await api.get("/plans/available", {
+          skipErrorToast: true,
+        } as any);
+        const next = Array.isArray(data) ? data : [];
+        if (mounted) setPlans(next);
+      } catch {
+        if (mounted) setPlans([]);
+      }
+    };
+
+    void loadPlans();
+
+    return () => {
+      mounted = false;
+    };
+  }, [api]);
+
+  const planOptions = React.useMemo(() => {
+    const options: { value: string; label: string }[] = [
+      { value: "trial", label: "trial" },
+    ];
+    const seen = new Set<string>(["trial"]);
+
+    for (const p of plans) {
+      const key = String(p?.key ?? "").trim();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      const name = String(p?.name ?? "").trim();
+      const enabled = Boolean(p?.enabled);
+      options.push({
+        value: key,
+        label: `${name || key} (${key})${enabled ? "" : " (disabled)"}`,
+      });
+    }
+
+    return options;
+  }, [plans]);
+
   return (
     <div className="space-y-3">
       {usersLoading ? (
@@ -162,8 +221,18 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                         }}
                         className="w-full bg-neutral-900 border border-neutral-800 p-2 rounded-2xl text-sm"
                       >
-                        <option value="trial">trial</option>
-                        <option value="pro">pro</option>
+                        {!planOptions.some(
+                          (o) => o.value === subForm.subscription_type
+                        ) ? (
+                          <option value={subForm.subscription_type}>
+                            {subForm.subscription_type} (legacy)
+                          </option>
+                        ) : null}
+                        {planOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
                       </select>
                       <label className="text-xs text-neutral-300 font-bold mt-2">
                         סטטוס מנוי

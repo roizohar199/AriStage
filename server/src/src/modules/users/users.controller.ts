@@ -70,7 +70,7 @@ export const usersController = {
 
     if (user) {
       // Admin is authoritative — do not auto-resolve if set by admin
-      if (!(user.subscription_type === "pro" || req.user?.role === "admin")) {
+      if (req.user?.role !== "admin") {
         user.subscription_status = resolveSubscriptionStatus(user);
       }
     }
@@ -101,7 +101,7 @@ export const usersController = {
 
     const fixed = users.map((u) => {
       // Admin is authoritative — do not auto-resolve if set by admin
-      if (!(u.subscription_type === "pro" || u.role === "admin")) {
+      if (u.role !== "admin") {
         u.subscription_status = resolveSubscriptionStatus(u);
       }
       return {

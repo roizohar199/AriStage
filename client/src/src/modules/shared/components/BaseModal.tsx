@@ -61,12 +61,12 @@ export default function BaseModal({
 
   return (
     <div
-      className={`fixed top-16 left-0 right-0 bottom-0 ${backdropClassName} backdrop-blur-sm flex justify-center items-center z-50 p-4 transition-all duration-200 ${backdropContainerClassName}`}
+      className={`fixed inset-0 sm:top-16 ${backdropClassName} backdrop-blur-sm flex justify-center items-start sm:items-center z-50 p-4 transition-all duration-200 ${backdropContainerClassName}`}
       onClick={handleBackdropClick}
       role="presentation"
     >
       <div
-        className={`bg-neutral-900 rounded-2xl w-full ${maxWidth} relative shadow-xl ${padding} animate-in fade-in zoom-in-95 duration-200 ${containerClassName}`}
+        className={`bg-neutral-900 rounded-2xl w-full ${maxWidth} relative shadow-xl ${padding} max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-6rem)] overflow-y-auto animate-in fade-in zoom-in-95 duration-200 ${containerClassName}`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

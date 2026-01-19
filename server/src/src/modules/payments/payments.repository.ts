@@ -1,5 +1,5 @@
 import { pool } from "../../database/pool.js";
-import { getSubscriptionSettings } from "../subscriptions/subscriptions.repository.js";
+import { getPlanByKey } from "../plans/plans.repository.js";
 
 import type { BillingPeriod } from "../../services/subscriptionService.js";
 
@@ -19,24 +19,37 @@ export type PaymentRecord = {
 
 export async function createMockPayment(
   userId: number,
+  planKey: string,
   billingPeriod: BillingPeriod
 ): Promise<PaymentRecord> {
   if (!Number.isFinite(userId) || userId <= 0) {
     throw new Error("Invalid userId for createMockPayment");
   }
 
-  const settings = await getSubscriptionSettings();
+  const normalizedPlanKey = String(planKey ?? "").trim();
+  if (!normalizedPlanKey) {
+    throw new Error("Invalid planKey for createMockPayment");
+  }
 
-  const basePrice = Number(settings.price_ils);
-  const amount = billingPeriod === "yearly" ? basePrice * 12 : basePrice;
+  const plan = await getPlanByKey(normalizedPlanKey);
+  if (!plan) {
+    throw new Error(`Unknown plan for createMockPayment: ${normalizedPlanKey}`);
+  }
+  if (!plan.enabled) {
+    throw new Error(`Plan is disabled for createMockPayment: ${normalizedPlanKey}`);
+  }
+
+  const amount =
+    billingPeriod === "yearly" ? Number(plan.yearly_price) : Number(plan.monthly_price);
+  const currency = String(plan.currency);
 
   const transactionId = `mock_${Date.now()}_${Math.random()
     .toString(36)
     .slice(2, 10)}`;
 
   const [result] = await pool.query(
-    "INSERT INTO payments (user_id, provider, transaction_id, plan, billing_period, amount, currency, status) VALUES (?, 'mock', ?, 'pro', ?, ?, 'ILS', 'pending')",
-    [userId, transactionId, billingPeriod, amount]
+    "INSERT INTO payments (user_id, provider, transaction_id, plan, billing_period, amount, currency, status) VALUES (?, 'mock', ?, ?, ?, ?, ?, 'pending')",
+    [userId, transactionId, normalizedPlanKey, billingPeriod, amount, currency]
   );
 
   const insertId = (result as any).insertId as number;

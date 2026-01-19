@@ -53,7 +53,7 @@ export const subscriptionsController = {
 
     let resolvedStatus = user.subscription_status;
     // Admin is authoritative — do not auto-resolve if set by admin
-    if (!(user.subscription_type === "pro" || user.role === "admin")) {
+    if (user.role !== "admin") {
       resolvedStatus = resolveSubscriptionStatus(user);
     }
     res.json({

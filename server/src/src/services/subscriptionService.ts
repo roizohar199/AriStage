@@ -49,14 +49,30 @@ export async function activateProForUser(
   params: { userId: number; billingPeriod: BillingPeriod },
   dbOverride?: any
 ): Promise<void> {
-  const { userId, billingPeriod } = params;
+  // Backward compatible wrapper
+  return activatePlanForUser(
+    { userId: params.userId, planKey: "pro", billingPeriod: params.billingPeriod },
+    dbOverride
+  );
+}
+
+export async function activatePlanForUser(
+  params: { userId: number; planKey: string; billingPeriod: BillingPeriod },
+  dbOverride?: any
+): Promise<void> {
+  const { userId, billingPeriod, planKey } = params;
+  const normalizedPlanKey = String(planKey ?? "").trim();
 
   if (!Number.isFinite(userId) || userId <= 0) {
-    throw new Error("Invalid userId for activateProForUser");
+    throw new Error("Invalid userId for activatePlanForUser");
   }
 
   if (billingPeriod !== "monthly" && billingPeriod !== "yearly") {
-    throw new Error("Invalid billingPeriod for activateProForUser");
+    throw new Error("Invalid billingPeriod for activatePlanForUser");
+  }
+
+  if (!normalizedPlanKey) {
+    throw new Error("Invalid planKey for activatePlanForUser");
   }
 
   const days = billingPeriod === "monthly" ? 30 : 365;
@@ -64,11 +80,11 @@ export async function activateProForUser(
   const db = dbOverride || pool;
 
   const [result] = await db.query(
-    "UPDATE users SET subscription_type = 'pro', subscription_status = 'active', subscription_started_at = NOW(), subscription_expires_at = DATE_ADD(NOW(), INTERVAL ? DAY), updated_at = NOW() WHERE id = ?",
-    [days, userId]
+    "UPDATE users SET subscription_type = ?, subscription_status = 'active', subscription_started_at = NOW(), subscription_expires_at = DATE_ADD(NOW(), INTERVAL ? DAY), updated_at = NOW() WHERE id = ?",
+    [normalizedPlanKey, days, userId]
   );
 
   if (!result || !result.affectedRows) {
-    throw new Error("Failed to activate Pro subscription for user");
+    throw new Error("Failed to activate subscription for user");
   }
 }

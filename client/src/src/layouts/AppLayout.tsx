@@ -3,8 +3,8 @@ import Footer from "@/modules/shared/components/Footer.tsx";
 import Header from "@/modules/shared/components/Header.tsx";
 import BottomNav from "@/modules/shared/components/BottomNav.tsx";
 import UpgradeModal from "@/modules/shared/components/UpgradeModal.tsx";
+import SubscriptionBanner from "@/modules/shared/components/SubscriptionBanner.tsx";
 import { useCurrentUser } from "@/modules/shared/hooks/useCurrentUser.ts";
-import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 
 declare global {
   interface Window {
@@ -38,11 +38,8 @@ export default function AppLayout({
   const scrollAreaRef = useRef<HTMLElement | null>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { user } = useCurrentUser();
-  const { subscriptionBlocked } = useAuth();
   const isAuthenticated = !!user?.id;
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
-  const [hasShownUpgradeModalOnLoad, setHasShownUpgradeModalOnLoad] =
-    useState(false);
 
   useEffect(() => {
     window.openUpgradeModal = () => setIsUpgradeModalOpen(true);
@@ -50,15 +47,6 @@ export default function AppLayout({
       delete window.openUpgradeModal;
     };
   }, []);
-
-  // Open modal when subscription is blocked
-  useEffect(() => {
-    if (window.location.pathname === "/settings") return;
-    if (subscriptionBlocked && isAuthenticated && !hasShownUpgradeModalOnLoad) {
-      setIsUpgradeModalOpen(true);
-      setHasShownUpgradeModalOnLoad(true);
-    }
-  }, [subscriptionBlocked, isAuthenticated, hasShownUpgradeModalOnLoad]);
 
   useEffect(() => {
     const mainEl = scrollAreaRef.current;
@@ -123,17 +111,9 @@ export default function AppLayout({
           isUpgradeModalOpen ? "blur-sm" : ""
         }`}
       >
+        <SubscriptionBanner />
         <div
           dir="rtl"
-          onClickCapture={(e) => {
-            if (window.location.pathname === "/settings") return;
-            if (!subscriptionBlocked) return;
-
-            e.preventDefault();
-            e.stopPropagation();
-
-            window.openUpgradeModal?.();
-          }}
           className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
         >
           {children}

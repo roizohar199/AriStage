@@ -29,6 +29,7 @@ import {
 import crypto from "crypto";
 import { transporter } from "../../integrations/mail/transporter.js";
 import { env } from "../../config/env.js";
+import { getPlanByKey } from "../plans/plans.repository.js";
 
 function toMysqlDateTime(date: Date): string {
   return date.toISOString().slice(0, 19).replace("T", " ");
@@ -107,15 +108,18 @@ export async function createUserAccount(currentUser, payload) {
   const hash = await bcrypt.hash(payload.password, 10);
 
   const nextTypeRaw =
-    payload.subscription_type !== undefined
-      ? payload.subscription_type
-      : "trial";
-  const nextTypeLower = String(nextTypeRaw ?? "").toLowerCase();
-  if (nextTypeLower && nextTypeLower !== "trial" && nextTypeLower !== "pro") {
-    throw new AppError(400, `Invalid subscription_type: ${nextTypeLower}`);
+    payload.subscription_type !== undefined ? payload.subscription_type : "trial";
+  let nextTypeLower = String(nextTypeRaw ?? "").trim().toLowerCase();
+  if (!nextTypeLower) {
+    nextTypeLower = "trial";
   }
-  const isPaidTier = nextTypeLower === "pro";
-  const subscription_status = isPaidTier ? "active" : "trial";
+  if (nextTypeLower !== "trial") {
+    const plan = await getPlanByKey(nextTypeLower);
+    if (!plan) {
+      throw new AppError(400, `Invalid subscription_type: ${nextTypeLower}`);
+    }
+  }
+  const subscription_status = nextTypeLower === "trial" ? "trial" : "active";
   const subscription_expires_at = addDaysMysqlDateTime(30);
 
   await insertUser({
@@ -151,10 +155,16 @@ export async function updateUserAccount(requestingUser, id, payload) {
   // ✅ טיפול במסלול (tier) – שומר על ההתנהגות הקודמת
   let nextTypeLower: string | undefined;
   if (payload.subscription_type !== undefined) {
-    nextTypeLower = String(payload.subscription_type ?? "").toLowerCase();
+    nextTypeLower = String(payload.subscription_type ?? "").trim().toLowerCase();
 
-    if (nextTypeLower && nextTypeLower !== "trial" && nextTypeLower !== "pro") {
-      throw new AppError(400, `Invalid subscription_type: ${nextTypeLower}`);
+    if (!nextTypeLower) {
+      throw new AppError(400, "Invalid subscription_type");
+    }
+    if (nextTypeLower !== "trial") {
+      const plan = await getPlanByKey(nextTypeLower);
+      if (!plan) {
+        throw new AppError(400, `Invalid subscription_type: ${nextTypeLower}`);
+      }
     }
 
     updates.subscription_type = nextTypeLower;
