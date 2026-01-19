@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { requireAuth } from "../../middleware/auth.js";
 import { requireActiveSubscription } from "../../middleware/subscription.js";
+import { requireFeatureFlagEnabled } from "../../middleware/featureFlags.js";
 import { emitRefreshOnMutation } from "../../middleware/refresh.js";
 import { songsController } from "./songs.controller.js";
 import { uploadSongChartPdf } from "../shared/upload.js";
@@ -14,10 +15,15 @@ router.use(requireActiveSubscription);
 router.use(emitRefreshOnMutation);
 
 router.get("/", songsController.list);
-router.post("/", songsController.create);
-router.get("/:id/private-charts", songsController.getPrivateCharts);
+router.post("/", requireFeatureFlagEnabled("module.addSongs"), songsController.create);
+router.get(
+  "/:id/private-charts",
+  requireFeatureFlagEnabled("module.charts"),
+  songsController.getPrivateCharts
+);
 router.post(
   "/:id/private-charts",
+  requireFeatureFlagEnabled("module.charts"),
   (req, res, next) => {
     uploadSongChartPdf.single("pdf")(req, res, (err: any) => {
       if (err) {
@@ -32,12 +38,18 @@ router.post(
 );
 router.delete(
   "/:id/private-charts/:chartId",
+  requireFeatureFlagEnabled("module.charts"),
   songsController.deletePrivateChart,
 );
-router.put("/:id", songsController.update);
-router.delete("/:id", songsController.remove);
+router.put("/:id", requireFeatureFlagEnabled("module.addSongs"), songsController.update);
+router.delete(
+  "/:id",
+  requireFeatureFlagEnabled("module.addSongs"),
+  songsController.remove
+);
 router.post(
   "/:id/upload-chart",
+  requireFeatureFlagEnabled("module.charts"),
   (req, res, next) => {
     uploadSongChartPdf.single("pdf")(req, res, (err: any) => {
       if (err) {
@@ -50,9 +62,21 @@ router.post(
   },
   songsController.uploadChart,
 );
-router.delete("/:id/delete-chart", songsController.deleteChart);
+router.delete(
+  "/:id/delete-chart",
+  requireFeatureFlagEnabled("module.charts"),
+  songsController.deleteChart
+);
 
-router.put("/:id/lyrics", songsController.upsertLyrics);
-router.delete("/:id/lyrics", songsController.deleteLyrics);
+router.put(
+  "/:id/lyrics",
+  requireFeatureFlagEnabled("module.lyrics"),
+  songsController.upsertLyrics
+);
+router.delete(
+  "/:id/lyrics",
+  requireFeatureFlagEnabled("module.lyrics"),
+  songsController.deleteLyrics
+);
 
 export const songsRouter = router;

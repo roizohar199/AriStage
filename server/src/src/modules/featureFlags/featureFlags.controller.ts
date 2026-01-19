@@ -2,6 +2,7 @@ import { asyncHandler } from "../../core/asyncHandler.js";
 import { AppError } from "../../core/errors.js";
 import { getFeatureFlags, setFeatureFlag } from "./featureFlags.service.js";
 import { logSystemEvent } from "../../utils/systemLogger.js";
+import { clearFeatureFlagsCache } from "../../middleware/featureFlags.js";
 
 export const featureFlagsController = {
   list: asyncHandler(async (_req, res) => {
@@ -9,18 +10,30 @@ export const featureFlagsController = {
     res.json(rows);
   }),
 
+  listClient: asyncHandler(async (_req, res) => {
+    const rows = await getFeatureFlags();
+    const clientRows = (Array.isArray(rows) ? rows : []).filter((r: any) =>
+      String(r?.key || "").startsWith("module.")
+    );
+    res.json(clientRows);
+  }),
+
   update: asyncHandler(async (req, res) => {
     const key = String(req.params.key || "").trim();
     if (!key) throw new AppError(400, "Missing feature flag key");
 
     const enabled = Boolean(req.body?.enabled);
-    await setFeatureFlag(key, enabled);
+    const description =
+      req.body?.description === undefined ? undefined : req.body?.description;
+
+    await setFeatureFlag(key, enabled, description);
+    clearFeatureFlagsCache();
 
     void logSystemEvent(
       "info",
       "FEATURE_FLAG_TOGGLED",
       "Feature flag toggled",
-      { key, enabled },
+      { key, enabled, description },
       (req as any).user?.id
     );
 

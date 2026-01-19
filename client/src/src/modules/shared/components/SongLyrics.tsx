@@ -3,6 +3,7 @@ import { Eye, Save, Trash2, FileText } from "lucide-react";
 import api from "@/modules/shared/lib/api.js";
 import BaseModal from "./BaseModal.tsx";
 import { useToast } from "./ToastProvider";
+import { useFeatureFlags } from "@/modules/shared/contexts/FeatureFlagsContext.tsx";
 import { ConfirmOptions } from "../confirm/types";
 
 type SongLyricsProps = {
@@ -23,6 +24,8 @@ export default function SongLyrics({
   onChanged,
 }: SongLyricsProps): JSX.Element {
   const { showToast } = useToast();
+  const { isEnabled } = useFeatureFlags();
+  const lyricsEnabled = isEnabled("module.lyrics", true);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState(lyricsText || "");
@@ -74,6 +77,19 @@ export default function SongLyrics({
       setSaving(false);
     }
   }, [canEdit, onChanged, onConfirm, showToast, songId]);
+
+  if (!lyricsEnabled) {
+    return (
+      <div className="bg-neutral-900 grid place-items-center mt-3 p-3 rounded-2xl">
+        <div className="flex items-center gap-2 mb-2">
+          <FileText size={16} className="text-neutral-500" />
+          <span className="text-xs font-semibold text-neutral-400">
+            מודול מילים כבוי
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

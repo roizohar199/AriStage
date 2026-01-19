@@ -17,14 +17,25 @@ export async function listFeatureFlags(): Promise<FeatureFlagRow[]> {
 export async function upsertFeatureFlag(input: {
   key: string;
   enabled: boolean;
+  description?: string | null;
 }) {
   const key = String(input.key || "").trim();
   if (!key) return;
 
+  const description =
+    input.description === undefined
+      ? null
+      : input.description === null
+      ? null
+      : String(input.description).trim() || null;
+
   await pool.query(
-    `INSERT INTO feature_flags (\`key\`, enabled, updated_at)
-     VALUES (?, ?, NOW())
-     ON DUPLICATE KEY UPDATE enabled = VALUES(enabled), updated_at = NOW()`,
-    [key, input.enabled ? 1 : 0]
+    `INSERT INTO feature_flags (\`key\`, enabled, description, updated_at)
+     VALUES (?, ?, ?, NOW())
+     ON DUPLICATE KEY UPDATE
+       enabled = VALUES(enabled),
+       description = COALESCE(VALUES(description), description),
+       updated_at = NOW()`,
+    [key, input.enabled ? 1 : 0, description]
   );
 }

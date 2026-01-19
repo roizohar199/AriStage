@@ -33,6 +33,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "@/modules/shared/components/ToastProvider.jsx";
+import { useFeatureFlags } from "@/modules/shared/contexts/FeatureFlagsContext.tsx";
 import { API_ORIGIN } from "@/config/apiConfig";
 import { io } from "socket.io-client";
 import CardSong from "../../shared/components/cardsong";
@@ -320,10 +321,35 @@ export default function LineupDetails() {
   const { showToast } = useToast();
   const { lineupId } = useParams<{ lineupId: string }>();
   const navigate = useNavigate();
+  const { isEnabled } = useFeatureFlags();
+
+  const lineupsEnabled = isEnabled("module.lineups", true);
+  const chartsEnabled = isEnabled("module.charts", true);
+  const lyricsEnabled = isEnabled("module.lyrics", true);
 
   // Safety check for invalid lineupId
   if (!lineupId || isNaN(Number(lineupId))) {
     return null;
+  }
+
+  if (!lineupsEnabled) {
+    return (
+      <div dir="rtl" className="text-white relative">
+        <div className="bg-neutral-800 rounded-2xl p-6 text-center">
+          <p className="text-neutral-200 font-bold">מודול ליינאפים כבוי</p>
+          <p className="text-neutral-400 text-sm mt-2">
+            ניתן להפעיל אותו מחדש בטאב “מודלים” באדמין.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate("/my")}
+            className="mt-4 px-4 py-2 rounded-2xl bg-neutral-900 border border-neutral-700 hover:bg-neutral-800 text-sm"
+          >
+            חזרה
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const [lineup, setLineup] = useState<any>(null);
@@ -942,26 +968,30 @@ export default function LineupDetails() {
                     <Printer size={16} />
                     הדפס
                   </button>
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      handleDownloadAllCharts();
-                    }}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:text-brand-orange"
-                  >
-                    <FileDown size={16} />
-                    הורד צ'ארטים
-                  </button>
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      handleDownloadAllLyrics();
-                    }}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:text-brand-orange"
-                  >
-                    <FileDown size={16} />
-                    הורד מילים
-                  </button>
+                  {chartsEnabled ? (
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        handleDownloadAllCharts();
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:text-brand-orange"
+                    >
+                      <FileDown size={16} />
+                      הורד צ'ארטים
+                    </button>
+                  ) : null}
+                  {lyricsEnabled ? (
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        handleDownloadAllLyrics();
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:text-brand-orange"
+                    >
+                      <FileDown size={16} />
+                      הורד מילים
+                    </button>
+                  ) : null}
                 </div>
               )}
             </div>

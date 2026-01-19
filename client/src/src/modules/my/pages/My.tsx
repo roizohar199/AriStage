@@ -41,6 +41,7 @@ import LineupDetails from "../../lineups/pages/LineupDetails.tsx";
 import api from "@/modules/shared/lib/api.js";
 import { API_ORIGIN } from "@/config/apiConfig";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
+import { useFeatureFlags } from "@/modules/shared/contexts/FeatureFlagsContext.tsx";
 import DesignActionButton from "../../shared/components/DesignActionButton";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "../../shared/components/ToastProvider";
@@ -100,11 +101,21 @@ function MyContent(): JSX.Element {
   const location = useLocation();
   const isLineupRoute = /^\/my\/lineups\/\d+/.test(location.pathname);
   const { subscriptionBlocked, subscriptionStatus, user } = useAuth();
+  const navigate = useNavigate();
+  const { isEnabled: isFeatureEnabled } = useFeatureFlags();
+
+  const addSongsEnabled = isFeatureEnabled("module.addSongs", true);
+  const lineupsEnabled = isFeatureEnabled("module.lineups", true);
 
   const canCreateOrMutate =
     user?.role === "admin" ||
-    subscriptionStatus === "active" ||
-    subscriptionStatus === "trial";
+    ((subscriptionStatus === "active" || subscriptionStatus === "trial") &&
+      addSongsEnabled);
+
+  const canMutateLineups =
+    user?.role === "admin" ||
+    ((subscriptionStatus === "active" || subscriptionStatus === "trial") &&
+      lineupsEnabled);
 
   // --- סטייטים כלליים ---
   const [stats, setStats] = useState<any>(null);
@@ -117,6 +128,15 @@ function MyContent(): JSX.Element {
 
   // Sync selectedTab with URL
   useEffect(() => {
+    if (
+      !lineupsEnabled &&
+      (location.pathname.includes("/lineups") ||
+        location.search.includes("tab=lineups"))
+    ) {
+      setSelectedTab("songs");
+      navigate("/my", { replace: true });
+      return;
+    }
     if (location.pathname.includes("/lineups")) {
       setSelectedTab("lineups");
     } else if (location.search.includes("tab=lineups")) {
@@ -126,8 +146,7 @@ function MyContent(): JSX.Element {
     } else {
       setSelectedTab("songs");
     }
-  }, [location.pathname, location.search]);
-  const navigate = useNavigate();
+  }, [location.pathname, location.search, lineupsEnabled, navigate]);
 
   // --- סטייטים של טאב השירים ---
   // --- אמנים שהזמנתי למאגר שלי ---
@@ -504,6 +523,10 @@ function MyContent(): JSX.Element {
     }
   };
   const remove = async (songId: number) => {
+    if (!addSongsEnabled) {
+      showToast("מודול הוספת שירים כבוי", "warning");
+      return;
+    }
     const ok = await confirm({
       title: "מחיקת שיר",
       message: "בטוח שאתה רוצה למחוק את השיר?",
@@ -518,6 +541,10 @@ function MyContent(): JSX.Element {
     );
   };
   const edit = (song: Song) => {
+    if (!addSongsEnabled) {
+      showToast("מודול הוספת שירים כבוי", "warning");
+      return;
+    }
     setForm({
       title: song.title || "",
       artist: song.artist || "",
@@ -689,7 +716,7 @@ function MyContent(): JSX.Element {
       if (isEditingLineup && editLineupId) {
         await api.put(`/lineups/${editLineupId}`, lineupForm);
       } else {
-        if (!canCreateOrMutate) {
+        if (!canMutateLineups) {
           window.openUpgradeModal?.();
           return;
         }
@@ -773,22 +800,24 @@ function MyContent(): JSX.Element {
         >
           שירים
         </button>
-        <button
-          className={`px-6 py-2  transition ${
-            selectedTab === "lineups"
-              ? "w-fit border-b-2 border-brand-orange overflow-hidden text-brand-orange font-bold"
-              : "font-bold text-white"
-          }`}
-          onClick={() => {
-            if (subscriptionBlocked) {
-              window.openUpgradeModal?.();
-              return;
-            }
-            navigate("/my?tab=lineups");
-          }}
-        >
-          ליינאפים
-        </button>
+        {lineupsEnabled ? (
+          <button
+            className={`px-6 py-2  transition ${
+              selectedTab === "lineups"
+                ? "w-fit border-b-2 border-brand-orange overflow-hidden text-brand-orange font-bold"
+                : "font-bold text-white"
+            }`}
+            onClick={() => {
+              if (subscriptionBlocked) {
+                window.openUpgradeModal?.();
+                return;
+              }
+              navigate("/my?tab=lineups");
+            }}
+          >
+            ליינאפים
+          </button>
+        ) : null}
         <button
           className={`px-6 py-2  transition ${
             selectedTab === "shared"
@@ -820,23 +849,25 @@ function MyContent(): JSX.Element {
               onChange={(e) => setSearch(e.target.value)}
             />
             {/* הוסף שיר */}
-            <DesignActionButton
-              onClick={() => {
-                setShowModal(true);
-                setEditingId(null);
-                setForm({
-                  title: "",
-                  artist: "",
-                  bpm: "",
-                  key_sig: "C Major",
-                  duration_sec: "00:00",
-                  notes: "",
-                });
-              }}
-            >
-              <Plus size={18} />
-              הוסף שיר
-            </DesignActionButton>
+            {addSongsEnabled ? (
+              <DesignActionButton
+                onClick={() => {
+                  setShowModal(true);
+                  setEditingId(null);
+                  setForm({
+                    title: "",
+                    artist: "",
+                    bpm: "",
+                    key_sig: "C Major",
+                    duration_sec: "00:00",
+                    notes: "",
+                  });
+                }}
+              >
+                <Plus size={18} />
+                הוסף שיר
+              </DesignActionButton>
+            ) : null}
           </div>
 
           {/* רשימת שירים */}
@@ -848,8 +879,8 @@ function MyContent(): JSX.Element {
                 index={i}
                 safeKey={safeKey}
                 safeDuration={safeDuration}
-                onEdit={edit}
-                onRemove={remove}
+                onEdit={addSongsEnabled ? edit : undefined}
+                onRemove={addSongsEnabled ? remove : undefined}
                 chartsComponent={
                   <Charts
                     song={s}
@@ -889,6 +920,10 @@ function MyContent(): JSX.Element {
               };
               try {
                 if (editId) {
+                  if (!addSongsEnabled) {
+                    showToast("מודול הוספת שירים כבוי", "warning");
+                    return;
+                  }
                   await api.put(`/songs/${editId}`, cleanForm);
                 } else {
                   if (!canCreateOrMutate) {
@@ -968,23 +1003,25 @@ function MyContent(): JSX.Element {
               onChange={(e) => setLineupSearch(e.target.value)}
             />
             {/* צור לינאפ חדש */}
-            <DesignActionButton
-              onClick={() => {
-                setShowLineupModal(true);
-                setIsEditingLineup(false);
-                setEditLineupId(null);
-                setLineupForm({
-                  title: "",
-                  date: "",
-                  time: "",
-                  location: "",
-                  description: "",
-                });
-              }}
-            >
-              <Plus size={18} />
-              צור לינאפ חדש
-            </DesignActionButton>
+            {canMutateLineups ? (
+              <DesignActionButton
+                onClick={() => {
+                  setShowLineupModal(true);
+                  setIsEditingLineup(false);
+                  setEditLineupId(null);
+                  setLineupForm({
+                    title: "",
+                    date: "",
+                    time: "",
+                    location: "",
+                    description: "",
+                  });
+                }}
+              >
+                <Plus size={18} />
+                צור לינאפ חדש
+              </DesignActionButton>
+            ) : null}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1000,8 +1037,8 @@ function MyContent(): JSX.Element {
                   }
                   navigate(`/my/lineups/${l.id}`);
                 }}
-                onEdit={() => openEditLineupModal(l)}
-                onDelete={() => removeLineup(l.id)}
+                onEdit={canMutateLineups ? () => openEditLineupModal(l) : undefined}
+                onDelete={canMutateLineups ? () => removeLineup(l.id) : undefined}
               />
             ))}
           </div>
@@ -1031,7 +1068,7 @@ function MyContent(): JSX.Element {
                     location,
                   });
                 } else {
-                  if (!canCreateOrMutate) {
+                  if (!canMutateLineups) {
                     window.openUpgradeModal?.();
                     return;
                   }

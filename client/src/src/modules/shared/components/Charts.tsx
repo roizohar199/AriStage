@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { Trash2, Upload, FileDown, Eye, FileText } from "lucide-react";
 import api from "@/modules/shared/lib/api.js";
+import { useFeatureFlags } from "@/modules/shared/contexts/FeatureFlagsContext.tsx";
 import { useToast } from "./ToastProvider";
 import { ConfirmOptions } from "../confirm/types";
 import BaseModal from "./BaseModal.tsx";
@@ -51,6 +52,21 @@ export default function Charts({
   onConfirm,
 }: ChartsProps): JSX.Element {
   const { showToast } = useToast();
+  const { isEnabled } = useFeatureFlags();
+  const chartsEnabled = isEnabled("module.charts", true);
+
+  if (!chartsEnabled) {
+    return (
+      <div className="bg-neutral-900 grid place-items-center mt-3 p-3 rounded-2xl">
+        <div className="flex items-center gap-2 mb-2">
+          <FileText size={16} className="text-neutral-500" />
+          <span className="text-xs font-semibold text-neutral-400">
+            מודול צ&apos;ארטים כבוי
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   const handleDeleteChart = useCallback(
     async (chartId: number) => {
