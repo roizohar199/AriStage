@@ -275,7 +275,7 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
         {/* משך זמן */}
         <div>
           <p className="text-sm text-neutral-400 mb-1">משך זמן:</p>
-          <div className="flex flex-justify-between gap-2 items-center">
+          <div className="flex flex-justify-between flex-row-reverse gap-2 items-center">
             <input
               type="number"
               min={0}
@@ -285,11 +285,11 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
                 setForm({
                   ...form,
                   duration_sec: `${e.target.value}:${getSeconds(
-                    form.duration_sec
+                    form.duration_sec,
                   )}`,
                 })
               }
-              className="w-fit bg-neutral-800 p-2 rounded-2xl text-sm text-center"
+              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm text-center"
             />
             <span>:</span>
             <input
@@ -300,11 +300,12 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
               onChange={(e) =>
                 setForm({
                   ...form,
-                  duration_sec: `${getMinutes(form.duration_sec)}:${e.target.value
-                    }`,
+                  duration_sec: `${getMinutes(form.duration_sec)}:${
+                    e.target.value
+                  }`,
                 })
               }
-              className="w-fit bg-neutral-800 p-2 rounded-2xl text-sm text-center"
+              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm text-center"
             />
           </div>
         </div>
@@ -318,10 +319,11 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
                 type="button"
                 key={tag}
                 onClick={() => setForm({ ...form, notes: tag })}
-                className={`px-3 py-1 rounded-2xl text-sm ${form.notes === tag
+                className={`px-3 py-1 rounded-2xl text-sm ${
+                  form.notes === tag
                     ? "bg-brand-orange border-brand-orange text-black"
                     : "bg-neutral-800 text-neutral-300"
-                  }`}
+                }`}
               >
                 {tag}
               </button>
