@@ -1,16 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle } from "lucide-react";
+import {
+  AlertTriangle,
+  Calendar,
+  Check,
+  Crown,
+  Sparkles,
+  Zap,
+} from "lucide-react";
 import BaseModal from "./BaseModal.tsx";
 import api from "@/modules/shared/lib/api.ts";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import { useSubscription } from "@/modules/shared/hooks/useSubscription.ts";
 
+type BillingPeriod = "monthly" | "yearly";
+
 interface UpgradeModalProps {
   open: boolean;
   onClose: () => void;
+  initialBillingPeriod?: BillingPeriod;
 }
-
-type BillingPeriod = "monthly" | "yearly";
 
 type AvailablePlan = {
   id: number;
@@ -23,7 +31,11 @@ type AvailablePlan = {
   enabled: boolean;
 };
 
-export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
+export default function UpgradeModal({
+  open,
+  onClose,
+  initialBillingPeriod,
+}: UpgradeModalProps) {
   const { subscriptionBlockedPayload, refreshUser, user, subscriptionStatus } =
     useAuth();
   const subscription = useSubscription();
@@ -39,6 +51,10 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
   useEffect(() => {
     if (!open) return;
 
+    if (initialBillingPeriod) {
+      setSelectedBillingPeriod(initialBillingPeriod);
+    }
+
     let mounted = true;
     setLoading(true);
     setError(null);
@@ -50,10 +66,17 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
         const nextPlans = Array.isArray(data) ? (data as AvailablePlan[]) : [];
         setPlans(nextPlans);
 
+        const firstEnabledPlanId =
+          nextPlans.find((p) => p.enabled !== false)?.id ?? null;
+
         // Keep selection if still exists; otherwise pick first.
         setSelectedPlanId((prev) => {
-          if (prev && nextPlans.some((p) => p.id === prev)) return prev;
-          return nextPlans[0]?.id ?? null;
+          if (
+            prev &&
+            nextPlans.some((p) => p.id === prev && p.enabled !== false)
+          )
+            return prev;
+          return firstEnabledPlanId ?? nextPlans[0]?.id ?? null;
         });
       })
       .catch(() => {
@@ -68,7 +91,7 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
     return () => {
       mounted = false;
     };
-  }, [open]);
+  }, [open, initialBillingPeriod]);
 
   const formatDate = (raw: unknown) => {
     if (!raw) return "—";
@@ -92,7 +115,7 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
     subscriptionBlockedPayload?.expires_at ??
       user?.subscription_expires_at ??
       subscription?.expiresAt ??
-      null
+      null,
   );
   const currentTier = subscription?.plan ?? "trial";
 
@@ -104,19 +127,17 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
     return plans[0] || null;
   }, [plans, selectedPlanId]);
 
-  const monthlyPrice =
-    selectedPlan && typeof selectedPlan.monthly_price === "number"
-      ? selectedPlan.monthly_price
-      : null;
-  const yearlyPrice =
-    selectedPlan && typeof selectedPlan.yearly_price === "number"
-      ? selectedPlan.yearly_price
-      : null;
+  const isSelectedPlanEnabled = selectedPlan?.enabled !== false;
 
   const handleUpgrade = async () => {
     if (submitting) return;
     if (!selectedPlan) {
       setError("אין מסלול זמין לשדרוג כרגע");
+      return;
+    }
+
+    if (selectedPlan.enabled === false) {
+      setError("המסלול הנבחר אינו זמין כרגע");
       return;
     }
 
@@ -156,6 +177,81 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
     }
   };
 
+  const title = isExpired
+    ? "המנוי פג תוקף"
+    : isTrial
+      ? "את/ה בתקופת ניסיון"
+      : "שדרוג מנוי";
+
+  const subtitle = isExpired
+    ? "כדי להמשיך להשתמש במערכת, יש לחדש מנוי"
+    : isTrial
+      ? "בחר/י מסלול וחזור/י לשימוש מלא במערכת"
+      : "בחר/י מסלול וחזור/י לשימוש מלא במערכת";
+
+  const planIcon = (plan: AvailablePlan) => {
+    const key = `${plan.key} ${plan.name}`.toLowerCase();
+    if (
+      key.includes("pro") ||
+      key.includes("premium") ||
+      key.includes("plus")
+    ) {
+      return <Crown className="h-5 w-5" />;
+    }
+    if (
+      key.includes("team") ||
+      key.includes("studio") ||
+      key.includes("business")
+    ) {
+      return <Sparkles className="h-5 w-5" />;
+    }
+    return <Zap className="h-5 w-5" />;
+  };
+
+  const billingSummary = useMemo(() => {
+    if (!selectedPlan) return null;
+    const currency = selectedPlan.currency;
+    const monthly =
+      typeof selectedPlan.monthly_price === "number"
+        ? selectedPlan.monthly_price
+        : null;
+    const yearly =
+      typeof selectedPlan.yearly_price === "number"
+        ? selectedPlan.yearly_price
+        : null;
+
+    if (selectedBillingPeriod === "monthly") {
+      return {
+        label: "חודשי",
+        amount: monthly,
+        cadence: "לחודש",
+        secondary: null as string | null,
+        currency,
+      };
+    }
+
+    const monthlyEquivalent =
+      yearly && typeof yearly === "number" ? Math.round(yearly / 12) : null;
+    const savings =
+      monthly && yearly ? Math.max(0, monthly * 12 - yearly) : null;
+
+    const secondaryParts: string[] = [];
+    if (monthlyEquivalent !== null) {
+      secondaryParts.push(`≈ ${monthlyEquivalent} ${currency} לחודש`);
+    }
+    if (savings && savings > 0) {
+      secondaryParts.push(`חיסכון ${savings} ${currency}`);
+    }
+
+    return {
+      label: "שנתי",
+      amount: yearly,
+      cadence: "לשנה",
+      secondary: secondaryParts.length ? secondaryParts.join(" • ") : null,
+      currency,
+    };
+  }, [selectedPlan, selectedBillingPeriod]);
+
   return (
     <BaseModal
       open={open}
@@ -166,141 +262,227 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
       showCloseButton={!submitting}
       padding="p-8"
     >
-      <div className="text-center space-y-8">
-        {/* Header with icon */}
-        <div className="flex justify-center">
-          <div className="bg-red-500/20 p-4 rounded-full">
-            <AlertTriangle className="w-8 h-8 text-red-500" />
+      <div dir="rtl" className="space-y-6 text-right p-2">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div
+              className={`mt-0.5 rounded-2xl p-3 border ${
+                isExpired
+                  ? "bg-red-500/10 border-red-500/20"
+                  : "bg-brand-orange/10 border-brand-orange/20"
+              }`}
+            >
+              <AlertTriangle
+                className={`h-6 w-6 ${
+                  isExpired ? "text-red-400" : "text-brand-orange"
+                }`}
+              />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-white">{title}</h2>
+              <p className="text-sm text-neutral-300 mt-1">{subtitle}</p>
+            </div>
           </div>
-        </div>
 
-        {/* Title */}
-        <h2 className="text-3xl font-bold text-white">
-          {isExpired ? "המנוי פג תוקף" : isTrial ? "את/ה בתקופת ניסיון" : "שדרוג מנוי"}
-        </h2>
-
-        {/* Current Status */}
-        <div className="space-y-4">
-          <div className="bg-neutral-800 rounded-xl p-4">
-            <p className="text-sm text-neutral-400">המסלול הנוכחי שלך</p>
-            <p className="text-lg font-semibold text-white mt-1">
-              {currentTier}
-            </p>
-          </div>
-
-          <div className="bg-neutral-800 rounded-xl p-4">
-            <p className="text-sm text-neutral-400">
-              {isExpired
-                ? "תוקף המנוי הסתיים בתאריך"
-                : isTrial
-                ? "תקופת הניסיון מסתיימת בתאריך"
-                : "תוקף המנוי עד תאריך"}
-            </p>
-            <p className="text-lg font-semibold text-white mt-1">
-              {expiryDate}
-            </p>
+          {/* Status pills */}
+          <div className="flex flex-col items-end gap-2">
+            <div className="inline-flex items-center gap-2 rounded-2xl bg-neutral-800 px-3 py-2">
+              <span className="text-xs text-neutral-400">מסלול נוכחי</span>
+              <span className="text-sm font-semibold text-white" dir="ltr">
+                {currentTier}
+              </span>
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-2xl bg-neutral-800 px-3 py-2">
+              <Calendar className="h-4 w-4 text-neutral-400" />
+              <span className="text-xs text-neutral-400">
+                {isExpired ? "הסתיים" : isTrial ? "ניסיון עד" : "בתוקף עד"}
+              </span>
+              <span className="text-sm font-semibold text-white">
+                {expiryDate}
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Upgrade Options */}
         {loading ? (
-          <div className="bg-neutral-800 rounded-xl p-8">
+          <div className="bg-neutral-900/60 rounded-2xl p-6 border border-neutral-800">
             <p className="text-neutral-400">טוען מסלולים...</p>
           </div>
         ) : plans.length ? (
-          <div className="space-y-4">
-            <p className="text-sm font-semibold text-neutral-400 uppercase tracking-wide">
-              אפשרויות שדרוג
-            </p>
+          <div className="space-y-5">
+            {/* Plans list */}
+            <div>
+              <div className="text-xl font-semibold text-white">
+                בחר/י מסלול
+              </div>
+              <div className="text-sm text-neutral-500">
+                אפשר לבחור מסלול אחר בכל רגע
+              </div>
+            </div>
 
-            {/* Plans list (no filtering by user) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Billing period segmented control */}
+            <div className="flex items-center justify-between gap-4 border border-neutral-800 rounded-2xl p-2">
+              <div>
+                <div className="text-sm font-semibold text-neutral-300">
+                  תקופת חיוב
+                </div>
+                <div className="text-xs text-neutral-500">
+                  ניתן לשנות לפני תשלום
+                </div>
+              </div>
+
+              <div className="inline-flex rounded-2xl p-1 bg-neutral-800">
+                <button
+                  type="button"
+                  onClick={() => setSelectedBillingPeriod("monthly")}
+                  className={`px-4 py-2 rounded-2xl text-sm font-semibold transition ${
+                    selectedBillingPeriod === "monthly"
+                      ? "bg-white text-black"
+                      : "text-neutral-300 hover:text-white"
+                  }`}
+                >
+                  חודשי
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedBillingPeriod("yearly")}
+                  className={`px-4 py-2 rounded-2xl text-sm font-semibold transition ${
+                    selectedBillingPeriod === "yearly"
+                      ? "bg-white text-black"
+                      : "text-neutral-300 hover:text-white"
+                  }`}
+                >
+                  שנתי
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {plans.map((plan) => {
                 const isSelected = selectedPlan?.id === plan.id;
-                return (
-                  <div
-                    key={plan.id}
-                    className={`rounded-xl p-6 border transition cursor-pointer ${
-                      isSelected
-                        ? "bg-neutral-800 border-brand-orange"
-                        : "bg-neutral-800 border-neutral-700 hover:border-brand-orange/50"
-                    }`}
-                    onClick={() => setSelectedPlanId(plan.id)}
-                  >
-                    <h3 className="font-semibold text-white mb-1">
-                      {plan.name}
-                    </h3>
-                    {plan.description ? (
-                      <p className="text-xs text-neutral-500 mb-3">
-                        {plan.description}
-                      </p>
-                    ) : (
-                      <div className="mb-3" />
-                    )}
+                const isEnabled = plan.enabled !== false;
+                const primaryPrice =
+                  selectedBillingPeriod === "monthly"
+                    ? plan.monthly_price
+                    : plan.yearly_price;
+                const cadence =
+                  selectedBillingPeriod === "monthly" ? "לחודש" : "לשנה";
 
-                    <div className="text-sm text-neutral-200" dir="ltr">
-                      {plan.currency} {plan.monthly_price} / month
+                return (
+                  <button
+                    type="button"
+                    key={plan.id}
+                    disabled={!isEnabled}
+                    onClick={() => {
+                      if (!isEnabled) return;
+                      setSelectedPlanId(plan.id);
+                    }}
+                    className={`group relative w-full rounded-2xl border p-5 text-right transition ${
+                      !isEnabled
+                        ? "bg-neutral-900/40 border-neutral-800 opacity-60 cursor-not-allowed"
+                        : isSelected
+                          ? "bg-neutral-700/50 border-brand-orange"
+                          : "bg-neutral-800 border-neutral-800 hover:border-brand-orange/50"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`rounded-xl p-2 border ${
+                            isSelected
+                              ? "bg-brand-orange/10 border-brand-orange/30 text-brand-orange"
+                              : "bg-neutral-950/30 border-neutral-800 text-neutral-300 group-hover:text-white"
+                          }`}
+                        >
+                          {planIcon(plan)}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-white">
+                              {plan.name}
+                            </h3>
+                            {isSelected ? (
+                              <span className="inline-flex items-center gap-1 rounded-lg bg-brand-orange text-black text-xs font-bold px-2 py-1">
+                                <Check className="h-3.5 w-3.5" />
+                                נבחר
+                              </span>
+                            ) : null}
+                            {!isEnabled ? (
+                              <span className="inline-flex items-center rounded-lg bg-neutral-800 text-neutral-200 text-xs font-semibold px-2 py-1">
+                                לא זמין
+                              </span>
+                            ) : null}
+                          </div>
+                          {plan.description ? (
+                            <p className="text-xs text-neutral-400 mt-1">
+                              {plan.description}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div className="text-left" dir="ltr">
+                        <div className="text-xs text-neutral-400">סה"כ</div>
+                        <div className="text-xl font-bold text-white">
+                          {plan.currency} {primaryPrice}
+                        </div>
+                        <div className="text-xs text-neutral-500">
+                          {cadence}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-sm text-neutral-300" dir="ltr">
-                      {plan.currency} {plan.yearly_price} / year
+
+                    <div
+                      className="mt-3 flex items-center justify-between gap-3 text-xs text-neutral-500"
+                      dir="ltr"
+                    >
+                      <span>
+                        {plan.currency} {plan.monthly_price} / month
+                      </span>
+                      <span>
+                        {plan.currency} {plan.yearly_price} / year
+                      </span>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
 
-            {/* Billing period selection (applies to selected plan) */}
-            {monthlyPrice !== null && yearlyPrice !== null ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Monthly */}
-                <div
-                  className={`rounded-xl p-6 border transition cursor-pointer ${
-                    selectedBillingPeriod === "monthly"
-                      ? "bg-neutral-800 border-brand-orange"
-                      : "bg-neutral-800 border-neutral-700 hover:border-brand-orange/50"
-                  }`}
-                  onClick={() => setSelectedBillingPeriod("monthly")}
-                >
-                  <h3 className="font-semibold text-white mb-2">חודשי</h3>
-                  <div className="mb-2">
-                    <span className="text-3xl font-bold text-white">
-                      {monthlyPrice}
-                    </span>
-                    <span className="text-neutral-400 text-sm"> ₪ לחודש</span>
+            {/* Price summary */}
+            {billingSummary && billingSummary.amount !== null ? (
+              <div className="rounded-2xl bg-neutral-800 p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="text-sm font-semibold text-neutral-200">
+                      סיכום תשלום
+                    </div>
+                    <div className="text-xs text-neutral-500 mt-1">
+                      {selectedPlan?.name} • {billingSummary.label}
+                    </div>
+                    {billingSummary.secondary ? (
+                      <div className="text-xs text-neutral-400 mt-2" dir="ltr">
+                        {billingSummary.secondary}
+                      </div>
+                    ) : null}
                   </div>
-                </div>
 
-                {/* Yearly */}
-                <div
-                  className={`bg-gradient-to-br rounded-xl p-6 border relative cursor-pointer ${
-                    selectedBillingPeriod === "yearly"
-                      ? "from-brand-orange/30 to-transparent border-brand-orange"
-                      : "from-brand-orange/20 to-transparent border-brand-orange/50"
-                  }`}
-                  onClick={() => setSelectedBillingPeriod("yearly")}
-                >
-                  <div className="absolute top-2 right-2 bg-brand-orange text-black text-xs font-bold px-2 py-1 rounded">
-                    {(() => {
-                      const savings = monthlyPrice * 12 - yearlyPrice;
-                      return savings > 0 ? `חיסכון ${savings} ₪` : "הכי משתלם";
-                    })()}
+                  <div className="text-left" dir="ltr">
+                    <div className="text-xs text-neutral-400">לתשלום</div>
+                    <div className="text-2xl font-bold text-white">
+                      {billingSummary.currency} {billingSummary.amount}
+                    </div>
+                    <div className="text-xs text-neutral-500">
+                      {billingSummary.cadence}
+                    </div>
                   </div>
-                  <h3 className="font-semibold text-white mb-2">שנתי</h3>
-                  <div className="mb-2">
-                    <span className="text-3xl font-bold text-white">
-                      {yearlyPrice}
-                    </span>
-                    <span className="text-neutral-400 text-sm"> ₪ בשנה</span>
-                  </div>
-                  <p className="text-xs text-neutral-500">
-                    {monthlyPrice} × 12 חודשים
-                  </p>
                 </div>
               </div>
             ) : null}
           </div>
         ) : (
-          <div className="bg-neutral-800 rounded-xl p-6">
+          <div className="bg-neutral-900/60 rounded-2xl p-6 border border-neutral-800">
             <p className="text-neutral-300">אין מסלולים זמינים כרגע.</p>
           </div>
         )}
@@ -308,10 +490,14 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
         {/* CTA Button */}
         <button
           onClick={handleUpgrade}
-          disabled={submitting || !selectedPlan}
-          className="w-full px-6 py-3 bg-brand-orange hover:bg-orange-600 disabled:opacity-70 disabled:cursor-not-allowed text-black font-semibold rounded-lg transition-colors"
+          disabled={submitting || !selectedPlan || !isSelectedPlanEnabled}
+          className="w-full px-6 py-3 bg-brand-orange hover:bg-brand-orangeLight disabled:opacity-70 disabled:cursor-not-allowed text-black font-semibold rounded-2xl transition-colors"
         >
-          {submitting ? "מבצע שדרוג (בדיקה)..." : "שדרג מנוי"}
+          {submitting
+            ? "מבצע שדרוג (בדיקה)..."
+            : billingSummary && billingSummary.amount !== null
+              ? `המשך לתשלום • ${billingSummary.amount} ${billingSummary.currency} ${billingSummary.cadence}`
+              : "המשך לתשלום"}
         </button>
 
         {error && (

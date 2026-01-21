@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ClipboardList } from "lucide-react";
+import { AlertCircle, ClipboardList, Filter, List } from "lucide-react";
 
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
 import api from "@/modules/shared/lib/api.ts";
 import { useToast } from "@/modules/shared/components/ToastProvider";
 
 import type { AdminUser } from "../pages/Admin";
+import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
 
 type LogRow = {
   id: number;
@@ -36,6 +37,7 @@ type Props = {
     children: React.ReactNode;
     variant?: SmallBadgeVariant;
   }>;
+  setDashboardCards?: (cards: DashboardCard[]) => void;
 };
 
 function formatLogTimestamp(raw?: string | null): string {
@@ -74,6 +76,7 @@ export default function AdminLogsTab({
   setSearchValue,
   CardContainer,
   SmallBadge,
+  setDashboardCards,
 }: Props) {
   const { showToast } = useToast();
 
@@ -82,7 +85,7 @@ export default function AdminLogsTab({
   const [logsLimit, setLogsLimit] = useState(50);
   const [logsOffset, setLogsOffset] = useState(0);
   const [logsLevel, setLogsLevel] = useState<"" | "info" | "warn" | "error">(
-    ""
+    "",
   );
   const [logsAction, setLogsAction] = useState("");
   const [logsUserId, setLogsUserId] = useState<"" | number>("");
@@ -177,7 +180,8 @@ export default function AdminLogsTab({
       setCleanupLoading(true);
 
       const params: any = {};
-      if (cleanupBeforeDate.trim()) params.beforeDate = cleanupBeforeDate.trim();
+      if (cleanupBeforeDate.trim())
+        params.beforeDate = cleanupBeforeDate.trim();
       else params.olderThanDays = cleanupOlderThanDays;
 
       const { data } = await api.delete("/logs/cleanup", { params } as any);
@@ -203,13 +207,69 @@ export default function AdminLogsTab({
     showToast,
   ]);
 
+  const dashboard = useMemo(() => {
+    const pageCount = logs.length;
+    const pageErrors = logs.filter((l) => l.level === "error").length;
+
+    const activeFilters =
+      (searchValue.trim() ? 1 : 0) +
+      (logsLevel ? 1 : 0) +
+      (logsAction ? 1 : 0) +
+      (logsUserId !== "" ? 1 : 0) +
+      (logsFromDate ? 1 : 0) +
+      (logsToDate ? 1 : 0);
+
+    const total = logsLoading || logsUnsupported ? "—" : logsTotal;
+    return { total, pageCount, pageErrors, activeFilters };
+  }, [
+    logs,
+    logsTotal,
+    logsLoading,
+    logsUnsupported,
+    searchValue,
+    logsLevel,
+    logsAction,
+    logsUserId,
+    logsFromDate,
+    logsToDate,
+  ]);
+
+  useEffect(() => {
+    setDashboardCards?.([
+      {
+        icon: <ClipboardList size={32} />,
+        value: dashboard.total,
+        label: 'סה"כ לוגים',
+      },
+      { icon: <List size={32} />, value: dashboard.pageCount, label: "בדף" },
+      {
+        icon: <AlertCircle size={32} />,
+        value: dashboard.pageErrors,
+        label: "שגיאות (בדף)",
+      },
+      {
+        icon: <Filter size={32} />,
+        value: dashboard.activeFilters,
+        label: "פילטרים פעילים",
+      },
+    ]);
+  }, [
+    setDashboardCards,
+    dashboard.activeFilters,
+    dashboard.pageCount,
+    dashboard.pageErrors,
+    dashboard.total,
+  ]);
+
   return (
     <div className="space-y-3">
       <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-4">
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-neutral-300 font-bold">Level</label>
+              <label className="text-xs text-neutral-300 font-bold">
+                Level
+              </label>
               <select
                 value={logsLevel}
                 onChange={(e) => {
@@ -226,7 +286,9 @@ export default function AdminLogsTab({
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-neutral-300 font-bold">Action</label>
+              <label className="text-xs text-neutral-300 font-bold">
+                Action
+              </label>
               <select
                 value={logsAction}
                 onChange={(e) => {
@@ -291,7 +353,9 @@ export default function AdminLogsTab({
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-neutral-300 font-bold">Page Size</label>
+              <label className="text-xs text-neutral-300 font-bold">
+                Page Size
+              </label>
               <select
                 value={String(logsLimit)}
                 onChange={(e) => {
@@ -308,7 +372,10 @@ export default function AdminLogsTab({
 
             <div className="flex-1" />
 
-            <DesignActionButton type="button" onClick={() => setCleanupOpen(true)}>
+            <DesignActionButton
+              type="button"
+              onClick={() => setCleanupOpen(true)}
+            >
               ניקוי לוגים
             </DesignActionButton>
           </div>
@@ -390,11 +457,17 @@ export default function AdminLogsTab({
               const tsLabel = formatLogTimestamp(ts);
               const level = (l.level as any) || "info";
               const actor =
-                l.actorLabel || l.user || (l.userId ? `User ${l.userId}` : "System");
+                l.actorLabel ||
+                l.user ||
+                (l.userId ? `User ${l.userId}` : "System");
               const explanation = l.explanation || l.entity || l.message || "";
 
               const levelVariant: SmallBadgeVariant =
-                level === "error" ? "danger" : level === "warn" ? "brand" : "success";
+                level === "error"
+                  ? "danger"
+                  : level === "warn"
+                    ? "brand"
+                    : "success";
 
               return (
                 <button
@@ -417,8 +490,12 @@ export default function AdminLogsTab({
                       {l.action || "LOG"}
                     </div>
                     <div className="md:col-span-2 text-sm text-neutral-200">
-                      <div className="truncate md:whitespace-normal">{explanation}</div>
-                      <div className="text-xs text-neutral-500 mt-1">{actor}</div>
+                      <div className="truncate md:whitespace-normal">
+                        {explanation}
+                      </div>
+                      <div className="text-xs text-neutral-500 mt-1">
+                        {actor}
+                      </div>
                     </div>
                   </div>
                 </button>
@@ -447,10 +524,13 @@ export default function AdminLogsTab({
                   <div className="text-xs text-neutral-400">Timestamp</div>
                   <div className="text-white tabular-nums" dir="ltr">
                     {formatLogTimestamp(
-                      selectedLog.createdAt || selectedLog.created_at || ""
+                      selectedLog.createdAt || selectedLog.created_at || "",
                     )}
                   </div>
-                  <div className="text-[11px] text-neutral-500 mt-1 break-all" dir="ltr">
+                  <div
+                    className="text-[11px] text-neutral-500 mt-1 break-all"
+                    dir="ltr"
+                  >
                     {selectedLog.createdAt || selectedLog.created_at || ""}
                   </div>
                 </div>
@@ -460,11 +540,15 @@ export default function AdminLogsTab({
                 </div>
                 <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-3">
                   <div className="text-xs text-neutral-400">Action</div>
-                  <div className="text-white break-all">{selectedLog.action || ""}</div>
+                  <div className="text-white break-all">
+                    {selectedLog.action || ""}
+                  </div>
                 </div>
                 <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-3">
                   <div className="text-xs text-neutral-400">Level</div>
-                  <div className="text-white">{selectedLog.level || "info"}</div>
+                  <div className="text-white">
+                    {selectedLog.level || "info"}
+                  </div>
                 </div>
               </div>
 
@@ -509,7 +593,9 @@ export default function AdminLogsTab({
                     type="number"
                     min={1}
                     value={cleanupOlderThanDays}
-                    onChange={(e) => setCleanupOlderThanDays(Number(e.target.value))}
+                    onChange={(e) =>
+                      setCleanupOlderThanDays(Number(e.target.value))
+                    }
                     className="w-full bg-neutral-900 border border-neutral-800 p-2 rounded-2xl text-sm mt-2"
                   />
                   <div className="text-[11px] text-neutral-500 mt-1">
@@ -527,7 +613,10 @@ export default function AdminLogsTab({
                     dir="ltr"
                   />
                   {cleanupBeforeDate.trim() ? (
-                    <div className="text-[11px] text-neutral-400 mt-2 tabular-nums" dir="ltr">
+                    <div
+                      className="text-[11px] text-neutral-400 mt-2 tabular-nums"
+                      dir="ltr"
+                    >
                       {formatLogTimestamp(cleanupBeforeDate.trim())}
                     </div>
                   ) : null}

@@ -4,6 +4,7 @@ import { AlertCircle, BadgeCheck, Users } from "lucide-react";
 import api from "@/modules/shared/lib/api.ts";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "@/modules/shared/components/ToastProvider";
+import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
 
 type SmallBadgeVariant = "neutral" | "brand" | "success" | "danger";
 
@@ -26,6 +27,7 @@ type Props = {
     children: React.ReactNode;
     variant?: SmallBadgeVariant;
   }>;
+  setDashboardCards?: (cards: DashboardCard[]) => void;
 };
 
 export default function AdminErrorsTab({
@@ -33,6 +35,7 @@ export default function AdminErrorsTab({
   setSearchValue,
   CardContainer,
   SmallBadge,
+  setDashboardCards,
 }: Props) {
   const confirm = useConfirm();
   const { showToast } = useToast();
@@ -71,6 +74,44 @@ export default function AdminErrorsTab({
         .includes(q),
     );
   }, [errors, searchValue]);
+
+  const dashboard = useMemo(() => {
+    const total = errors.length;
+    const resolved = errors.filter((e) => {
+      const r = e.resolved as any;
+      return r === true || r === 1 || r === "1" || r === "true";
+    }).length;
+    const open = total - resolved;
+    const shown = filteredErrors.length;
+    return { total, open, resolved, shown };
+  }, [errors, filteredErrors.length]);
+
+  useEffect(() => {
+    setDashboardCards?.([
+      {
+        icon: <AlertCircle size={32} />,
+        value: dashboard.total,
+        label: 'סה"כ תקלות',
+      },
+      {
+        icon: <AlertCircle size={32} />,
+        value: dashboard.open,
+        label: "פתוחות",
+      },
+      {
+        icon: <BadgeCheck size={32} />,
+        value: dashboard.resolved,
+        label: "Resolved",
+      },
+      { icon: <Users size={32} />, value: dashboard.shown, label: "מוצגות" },
+    ]);
+  }, [
+    setDashboardCards,
+    dashboard.open,
+    dashboard.resolved,
+    dashboard.shown,
+    dashboard.total,
+  ]);
 
   const resolveError = async (errorId: number) => {
     const ok = await confirm({

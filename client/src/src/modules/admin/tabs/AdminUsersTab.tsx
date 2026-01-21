@@ -9,6 +9,7 @@ import {
   UserCog,
   Users,
 } from "lucide-react";
+import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
 
 import BaseModal from "@/modules/shared/components/BaseModal";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
@@ -58,6 +59,17 @@ function formatLastSeen(lastSeenAt?: string | null): {
   return { text: `לפני ${d} ימים`, variant: "neutral" };
 }
 
+function parseDateMs(raw?: string | null): number | null {
+  if (!raw) return null;
+  const trimmed = String(raw).trim();
+  if (!trimmed) return null;
+  const normalized = trimmed.includes("T")
+    ? trimmed
+    : trimmed.replace(" ", "T");
+  const ms = new Date(normalized).getTime();
+  return Number.isNaN(ms) ? null : ms;
+}
+
 type Props = {
   usersLoading: boolean;
   usersUnsupported: boolean;
@@ -84,6 +96,7 @@ type Props = {
     children: React.ReactNode;
     variant?: SmallBadgeVariant;
   }>;
+  setDashboardCards?: (cards: DashboardCard[]) => void;
 };
 
 export default function AdminUsersTab({
@@ -100,7 +113,54 @@ export default function AdminUsersTab({
   saveUser,
   CardContainer,
   SmallBadge,
+  setDashboardCards,
 }: Props) {
+  const stats = React.useMemo(() => {
+    const total = filteredUsers.length;
+    const admins = filteredUsers.filter(
+      (u) => u.role === "admin" || u.role === "manager",
+    ).length;
+
+    const now = Date.now();
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+
+    const active7d = filteredUsers.filter((u) => {
+      const ms = parseDateMs(u.last_seen_at ?? null);
+      return ms != null && now - ms <= sevenDaysMs;
+    }).length;
+
+    const new30d = filteredUsers.filter((u) => {
+      const ms = parseDateMs(u.created_at ?? null);
+      return ms != null && now - ms <= thirtyDaysMs;
+    }).length;
+
+    return { total, admins, active7d, new30d };
+  }, [filteredUsers]);
+
+  React.useLayoutEffect(() => {
+    setDashboardCards?.([
+      { icon: <Users size={32} />, value: stats.total, label: "משתמשים" },
+      { icon: <Shield size={32} />, value: stats.admins, label: "אדמין/מנהל" },
+      {
+        icon: <Activity size={32} />,
+        value: stats.active7d,
+        label: "פעילים (7 ימים)",
+      },
+      {
+        icon: <BadgeCheck size={32} />,
+        value: stats.new30d,
+        label: "חדשים (30 ימים)",
+      },
+    ]);
+  }, [
+    setDashboardCards,
+    stats.active7d,
+    stats.admins,
+    stats.new30d,
+    stats.total,
+  ]);
+
   return (
     <>
       <div className="space-y-3">

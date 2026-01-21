@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import BaseModal from "./BaseModal.tsx";
+import DesignActionButtonBig from "./DesignActionButtonBig";
 
 /* ---------- Types ---------- */
 
@@ -331,12 +332,9 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
           </div>
         </div>
 
-        <button
-          type="submit"
-          className="w-full p-2 bg-brand-orange text-black hover:text-black font-semibold py-2 rounded-2xl mt-2"
-        >
+        <DesignActionButtonBig type="submit">
           {editingId ? "עדכון" : "שמור"}
-        </button>
+        </DesignActionButtonBig>
       </form>
     </BaseModal>
   );

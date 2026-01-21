@@ -1,7 +1,8 @@
 import React from "react";
-import { Mail, BadgeCheck } from "lucide-react";
+import { Mail, BadgeCheck, Users, Clock } from "lucide-react";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
 import type { AdminUser } from "../pages/Admin";
+import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
 
 type SubscriptionEdit = {
   subscription_type: string;
@@ -9,6 +10,17 @@ type SubscriptionEdit = {
   subscription_started_at: string;
   subscription_expires_at: string;
 };
+
+function parseDateMs(raw?: string | null): number | null {
+  if (!raw) return null;
+  const trimmed = String(raw).trim();
+  if (!trimmed) return null;
+  const normalized = trimmed.includes("T")
+    ? trimmed
+    : trimmed.replace(" ", "T");
+  const ms = new Date(normalized).getTime();
+  return Number.isNaN(ms) ? null : ms;
+}
 
 type AdminSubscriptionsTabProps = {
   users: AdminUser[];
@@ -35,9 +47,10 @@ type AdminSubscriptionsTabProps = {
   normalizeSubscriptionType: (raw?: string | null) => string;
   showToast: (
     msg: string,
-    type?: "success" | "info" | "error" | "warning"
+    type?: "success" | "info" | "error" | "warning",
   ) => void;
   api: any;
+  setDashboardCards?: (cards: DashboardCard[]) => void;
 };
 
 const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
@@ -57,10 +70,64 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
   normalizeSubscriptionType,
   showToast,
   api,
+  setDashboardCards,
 }) => {
   const [plans, setPlans] = React.useState<
     { id: number; key: string; name: string; enabled: boolean }[]
   >([]);
+
+  const dashboardStats = React.useMemo(() => {
+    const total = users.length;
+
+    const isTrial = (u: AdminUser) => {
+      const t = String(u.subscription_type ?? "trial")
+        .trim()
+        .toLowerCase();
+      return !t || t === "trial";
+    };
+
+    const paid = users.filter((u) => !isTrial(u)).length;
+    const trial = users.filter((u) => isTrial(u)).length;
+
+    const now = Date.now();
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+    const expiringSoon = users.filter((u) => {
+      if (isTrial(u)) return false;
+      const ms = parseDateMs(u.subscription_expires_at ?? null);
+      if (ms == null) return false;
+      const diff = ms - now;
+      return diff >= 0 && diff <= sevenDaysMs;
+    }).length;
+
+    return { total, paid, trial, expiringSoon };
+  }, [users]);
+
+  React.useLayoutEffect(() => {
+    setDashboardCards?.([
+      { icon: <Users size={32} />, value: dashboardStats.total, label: 'סה"כ' },
+      {
+        icon: <BadgeCheck size={32} />,
+        value: dashboardStats.paid,
+        label: "מנויים (לא trial)",
+      },
+      {
+        icon: <Users size={32} />,
+        value: dashboardStats.trial,
+        label: "trial",
+      },
+      {
+        icon: <Clock size={32} />,
+        value: dashboardStats.expiringSoon,
+        label: "פג תוקף בקרוב (7 ימים)",
+      },
+    ]);
+  }, [
+    setDashboardCards,
+    dashboardStats.expiringSoon,
+    dashboardStats.paid,
+    dashboardStats.total,
+    dashboardStats.trial,
+  ]);
 
   React.useEffect(() => {
     let mounted = true;
@@ -154,10 +221,10 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                 ? rawStatus
                 : "—";
             const startedLabel = formatSubscriptionDate(
-              u.subscription_started_at ?? null
+              u.subscription_started_at ?? null,
             );
             const expiresLabel = formatSubscriptionDate(
-              u.subscription_expires_at ?? null
+              u.subscription_expires_at ?? null,
             );
             const baseSubForm: SubscriptionEdit = {
               subscription_type: normalizeSubscriptionType(u.subscription_type),
@@ -222,7 +289,7 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                         className="w-full bg-neutral-900 border border-neutral-800 p-2 rounded-2xl text-sm"
                       >
                         {!planOptions.some(
-                          (o) => o.value === subForm.subscription_type
+                          (o) => o.value === subForm.subscription_type,
                         ) ? (
                           <option value={subForm.subscription_type}>
                             {subForm.subscription_type} (legacy)
@@ -266,7 +333,7 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                           type="datetime-local"
                           placeholder="subscription_started_at"
                           value={toDateTimeLocalInput(
-                            subForm.subscription_started_at || ""
+                            subForm.subscription_started_at || "",
                           )}
                           onChange={(e) => {
                             const value = e.target.value;
@@ -287,7 +354,7 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                           type="datetime-local"
                           placeholder="subscription_expires_at"
                           value={toDateTimeLocalInput(
-                            subForm.subscription_expires_at || ""
+                            subForm.subscription_expires_at || "",
                           )}
                           onChange={(e) => {
                             const value = e.target.value;
@@ -326,7 +393,7 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                               };
                               await api.put(
                                 `/admin/users/${u.id}/subscription`,
-                                payload
+                                payload,
                               );
                               showToast("Subscription updated", "success");
                               setEditingSubscriptionUserId(null);

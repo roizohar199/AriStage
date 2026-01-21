@@ -7,6 +7,7 @@ import { useToast } from "@/modules/shared/components/ToastProvider";
 import Search from "@/modules/shared/components/Search";
 import type { AdminUser } from "../pages/Admin";
 import { API_ORIGIN } from "@/config/apiConfig";
+import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
 
 type SmallBadgeVariant = "neutral" | "brand" | "success" | "danger";
 
@@ -39,6 +40,7 @@ type Props = {
     children: React.ReactNode;
     variant?: SmallBadgeVariant;
   }>;
+  setDashboardCards?: (cards: DashboardCard[]) => void;
 };
 
 export default function AdminFilesTab({
@@ -47,6 +49,7 @@ export default function AdminFilesTab({
   users,
   CardContainer,
   SmallBadge,
+  setDashboardCards,
 }: Props) {
   const confirm = useConfirm();
   const { showToast } = useToast();
@@ -149,6 +152,48 @@ export default function AdminFilesTab({
 
     return { count, knownBytes, unknownCount };
   }, [filteredFiles]);
+
+  const dashboard = useMemo(() => {
+    return {
+      total: files.length,
+      filtered: filteredFiles.length,
+      knownBytes: storageSummary.knownBytes,
+      unknownCount: storageSummary.unknownCount,
+    };
+  }, [
+    files.length,
+    filteredFiles.length,
+    storageSummary.knownBytes,
+    storageSummary.unknownCount,
+  ]);
+
+  useEffect(() => {
+    setDashboardCards?.([
+      {
+        icon: <Files size={32} />,
+        value: dashboard.total,
+        label: 'סה"כ קבצים',
+      },
+      { icon: <Files size={32} />, value: dashboard.filtered, label: "מוצגים" },
+      {
+        icon: <Users size={32} />,
+        value: formatBytes(dashboard.knownBytes),
+        label: "נפח ידוע",
+      },
+      {
+        icon: <Trash2 size={32} />,
+        value: dashboard.unknownCount,
+        label: "בלי גודל",
+      },
+    ]);
+  }, [
+    setDashboardCards,
+    dashboard.filtered,
+    dashboard.knownBytes,
+    dashboard.total,
+    dashboard.unknownCount,
+    formatBytes,
+  ]);
 
   const deleteStorageFile = async (storagePath: string) => {
     const ok = await confirm({

@@ -24,7 +24,8 @@ export default {
       colors: {
         brand: {
           orange: "#F59E0B", // 🍊 צבע כתום עיקרי
-          orangeLight: "#FDBA74", // ✨ צבע כתום בהיר להובר/הארה
+          orangeLight: "#ffb93f", // ✨ צבע כתום בהיר להובר/הארה
+          orangeDark: "#ce8200", // ✨ צבע כתום בהיר להובר/הארה
           dark: "#0A0A0A", // 🖤 רקע כהה ראשי
           mid: "#1C1C1E", // 🌑 אפור כהה
           light: "#F2F2F7", // ☁️ טקסט/רקע בהיר

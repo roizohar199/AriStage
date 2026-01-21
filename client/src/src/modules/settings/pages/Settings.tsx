@@ -11,6 +11,8 @@ type SubscriptionPlan = {
   currency: string;
 };
 
+type BillingPeriod = "monthly" | "yearly";
+
 type SettingsFormState = {
   full_name: string;
   email: string;
@@ -48,6 +50,8 @@ export default function Settings() {
 
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [plansLoading, setPlansLoading] = useState(false);
+  const [selectedBillingPeriod, setSelectedBillingPeriod] =
+    useState<BillingPeriod>("yearly");
 
   useEffect(() => {
     if (!shouldShowUpgrade) {
@@ -144,10 +148,10 @@ export default function Settings() {
       window.dispatchEvent(
         new CustomEvent("data-refresh", {
           detail: { type: "user", action: "updated" },
-        })
+        }),
       );
       window.dispatchEvent(
-        new CustomEvent("user-updated", { detail: userData })
+        new CustomEvent("user-updated", { detail: userData }),
       );
     } catch (err: any) {
       console.error(err);
@@ -223,21 +227,57 @@ export default function Settings() {
               </div>
             ) : plans[0] ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-neutral-900 rounded-2xl p-5 border border-neutral-800">
-                  <div className="font-semibold mb-2">מסלול חודשי</div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedBillingPeriod("monthly")}
+                  className={`text-right bg-neutral-900 rounded-2xl p-5 border transition cursor-pointer ${
+                    selectedBillingPeriod === "monthly"
+                      ? "border-brand-orange"
+                      : "border-neutral-800 hover:border-brand-orange/50"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="font-semibold mb-2">מסלול חודשי</div>
+                    <div
+                      className={`h-3 w-3 rounded-full border ${
+                        selectedBillingPeriod === "monthly"
+                          ? "bg-brand-orange border-brand-orange"
+                          : "border-neutral-600"
+                      }`}
+                      aria-hidden
+                    />
+                  </div>
                   <div className="text-2xl font-bold" dir="ltr">
                     {plans[0].monthlyPrice} ₪
                     <span className="text-sm text-neutral-400"> / חודש</span>
                   </div>
-                </div>
+                </button>
 
-                <div className="bg-neutral-900 rounded-2xl p-5 border border-brand-orange/50">
-                  <div className="font-semibold mb-2">מסלול שנתי</div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedBillingPeriod("yearly")}
+                  className={`text-right bg-neutral-900 rounded-2xl p-5 border transition cursor-pointer ${
+                    selectedBillingPeriod === "yearly"
+                      ? "border-brand-orange"
+                      : "border-neutral-800 hover:border-brand-orange/50"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="font-semibold mb-2">מסלול שנתי</div>
+                    <div
+                      className={`h-3 w-3 rounded-full border ${
+                        selectedBillingPeriod === "yearly"
+                          ? "bg-brand-orange border-brand-orange"
+                          : "border-neutral-600"
+                      }`}
+                      aria-hidden
+                    />
+                  </div>
                   <div className="text-2xl font-bold" dir="ltr">
                     {plans[0].yearlyPrice} ₪
                     <span className="text-sm text-neutral-400"> / שנה</span>
                   </div>
-                </div>
+                </button>
               </div>
             ) : (
               <div className="bg-neutral-900 rounded-2xl p-4 text-neutral-400">
@@ -247,7 +287,7 @@ export default function Settings() {
 
             <button
               type="button"
-              onClick={() => window.openUpgradeModal?.()}
+              onClick={() => window.openUpgradeModal?.(selectedBillingPeriod)}
               className="w-full cursor-pointer bg-brand-orange text-black font-semibold px-4 py-2 rounded-2xl shadow-innerIos transition text-sm"
             >
               שדרג מנוי

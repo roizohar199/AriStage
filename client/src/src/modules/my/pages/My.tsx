@@ -783,12 +783,12 @@ function MyContent(): JSX.Element {
       )}
 
       {/* Tabs block below stats */}
-      <div className="flex justify-between mt-8 bg-neutral-800 rounded-2xl mb-6 overflow-hidden  w-fit">
+      <div className="flex justify-between mt-8 bg-neutral-800 rounded-2xl mb-6 overflow-hidden w-fit">
         <button
           className={`px-6 py-2  transition ${
             selectedTab === "songs"
               ? "w-fit border-b-2 border-brand-orange overflow-hidden text-brand-orange font-bold"
-              : "font-bold text-white"
+              : "font-bold text-white hover:text-brand-orange"
           }`}
           onClick={() => {
             if (subscriptionBlocked) {
@@ -805,7 +805,7 @@ function MyContent(): JSX.Element {
             className={`px-6 py-2  transition ${
               selectedTab === "lineups"
                 ? "w-fit border-b-2 border-brand-orange overflow-hidden text-brand-orange font-bold"
-                : "font-bold text-white"
+                : "font-bold text-white hover:text-brand-orange"
             }`}
             onClick={() => {
               if (subscriptionBlocked) {
@@ -822,7 +822,7 @@ function MyContent(): JSX.Element {
           className={`px-6 py-2  transition ${
             selectedTab === "shared"
               ? "w-fit border-b-2 border-brand-orange overflow-hidden text-brand-orange font-bold"
-              : "font-bold text-white "
+              : "font-bold text-white hover:text-brand-orange "
           }`}
           onClick={() => {
             if (subscriptionBlocked) {
@@ -1037,8 +1037,12 @@ function MyContent(): JSX.Element {
                   }
                   navigate(`/my/lineups/${l.id}`);
                 }}
-                onEdit={canMutateLineups ? () => openEditLineupModal(l) : undefined}
-                onDelete={canMutateLineups ? () => removeLineup(l.id) : undefined}
+                onEdit={
+                  canMutateLineups ? () => openEditLineupModal(l) : undefined
+                }
+                onDelete={
+                  canMutateLineups ? () => removeLineup(l.id) : undefined
+                }
               />
             ))}
           </div>

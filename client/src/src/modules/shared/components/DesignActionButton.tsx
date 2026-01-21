@@ -6,7 +6,7 @@ type DesignActionButtonProps = Omit<
 >;
 
 const DESIGN_ACTION_BUTTON_CLASS =
-  "w-auto bg-brand-orange text-black font-semibold rounded-2xl gap-1 flex flex-row-reverse items-center justify-center px-4 py-2";
+  "w-auto bg-brand-orange text-black font-semibold rounded-2xl gap-1 flex flex-row-reverse items-center justify-center px-4 py-2 hover:bg-brand-orangeLight";
 
 const DesignActionButton = React.forwardRef<
   HTMLButtonElement,

@@ -56,9 +56,12 @@ export default function SubscriptionBanner() {
   };
 
   return (
-    <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-4 shadow-md">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
+    <div
+      dir="rtl"
+      className="relative left-1/2 w-screen -translate-x-1/2 bg-gradient-to-r from-brand-orange to-brand-orangeDark text-white py-4"
+    >
+      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3 text-right">
           <AlertCircle className="h-6 w-6 flex-shrink-0" />
           <div>
             <h3 className="font-semibold text-lg">תקופת הניסיון הסתיימה</h3>
@@ -68,8 +71,8 @@ export default function SubscriptionBanner() {
                 {priceLoading
                   ? "טוען..."
                   : price !== null
-                  ? `${price} ₪ לחודש`
-                  : "לא זמין"}
+                    ? `${price} ₪ לחודש`
+                    : "לא זמין"}
               </strong>
             </p>
           </div>

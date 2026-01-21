@@ -6,6 +6,9 @@ import api from "@/modules/shared/lib/api.ts";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "@/modules/shared/components/ToastProvider";
 import { normalizeSubscriptionType } from "@/modules/shared/hooks/useSubscription.ts";
+import DashboardCards, {
+  type DashboardCard,
+} from "@/modules/admin/components/DashboardCards";
 import AdminSubscriptionsTab from "../tabs/AdminSubscriptionsTab";
 import AdminUsersTab from "../tabs/AdminUsersTab";
 import AdminPlansTab from "../tabs/AdminPlansTab";
@@ -81,53 +84,6 @@ function SmallBadge({
       {icon}
       {children}
     </span>
-  );
-}
-
-function AdminStats({
-  stats,
-}: {
-  stats: {
-    users: number;
-    activeSubscriptions: number;
-    files: number;
-    openIssues: number;
-  };
-}) {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div className="bg-neutral-800 rounded-2xl p-4 flex items-center gap-4">
-        <Users size={32} className="text-brand-orange shrink-0" />
-        <div className="flex flex-col">
-          <span className="text-xl font-bold">{stats.users}</span>
-          <span className="text-sm text-neutral-300">משתמשים</span>
-        </div>
-      </div>
-
-      <div className="bg-neutral-800 rounded-2xl p-4 flex items-center gap-4">
-        <BadgeCheck size={32} className="text-brand-orange shrink-0" />
-        <div className="flex flex-col">
-          <span className="text-xl font-bold">{stats.activeSubscriptions}</span>
-          <span className="text-sm text-neutral-300">מנויים פעילים</span>
-        </div>
-      </div>
-
-      <div className="bg-neutral-800 rounded-2xl p-4 flex items-center gap-4">
-        <Files size={32} className="text-brand-orange shrink-0" />
-        <div className="flex flex-col">
-          <span className="text-xl font-bold">{stats.files}</span>
-          <span className="text-sm text-neutral-300">קבצים</span>
-        </div>
-      </div>
-
-      <div className="bg-neutral-800 rounded-2xl p-4 flex items-center gap-4">
-        <AlertCircle size={32} className="text-brand-orange shrink-0" />
-        <div className="flex flex-col">
-          <span className="text-xl font-bold">{stats.openIssues}</span>
-          <span className="text-sm text-neutral-300">תקלות פתוחות</span>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -212,6 +168,15 @@ export default function AdminReal() {
     [location.search],
   );
   console.log("ADMIN RENDERED");
+
+  const [tabDashboardCards, setTabDashboardCards] = useState<DashboardCard[]>(
+    [],
+  );
+
+  useEffect(() => {
+    // Clear so tabs can replace the header cards on tab switch
+    setTabDashboardCards([]);
+  }, [selectedTab]);
 
   const setTab = useCallback(
     (tab: AdminTab) => {
@@ -419,6 +384,35 @@ export default function AdminReal() {
     };
   }, [users, filesCount, openIssuesCount]);
 
+  const defaultDashboardCards = useMemo<DashboardCard[]>(() => {
+    return [
+      {
+        icon: <Users size={32} />,
+        value: stats.users,
+        label: "משתמשים",
+      },
+      {
+        icon: <BadgeCheck size={32} />,
+        value: stats.activeSubscriptions,
+        label: "מנויים פעילים",
+      },
+      {
+        icon: <Files size={32} />,
+        value: stats.files,
+        label: "קבצים",
+      },
+      {
+        icon: <AlertCircle size={32} />,
+        value: stats.openIssues,
+        label: "תקלות פתוחות",
+      },
+    ];
+  }, [stats]);
+
+  const headerCards = tabDashboardCards.length
+    ? tabDashboardCards
+    : defaultDashboardCards;
+
   // reload() used by Users/Subscriptions tab flows
   const reload = useCallback(async () => {
     await loadUsers();
@@ -434,23 +428,25 @@ export default function AdminReal() {
         <h1 className="text-3xl font-bold">אדמין</h1>
       </header>
 
-      <AdminStats stats={stats} />
+      <DashboardCards cards={headerCards} />
 
-      <div className="flex justify-between mt-8 bg-neutral-800 rounded-2xl mb-6 overflow-hidden w-fit">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            className={`px-6 py-2 transition ${
-              selectedTab === tab.key
-                ? "w-fit border-b-2 border-brand-orange overflow-hidden text-brand-orange font-bold"
-                : "font-bold text-white"
-            }`}
-            onClick={() => setTab(tab.key)}
-            type="button"
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="mt-8 mb-6 bg-neutral-800 rounded-2xl overflow-x-auto overflow-y-hidden max-w-full">
+        <div className="flex flex-nowrap min-w-full w-max justify-between">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              className={`px-3 sm:px-6 py-2 transition whitespace-nowrap ${
+                selectedTab === tab.key
+                  ? "border-b-2 border-brand-orange text-brand-orange font-bold"
+                  : "font-bold text-white"
+              }`}
+              onClick={() => setTab(tab.key)}
+              type="button"
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex items-center gap-3 mb-3">
@@ -478,6 +474,7 @@ export default function AdminReal() {
           saveUser={saveUser}
           CardContainer={CardContainer}
           SmallBadge={SmallBadge}
+          setDashboardCards={setTabDashboardCards}
         />
       ) : selectedTab === "subscriptions" ? (
         <AdminSubscriptionsTab
@@ -497,9 +494,10 @@ export default function AdminReal() {
           normalizeSubscriptionType={normalizeSubscriptionType}
           showToast={showToast}
           api={api}
+          setDashboardCards={setTabDashboardCards}
         />
       ) : selectedTab === "plans" ? (
-        <AdminPlansTab />
+        <AdminPlansTab setDashboardCards={setTabDashboardCards} />
       ) : selectedTab === "files" ? (
         <AdminFilesTab
           searchValue={searchValue}
@@ -507,6 +505,7 @@ export default function AdminReal() {
           users={users}
           CardContainer={CardContainer}
           SmallBadge={SmallBadge}
+          setDashboardCards={setTabDashboardCards}
         />
       ) : selectedTab === "logs" ? (
         <AdminLogsTab
@@ -515,6 +514,7 @@ export default function AdminReal() {
           setSearchValue={setSearchValue}
           CardContainer={CardContainer}
           SmallBadge={SmallBadge}
+          setDashboardCards={setTabDashboardCards}
         />
       ) : selectedTab === "errors" ? (
         <AdminErrorsTab
@@ -522,6 +522,7 @@ export default function AdminReal() {
           setSearchValue={setSearchValue}
           CardContainer={CardContainer}
           SmallBadge={SmallBadge}
+          setDashboardCards={setTabDashboardCards}
         />
       ) : selectedTab === "models" ? (
         <AdminModelsTab
@@ -529,9 +530,10 @@ export default function AdminReal() {
           setSearchValue={setSearchValue}
           CardContainer={CardContainer}
           SmallBadge={SmallBadge}
+          setDashboardCards={setTabDashboardCards}
         />
       ) : (
-        <AdminMonitoringTab />
+        <AdminMonitoringTab setDashboardCards={setTabDashboardCards} />
       )}
     </div>
   );

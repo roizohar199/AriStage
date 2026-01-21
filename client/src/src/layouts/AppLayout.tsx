@@ -8,7 +8,7 @@ import { useCurrentUser } from "@/modules/shared/hooks/useCurrentUser.ts";
 
 declare global {
   interface Window {
-    openUpgradeModal?: () => void;
+    openUpgradeModal?: (billingPeriod?: "monthly" | "yearly") => void;
   }
 }
 
@@ -40,9 +40,14 @@ export default function AppLayout({
   const { user } = useCurrentUser();
   const isAuthenticated = !!user?.id;
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [preferredUpgradeBillingPeriod, setPreferredUpgradeBillingPeriod] =
+    useState<"monthly" | "yearly" | null>(null);
 
   useEffect(() => {
-    window.openUpgradeModal = () => setIsUpgradeModalOpen(true);
+    window.openUpgradeModal = (billingPeriod) => {
+      setPreferredUpgradeBillingPeriod(billingPeriod ?? null);
+      setIsUpgradeModalOpen(true);
+    };
     return () => {
       delete window.openUpgradeModal;
     };
@@ -107,7 +112,7 @@ export default function AppLayout({
       <main
         ref={scrollAreaRef}
         dir="ltr"
-        className={`flex-1 overflow-y-auto relative app-scroll bg-neutral-900 pt-16 pb-20 md:pb-0 transition-all duration-300 ${
+        className={`flex-1 overflow-y-auto overflow-x-hidden relative app-scroll bg-neutral-900 pt-16 pb-20 md:pb-0 transition-all duration-300 ${
           isUpgradeModalOpen ? "blur-sm" : ""
         }`}
       >
@@ -129,6 +134,7 @@ export default function AppLayout({
       <UpgradeModal
         open={isUpgradeModalOpen}
         onClose={() => setIsUpgradeModalOpen(false)}
+        initialBillingPeriod={preferredUpgradeBillingPeriod ?? undefined}
       />
     </div>
   );

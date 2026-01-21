@@ -1,9 +1,21 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Pencil, Plus, Save, ToggleLeft, ToggleRight, X } from "lucide-react";
+import {
+  Boxes,
+  ChevronDown,
+  ChevronUp,
+  ListChecks,
+  Pencil,
+  Plus,
+  Save,
+  ToggleLeft,
+  ToggleRight,
+  X,
+} from "lucide-react";
 
 import api from "@/modules/shared/lib/api.ts";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
 import { useToast } from "@/modules/shared/components/ToastProvider";
+import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
 
 type SmallBadgeVariant = "neutral" | "brand" | "success" | "danger";
 
@@ -26,10 +38,22 @@ const DEFAULT_MODULES: Array<{
   label: string;
   description: string;
 }> = [
-  { key: "module.charts", label: "צ'ארטים", description: "ניהול צ'ארטים וקבצי תווים" },
+  {
+    key: "module.charts",
+    label: "צ'ארטים",
+    description: "ניהול צ'ארטים וקבצי תווים",
+  },
   { key: "module.lyrics", label: "מילים", description: "ניהול מילים לשירים" },
-  { key: "module.addSongs", label: "הוספת שירים", description: "יצירה/עריכה/מחיקה של שירים" },
-  { key: "module.lineups", label: "ליינאפים", description: "ניהול ליינאפים ושירים בליינאפ" },
+  {
+    key: "module.addSongs",
+    label: "הוספת שירים",
+    description: "יצירה/עריכה/מחיקה של שירים",
+  },
+  {
+    key: "module.lineups",
+    label: "ליינאפים",
+    description: "ניהול ליינאפים ושירים בליינאפ",
+  },
 ];
 
 function toBool(v: any): boolean {
@@ -47,6 +71,7 @@ type Props = {
     children: React.ReactNode;
     variant?: SmallBadgeVariant;
   }>;
+  setDashboardCards?: (cards: DashboardCard[]) => void;
 };
 
 export default function AdminModelsTab({
@@ -54,6 +79,7 @@ export default function AdminModelsTab({
   setSearchValue,
   CardContainer,
   SmallBadge,
+  setDashboardCards,
 }: Props) {
   const { showToast } = useToast();
 
@@ -79,7 +105,9 @@ export default function AdminModelsTab({
     try {
       setLoading(true);
       setUnsupported(false);
-      const { data } = await api.get("/feature-flags", { skipErrorToast: true } as any);
+      const { data } = await api.get("/feature-flags", {
+        skipErrorToast: true,
+      } as any);
       setRows(Array.isArray(data) ? (data as FeatureFlagRow[]) : []);
     } catch (err: any) {
       if (err?.response?.status === 404) setUnsupported(true);
@@ -112,22 +140,26 @@ export default function AdminModelsTab({
       });
 
     const seen = new Set(dbModules.map((m) => m.key));
-    const missingDefaults = DEFAULT_MODULES.filter((m) => !seen.has(m.key)).map((m) => ({
-      key: m.key,
-      label: m.label,
-      description: m.description,
-      enabled: true,
-      source: "default" as const,
-    }));
+    const missingDefaults = DEFAULT_MODULES.filter((m) => !seen.has(m.key)).map(
+      (m) => ({
+        key: m.key,
+        label: m.label,
+        description: m.description,
+        enabled: true,
+        source: "default" as const,
+      }),
+    );
 
-    return [...dbModules, ...missingDefaults].sort((a, b) => a.key.localeCompare(b.key));
+    return [...dbModules, ...missingDefaults].sort((a, b) =>
+      a.key.localeCompare(b.key),
+    );
   }, [rows]);
 
   const filteredModules = useMemo(() => {
     const q = searchValue.trim().toLowerCase();
     if (!q) return modules;
     return modules.filter((m) =>
-      `${m.key} ${m.label} ${m.description}`.toLowerCase().includes(q)
+      `${m.key} ${m.label} ${m.description}`.toLowerCase().includes(q),
     );
   }, [modules, searchValue]);
 
@@ -145,7 +177,7 @@ export default function AdminModelsTab({
         showToast(msg, "error");
       }
     },
-    [load, showToast]
+    [load, showToast],
   );
 
   const create = async () => {
@@ -169,7 +201,12 @@ export default function AdminModelsTab({
     setAdding(true);
     try {
       await upsertFlag(key, !!createForm.enabled, effectiveDesc);
-      setCreateForm({ key: "module.", label: "", description: "", enabled: true });
+      setCreateForm({
+        key: "module.",
+        label: "",
+        description: "",
+        enabled: true,
+      });
       showToast("מודול נוסף", "success");
     } finally {
       setAdding(false);
@@ -192,9 +229,48 @@ export default function AdminModelsTab({
     const q = searchValue.trim().toLowerCase();
     if (!q) return base;
     return base.filter((f) =>
-      `${f.key} ${f.description}`.toLowerCase().includes(q)
+      `${f.key} ${f.description}`.toLowerCase().includes(q),
     );
   }, [rows, advancedShowModules, searchValue]);
+
+  const dashboard = useMemo(() => {
+    const flagsTotal = rows.length;
+    const modulesTotal = modules.length;
+    const enabledModules = modules.filter((m) => m.enabled).length;
+    const disabledModules = modulesTotal - enabledModules;
+    return { flagsTotal, modulesTotal, enabledModules, disabledModules };
+  }, [rows.length, modules]);
+
+  useEffect(() => {
+    setDashboardCards?.([
+      {
+        icon: <ListChecks size={32} />,
+        value: dashboard.flagsTotal,
+        label: "Feature Flags",
+      },
+      {
+        icon: <Boxes size={32} />,
+        value: dashboard.modulesTotal,
+        label: "Modules",
+      },
+      {
+        icon: <ToggleRight size={32} />,
+        value: dashboard.enabledModules,
+        label: "Enabled",
+      },
+      {
+        icon: <ToggleLeft size={32} />,
+        value: dashboard.disabledModules,
+        label: "Disabled",
+      },
+    ]);
+  }, [
+    setDashboardCards,
+    dashboard.disabledModules,
+    dashboard.enabledModules,
+    dashboard.flagsTotal,
+    dashboard.modulesTotal,
+  ]);
 
   return (
     <div className="space-y-4">
@@ -235,7 +311,9 @@ export default function AdminModelsTab({
             />
           </div>
           <div className="flex flex-col gap-1 md:col-span-2">
-            <label className="text-xs text-neutral-300 font-bold">Description</label>
+            <label className="text-xs text-neutral-300 font-bold">
+              Description
+            </label>
             <input
               value={createForm.description}
               onChange={(e) =>
@@ -259,7 +337,11 @@ export default function AdminModelsTab({
               enabled
             </label>
 
-            <DesignActionButton type="button" onClick={create} disabled={adding}>
+            <DesignActionButton
+              type="button"
+              onClick={create}
+              disabled={adding}
+            >
               <span className="inline-flex items-center gap-2">
                 <Plus size={16} />
                 {adding ? "מוסיף..." : "הוסף מודול"}
@@ -306,7 +388,9 @@ export default function AdminModelsTab({
                   )}
                 </div>
                 {m.description ? (
-                  <p className="text-sm text-neutral-300 mt-2">{m.description}</p>
+                  <p className="text-sm text-neutral-300 mt-2">
+                    {m.description}
+                  </p>
                 ) : null}
               </div>
 
@@ -317,7 +401,11 @@ export default function AdminModelsTab({
                   title="toggle"
                   type="button"
                 >
-                  {m.enabled ? <ToggleRight size={22} /> : <ToggleLeft size={22} />}
+                  {m.enabled ? (
+                    <ToggleRight size={22} />
+                  ) : (
+                    <ToggleLeft size={22} />
+                  )}
                 </button>
               </div>
             </CardContainer>
@@ -373,7 +461,9 @@ export default function AdminModelsTab({
                   return (
                     <CardContainer key={`adv-${f.key}`}>
                       <div className="flex-1 min-w-0 text-right">
-                        <h3 className="text-lg font-bold text-white mb-1">{f.key}</h3>
+                        <h3 className="text-lg font-bold text-white mb-1">
+                          {f.key}
+                        </h3>
                         {isEditing ? (
                           <div className="mt-2">
                             <label className="text-xs text-neutral-300 font-bold">
@@ -381,13 +471,17 @@ export default function AdminModelsTab({
                             </label>
                             <input
                               value={editingFlagDraft}
-                              onChange={(e) => setEditingFlagDraft(e.target.value)}
+                              onChange={(e) =>
+                                setEditingFlagDraft(e.target.value)
+                              }
                               className="mt-2 w-full bg-neutral-950 border border-neutral-800 p-2 rounded-2xl text-sm"
                               placeholder="תיאור"
                             />
                           </div>
                         ) : f.description ? (
-                          <p className="text-sm text-neutral-300">{f.description}</p>
+                          <p className="text-sm text-neutral-300">
+                            {f.description}
+                          </p>
                         ) : (
                           <p className="text-sm text-neutral-500">—</p>
                         )}
@@ -395,7 +489,9 @@ export default function AdminModelsTab({
 
                       <div className="flex gap-4 flex-row-reverse items-center">
                         <button
-                          onClick={() => upsertFlag(f.key, !f.enabled, f.description)}
+                          onClick={() =>
+                            upsertFlag(f.key, !f.enabled, f.description)
+                          }
                           className="w-6 h-6 text-brand-orange hover:text-white"
                           title="toggle"
                           type="button"
@@ -438,7 +534,11 @@ export default function AdminModelsTab({
                               title="save"
                               onClick={async () => {
                                 try {
-                                  await upsertFlag(f.key, f.enabled, editingFlagDraft);
+                                  await upsertFlag(
+                                    f.key,
+                                    f.enabled,
+                                    editingFlagDraft,
+                                  );
                                   setEditingFlagKey(null);
                                   setEditingFlagDraft("");
                                   showToast("עודכן", "success");
@@ -463,4 +563,3 @@ export default function AdminModelsTab({
     </div>
   );
 }
-

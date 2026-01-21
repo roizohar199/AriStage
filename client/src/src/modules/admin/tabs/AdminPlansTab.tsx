@@ -5,13 +5,23 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { Pencil, Plus, ToggleLeft, ToggleRight, Trash } from "lucide-react";
+import {
+  BadgeCheck,
+  CreditCard,
+  Layers,
+  Pencil,
+  Plus,
+  ToggleLeft,
+  ToggleRight,
+  Trash,
+} from "lucide-react";
 import BaseModal from "@/modules/shared/components/BaseModal";
 import ConfirmModal from "@/modules/shared/confirm/ConfirmModal";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
 import { useToast } from "@/modules/shared/components/ToastProvider";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import api from "@/modules/shared/lib/api.ts";
+import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
 
 // 1) Types
 export type Plan = {
@@ -328,7 +338,11 @@ function PlanForm({
   );
 }
 
-export default function AdminPlansTab() {
+export default function AdminPlansTab({
+  setDashboardCards,
+}: {
+  setDashboardCards?: (cards: DashboardCard[]) => void;
+}) {
   const { user } = useAuth();
   const canEdit = user?.role === "admin";
   const { showToast } = useToast();
@@ -479,6 +493,54 @@ export default function AdminPlansTab() {
     }
   };
 
+  const dashboard = useMemo(() => {
+    const totalPlans = plans.length;
+    const enabledPlans = plans.filter((p) => p.enabled).length;
+
+    const totalPayments = paymentsLoading ? "…" : payments.length;
+    const successPayments = paymentsLoading
+      ? "…"
+      : payments.filter((p) => {
+          const s = String(p.status ?? "").toLowerCase();
+          return ["paid", "success", "succeeded", "completed", "ok"].includes(
+            s,
+          );
+        }).length;
+
+    return { totalPlans, enabledPlans, totalPayments, successPayments };
+  }, [plans, payments, paymentsLoading]);
+
+  useEffect(() => {
+    setDashboardCards?.([
+      {
+        icon: <Layers size={32} />,
+        value: dashboard.totalPlans,
+        label: "מסלולים",
+      },
+      {
+        icon: <ToggleRight size={32} />,
+        value: dashboard.enabledPlans,
+        label: "Enabled",
+      },
+      {
+        icon: <CreditCard size={32} />,
+        value: dashboard.totalPayments,
+        label: "תשלומים",
+      },
+      {
+        icon: <BadgeCheck size={32} />,
+        value: dashboard.successPayments,
+        label: "תשלומים מוצלחים",
+      },
+    ]);
+  }, [
+    setDashboardCards,
+    dashboard.enabledPlans,
+    dashboard.successPayments,
+    dashboard.totalPayments,
+    dashboard.totalPlans,
+  ]);
+
   return (
     <div className="space-y-6">
       <div className="space-y-3">
@@ -597,9 +659,15 @@ export default function AdminPlansTab() {
                               disabled={isToggling}
                             >
                               {p.enabled ? (
-                                <ToggleRight className="text-brand-orange" size={25} />
+                                <ToggleRight
+                                  className="text-brand-orange"
+                                  size={25}
+                                />
                               ) : (
-                                <ToggleLeft className="text-white hover:text-brand-orange" size={25} />
+                                <ToggleLeft
+                                  className="text-white hover:text-brand-orange"
+                                  size={25}
+                                />
                               )}
                             </button>
                           ) : null}

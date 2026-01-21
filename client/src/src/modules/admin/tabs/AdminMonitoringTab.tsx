@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Activity, Users } from "lucide-react";
 
 import api from "@/modules/shared/lib/api.ts";
+import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
 
 type MonitoringCard = {
   label: string;
@@ -9,7 +10,11 @@ type MonitoringCard = {
   icon: React.ReactNode;
 };
 
-export default function AdminMonitoringTab() {
+export default function AdminMonitoringTab({
+  setDashboardCards,
+}: {
+  setDashboardCards?: (cards: DashboardCard[]) => void;
+}) {
   const [monitoring, setMonitoring] = useState<any>(null);
   const [monitoringLoading, setMonitoringLoading] = useState(true);
 
@@ -33,7 +38,8 @@ export default function AdminMonitoringTab() {
   }, [loadMonitoring]);
 
   const monitoringCards: MonitoringCard[] = useMemo(() => {
-    const activeUsers = monitoring?.activeUsers ?? monitoring?.active_users ?? "TODO";
+    const activeUsers =
+      monitoring?.activeUsers ?? monitoring?.active_users ?? "TODO";
     const cpu = monitoring?.cpu ?? monitoring?.cpu_percent ?? "TODO";
     const memory = monitoring?.memory ?? monitoring?.memory_used ?? "TODO";
 
@@ -41,16 +47,25 @@ export default function AdminMonitoringTab() {
       {
         label: "CPU",
         value: typeof cpu === "number" ? `${cpu}%` : String(cpu),
-        icon: <Activity size={20} />,
+        icon: <Activity size={32} />,
       },
-      { label: "Memory", value: String(memory), icon: <Activity size={20} /> },
+      { label: "Memory", value: String(memory), icon: <Activity size={32} /> },
       {
         label: "Active Users",
         value: String(activeUsers),
-        icon: <Users size={20} />,
+        icon: <Users size={32} />,
       },
     ];
   }, [monitoring]);
+
+  useEffect(() => {
+    const cards: DashboardCard[] = monitoringCards.map((c) => ({
+      icon: c.icon,
+      value: c.value,
+      label: c.label,
+    }));
+    setDashboardCards?.(cards);
+  }, [monitoringCards, setDashboardCards]);
 
   return (
     <div className="space-y-3">
@@ -59,19 +74,6 @@ export default function AdminMonitoringTab() {
           טוען ניטור...
         </div>
       )}
-
-      {monitoringCards.map((c) => (
-        <div
-          key={c.label}
-          className="bg-neutral-800 rounded-2xl p-4 flex items-center gap-4"
-        >
-          <div className="text-brand-orange shrink-0">{c.icon}</div>
-          <div className="flex flex-col">
-            <span className="text-xl font-bold">{c.value}</span>
-            <span className="text-sm text-neutral-300">{c.label}</span>
-          </div>
-        </div>
-      ))}
 
       <div className="bg-neutral-800 rounded-2xl p-6 text-center">
         <p className="text-neutral-500 text-xs">GET /dashboard-stats (light)</p>

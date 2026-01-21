@@ -39,7 +39,7 @@ export default function BaseModal({
         onClose();
       }
     },
-    [closeOnBackdropClick, onClose]
+    [closeOnBackdropClick, onClose],
   );
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export default function BaseModal({
 
   return (
     <div
-      className={`fixed inset-0 sm:top-16 ${backdropClassName} backdrop-blur-sm flex justify-center items-start sm:items-center z-50 p-4 transition-all duration-200 ${backdropContainerClassName}`}
+      className={`fixed inset-0 sm:top-16 ${backdropClassName} backdrop-blur-sm flex justify-center items-start sm:items-center z-[100] p-4 transition-all duration-200 ${backdropContainerClassName}`}
       onClick={handleBackdropClick}
       role="presentation"
     >
