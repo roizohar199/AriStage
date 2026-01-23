@@ -1,6 +1,7 @@
 import axios from "axios";
 import { API_BASE_URL } from "@/config/apiConfig";
 import { emitToast } from "./toastBus.ts";
+import { isEffectiveOffline } from "@/modules/shared/lib/offlineMode";
 import {
   authLogoutEvent,
   subscriptionBlockedEvent,
@@ -20,6 +21,23 @@ export const api = axios.create({
 ----------------------------------------------------- */
 api.interceptors.request.use((config) => {
   try {
+    // ⛔ Offline mode: avoid hanging network calls.
+    // Allow explicit opt-out per request via `allowWhenOffline`.
+    const allowWhenOffline = (config as any)?.allowWhenOffline === true;
+    if (isEffectiveOffline() && !allowWhenOffline) {
+      const method = (config.method || "get").toLowerCase();
+      const isReadOnly =
+        method === "get" || method === "head" || method === "options";
+
+      // ✅ Allow read-only requests so Workbox can respond from cache when available.
+      if (!isReadOnly) {
+        emitToast("אתה במצב Offline — אי אפשר לבצע פעולה זו", "error");
+        return Promise.reject(
+          Object.assign(new Error("OFFLINE_MODE"), { code: "OFFLINE_MODE" }),
+        );
+      }
+    }
+
     let token = localStorage.getItem("ari_token");
 
     // אם אין טוקן – אולי אנחנו בייצוג ול-ari_user יש טוקן משולב
@@ -77,6 +95,11 @@ api.interceptors.response.use(
   (err) => {
     const config = err.config || {};
 
+    // Explicit offline short-circuit
+    if (err?.code === "OFFLINE_MODE") {
+      return Promise.reject(err);
+    }
+
     // ✅ Subscription blocked (Payment Required)
     // Handle before skipErrorToast so bootstrap calls can still set blocked state.
     if (
@@ -84,7 +107,7 @@ api.interceptors.response.use(
       err?.response?.data?.code === "SUBSCRIPTION_REQUIRED"
     ) {
       subscriptionBlockedEvent.dispatchEvent(
-        new CustomEvent("blocked", { detail: err.response.data })
+        new CustomEvent("blocked", { detail: err.response.data }),
       );
       return Promise.reject(err);
     }
@@ -141,7 +164,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(err);
-  }
+  },
 );
 
 export default api;

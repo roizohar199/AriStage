@@ -4,10 +4,13 @@ import {
   Check,
   CheckCircle2,
   CheckIcon,
+  HardDrive,
   LogOut,
   Settings,
   Trash2,
   User,
+  Wifi,
+  WifiOff,
   X,
 } from "lucide-react";
 import { getNavItems } from "@/modules/shared/components/navConfig.tsx";
@@ -18,6 +21,7 @@ import { useCurrentUser } from "@/modules/shared/hooks/useCurrentUser.ts";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import api from "@/modules/shared/lib/api.js";
 import AcceptInvitation from "../../auth/pages/AcceptInvitation";
+import { useOfflineStatus } from "@/modules/shared/hooks/useOfflineStatus";
 
 interface HeaderProps {
   rightActions?: React.ReactNode;
@@ -36,6 +40,8 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { isEffectiveOffline, isForcedOffline, toggleForcedOffline } =
+    useOfflineStatus();
   const [menuOpen, setMenuOpen] = useState(false);
   const [pendingModalOpen, setPendingModalOpen] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<
@@ -45,6 +51,12 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
   const [processingId, setProcessingId] = useState<number | null>(null);
   const [displayPendingCount, setDisplayPendingCount] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const [offlineCacheModalOpen, setOfflineCacheModalOpen] = useState(false);
+  const [offlineCacheLoading, setOfflineCacheLoading] = useState(false);
+  const [offlineCacheEntries, setOfflineCacheEntries] = useState<
+    Array<{ cacheName: string; url: string }>
+  >([]);
 
   const role = user?.role || "user";
   const pendingCount = usePendingInvitations(user?.id);
@@ -151,6 +163,44 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
     }
   };
 
+  const loadOfflineCacheEntries = useCallback(async () => {
+    if (typeof window === "undefined" || !("caches" in window)) {
+      setOfflineCacheEntries([]);
+      return;
+    }
+
+    setOfflineCacheLoading(true);
+    try {
+      const cacheNames = await caches.keys();
+      const rows: Array<{ cacheName: string; url: string }> = [];
+
+      for (const cacheName of cacheNames) {
+        const cache = await caches.open(cacheName);
+        const requests = await cache.keys();
+        for (const req of requests) {
+          rows.push({ cacheName, url: req.url });
+        }
+      }
+
+      rows.sort((a, b) =>
+        a.cacheName === b.cacheName
+          ? a.url.localeCompare(b.url)
+          : a.cacheName.localeCompare(b.cacheName),
+      );
+      setOfflineCacheEntries(rows);
+    } catch {
+      setOfflineCacheEntries([]);
+    } finally {
+      setOfflineCacheLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (offlineCacheModalOpen) {
+      loadOfflineCacheEntries();
+    }
+  }, [offlineCacheModalOpen, loadOfflineCacheEntries]);
+
   return (
     <div className="relative z-[200] w-full h-16 bg-neutral-800/80">
       <div className="h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between md:grid md:grid-cols-3">
@@ -186,6 +236,35 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
         {/* Right: User avatar with dropdown */}
         <div className="md:justify-self-end flex items-center gap-3 relative">
           {rightActions}
+
+          <button
+            type="button"
+            onClick={() => {
+              toggleForcedOffline();
+              const next = !isForcedOffline;
+              showToast(
+                next ? "עברת למצב Offline (ללא רשת)" : "חזרת למצב Online",
+                "info",
+              );
+            }}
+            className={`h-8 px-3 rounded-full border text-xs font-semibold flex items-center gap-2 transition \
+              ${
+                isEffectiveOffline
+                  ? "bg-red-500/15 border-red-400/50 text-red-200 hover:bg-red-500/20"
+                  : "bg-emerald-500/10 border-emerald-400/40 text-emerald-200 hover:bg-emerald-500/15"
+              }`}
+            title={
+              isForcedOffline
+                ? "מצב Offline כפוי פעיל"
+                : isEffectiveOffline
+                  ? "אין חיבור אינטרנט"
+                  : "Online"
+            }
+          >
+            {isEffectiveOffline ? <WifiOff size={16} /> : <Wifi size={16} />}
+            {isEffectiveOffline ? "Offline" : "Online"}
+          </button>
+
           <div ref={menuRef} className="relative">
             <div className="relative">
               {displayPendingCount > 0 && (
@@ -221,6 +300,16 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                 <button
                   onClick={() => {
                     setMenuOpen(false);
+                    setOfflineCacheModalOpen(true);
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-700/50 rounded-2xl"
+                >
+                  <HardDrive size={16} />
+                  תוכן Offline
+                </button>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
                     setPendingModalOpen(true);
                   }}
                   className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-700/50 rounded-2xl"
@@ -247,6 +336,80 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
           </div>
         </div>
       </div>
+
+      <BaseModal
+        open={offlineCacheModalOpen}
+        onClose={() => setOfflineCacheModalOpen(false)}
+        title="תוכן זמין במצב Offline"
+        maxWidth="max-w-3xl"
+      >
+        <div className="w-full">
+          <div className="text-sm text-neutral-300 mb-4">
+            מוצגים כאן כל הקבצים/כתובות שכבר נשמרו בקאש בדפדפן. מה שלא ביקרו
+            בו/נטען עדיין — לא יופיע כאן.
+          </div>
+
+          {offlineCacheLoading ? (
+            <div className="text-neutral-300 text-sm">טוען…</div>
+          ) : offlineCacheEntries.length === 0 ? (
+            <div className="text-neutral-300 text-sm">
+              אין תוכן מקאש כרגע. טען כמה דפים/נתונים במצב Online ואז נסה שוב.
+            </div>
+          ) : (
+            <div className="max-h-[60vh] overflow-auto border border-neutral-700 rounded-xl">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-neutral-900">
+                  <tr>
+                    <th className="text-right px-3 py-2 text-neutral-300 font-semibold">
+                      Cache
+                    </th>
+                    <th className="text-right px-3 py-2 text-neutral-300 font-semibold">
+                      URL
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {offlineCacheEntries.map((row, idx) => (
+                    <tr
+                      key={`${row.cacheName}:${row.url}:${idx}`}
+                      className="border-t border-neutral-800"
+                    >
+                      <td className="px-3 py-2 text-neutral-200 whitespace-nowrap">
+                        {row.cacheName}
+                      </td>
+                      <td className="px-3 py-2 text-neutral-200 break-all">
+                        {row.url}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => loadOfflineCacheEntries()}
+              className="px-4 py-2 rounded-xl bg-neutral-700/60 hover:bg-neutral-700 text-white text-sm font-semibold"
+            >
+              רענן
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                showToast(
+                  "כדי להוסיף עוד תוכן ל-Offline: תטייל באתר במצב Online פעם אחת",
+                  "info",
+                );
+              }}
+              className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700/70 text-white text-sm font-semibold"
+            >
+              איך למלא קאש?
+            </button>
+          </div>
+        </div>
+      </BaseModal>
 
       <BaseModal
         open={pendingModalOpen}

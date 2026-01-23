@@ -1,7 +1,11 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import api from "@/modules/shared/lib/api.js";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
+import DesignActionButtonBig from "@/modules/shared/components/DesignActionButtonBig";
+import DesignActionButton from "@/modules/shared/components/DesignActionButton";
+import { X } from "lucide-react";
 
 export default function Login() {
   const [search] = useSearchParams();
@@ -15,19 +19,33 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [role, setRole] = useState("");
-  const [avatar, setAvatar] = useState(null);
-  const [preview, setPreview] = useState(null);
+  const [avatar, setAvatar] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (tabFromUrl === "register") setTab("register");
     if (tabFromUrl === "reset") setTab("reset");
   }, [tabFromUrl]);
 
-  const handleLogin = async (e) => {
+  useEffect(() => {
+    if (!isTermsOpen) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsTermsOpen(false);
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isTermsOpen]);
+
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setMessage("");
@@ -52,7 +70,7 @@ export default function Login() {
 
       // Navigate to home - let the app routing decide the destination
       navigate("/");
-    } catch (err) {
+    } catch (err: any) {
       setError(err?.response?.data?.message || "שגיאה בהתחברות");
     } finally {
       setLoading(false);
@@ -62,7 +80,7 @@ export default function Login() {
   /* -------------------------------------------
        REGISTER – FormData + role + avatar
   -------------------------------------------- */
-  const handleRegister = async (e) => {
+  const handleRegister = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setMessage("");
@@ -124,7 +142,7 @@ export default function Login() {
       setAvatar(null);
       setPreview(null);
       setAgreed(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error("❌ [REGISTER] שגיאה!", {
         error: err,
         response: err?.response,
@@ -139,7 +157,7 @@ export default function Login() {
     }
   };
 
-  const handleReset = async (e) => {
+  const handleReset = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setMessage("");
@@ -148,7 +166,7 @@ export default function Login() {
       setLoading(true);
       const { data } = await api.post("/auth/reset-request", { email });
       setMessage(data.message || "נשלח מייל לאיפוס אם המשתמש קיים");
-    } catch (err) {
+    } catch (err: any) {
       setError(err?.response?.data?.message || "שגיאה בעת שליחת האיפוס");
     } finally {
       setLoading(false);
@@ -163,10 +181,10 @@ export default function Login() {
             <input
               type="email"
               placeholder="name@example.com"
-              dir="ltr"
+              dir="rtl"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white hover:bg-neutral-700/50 focus:bg-neutral-700"
               required
             />
             <input
@@ -174,15 +192,12 @@ export default function Login() {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white hover:bg-neutral-700/50 focus:bg-neutral-700"
               required
             />
-            <button
-              disabled={loading}
-              className="w-full cursor-pointer bg-brand-orange text-black font-semibold px-4 py-2 rounded-2xl shadow-innerIos transition text-sm"
-            >
+            <DesignActionButtonBig type="submit" disabled={loading}>
               {loading ? "מתחבר..." : "התחבר"}
-            </button>
+            </DesignActionButtonBig>
 
             {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
             {message && (
@@ -210,49 +225,56 @@ export default function Login() {
                 )}
               </div>
 
-              <label className="cursor-pointer bg-brand-orange text-black font-semibold px-4 py-2 rounded-2xl shadow-innerIos transition text-sm">
+              <DesignActionButton
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+              >
                 העלאת תמונה
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    setAvatar(file);
-                    if (file) {
-                      const url = URL.createObjectURL(file);
-                      setPreview(url);
-                    }
-                  }}
-                />
-              </label>
+              </DesignActionButton>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                  const file = e.target.files?.[0] ?? null;
+                  setAvatar(file);
+                  if (file) {
+                    const url = URL.createObjectURL(file);
+                    setPreview(url);
+                  } else {
+                    setPreview(null);
+                  }
+                }}
+              />
             </div>
             <input
               type="text"
               placeholder="שם מלא"
               value={full_name}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white"
-              required
-            />
-
-            <input
-              type="email"
-              placeholder="name@example.com"
-              dir="ltr"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white hover:bg-neutral-700/50 focus:bg-neutral-700"
               required
             />
 
             {/* ROLE */}
             <input
               type="text"
-              placeholder="תפקיד (גיטריסט, בסיסט...)"
+              placeholder="תפקיד (זמר, גיטריסט, מתופף...)"
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white hover:bg-neutral-700/50 focus:bg-neutral-700"
+            />
+
+            <input
+              type="email"
+              placeholder="name@example.com"
+              dir="rtl"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white hover:bg-neutral-700/50 focus:bg-neutral-700"
+              required
             />
 
             <input
@@ -260,7 +282,7 @@ export default function Login() {
               placeholder="בחר סיסמה"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white hover:bg-neutral-700/50 focus:bg-neutral-700"
               required
             />
 
@@ -269,7 +291,7 @@ export default function Login() {
               placeholder="אימות סיסמה"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white hover:bg-neutral-700/50 focus:bg-neutral-700"
               required
             />
 
@@ -281,15 +303,25 @@ export default function Login() {
                 className="mr-2 m-2 accent-brand-orange"
                 required
               />
-              קראתי את התקנון
+              <span>
+                קראתי את{" "}
+                <button
+                  type="button"
+                  className="underline underline-offset-2 text-brand-orange hover:text-brand-orangeLight"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsTermsOpen(true);
+                  }}
+                >
+                  התקנון
+                </button>
+              </span>
             </label>
 
-            <button
-              disabled={loading}
-              className="w-full cursor-pointer bg-brand-orange text-black font-semibold px-4 py-2 rounded-2xl shadow-innerIos transition text-sm"
-            >
+            <DesignActionButtonBig type="submit" disabled={loading}>
               {loading ? "נרשם..." : "הרשמה"}
-            </button>
+            </DesignActionButtonBig>
 
             {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
             {message && (
@@ -304,15 +336,15 @@ export default function Login() {
             <input
               type="email"
               placeholder="name@example.com"
-              dir="ltr"
+              dir="rtl"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white hover:bg-neutral-700/50 focus:bg-neutral-700"
               required
             />
-            <button className="w-full cursor-pointer bg-brand-orange text-black font-semibold px-4 py-2 rounded-2xl shadow-innerIos transition text-sm">
-              שלח קישור לאיפוס סיסמה
-            </button>
+            <DesignActionButtonBig type="submit" disabled={loading}>
+              {loading ? "מאפס..." : "איפוס סיסמה"}
+            </DesignActionButtonBig>
             {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
             {message && (
               <p className="text-green-400 text-sm mt-2">{message}</p>
@@ -342,7 +374,7 @@ export default function Login() {
               className={`flex-1 py-2 font-semibold ${
                 tab === t
                   ? "border-b-2 border-brand-orange overflow-hidden text-brand-orange"
-                  : "text-white"
+                  : "text-white hover:text-brand-orangeLight"
               }`}
               onClick={() => {
                 setError("");
@@ -359,6 +391,167 @@ export default function Login() {
 
         {renderForm()}
       </div>
+
+      {isTermsOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="תקנון השימוש של Ari Stage"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setIsTermsOpen(false);
+          }}
+        >
+          <div className="w-full max-w-2xl rounded-2xl bg-neutral-950 text-right shadow-2xl border border-neutral-800">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-800">
+              <h2 className="text-lg font-bold text-brand-orange">
+                תקנון שימוש – Ari Stage
+              </h2>
+              <button
+                onClick={() => setIsTermsOpen(false)}
+                className="text-neutral-400 hover:text-white transition-colors p-1 hover:bg-neutral-800 rounded-md"
+                aria-label="סגור"
+                type="button"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="max-h-[70vh] overflow-auto px-5 py-4 text-sm text-gray-200 space-y-4 leading-6">
+              <p className="text-gray-400">
+                עודכן לאחרונה: 23/01/2026. השימוש באתר/אפליקציה Ari Stage מהווה
+                הסכמה לתנאים המפורטים להלן.
+              </p>
+
+              <section className="space-y-2">
+                <h3 className="font-semibold text-white">1. מה השירות</h3>
+                <p>
+                  Ari Stage היא מערכת לניהול ליינאפים, שירים וחומרים נלווים
+                  ("השירות"). ניתן להשתמש בשירות לצורך עבודה אישית או ניהול
+                  צוות.
+                </p>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="font-semibold text-white">2. חשבון משתמש</h3>
+                <ul className="list-disc pr-5 space-y-1">
+                  <li>
+                    עליך לספק פרטים נכונים ועדכניים ולשמור על סודיות הסיסמה.
+                  </li>
+                  <li>
+                    אתה אחראי לכל פעילות שמתבצעת בחשבונך, לרבות העלאת תכנים.
+                  </li>
+                  <li>
+                    אנו רשאים להשעות/לסגור חשבון במקרה של שימוש לרעה או הפרת
+                    תנאים.
+                  </li>
+                </ul>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="font-semibold text-white">
+                  3. תכנים שהמשתמש מעלה
+                </h3>
+                <ul className="list-disc pr-5 space-y-1">
+                  <li>
+                    התכנים (למשל שמות שירים, טקסטים, קבצים, תמונות, PDFs) הם
+                    באחריותך בלבד.
+                  </li>
+                  <li>
+                    אתה מצהיר שיש לך זכויות להשתמש ולהעלות את התכנים, ושאינם
+                    מפרים זכויות יוצרים/פרטיות/סימני מסחר.
+                  </li>
+                  <li>
+                    אינך רשאי להעלות תוכן בלתי חוקי, פוגעני, מטעה או כזה שמסכן
+                    את אבטחת השירות.
+                  </li>
+                </ul>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="font-semibold text-white">
+                  4. שימוש מותר ואסור
+                </h3>
+                <ul className="list-disc pr-5 space-y-1">
+                  <li>
+                    מותר להשתמש בשירות למטרות ניהול ושיתוף חומרים הקשורים
+                    להופעות/חזרות/הפקה.
+                  </li>
+                  <li>
+                    אסור לבצע ניסיונות חדירה, סריקות חולשות, עקיפת הרשאות, או
+                    שימוש שמעמיס באופן חריג על המערכת.
+                  </li>
+                  <li>אסור לאסוף מידע על משתמשים אחרים ללא הרשאה.</li>
+                </ul>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="font-semibold text-white">5. תשלומים ומנויים</h3>
+                <p>
+                  חלק מהפיצ'רים עשויים להיות בתשלום. אם קיימים מסלולים/מנויים,
+                  התנאים, המחירים והחיובים יוצגו במעמד הרכישה. אי-תשלום עשוי
+                  לגרום להגבלת גישה לפיצ'רים מסוימים.
+                </p>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="font-semibold text-white">6. זמינות ושינויים</h3>
+                <p>
+                  אנו שואפים לזמינות גבוהה אך איננו מתחייבים שהשירות יהיה ללא
+                  תקלות או ללא הפסקות. אנו רשאים לעדכן, לשנות או להפסיק חלקים מן
+                  השירות.
+                </p>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="font-semibold text-white">7. פרטיות</h3>
+                <p>
+                  אנו משתמשים במידע לצורך אספקת השירות, אבטחה ושיפור חוויית
+                  המשתמש. ייתכן שנשתמש בעוגיות/אחסון מקומי (כגון localStorage)
+                  לצרכים תפעוליים. לא נמסור מידע אישי לצדדים שלישיים אלא אם נדרש
+                  לפי דין או לצורך תפעול השירות.
+                </p>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="font-semibold text-white">
+                  8. אחריות והגבלת אחריות
+                </h3>
+                <p>
+                  השירות מסופק "כמות שהוא". ככל שהדין מאפשר, Ari Stage לא תהיה
+                  אחראית לנזקים עקיפים/תוצאתיים, לאובדן נתונים או לאובדן רווחים
+                  הנובעים משימוש בשירות.
+                </p>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="font-semibold text-white">9. יצירת קשר</h3>
+                <p>
+                  לשאלות, דיווח על בעיה או בקשות, ניתן ליצור קשר דרך ערוצי
+                  התמיכה המופיעים באתר.
+                </p>
+              </section>
+
+              <section className="space-y-2">
+                <h3 className="font-semibold text-white">10. הסכמה לתנאים</h3>
+                <p>
+                  בהרשמה לשירות, אתה מאשר שקראת והבנת את התקנון ומסכים לפעול
+                  לפיו.
+                </p>
+              </section>
+            </div>
+
+            <div className="px-5 py-4 border-t border-neutral-800 flex justify-end">
+              <DesignActionButton
+                type="button"
+                onClick={() => setIsTermsOpen(false)}
+              >
+                מאשר
+              </DesignActionButton>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

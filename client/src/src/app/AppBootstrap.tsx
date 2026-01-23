@@ -6,6 +6,7 @@ import { io } from "socket.io-client";
 import { API_ORIGIN } from "@/config/apiConfig";
 import api from "@/modules/shared/lib/api.js";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
+import { useOfflineStatus } from "@/modules/shared/hooks/useOfflineStatus";
 
 import ProtectedRoute from "@/modules/shared/components/ProtectedRoute.tsx";
 import Splash from "@/modules/shared/components/Splash.tsx";
@@ -62,12 +63,13 @@ function exitImpersonation(): void {
 export default function AppBootstrap(): JSX.Element {
   const location = useLocation();
   const { user: ctxUser, loading: authLoading, subscriptionStatus } = useAuth();
+  const { isEffectiveOffline } = useOfflineStatus();
 
   /* -----------------------------------------
      🟦 המשתמש הנוכחי (moved from App.tsx)
   ----------------------------------------- */
   const currentUser: User = JSON.parse(
-    localStorage.getItem("ari_user") || "{}"
+    localStorage.getItem("ari_user") || "{}",
   );
 
   const effectiveUser = (ctxUser?.id ? ctxUser : currentUser) as any;
@@ -101,6 +103,15 @@ export default function AppBootstrap(): JSX.Element {
   }, []);
 
   useEffect(() => {
+    if (!socket) return;
+    if (isEffectiveOffline) {
+      socket.disconnect();
+    } else if (!socket.connected) {
+      socket.connect();
+    }
+  }, [isEffectiveOffline, socket]);
+
+  useEffect(() => {
     if (!socket || !currentUser?.id) {
       return;
     }
@@ -130,7 +141,7 @@ export default function AppBootstrap(): JSX.Element {
       window.dispatchEvent(
         new CustomEvent("data-refresh", {
           detail: payload || { type: "global" },
-        })
+        }),
       );
     };
 
@@ -139,7 +150,7 @@ export default function AppBootstrap(): JSX.Element {
       window.dispatchEvent(
         new CustomEvent("data-refresh", {
           detail: { type: "lineup-song", action: "reordered", lineupId },
-        })
+        }),
       );
     };
 

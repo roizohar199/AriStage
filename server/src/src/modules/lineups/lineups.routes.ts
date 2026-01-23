@@ -10,7 +10,8 @@ const router = Router();
 router.get(
   "/public/:token",
   requireFeatureFlagEnabled("module.lineups"),
-  lineupsController.public
+  requireFeatureFlagEnabled("module.shareLineup"),
+  lineupsController.public,
 );
 
 router.use(requireAuth);
@@ -28,19 +29,31 @@ router.post("/", lineupsController.create);
 router.put("/:id", lineupsController.update);
 router.delete("/:id", lineupsController.remove);
 
-router.get("/:id/share", lineupsController.shareStatus);
-router.post("/:id/share", lineupsController.generateShare);
-router.delete("/:id/share", lineupsController.disableShare);
+router.get(
+  "/:id/share",
+  requireFeatureFlagEnabled("module.shareLineup"),
+  lineupsController.shareStatus,
+);
+router.post(
+  "/:id/share",
+  requireFeatureFlagEnabled("module.shareLineup"),
+  lineupsController.generateShare,
+);
+router.delete(
+  "/:id/share",
+  requireFeatureFlagEnabled("module.shareLineup"),
+  lineupsController.disableShare,
+);
 
 router.post(
   "/:id/download-charts",
   requireFeatureFlagEnabled("module.charts"),
-  lineupsController.downloadCharts
+  lineupsController.downloadCharts,
 );
 router.post(
   "/:id/download-lyrics",
   requireFeatureFlagEnabled("module.lyrics"),
-  lineupsController.downloadLyrics
+  lineupsController.downloadLyrics,
 );
 
 export const lineupsRouter = router;

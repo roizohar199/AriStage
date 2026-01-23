@@ -1,39 +1,33 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
-import {
-  Clock,
-  Music4Icon,
-  MoreHorizontal,
-  Printer,
-  FileDown,
-} from "lucide-react";
+import { Clock, Music4Icon, MoreHorizontal, Printer } from "lucide-react";
 import CardSong from "../../shared/components/cardsong";
-import api from "@/modules/shared/lib/api.js";
+import api from "@/modules/shared/lib/api.ts";
 import { API_ORIGIN } from "@/config/apiConfig";
 
 // ⭐ Socket.IO
 import { io } from "socket.io-client";
 
 // ⭐ פונקציות עזר לתאריך ושעה
-function formatDate(dateStr) {
+function formatDate(dateStr?: string | null): string {
   if (!dateStr) return "";
   const d = new Date(dateStr);
   return d.toLocaleDateString("he-IL");
 }
 
-function formatTime(timeStr) {
+function formatTime(timeStr?: string | null): string {
   if (!timeStr) return "";
   return timeStr.slice(0, 5);
 }
 
 // ⭐ פירוק זמן
-const parseDuration = (d) => {
+const parseDuration = (d?: string | number | null): number => {
   if (!d) return 0;
   const str = String(d);
 
   if (!str.includes(":")) {
     const num = Number(str);
-    return isNaN(num) ? 0 : num;
+    return Number.isNaN(num) ? 0 : num;
   }
 
   const parts = str.split(":").map((n) => Number(n) || 0);
@@ -51,20 +45,50 @@ const parseDuration = (d) => {
   return 0;
 };
 
-const safeKey = (key) => {
+const safeKey = (key: unknown): string => {
   if (!key) return "N/A";
   const normalized = String(key).trim();
   return normalized || "N/A";
 };
 
-const safeDuration = (duration) => {
+const safeDuration = (duration: unknown): string => {
   const totalSec = parseDuration(duration);
   const m = Math.floor(totalSec / 60);
   const s = totalSec % 60;
   return `${m}:${String(s).padStart(2, "0")}`;
 };
 
-const normalizeNotes = (song) => {
+type ShareLineupSong = {
+  lineup_song_id?: number | null;
+  song_id?: number | null;
+  id?: number | null;
+  title?: string | null;
+  artist?: string | null;
+  bpm?: number | string | null;
+  key_sig?: string | null;
+  duration_sec?: string | number | null;
+  notes?: string | null;
+  lineup_note?: string | null;
+  song_note?: string | null;
+  note?: string | null;
+  tag?: string | null;
+  label?: string | null;
+  comment?: string | null;
+};
+
+type ShareLineupResponse = {
+  id: number;
+  title: string;
+  date?: string | null;
+  time?: string | null;
+  location?: string | null;
+  description?: string | null;
+  songs: ShareLineupSong[];
+};
+
+const normalizeNotes = (
+  song: ShareLineupSong | null | undefined,
+): string | null => {
   if (!song) return null;
   const candidates = [
     song.notes,
@@ -86,9 +110,9 @@ const normalizeNotes = (song) => {
 };
 
 export default function ShareLineup() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
 
-  const [lineup, setLineup] = useState(null);
+  const [lineup, setLineup] = useState<ShareLineupResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -111,9 +135,17 @@ export default function ShareLineup() {
   }, [id]);
 
   const load = async () => {
+    if (!id) {
+      setError("הליינאפ לא נמצא או שהקישור לא תקין");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError("");
     try {
       const { data } = await api.get(`/lineups/public/${id}`);
-      setLineup(data);
+      setLineup(data as ShareLineupResponse);
     } catch (err) {
       console.error(err);
       setError("הליינאפ לא נמצא או שהקישור לא תקין");

@@ -1,16 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  Boxes,
-  ChevronDown,
-  ChevronUp,
-  ListChecks,
-  Pencil,
-  Plus,
-  Save,
-  ToggleLeft,
-  ToggleRight,
-  X,
-} from "lucide-react";
+import { Boxes, ListChecks, Plus, ToggleLeft, ToggleRight } from "lucide-react";
 
 import api from "@/modules/shared/lib/api.ts";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
@@ -54,6 +43,36 @@ const DEFAULT_MODULES: Array<{
     label: "ליינאפים",
     description: "ניהול ליינאפים ושירים בליינאפ",
   },
+  {
+    key: "module.plans",
+    label: "מסלולים",
+    description: "ניהול מסלולים / תוכניות תמחור",
+  },
+  {
+    key: "module.pendingInvitations",
+    label: "הזמנות ממתינות",
+    description: "צפייה והחלטה על הזמנות ממתינות",
+  },
+  {
+    key: "module.inviteArtist",
+    label: "הזמנת אמן - אישי",
+    description: "שליחת/ביטול הזמנה לאמן",
+  },
+  {
+    key: "module.invitedMeArtists",
+    label: "אמנים שהזמינו אותי - משותפים",
+    description: "הצגת המאגר: מי הזמין אותי",
+  },
+  {
+    key: "module.payments",
+    label: "תשלומים",
+    description: "יצירת תשלום ואישור תשלום להפעלת מנוי",
+  },
+  {
+    key: "module.shareLineup",
+    label: "שיתוף ליינאפ",
+    description: "שיתוף וצפייה בליינאפ ציבורי באמצעות קישור",
+  },
 ];
 
 function toBool(v: any): boolean {
@@ -94,12 +113,6 @@ export default function AdminModelsTab({
     description: "",
     enabled: true,
   });
-
-  const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [advancedShowModules, setAdvancedShowModules] = useState(false);
-
-  const [editingFlagKey, setEditingFlagKey] = useState<string | null>(null);
-  const [editingFlagDraft, setEditingFlagDraft] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -212,26 +225,6 @@ export default function AdminModelsTab({
       setAdding(false);
     }
   };
-
-  const advancedFlags = useMemo(() => {
-    const base = rows
-      .filter((r) => {
-        const key = String(r.key || "");
-        if (advancedShowModules) return true;
-        return !key.startsWith("module.");
-      })
-      .map((r) => ({
-        key: String(r.key),
-        description: (r.description ?? "").toString(),
-        enabled: toBool(r.enabled),
-      }));
-
-    const q = searchValue.trim().toLowerCase();
-    if (!q) return base;
-    return base.filter((f) =>
-      `${f.key} ${f.description}`.toLowerCase().includes(q),
-    );
-  }, [rows, advancedShowModules, searchValue]);
 
   const dashboard = useMemo(() => {
     const flagsTotal = rows.length;
@@ -397,14 +390,20 @@ export default function AdminModelsTab({
               <div className="flex gap-6 flex-row-reverse items-center">
                 <button
                   onClick={() => upsertFlag(m.key, !m.enabled, m.description)}
-                  className="w-6 h-6 text-brand-orange hover:text-white"
+                  className="w-6 h-6"
                   title="toggle"
                   type="button"
                 >
                   {m.enabled ? (
-                    <ToggleRight size={22} />
+                    <ToggleRight
+                      size={22}
+                      className="text-green-600 hover:text-green-500"
+                    />
                   ) : (
-                    <ToggleLeft size={22} />
+                    <ToggleLeft
+                      size={22}
+                      className="text-red-600 hover:text-red-500"
+                    />
                   )}
                 </button>
               </div>
@@ -412,154 +411,6 @@ export default function AdminModelsTab({
           ))}
         </div>
       )}
-
-      {/* Advanced */}
-      <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-4">
-        <button
-          type="button"
-          className="w-full flex items-center justify-between"
-          onClick={() => setAdvancedOpen((v) => !v)}
-        >
-          <div className="text-white font-bold">מתקדם: Feature Flags</div>
-          {advancedOpen ? (
-            <ChevronUp className="text-neutral-300" size={18} />
-          ) : (
-            <ChevronDown className="text-neutral-300" size={18} />
-          )}
-        </button>
-
-        {advancedOpen ? (
-          <div className="mt-4 space-y-4">
-            <div className="flex items-center justify-between gap-3">
-              <label className="flex items-center gap-2 text-sm text-neutral-200">
-                <input
-                  type="checkbox"
-                  checked={advancedShowModules}
-                  onChange={(e) => setAdvancedShowModules(e.target.checked)}
-                  className="accent-brand-orange"
-                />
-                הצג גם module.* כאן (ברירת מחדל: מוסתר)
-              </label>
-
-              <button
-                type="button"
-                onClick={() => setSearchValue("")}
-                className="text-xs text-neutral-400 hover:text-neutral-200"
-              >
-                נקה חיפוש
-              </button>
-            </div>
-
-            {advancedFlags.length === 0 ? (
-              <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-4 text-center text-neutral-400 text-sm">
-                אין Feature Flags להצגה
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {advancedFlags.map((f) => {
-                  const isEditing = editingFlagKey === f.key;
-                  return (
-                    <CardContainer key={`adv-${f.key}`}>
-                      <div className="flex-1 min-w-0 text-right">
-                        <h3 className="text-lg font-bold text-white mb-1">
-                          {f.key}
-                        </h3>
-                        {isEditing ? (
-                          <div className="mt-2">
-                            <label className="text-xs text-neutral-300 font-bold">
-                              description
-                            </label>
-                            <input
-                              value={editingFlagDraft}
-                              onChange={(e) =>
-                                setEditingFlagDraft(e.target.value)
-                              }
-                              className="mt-2 w-full bg-neutral-950 border border-neutral-800 p-2 rounded-2xl text-sm"
-                              placeholder="תיאור"
-                            />
-                          </div>
-                        ) : f.description ? (
-                          <p className="text-sm text-neutral-300">
-                            {f.description}
-                          </p>
-                        ) : (
-                          <p className="text-sm text-neutral-500">—</p>
-                        )}
-                      </div>
-
-                      <div className="flex gap-4 flex-row-reverse items-center">
-                        <button
-                          onClick={() =>
-                            upsertFlag(f.key, !f.enabled, f.description)
-                          }
-                          className="w-6 h-6 text-brand-orange hover:text-white"
-                          title="toggle"
-                          type="button"
-                        >
-                          {f.enabled ? (
-                            <ToggleRight size={22} />
-                          ) : (
-                            <ToggleLeft size={22} />
-                          )}
-                        </button>
-
-                        {!isEditing ? (
-                          <button
-                            type="button"
-                            className="w-6 h-6 text-neutral-300 hover:text-white"
-                            title="edit description"
-                            onClick={() => {
-                              setEditingFlagKey(f.key);
-                              setEditingFlagDraft(f.description || "");
-                            }}
-                          >
-                            <Pencil size={18} />
-                          </button>
-                        ) : (
-                          <>
-                            <button
-                              type="button"
-                              className="w-6 h-6 text-neutral-300 hover:text-white"
-                              title="cancel"
-                              onClick={() => {
-                                setEditingFlagKey(null);
-                                setEditingFlagDraft("");
-                              }}
-                            >
-                              <X size={18} />
-                            </button>
-                            <button
-                              type="button"
-                              className="w-6 h-6 text-green-400 hover:text-green-300"
-                              title="save"
-                              onClick={async () => {
-                                try {
-                                  await upsertFlag(
-                                    f.key,
-                                    f.enabled,
-                                    editingFlagDraft,
-                                  );
-                                  setEditingFlagKey(null);
-                                  setEditingFlagDraft("");
-                                  showToast("עודכן", "success");
-                                } catch {
-                                  // handled inside upsertFlag
-                                }
-                              }}
-                            >
-                              <Save size={18} />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </CardContainer>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        ) : null}
-      </div>
     </div>
   );
 }
