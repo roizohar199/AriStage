@@ -33,6 +33,7 @@ import BaseModal from "@/modules/shared/components/BaseModal.tsx";
 import { AddNewSong, SongForm } from "../../shared/components/Addnewsong";
 import CreateLineup from "../../shared/components/Createlineup";
 import Search from "../../shared/components/Search";
+import Tab, { type TabItem } from "@/modules/shared/components/Tab";
 import Charts from "../../shared/components/Charts";
 import CardSong from "../../shared/components/cardsong";
 import SongLyrics from "../../shared/components/SongLyrics";
@@ -43,6 +44,7 @@ import { API_ORIGIN } from "@/config/apiConfig";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import { useFeatureFlags } from "@/modules/shared/contexts/FeatureFlagsContext.tsx";
 import DesignActionButton from "../../shared/components/DesignActionButton";
+import DesignActionButtonBig from "../../shared/components/DesignActionButtonBig";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "../../shared/components/ToastProvider";
 import ArtistCard from "../../shared/components/ArtistCard";
@@ -104,6 +106,8 @@ function MyContent(): JSX.Element {
   const navigate = useNavigate();
   const { isEnabled: isFeatureEnabled } = useFeatureFlags();
 
+  type MyTabKey = "songs" | "lineups" | "shared";
+
   const addSongsEnabled = isFeatureEnabled("module.addSongs", true);
   const lineupsEnabled = isFeatureEnabled("module.lineups", true);
 
@@ -122,9 +126,40 @@ function MyContent(): JSX.Element {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [connectedArtistsCount, setConnectedArtistsCount] = useState(0);
-  const [selectedTab, setSelectedTab] = useState<
-    "songs" | "lineups" | "shared"
-  >("songs");
+  const [selectedTab, setSelectedTab] = useState<MyTabKey>("songs");
+
+  const tabs = useMemo<Array<TabItem<MyTabKey>>>(() => {
+    const base: Array<TabItem<MyTabKey>> = [
+      { key: "songs", label: "שירים" },
+      { key: "shared", label: "אמנים שלי" },
+    ];
+    if (lineupsEnabled) {
+      base.splice(1, 0, { key: "lineups", label: "ליינאפים" });
+    }
+    return base;
+  }, [lineupsEnabled]);
+
+  const handleSelectTab = useCallback(
+    (tab: MyTabKey) => {
+      if (subscriptionBlocked) {
+        window.openUpgradeModal?.();
+        return;
+      }
+
+      if (tab === "songs") {
+        navigate("/my");
+        return;
+      }
+
+      if (tab === "lineups" && !lineupsEnabled) {
+        navigate("/my");
+        return;
+      }
+
+      navigate(`/my?tab=${tab}`);
+    },
+    [navigate, subscriptionBlocked, lineupsEnabled],
+  );
 
   // Sync selectedTab with URL
   useEffect(() => {
@@ -782,59 +817,12 @@ function MyContent(): JSX.Element {
         />
       )}
 
-      {/* Tabs block below stats */}
-      <div className="flex justify-between mt-8 bg-neutral-800 rounded-2xl mb-6 overflow-hidden w-fit">
-        <button
-          className={`px-6 py-2  transition ${
-            selectedTab === "songs"
-              ? "w-fit border-b-2 border-brand-orange overflow-hidden text-brand-orange font-bold"
-              : "font-bold text-white hover:text-brand-orange"
-          }`}
-          onClick={() => {
-            if (subscriptionBlocked) {
-              window.openUpgradeModal?.();
-              return;
-            }
-            navigate("/my");
-          }}
-        >
-          שירים
-        </button>
-        {lineupsEnabled ? (
-          <button
-            className={`px-6 py-2  transition ${
-              selectedTab === "lineups"
-                ? "w-fit border-b-2 border-brand-orange overflow-hidden text-brand-orange font-bold"
-                : "font-bold text-white hover:text-brand-orange"
-            }`}
-            onClick={() => {
-              if (subscriptionBlocked) {
-                window.openUpgradeModal?.();
-                return;
-              }
-              navigate("/my?tab=lineups");
-            }}
-          >
-            ליינאפים
-          </button>
-        ) : null}
-        <button
-          className={`px-6 py-2  transition ${
-            selectedTab === "shared"
-              ? "w-fit border-b-2 border-brand-orange overflow-hidden text-brand-orange font-bold"
-              : "font-bold text-white hover:text-brand-orange "
-          }`}
-          onClick={() => {
-            if (subscriptionBlocked) {
-              window.openUpgradeModal?.();
-              return;
-            }
-            navigate("/my?tab=shared");
-          }}
-        >
-          אמנים שלי
-        </button>
-      </div>
+      <Tab
+        tabs={tabs}
+        selectedKey={selectedTab}
+        onSelect={handleSelectTab}
+        variant="user"
+      />
 
       {/* --- תוכן טאב השירים --- */}
       {isLineupRoute ? (
@@ -1224,18 +1212,14 @@ function MyContent(): JSX.Element {
               placeholder="artist@example.com"
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
+              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm hover:bg-neutral-700 focus:bg-neutral-700"
               dir="ltr"
               required
               disabled={inviteLoading}
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={inviteLoading}
-            className="w-full p-2 bg-brand-orange text-black hover:text-black font-semibold py-2 rounded-2xl mt-2"
-          >
+          <DesignActionButtonBig type="submit" disabled={inviteLoading}>
             {inviteLoading ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -1244,7 +1228,7 @@ function MyContent(): JSX.Element {
             ) : (
               <>שלח הזמנה</>
             )}
-          </button>
+          </DesignActionButtonBig>
         </form>
       </BaseModal>
     </div>

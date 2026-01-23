@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import api from "@/modules/shared/lib/api.js";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import { useSubscription } from "@/modules/shared/hooks/useSubscription.ts";
+import DesignActionButton from "@/modules/shared/components/DesignActionButton";
+import DesignActionButtonBig from "@/modules/shared/components/DesignActionButtonBig";
 
 type SubscriptionPlan = {
   tier: string;
@@ -26,6 +28,8 @@ export default function Settings() {
   const { user } = useAuth();
   const subscription = useSubscription();
 
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const isSubscriptionActive =
     user?.role === "admin" ||
     subscription?.status === "active" ||
@@ -45,6 +49,7 @@ export default function Settings() {
   const [preview, setPreview] = useState<string | null>(null); // תצוגה מקדימה
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deletingAvatar, setDeletingAvatar] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -167,6 +172,52 @@ export default function Settings() {
       setError(err.response?.data?.error || "שגיאה בעדכון הנתונים");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const deleteAvatar = async () => {
+    if (!preview) return;
+    if (!window.confirm("למחוק את תמונת הפרופיל?")) return;
+
+    setError(null);
+    setSuccess(null);
+    setDeletingAvatar(true);
+
+    try {
+      const { data: userData } = await api.delete("/users/avatar");
+
+      setPreview(null);
+      setForm((f) => ({ ...f, avatar: null }));
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      localStorage.setItem("ari_user", JSON.stringify(userData));
+
+      window.dispatchEvent(
+        new CustomEvent("data-refresh", {
+          detail: { type: "user", action: "updated" },
+        }),
+      );
+      window.dispatchEvent(
+        new CustomEvent("user-updated", { detail: userData }),
+      );
+
+      setSuccess("התמונה נמחקה בהצלחה!");
+    } catch (err: any) {
+      console.error(err);
+      const isSubscriptionBlocked =
+        err?.response?.status === 402 &&
+        err?.response?.data?.code === "SUBSCRIPTION_REQUIRED";
+
+      if (isSubscriptionBlocked) {
+        setError("המנוי אינו פעיל. כדי למחוק תמונה יש לשדרג מנוי.");
+        return;
+      }
+
+      setError(err.response?.data?.error || "שגיאה במחיקת התמונה");
+    } finally {
+      setDeletingAvatar(false);
     }
   };
 
@@ -319,19 +370,38 @@ export default function Settings() {
               )}
             </div>
 
-            <label className="cursor-pointer bg-brand-orange text-black font-semibold px-4 py-2 rounded-2xl shadow-innerIos transition text-sm">
-              החלף תמונה
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                  const file = e.target.files?.[0] ?? null;
-                  setForm({ ...form, avatar: file });
-                  if (file) setPreview(URL.createObjectURL(file));
-                }}
-              />
-            </label>
+            <div className="flex items-center flex-row-reverse gap-2 justify-center">
+              <DesignActionButton
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={saving || deletingAvatar}
+              >
+                החלף תמונה
+              </DesignActionButton>
+
+              {preview && (
+                <DesignActionButton
+                  type="button"
+                  variant="danger"
+                  onClick={deleteAvatar}
+                  disabled={saving || deletingAvatar}
+                >
+                  {deletingAvatar ? "מוחק..." : "מחק תמונה"}
+                </DesignActionButton>
+              )}
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                const file = e.target.files?.[0] ?? null;
+                setForm({ ...form, avatar: file });
+                if (file) setPreview(URL.createObjectURL(file));
+              }}
+            />
           </div>
 
           {/* שם מלא */}
@@ -341,7 +411,7 @@ export default function Settings() {
               type="text"
               value={form.full_name}
               onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm outline-none"
+              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm outline-none hover:bg-neutral-700/50 focus:bg-neutral-700"
             />
           </div>
 
@@ -354,7 +424,7 @@ export default function Settings() {
                 setForm({ ...form, artist_role: e.target.value })
               }
               placeholder="גיטריסט, מפיק, בסיסט..."
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm outline-none"
+              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm outline-none hover:bg-neutral-700/50 focus:bg-neutral-700"
             />
           </div>
 
@@ -366,7 +436,7 @@ export default function Settings() {
               dir="ltr"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm outline-none"
+              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm outline-none hover:bg-neutral-700/50 focus:bg-neutral-700"
             />
           </div>
 
@@ -378,18 +448,14 @@ export default function Settings() {
               value={form.newPass}
               onChange={(e) => setForm({ ...form, newPass: e.target.value })}
               placeholder="לא חובה"
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm outline-none"
+              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm outline-none hover:bg-neutral-700/50 focus:bg-neutral-700"
             />
           </div>
 
           {/* כפתור שמירה */}
-          <button
-            type="submit"
-            disabled={saving}
-            className="w-full cursor-pointer bg-brand-orange text-black font-semibold px-4 py-2 rounded-2xl shadow-innerIos transition text-sm"
-          >
+          <DesignActionButtonBig type="submit" disabled={saving}>
             {saving ? "שומר..." : "שמור שינויים"}
-          </button>
+          </DesignActionButtonBig>
         </form>
 
         {/* שאר העמוד — ללא שינוי */}

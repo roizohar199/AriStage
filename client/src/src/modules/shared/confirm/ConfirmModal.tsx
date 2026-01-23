@@ -24,9 +24,9 @@ export default function ConfirmModal({
   onCancel,
 }: ConfirmModalProps) {
   const confirmButtonClassName =
-    variant === "danger"
-      ? "bg-red-600 hover:bg-red-700 text-white"
-      : "bg-brand-orange text-black";
+    variant === "confirm"
+      ? "bg-brand-orange text-black"
+      : "bg-red-600 hover:bg-red-700 text-white";
 
   return (
     <BaseModal
@@ -46,7 +46,7 @@ export default function ConfirmModal({
 
         <div className="flex gap-4 justify-center">
           <button
-            className="px-5 py-2 font-bold rounded-2xl bg-neutral-700"
+            className="px-5 py-2 font-bold rounded-2xl bg-neutral-700/50 hover:bg-neutral-700"
             onClick={onCancel}
             type="button"
           >
@@ -54,7 +54,7 @@ export default function ConfirmModal({
           </button>
 
           <button
-            className={`px-5 py-2 font-bold rounded-2xl ${confirmButtonClassName}`}
+            className={`px-5 py-2 font-bold rounded-2xl hover:bg-brand-orangeLight ${confirmButtonClassName}`}
             onClick={onConfirm}
             type="button"
           >

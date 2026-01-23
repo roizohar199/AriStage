@@ -637,24 +637,24 @@ export default function AdminLogsTab({
               </div>
 
               <div className="flex items-center justify-end gap-2">
-                <button
+                <DesignActionButton
                   type="button"
-                  className="px-3 py-2 rounded-2xl bg-neutral-800 hover:bg-neutral-700 text-sm"
+                  variant="cancel"
                   onClick={() => {
                     setCleanupOpen(false);
                     setCleanupConfirmText("");
                   }}
                 >
                   ביטול
-                </button>
-                <button
+                </DesignActionButton>
+                <DesignActionButton
                   type="button"
-                  className="px-3 py-2 rounded-2xl bg-red-600 hover:bg-red-500 text-sm disabled:opacity-50"
+                  variant="danger"
                   disabled={cleanupLoading}
                   onClick={runLogsCleanup}
                 >
                   {cleanupLoading ? "מנקה..." : "מחק לוגים"}
-                </button>
+                </DesignActionButton>
               </div>
             </div>
           </div>

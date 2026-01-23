@@ -152,7 +152,7 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
   };
 
   return (
-    <div className="relative z-[60] w-full h-16 bg-neutral-800/80">
+    <div className="relative z-[200] w-full h-16 bg-neutral-800/80">
       <div className="h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between md:grid md:grid-cols-3">
         {/* Left: Logo */}
         <div className="flex items-center gap-2">
@@ -193,8 +193,8 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                   {displayPendingCount > 99
                     ? "99+"
                     : displayPendingCount > 9
-                    ? "9+"
-                    : displayPendingCount}
+                      ? "9+"
+                      : displayPendingCount}
                 </span>
               )}
               <button
@@ -217,7 +217,7 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
 
             {/* Dropdown menu */}
             {menuOpen && (
-              <div className="absolute left-0 top-10 bg-neutral-800 rounded-2xl shadow-lg z-[70] min-w-max">
+              <div className="absolute left-0 top-10 bg-neutral-800 rounded-2xl shadow-lg z-[210] min-w-max">
                 <button
                   onClick={() => {
                     setMenuOpen(false);

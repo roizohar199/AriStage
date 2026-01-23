@@ -17,6 +17,7 @@ import AdminLogsTab from "../tabs/AdminLogsTab";
 import AdminErrorsTab from "../tabs/AdminErrorsTab";
 import AdminMonitoringTab from "../tabs/AdminMonitoringTab";
 import AdminModelsTab from "../tabs/AdminModelsTab";
+import Tab from "@/modules/shared/components/Tab";
 
 type AdminTab =
   | "users"
@@ -430,24 +431,7 @@ export default function AdminReal() {
 
       <DashboardCards cards={headerCards} />
 
-      <div className="mt-8 mb-6 bg-neutral-800 rounded-2xl overflow-x-auto overflow-y-hidden max-w-full">
-        <div className="flex flex-nowrap min-w-full w-max justify-between">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              className={`px-3 sm:px-6 py-2 transition whitespace-nowrap ${
-                selectedTab === tab.key
-                  ? "border-b-2 border-brand-orange text-brand-orange font-bold"
-                  : "font-bold text-white"
-              }`}
-              onClick={() => setTab(tab.key)}
-              type="button"
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <Tab tabs={TABS} selectedKey={selectedTab} onSelect={setTab} />
 
       <div className="flex items-center gap-3 mb-3">
         <Search

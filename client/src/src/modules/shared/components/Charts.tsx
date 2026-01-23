@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Trash2, Upload, FileDown, Eye, FileText } from "lucide-react";
 import api from "@/modules/shared/lib/api.js";
 import { useFeatureFlags } from "@/modules/shared/contexts/FeatureFlagsContext.tsx";
@@ -54,6 +54,27 @@ export default function Charts({
   const { showToast } = useToast();
   const { isEnabled } = useFeatureFlags();
   const chartsEnabled = isEnabled("module.charts", true);
+
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (scrollTimerRef.current) {
+        window.clearTimeout(scrollTimerRef.current);
+        scrollTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleViewerScroll = useCallback(() => {
+    setIsScrolling(true);
+    if (scrollTimerRef.current) window.clearTimeout(scrollTimerRef.current);
+    scrollTimerRef.current = window.setTimeout(() => {
+      setIsScrolling(false);
+      scrollTimerRef.current = null;
+    }, 700);
+  }, []);
 
   if (!chartsEnabled) {
     return (
@@ -170,21 +191,21 @@ export default function Charts({
                 {/* צפייה תמיד מותרת */}
                 <button
                   onClick={() => setViewingChart(chart.file_path)}
-                  className="w-6 h-6 text-white hover:text-brand-orange"
+                  className="w-6 h-6 text-white hover:text-brand-orange outline-none"
                   title="צפייה"
                 >
                   <Eye size={16} />
                 </button>
                 <button
                   onClick={() => handleDownloadChart(chart)}
-                  className="w-6 h-6 text-white hover:text-brand-orange"
+                  className="w-6 h-6 text-white hover:text-brand-orange outline-none"
                   title="הורדה"
                 >
                   <FileDown size={16} />
                 </button>
                 <button
                   onClick={() => handleDeleteChart(chart.id)}
-                  className="w-6 h-6 text-red-500 hover:text-red-400"
+                  className="w-6 h-6 text-red-500 hover:text-red-400 outline-none"
                   title="מחיקה"
                 >
                   <Trash2 size={16} />
@@ -211,7 +232,7 @@ export default function Charts({
 
             <button
               onClick={() => fileInputRefs.current[song.id]?.click()}
-              className="w-full bg-neutral-700/50 p-2 rounded-2xl flex flex-row-reverse items-center justify-center gap-2 text-brand-orange"
+              className="w-full bg-neutral-700/50 p-2 rounded-2xl flex flex-row-reverse items-center justify-center gap-2 text-brand-orange hover:bg-neutral-700"
               title="העלה קובץ"
             >
               <Upload size={16} />
@@ -229,24 +250,33 @@ export default function Charts({
         onClose={() => setViewingChart(null)}
         title="צפייה בצ'ארט"
         maxWidth="max-w-4xl"
+        backdropClassName="bg-black/50"
+        backdropContainerClassName="backdrop-blur-md"
         containerClassName="max-h-[90vh] flex flex-col overflow-hidden"
         padding="p-0"
       >
         <div className="flex justify-between items-center p-4 border-b border-neutral-700 bg-neutral-950">
           <h3 className="text-white">צפייה בצ'ארט</h3>
         </div>
-        <div className="flex-1 overflow-auto p-4 flex items-center justify-center">
+        <div
+          className={`flex-1 overflow-auto p-4 app-scroll ${
+            isScrolling ? "scrolling" : ""
+          }`}
+          onScroll={handleViewerScroll}
+        >
           {viewingChart && viewingChart.toLowerCase().endsWith(".pdf") ? (
             <iframe
               src={viewingChart}
-              className="w-full h-full min-h-96"
+              className="w-full h-[80vh]"
               style={{ border: "none" }}
+              title="Chart Viewer"
             />
           ) : (
             <img
               src={viewingChart || ""}
               alt="צ'ארט"
-              className="max-w-full max-h-full"
+              className="block w-full h-auto"
+              style={{ maxHeight: "none" }}
             />
           )}
         </div>

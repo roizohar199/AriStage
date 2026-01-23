@@ -1,10 +1,18 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { Eye, Save, Trash2, FileText } from "lucide-react";
+import {
+  Eye,
+  Save,
+  Trash2,
+  FileText,
+  PenIcon,
+  PenLineIcon,
+} from "lucide-react";
 import api from "@/modules/shared/lib/api.js";
 import BaseModal from "./BaseModal.tsx";
 import { useToast } from "./ToastProvider";
 import { useFeatureFlags } from "@/modules/shared/contexts/FeatureFlagsContext.tsx";
 import { ConfirmOptions } from "../confirm/types";
+import DesignActionButton from "./DesignActionButton";
 
 type SongLyricsProps = {
   songId: number;
@@ -95,7 +103,7 @@ export default function SongLyrics({
     <>
       <div className="bg-neutral-900 grid place-items-center mt-3 p-3 rounded-2xl">
         <div className="flex items-center gap-2 mb-2">
-          <FileText size={16} className="text-brand-orange" />
+          <PenLineIcon size={16} className="text-brand-orange" />
           <span className="text-xs font-semibold text-neutral-300">
             מילים {hasLyrics ? "(קיים)" : "(אין)"}
           </span>
@@ -104,11 +112,11 @@ export default function SongLyrics({
         <div className="flex items-center gap-1 px-2 py-1.5">
           <button
             onClick={openModal}
-            className="w-full bg-neutral-700/50 p-2 rounded-2xl flex flex-row-reverse items-center justify-center gap-2 text-brand-orange"
+            className="w-full bg-neutral-700/50 p-2 rounded-2xl flex flex-row-reverse items-center justify-center gap-2 text-brand-orange hover:bg-neutral-700 "
             title="צפייה במילים"
           >
             <Eye size={16} />
-            <span className="flex-1 text-xs text-white font-bold">
+            <span className="flex-1 text-xs text-white font-bold ">
               צפייה במילים
             </span>
           </button>
@@ -132,22 +140,18 @@ export default function SongLyrics({
 
           {canEdit && (
             <div className="flex items-center gap-2 justify-end">
-              <button
+              <DesignActionButton
                 onClick={handleDelete}
                 disabled={saving}
-                className="px-4 py-2 rounded-2xl bg-red-600/20 text-red-400 hover:bg-red-600/30 flex items-center flex-row-reverse gap-2"
+                variant="danger"
               >
                 <Trash2 size={16} />
                 מחיקה
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="px-4 py-2 rounded-2xl bg-brand-orange text-black font-semibold hover:opacity-90 flex items-center flex-row-reverse gap-2"
-              >
+              </DesignActionButton>
+              <DesignActionButton onClick={handleSave} disabled={saving}>
                 <Save size={16} />
                 שמירה
-              </button>
+              </DesignActionButton>
             </div>
           )}
 

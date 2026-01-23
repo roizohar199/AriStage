@@ -170,7 +170,7 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
           placeholder="שם השיר *"
           value={form.title}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
-          className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
+          className="w-full bg-neutral-800 p-2 rounded-2xl text-sm hover:bg-neutral-700/50 focus:bg-neutral-700"
           required
         />
 
@@ -179,7 +179,7 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
           placeholder="אמן"
           value={form.artist}
           onChange={(e) => setForm({ ...form, artist: e.target.value })}
-          className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
+          className="w-full bg-neutral-800 p-2 rounded-2xl text-sm hover:bg-neutral-700/50 focus:bg-neutral-700"
         />
 
         {/* BPM */}
@@ -195,7 +195,7 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
               bpm: e.target.value.replace(/\D/g, ""),
             })
           }
-          className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
+          className="w-full bg-neutral-800 p-2 rounded-2xl text-sm hover:bg-neutral-700/50 focus:bg-neutral-700"
         />
 
         {/* סולם */}
@@ -211,12 +211,12 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
                   setRootOpen((v) => !v);
                   setModeOpen(false);
                 }}
-                className="w-full text-left bg-neutral-800 p-2 rounded-2xl text-sm"
+                className="w-full text-left bg-neutral-800 p-2 rounded-2xl text-sm hover:bg-neutral-700/50 focus:bg-neutral-700"
               >
                 {getRoot(form.key_sig)}
               </button>
               {rootOpen && (
-                <div className="absolute mt-1 w-full bg-neutral-800 rounded-2xl max-h-44 overflow-auto z-20">
+                <div className="absolute  w-full bg-neutral-800 rounded-2xl max-h-44 overflow-auto z-20">
                   {notesKeys.map((note) => (
                     <button
                       key={note}
@@ -245,7 +245,7 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
                   setModeOpen((v) => !v);
                   setRootOpen(false);
                 }}
-                className="w-full text-left bg-neutral-800 p-2 rounded-2xl text-sm"
+                className="w-full text-left bg-neutral-800 p-2 rounded-2xl text-sm hover:bg-neutral-700/50 focus:bg-neutral-700"
               >
                 {getMode(form.key_sig)}
               </button>
@@ -290,7 +290,7 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
                   )}`,
                 })
               }
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm text-center"
+              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm text-center hover:bg-neutral-700/50 focus:bg-neutral-700"
             />
             <span>:</span>
             <input
@@ -306,7 +306,7 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
                   }`,
                 })
               }
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm text-center"
+              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm text-center hover:bg-neutral-700/50 focus:bg-neutral-700"
             />
           </div>
         </div>
@@ -323,7 +323,7 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
                 className={`px-3 py-1 rounded-2xl text-sm ${
                   form.notes === tag
                     ? "bg-brand-orange border-brand-orange text-black"
-                    : "bg-neutral-800 text-neutral-300"
+                    : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700/50"
                 }`}
               >
                 {tag}

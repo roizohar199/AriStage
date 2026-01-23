@@ -28,8 +28,10 @@ router.get("/connected-to-me", usersController.connectedToMe);
 router.put(
   "/settings",
   uploadUserAvatar.single("avatar"), // ← תמיכה ב־FormData + שמירה לפי userId
-  usersController.updateSettings
+  usersController.updateSettings,
 );
+
+router.delete("/avatar", usersController.deleteAvatar);
 
 router.put("/password", usersController.updatePassword);
 
@@ -44,7 +46,7 @@ router.delete("/:id", requireRoles(["admin"]), usersController.remove);
 router.post(
   "/:id/impersonate",
   requireRoles(["admin"]),
-  usersController.impersonate
+  usersController.impersonate,
 );
 
 // ⭐ הזמנת אמן למאגר שלי

@@ -55,8 +55,8 @@ export default function MyArtist() {
       const artistsList = Array.isArray(myCollection)
         ? myCollection
         : myCollection
-        ? [myCollection]
-        : [];
+          ? [myCollection]
+          : [];
       setArtists(artistsList);
     } catch (err) {
       console.error("שגיאה בטעינת אמנים:", err);
@@ -177,7 +177,7 @@ export default function MyArtist() {
       await api.post("/users/leave-collection", hostId ? { hostId } : {});
       showToast(
         hostId ? "השתתפותך במאגר בוטלה בהצלחה" : "כל השתתפויותיך בוטלו בהצלחה",
-        "success"
+        "success",
       );
       loadArtists();
     } catch (err: any) {
@@ -249,7 +249,7 @@ export default function MyArtist() {
                       navigate(`/artist/${artist.id}`);
                     }
                   }}
-                  // No visual/layout classes here. ArtistCard handles all visuals.
+                  className="cursor-pointer rounded-2xl hover:[&>div]:bg-neutral-700/50 focus:[&>div]:bg-neutral-700"
                 >
                   <ArtistCard
                     artist={artist}

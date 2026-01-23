@@ -964,7 +964,7 @@ export default function LineupDetails() {
             <div className="relative">
               <button
                 onClick={() => setMenuOpen((v) => !v)}
-                className="bg-neutral-800 p-2 rounded-full"
+                className="bg-neutral-800 p-2 rounded-full hover:bg-neutral-700/50 "
               >
                 <MoreHorizontal size={18} />
               </button>

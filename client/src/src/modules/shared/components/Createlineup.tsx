@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import BaseModal from "./BaseModal.tsx";
+import DesignActionButtonBig from "./DesignActionButtonBig";
 
 interface CreateLineupForm {
   name: string;
@@ -77,7 +78,7 @@ const CreateLineup: React.FC<CreateLineupProps> = ({
           placeholder="שם הליינאפ *"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
-          className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
+          className="w-full bg-neutral-800 p-2 rounded-2xl text-sm hover:bg-neutral-700/50 focus:bg-neutral-700"
           required
         />
 
@@ -86,7 +87,7 @@ const CreateLineup: React.FC<CreateLineupProps> = ({
           placeholder="dd/mm/yyyy"
           value={form.date}
           onChange={(e) => setForm({ ...form, date: e.target.value })}
-          className="w-full bg-neutral-800 p-3 rounded-2xl text-sm"
+          className="w-full bg-neutral-800 p-3 rounded-2xl text-sm hover:bg-neutral-700/50 focus:bg-neutral-700"
         />
 
         <input
@@ -94,30 +95,27 @@ const CreateLineup: React.FC<CreateLineupProps> = ({
           placeholder="--:--"
           value={form.time}
           onChange={(e) => setForm({ ...form, time: e.target.value })}
-          className="w-full bg-neutral-800 p-3 rounded-2xl text-sm"
+          className="w-full bg-neutral-800 p-3 rounded-2xl text-sm hover:bg-neutral-700/50 focus:bg-neutral-700"
         />
 
         <input
           placeholder="מיקום"
           value={form.location}
           onChange={(e) => setForm({ ...form, location: e.target.value })}
-          className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
+          className="w-full bg-neutral-800 p-2 rounded-2xl text-sm hover:bg-neutral-700/50 focus:bg-neutral-700"
         />
 
         <textarea
           placeholder="תיאור (אופציונלי)"
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
-          className="w-full bg-neutral-800 p-3 rounded-2xl text-sm"
+          className="w-full bg-neutral-800 p-3 rounded-2xl text-sm hover:bg-neutral-700/50 focus:bg-neutral-700 focus:outline-none"
           rows={3}
         />
 
-        <button
-          type="submit"
-          className="w-full p-2 bg-brand-orange text-black hover:text-black font-semibold py-2 rounded-2xl mt-2"
-        >
+        <DesignActionButtonBig type="submit">
           {editing ? "שמור" : "צור ליינאפ"}
-        </button>
+        </DesignActionButtonBig>
       </form>
     </BaseModal>
   );

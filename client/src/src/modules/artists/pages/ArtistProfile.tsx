@@ -25,6 +25,7 @@ import BlockLineup from "@/modules/shared/components/blocklineup";
 import CardSong from "@/modules/shared/components/cardsong";
 import Charts from "@/modules/shared/components/Charts";
 import SongLyrics from "@/modules/shared/components/SongLyrics";
+import Tab, { type TabItem } from "@/modules/shared/components/Tab";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 
 export default function ArtistProfile() {
@@ -73,6 +74,34 @@ export default function ArtistProfile() {
     const params = new URLSearchParams(location.search);
     return params.get("tab") === "songs" ? "songs" : "lineups";
   }, [location.search]);
+
+  const tabs = useMemo<Array<TabItem<"lineups" | "songs">>>(
+    () => [
+      {
+        key: "lineups",
+        label: <span className="flex items-center gap-2">ליינאפים</span>,
+      },
+      {
+        key: "songs",
+        label: <span className="flex items-center gap-2">שירים</span>,
+      },
+    ],
+    [],
+  );
+
+  const handleSelectTab = (tab: "lineups" | "songs") => {
+    if (subscriptionBlocked) {
+      window.openUpgradeModal?.();
+      return;
+    }
+
+    if (tab === "songs") {
+      navigate(`/artist/${id}?tab=songs`);
+      return;
+    }
+
+    navigate(`/artist/${id}`);
+  };
 
   const filteredLineups = useMemo(() => {
     if (!searchQuery) return lineups;
@@ -361,42 +390,12 @@ export default function ArtistProfile() {
           )}
         </div>
 
-        {/* Tabs */}
-        <div className="flex justify-between mt-8 bg-neutral-800 rounded-2xl mb-6 overflow-hidden w-fit">
-          <button
-            onClick={() => {
-              if (subscriptionBlocked) {
-                window.openUpgradeModal?.();
-                return;
-              }
-              navigate(`/artist/${id}`);
-            }}
-            className={`px-6 py-2 transition font-bold flex items-center gap-2 ${
-              activeTab === "lineups"
-                ? "border-b-2 border-brand-orange text-brand-orange"
-                : "text-white"
-            }`}
-          >
-            ליינאפים
-          </button>
-
-          <button
-            onClick={() => {
-              if (subscriptionBlocked) {
-                window.openUpgradeModal?.();
-                return;
-              }
-              navigate(`/artist/${id}?tab=songs`);
-            }}
-            className={`px-6 py-2 transition font-bold flex items-center gap-2 ${
-              activeTab === "songs"
-                ? "border-b-2 border-brand-orange text-brand-orange"
-                : "text-white"
-            }`}
-          >
-            שירים
-          </button>
-        </div>
+        <Tab
+          tabs={tabs}
+          selectedKey={activeTab}
+          onSelect={handleSelectTab}
+          variant="user"
+        />
 
         {/* Chart viewing modal */}
         <BaseModal

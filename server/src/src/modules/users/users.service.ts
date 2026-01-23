@@ -1,6 +1,9 @@
 import bcrypt from "bcryptjs";
 import { AppError } from "../../core/errors.js";
 import { signToken } from "../auth/token.service.js";
+import fs from "fs";
+import path from "path";
+import { joinUploadsPath } from "../../utils/uploadsRoot.js";
 
 import {
   findMyCollection,
@@ -72,7 +75,8 @@ export async function updateProfile(userId, payload) {
     email: payload.email ?? undefined,
     theme: payload.theme ?? undefined,
     artist_role: payload.artist_role ?? undefined,
-    avatar: payload.avatar ?? undefined, // ⭐ פה זה כבר נתיב (string), לא File
+    // allow explicit null to clear avatar
+    avatar: payload.avatar === undefined ? undefined : payload.avatar,
   });
 
   if (!affected) {
@@ -80,6 +84,62 @@ export async function updateProfile(userId, payload) {
   }
 
   return getCurrentUser(userId);
+}
+
+function avatarToAbsolutePath(avatar: any): string | null {
+  if (!avatar || typeof avatar !== "string") return null;
+
+  // support either a stored relative path (/uploads/...) or a full URL
+  let pathname = avatar;
+  try {
+    if (/^https?:\/\//i.test(avatar)) {
+      pathname = new URL(avatar).pathname;
+    }
+  } catch {
+    // ignore parse errors and fall back to raw string
+  }
+
+  const clean = String(pathname).replace(/^\/?uploads\//, "");
+  if (!clean || clean === pathname) {
+    // if it didn't look like an uploads path, don't delete anything
+    return null;
+  }
+
+  const normalized = clean.split("/").filter(Boolean);
+  return joinUploadsPath(...normalized);
+}
+
+export async function deleteAvatar(userId) {
+  const user = await getCurrentUser(userId);
+  if (!user) {
+    throw new AppError(404, "משתמש לא נמצא");
+  }
+
+  const currentAvatar = user.avatar;
+  const absolutePath = avatarToAbsolutePath(currentAvatar);
+
+  const updatedUser = await updateProfile(userId, { avatar: null });
+
+  if (absolutePath) {
+    try {
+      await fs.promises.unlink(absolutePath);
+    } catch {
+      // best-effort: ignore missing file / permission issues
+    }
+
+    // also try removing the user upload dir if it became empty
+    try {
+      const dir = path.dirname(absolutePath);
+      const entries = await fs.promises.readdir(dir);
+      if (entries.length === 0) {
+        await fs.promises.rmdir(dir);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return updatedUser;
 }
 
 export async function changePassword(userId, newPassword) {
@@ -108,8 +168,12 @@ export async function createUserAccount(currentUser, payload) {
   const hash = await bcrypt.hash(payload.password, 10);
 
   const nextTypeRaw =
-    payload.subscription_type !== undefined ? payload.subscription_type : "trial";
-  let nextTypeLower = String(nextTypeRaw ?? "").trim().toLowerCase();
+    payload.subscription_type !== undefined
+      ? payload.subscription_type
+      : "trial";
+  let nextTypeLower = String(nextTypeRaw ?? "")
+    .trim()
+    .toLowerCase();
   if (!nextTypeLower) {
     nextTypeLower = "trial";
   }
@@ -155,7 +219,9 @@ export async function updateUserAccount(requestingUser, id, payload) {
   // ✅ טיפול במסלול (tier) – שומר על ההתנהגות הקודמת
   let nextTypeLower: string | undefined;
   if (payload.subscription_type !== undefined) {
-    nextTypeLower = String(payload.subscription_type ?? "").trim().toLowerCase();
+    nextTypeLower = String(payload.subscription_type ?? "")
+      .trim()
+      .toLowerCase();
 
     if (!nextTypeLower) {
       throw new AppError(400, "Invalid subscription_type");
@@ -257,15 +323,15 @@ export async function uninviteArtistFromMyCollection(hostId, artistId) {
 // ⭐ אורח מבטל את השתתפותו במאגר (כל המארחים או מארח ספציפי)
 export async function leaveMyCollection(
   artistId,
-  hostId: number | null = null
+  hostId: number | null = null,
 ) {
   const { isGuest } = await import("./users.repository.js");
   const existingHosts = await isGuest(artistId);
   const existingHostsArray: number[] = Array.isArray(existingHosts)
     ? existingHosts
     : existingHosts
-    ? [existingHosts]
-    : [];
+      ? [existingHosts]
+      : [];
 
   if (existingHostsArray.length === 0) {
     throw new AppError(400, "אינך אורח במאגר - אין לך השתתפות לבטל");

@@ -32,7 +32,7 @@ const BlockLineup: React.FC<BlockLineupProps> = ({
     <div
       role="button"
       onClick={onOpen}
-      className="relative aspect-square bg-neutral-800 p-4 rounded-2xl flex flex-col justify-center items-center text-center select-none"
+      className="relative aspect-square bg-neutral-800 p-4 rounded-2xl flex flex-col justify-center items-center text-center select-none hover:bg-neutral-700/50 active:bg-neutral-700"
     >
       {/* מספור – תמיד נראה */}
       {typeof index === "number" && (

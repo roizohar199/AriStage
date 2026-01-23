@@ -3,6 +3,7 @@ import { env } from "../../config/env.js";
 import {
   changePassword,
   createUserAccount,
+  deleteAvatar as deleteAvatarService,
   getProfile,
   getUsers,
   impersonateUser,
@@ -117,13 +118,27 @@ export const usersController = {
   updateSettings: asyncHandler(async (req, res) => {
     const avatar = req.file
       ? `/uploads/users/${req.user.id}/${req.file.filename}`
-      : null;
+      : undefined;
 
     const updatedUser = await updateProfile(req.user.id, {
       ...req.body,
       artist_role: req.body.artist_role || null,
       avatar,
     });
+
+    if (updatedUser?.avatar) {
+      updatedUser.avatar = fixAvatar(req, updatedUser.avatar);
+    }
+
+    res.json(updatedUser);
+  }),
+
+  deleteAvatar: asyncHandler(async (req, res) => {
+    const updatedUser = await deleteAvatarService(req.user.id);
+
+    if (updatedUser?.avatar) {
+      updatedUser.avatar = fixAvatar(req, updatedUser.avatar);
+    }
 
     res.json(updatedUser);
   }),
@@ -276,8 +291,8 @@ export const usersController = {
     const hostIdsArray = Array.isArray(hostIds)
       ? hostIds
       : hostIds
-      ? [hostIds]
-      : [];
+        ? [hostIds]
+        : [];
 
     const hostId = hostIdsArray.length > 0 ? hostIdsArray[0] : null;
 
