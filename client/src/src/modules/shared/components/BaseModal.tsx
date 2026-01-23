@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, ReactNode } from "react";
+import React, { useEffect, useCallback, useRef, ReactNode } from "react";
 import { X } from "lucide-react";
 
 export interface BaseModalProps {
@@ -33,6 +33,8 @@ export default function BaseModal({
 }: BaseModalProps) {
   // ✅ Hooks תמיד למעלה, בלי תנאים
 
+  const scrollTimeoutRef = useRef<number | null>(null);
+
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent) => {
       if (closeOnBackdropClick && e.target === e.currentTarget) {
@@ -56,6 +58,25 @@ export default function BaseModal({
     return () => window.removeEventListener("keydown", handleEsc);
   }, [open, closeOnEsc, onClose]);
 
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    el.classList.add("scrolling");
+    if (scrollTimeoutRef.current) {
+      window.clearTimeout(scrollTimeoutRef.current);
+    }
+    scrollTimeoutRef.current = window.setTimeout(() => {
+      el.classList.remove("scrolling");
+    }, 800);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        window.clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // ❗ רק כאן עושים תנאי
   if (!open) return null;
 
@@ -66,8 +87,9 @@ export default function BaseModal({
       role="presentation"
     >
       <div
-        className={`bg-neutral-900 rounded-2xl w-full ${maxWidth} relative shadow-xl ${padding} max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-6rem)] overflow-y-auto animate-in fade-in zoom-in-95 duration-200 ${containerClassName}`}
+        className={`bg-neutral-900 rounded-2xl w-full ${maxWidth} relative shadow-xl ${padding} max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-6rem)] overflow-y-auto app-scroll animate-in fade-in zoom-in-95 duration-200 ${containerClassName}`}
         onClick={(e) => e.stopPropagation()}
+        onScroll={handleScroll}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? "modal-title" : undefined}

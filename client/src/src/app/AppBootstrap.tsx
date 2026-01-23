@@ -7,6 +7,7 @@ import { API_ORIGIN } from "@/config/apiConfig";
 import api from "@/modules/shared/lib/api.js";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import { useOfflineStatus } from "@/modules/shared/hooks/useOfflineStatus";
+import { applyThemeFromUser } from "@/modules/shared/lib/theme";
 
 import ProtectedRoute from "@/modules/shared/components/ProtectedRoute.tsx";
 import Splash from "@/modules/shared/components/Splash.tsx";
@@ -27,6 +28,7 @@ interface User {
   full_name?: string;
   role: string;
   subscription_type?: string;
+  theme?: number | string | null;
 }
 
 /* -------------------------------------------------------
@@ -74,6 +76,10 @@ export default function AppBootstrap(): JSX.Element {
 
   const effectiveUser = (ctxUser?.id ? ctxUser : currentUser) as any;
   const isAdminUser = effectiveUser?.role === "admin";
+
+  useEffect(() => {
+    applyThemeFromUser(effectiveUser);
+  }, [effectiveUser?.id, effectiveUser?.theme]);
 
   const isAuthenticated = (() => {
     try {

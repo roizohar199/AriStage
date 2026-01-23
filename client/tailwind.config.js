@@ -51,7 +51,7 @@ export default {
 
       // ✍️ פונט
       fontFamily: {
-        heebo: ["Heebo", "system-ui", "sans-serif"],
+        assistant: ["Assistant", "system-ui", "sans-serif"],
       },
 
       // 🔘 פינות עגולות

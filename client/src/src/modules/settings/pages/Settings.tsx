@@ -1,10 +1,138 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import api from "@/modules/shared/lib/api.js";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import { useSubscription } from "@/modules/shared/hooks/useSubscription.ts";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
 import DesignActionButtonBig from "@/modules/shared/components/DesignActionButtonBig";
+import { resolveThemeIndex } from "@/modules/shared/lib/theme";
+
+type DropdownOption<T extends string> = {
+  value: T;
+  label: string;
+};
+
+function DesignDropdown<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  value: T;
+  options: DropdownOption<T>[];
+  onChange: (next: T) => void;
+  disabled?: boolean;
+}) {
+  const id = useId();
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const [open, setOpen] = useState(false);
+
+  const selected = options.find((o) => o.value === value) ?? options[0];
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onMouseDown = (e: MouseEvent) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+      if (containerRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setOpen(false);
+        buttonRef.current?.focus();
+      }
+    };
+
+    document.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <label className="block text-sm mb-1" id={`${id}-label`}>
+        {label}
+      </label>
+
+      <button
+        ref={buttonRef}
+        type="button"
+        disabled={disabled}
+        aria-labelledby={`${id}-label`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={`${id}-listbox`}
+        onClick={() => setOpen((v) => !v)}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setOpen(true);
+          }
+        }}
+        className={`w-full bg-neutral-800 p-2 rounded-2xl text-sm outline-none hover:bg-neutral-700/50 focus:bg-neutral-700 flex items-center justify-between gap-3 ${
+          disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+        }`}
+      >
+        <span className="truncate">{selected?.label}</span>
+        <svg
+          className={`h-4 w-4 text-neutral-300 transition ${open ? "rotate-180" : ""}`}
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          aria-hidden
+        >
+          <path
+            fillRule="evenodd"
+            d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08Z"
+            clipRule="evenodd"
+          />
+        </svg>
+      </button>
+
+      {open && (
+        <div
+          id={`${id}-listbox`}
+          role="listbox"
+          aria-labelledby={`${id}-label`}
+          className="absolute z-50 mt-1 w-full overflow-hidden rounded-2xl bg-neutral-800 shadow-lg"
+        >
+          {options.map((opt) => {
+            const isSelected = opt.value === value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                  buttonRef.current?.focus();
+                }}
+                className={`w-full text-right px-3 py-2 text-sm  ${
+                  isSelected
+                    ? "bg-neutral-800 rounded-2xl text-neutral-200 hover:bg-neutral-700/50"
+                    : "bg-neutral-800 rounded-2xl text-neutral-200 hover:bg-neutral-700/50"
+                }`}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 type SubscriptionPlan = {
   tier: string;
@@ -19,13 +147,13 @@ type SettingsFormState = {
   full_name: string;
   email: string;
   newPass: string;
-  theme: string;
+  themeIndex: "0" | "1";
   artist_role: string;
   avatar: File | null;
 };
 
 export default function Settings() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const subscription = useSubscription();
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -41,7 +169,7 @@ export default function Settings() {
     full_name: "",
     email: "",
     newPass: "",
-    theme: localStorage.getItem("theme") || "dark",
+    themeIndex: String(resolveThemeIndex(user?.theme)) as "0" | "1",
     artist_role: "",
     avatar: null, // קובץ תמונה חדש
   });
@@ -97,7 +225,7 @@ export default function Settings() {
           ...f,
           full_name: data.full_name || "",
           email: data.email || "",
-          theme: data.theme || localStorage.getItem("theme") || "dark",
+          themeIndex: String(resolveThemeIndex(data.theme)) as "0" | "1",
           artist_role: data.artist_role || "",
           avatar: null, // לא לשים פה URL, רק בקובץ preview
         }));
@@ -126,7 +254,7 @@ export default function Settings() {
       const fd = new FormData();
       fd.append("full_name", form.full_name);
       fd.append("email", form.email);
-      fd.append("theme", form.theme);
+      fd.append("theme", form.themeIndex);
       fd.append("artist_role", form.artist_role);
 
       if (form.avatar) {
@@ -145,9 +273,9 @@ export default function Settings() {
       setSuccess("הפרטים נשמרו בהצלחה!");
       setForm({ ...form, newPass: "" });
 
-      // עדכון משתמש ב-localStorage
-      const { data: userData } = await api.get("/users/me");
-      localStorage.setItem("ari_user", JSON.stringify(userData));
+      // עדכון משתמש דרך AuthContext (וגם sync ל-localStorage בתוך refreshUser)
+      await refreshUser();
+      const userData = JSON.parse(localStorage.getItem("ari_user") || "{}");
 
       // עדכון כל הקומפוננטות דרך custom event
       window.dispatchEvent(
@@ -438,6 +566,23 @@ export default function Settings() {
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               className="w-full bg-neutral-800 p-2 rounded-2xl text-sm outline-none hover:bg-neutral-700/50 focus:bg-neutral-700"
             />
+          </div>
+
+          {/* Theme */}
+          <div>
+            <DesignDropdown
+              label="צבע מערכת"
+              value={form.themeIndex}
+              disabled={saving}
+              options={[
+                { value: "0", label: "כהה" },
+                { value: "1", label: "בהיר" },
+              ]}
+              onChange={(themeIndex) => setForm({ ...form, themeIndex })}
+            />
+            <div className="text-xs text-neutral-400 mt-1">
+              נשמר לכל משתמש קבוע
+            </div>
           </div>
 
           {/* סיסמה חדשה */}

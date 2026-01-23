@@ -2,6 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
+/* -------------------------------------------------------
+   Theme tokens (smart light mode)
+   - Default is dark
+   - Light mode is applied via: document.documentElement.dataset.theme = 'light'
+-------------------------------------------------------- */
+
+:root {
+  color-scheme: dark;
+
+  /* Background gradient stops */
+  --app-bg-from: 10 10 10;
+  --app-bg-via: 18 18 18;
+  --app-bg-to: 28 28 30;
+
+  /* Semantic colors */
+  --app-text: 245 245 245;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --app-bg-from: 248 250 252;
+  --app-bg-via: 241 245 249;
+  --app-bg-to: 226 232 240;
+
+  --app-text: 23 23 23;
+}
+
 /* 🔥 פונט קטן במובייל, רגיל במחשב */
 html {
   font-size: 16px; /* מובייל קטן */
@@ -15,7 +43,15 @@ html {
 
 /* --- BODY STYLE --- */
 body {
-  @apply font-heebo text-white bg-gradient-to-b from-[#0A0A0A] via-[#121212] to-[#1C1C1E];
+  @apply font-assistant;
+  color: rgb(var(--app-text));
+  background-color: rgb(var(--app-bg-from));
+  background-image: linear-gradient(
+    to bottom,
+    rgb(var(--app-bg-from)),
+    rgb(var(--app-bg-via)),
+    rgb(var(--app-bg-to))
+  );
 }
 
 /* --- GLASS STYLE --- */
@@ -38,10 +74,6 @@ button:disabled {
   @apply bg-brand-orange text-black font-semibold rounded-xl py-2 px-4 shadow-innerIos transition hover:bg-brand-orangeLight;
 }
 
-/* --- RTL + DARK MODE BASE --- */
-:root {
-  color-scheme: dark;
-}
 html,
 body,
 #root {
@@ -49,8 +81,89 @@ body,
   overflow: hidden;
 }
 
-body {
-  @apply font-heebo bg-neutral-950 text-neutral-100;
+/* Smart remap of common dark utilities to light equivalents.
+   This avoids touching dozens of components while still making
+   the whole UI readable in light mode. */
+:root[data-theme="light"] .text-white {
+  color: rgb(23 23 23 / var(--tw-text-opacity, 1));
+}
+
+:root[data-theme="light"] .text-neutral-100 {
+  color: rgb(23 23 23 / var(--tw-text-opacity, 1));
+}
+
+:root[data-theme="light"] .text-neutral-200 {
+  color: rgb(38 38 38 / var(--tw-text-opacity, 1));
+}
+
+:root[data-theme="light"] .text-neutral-300 {
+  color: rgb(64 64 64 / var(--tw-text-opacity, 1));
+}
+
+:root[data-theme="light"] .text-neutral-400 {
+  color: rgb(82 82 82 / var(--tw-text-opacity, 1));
+}
+
+:root[data-theme="light"] .bg-neutral-950 {
+  background-color: rgb(248 250 252 / var(--tw-bg-opacity, 1));
+}
+
+:root[data-theme="light"] .bg-neutral-950\/50 {
+  background-color: rgb(248 250 252 / 0.7);
+}
+
+:root[data-theme="light"] .bg-neutral-900 {
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+}
+
+:root[data-theme="light"] .bg-neutral-800 {
+  background-color: rgb(241 245 249 / var(--tw-bg-opacity, 1));
+}
+
+:root[data-theme="light"] .bg-neutral-800\/80 {
+  background-color: rgb(241 245 249 / 0.85);
+}
+
+:root[data-theme="light"] .bg-neutral-700 {
+  background-color: rgb(226 232 240 / var(--tw-bg-opacity, 1));
+}
+
+:root[data-theme="light"] .bg-neutral-700\/60 {
+  background-color: rgb(226 232 240 / 0.85);
+}
+
+:root[data-theme="light"] .bg-neutral-700\/50 {
+  background-color: rgb(226 232 240 / 0.7);
+}
+
+:root[data-theme="light"] .hover\:bg-neutral-700\/50:hover {
+  background-color: rgb(226 232 240 / 0.7);
+}
+
+:root[data-theme="light"] .hover\:bg-neutral-700\/70:hover {
+  background-color: rgb(226 232 240 / 0.9);
+}
+
+:root[data-theme="light"] .border-neutral-800 {
+  border-color: rgb(226 232 240 / var(--tw-border-opacity, 1));
+}
+
+:root[data-theme="light"] .border-neutral-700 {
+  border-color: rgb(203 213 225 / var(--tw-border-opacity, 1));
+}
+
+:root[data-theme="light"] .border-neutral-600 {
+  border-color: rgb(203 213 225 / var(--tw-border-opacity, 1));
+}
+
+:root[data-theme="light"] .border-neutral-900 {
+  border-color: rgb(148 163 184 / var(--tw-border-opacity, 1));
+}
+
+:root[data-theme="light"] .glass {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(2, 6, 23, 0.08);
+  box-shadow: 0 8px 20px rgba(2, 6, 23, 0.08);
 }
 
 /* Scrollbar for in-app scrolling containers */
@@ -113,7 +226,7 @@ input[type="time"]::-webkit-datetime-edit {
 /* When has value — show text */
 input[type="date"].has-value::-webkit-datetime-edit,
 input[type="time"].has-value::-webkit-datetime-edit {
-  color: white !important;
+  color: rgb(var(--app-text)) !important;
 }
 
 /* Remove blue focus outline */
@@ -125,7 +238,7 @@ input:focus {
 /* טקסט לבן בתוך אינפוט תאריך ושעה (כרום/אדג') */
 input[type="date"],
 input[type="time"] {
-  color: #fff;
+  color: rgb(var(--app-text));
 }
 
 /* חלק הפנימי של התאריך */
@@ -134,7 +247,7 @@ input[type="date"]::-webkit-datetime-edit-text,
 input[type="date"]::-webkit-datetime-edit-month-field,
 input[type="date"]::-webkit-datetime-edit-day-field,
 input[type="date"]::-webkit-datetime-edit-year-field {
-  color: #fff;
+  color: rgb(var(--app-text));
 }
 
 /* חלק הפנימי של השעה */
@@ -142,7 +255,7 @@ input[type="time"]::-webkit-datetime-edit,
 input[type="time"]::-webkit-datetime-edit-text,
 input[type="time"]::-webkit-datetime-edit-hour-field,
 input[type="time"]::-webkit-datetime-edit-minute-field {
-  color: #fff;
+  color: rgb(var(--app-text));
 }
 
 @keyframes fadeIn {

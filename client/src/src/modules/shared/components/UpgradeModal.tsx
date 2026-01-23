@@ -452,28 +452,31 @@ export default function UpgradeModal({
 
             {/* Price summary */}
             {billingSummary && billingSummary.amount !== null ? (
-              <div className="rounded-2xl bg-neutral-800 p-5">
+              <div className="rounded-2xl bg-neutral-700 p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <div className="text-sm font-semibold text-neutral-200">
+                    <div className="text-sm font-semibold text-white">
                       סיכום תשלום
                     </div>
-                    <div className="text-xs text-neutral-500 mt-1">
-                      {selectedPlan?.name} • {billingSummary.label}
+                    <div className="text-xs text-white/70 mt-1">
+                      {selectedPlan?.name} {billingSummary.label}
                     </div>
                     {billingSummary.secondary ? (
-                      <div className="text-xs text-neutral-400 mt-2" dir="ltr">
+                      <div
+                        className="rounded-2xl bg-neutral-800/50 px-3 py-2 text-xs text-white mt-2 font-bold"
+                        dir="rtl"
+                      >
                         {billingSummary.secondary}
                       </div>
                     ) : null}
                   </div>
 
-                  <div className="text-left" dir="ltr">
-                    <div className="text-xs text-neutral-400">לתשלום</div>
+                  <div className="text-left" dir="rtl">
+                    <div className="text-xs text-white/70">לתשלום</div>
                     <div className="text-2xl font-bold text-white">
                       {billingSummary.currency} {billingSummary.amount}
                     </div>
-                    <div className="text-xs text-neutral-500">
+                    <div className="text-xs text-white/70">
                       {billingSummary.cadence}
                     </div>
                   </div>
@@ -496,7 +499,7 @@ export default function UpgradeModal({
           {submitting
             ? "מבצע שדרוג (בדיקה)..."
             : billingSummary && billingSummary.amount !== null
-              ? `המשך לתשלום • ${billingSummary.amount} ${billingSummary.currency} ${billingSummary.cadence}`
+              ? `המשך לתשלום - ${billingSummary.amount} ${billingSummary.currency} ${billingSummary.cadence}`
               : "המשך לתשלום"}
         </button>
 

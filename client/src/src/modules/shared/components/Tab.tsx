@@ -49,7 +49,7 @@ export default function Tab<TKey extends string = string>({
         withMargins ? "mt-8 mb-6" : ""
       }`}
     >
-      <div className="flex flex-nowrap min-w-full w-max justify-between">
+      <div className="flex flex-nowrap min-w-full w-max justify-start gap-1 outline-none">
         {tabs.map((tab) => (
           <button
             key={String(tab.key)}

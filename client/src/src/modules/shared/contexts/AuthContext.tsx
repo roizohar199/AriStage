@@ -13,6 +13,7 @@ export type CurrentUser = {
   full_name?: string;
   role?: string;
   avatar?: string | null;
+  theme?: number | string | null;
   subscription_type?: string;
   subscription_status?: string;
   subscription_expires_at?: string | null;
@@ -65,7 +66,7 @@ function readStoredToken(): string | null {
 }
 
 function normalizeResolvedStatus(
-  value: unknown
+  value: unknown,
 ): ResolvedSubscriptionStatus | null {
   if (!value) return null;
   const s = String(value).toLowerCase();
@@ -91,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch {
         return false;
       }
-    }
+    },
   );
   const [subscriptionBlockedPayload, setSubscriptionBlockedPayload] =
     useState<SubscriptionBlockedPayload | null>(() => {
@@ -105,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const setBlocked = (
     blocked: boolean,
-    payload: SubscriptionBlockedPayload | null
+    payload: SubscriptionBlockedPayload | null,
   ) => {
     setSubscriptionBlocked(blocked);
     setSubscriptionBlockedPayload(payload);
@@ -114,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("ari_subscription_blocked", "1");
         localStorage.setItem(
           "ari_subscription_blocked_payload",
-          JSON.stringify(payload || null)
+          JSON.stringify(payload || null),
         );
       } else {
         localStorage.removeItem("ari_subscription_blocked");
@@ -180,7 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // This does NOT set a default; it only reuses a persisted value.
       if (subscriptionStatus === null) {
         setSubscriptionStatus(
-          normalizeResolvedStatus(storedUser?.subscription_status)
+          normalizeResolvedStatus(storedUser?.subscription_status),
         );
       }
     } finally {
@@ -216,7 +217,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       authLogoutEvent.removeEventListener(
         "logout",
-        handleLogout as EventListener
+        handleLogout as EventListener,
       );
     };
   }, []);
@@ -232,13 +233,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     subscriptionBlockedEvent.addEventListener(
       "blocked",
-      handleBlocked as EventListener
+      handleBlocked as EventListener,
     );
 
     return () => {
       subscriptionBlockedEvent.removeEventListener(
         "blocked",
-        handleBlocked as EventListener
+        handleBlocked as EventListener,
       );
     };
   }, []);
@@ -296,7 +297,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const storedUser = readStoredUser();
         setUser(storedUser);
         setSubscriptionStatus(
-          normalizeResolvedStatus(storedUser?.subscription_status)
+          normalizeResolvedStatus(storedUser?.subscription_status),
         );
       })
       .finally(() => {
