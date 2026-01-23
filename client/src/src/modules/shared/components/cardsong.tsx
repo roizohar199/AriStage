@@ -71,7 +71,7 @@ const CardSong: React.FC<CardSongProps> = ({
           <>
             <button
               onClick={() => onRemove(song.id)}
-              className="w-6 h-6 text-red-500 hover:text-red-400"
+              className="w-6 h-6 text-red-500 hover:text-red-400 outline-none"
             >
               <Trash2 size={20} />
             </button>
@@ -79,7 +79,7 @@ const CardSong: React.FC<CardSongProps> = ({
             {onEdit && (
               <button
                 onClick={() => onEdit(song)}
-                className="w-6 h-6 text-white hover:text-brand-orange"
+                className="w-6 h-6 text-white hover:text-brand-orange outline-none"
               >
                 <Edit2 size={20} />
               </button>

@@ -146,7 +146,7 @@ export default function ShareLineup() {
 
     const totalSec = lineup.songs.reduce(
       (sum, s) => sum + parseDuration(s.duration_sec),
-      0
+      0,
     );
 
     const m = Math.floor(totalSec / 60);
@@ -169,7 +169,7 @@ export default function ShareLineup() {
   return (
     <div className="min-h-screen text-white p-4 flex flex-col items-center">
       {/* כרטיס ליינאפ */}
-      <div className="w-full bg-brand-orange/30 rounded-2xl p-6 relative">
+      <div className="w-full border border-neutral-800 rounded-2xl p-6 relative">
         {/* כותרת */}
         <h1 className="text-3xl font-bold mb-2 text-right">{lineup.title}</h1>
 
@@ -222,7 +222,7 @@ export default function ShareLineup() {
             <div className="relative">
               <button
                 onClick={() => setMenuOpen((v) => !v)}
-                className="bg-neutral-800 p-2 rounded-full"
+                className="bg-neutral-800 p-2 rounded-full hover:bg-neutral-700/50 "
               >
                 <MoreHorizontal size={18} />
               </button>
@@ -234,7 +234,7 @@ export default function ShareLineup() {
                       setMenuOpen(false);
                       window.print();
                     }}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:text-brand-orange"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-700/50 rounded-2xl"
                   >
                     <Printer size={16} /> הדפס
                   </button>

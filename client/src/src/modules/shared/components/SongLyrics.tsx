@@ -135,7 +135,7 @@ export default function SongLyrics({
             onChange={(e) => setDraft(e.target.value)}
             readOnly={!canEdit}
             placeholder={canEdit ? "הדבק/כתוב כאן את המילים..." : "אין מילים"}
-            className="w-full min-h-[320px] bg-neutral-800 text-white rounded-2xl p-3 focus:outline-none"
+            className="w-full min-h-[320px] bg-neutral-800 text-white rounded-2xl p-3 focus:outline-none hover:bg-neutral-700/50 focus:bg-neutral-700"
           />
 
           {canEdit && (

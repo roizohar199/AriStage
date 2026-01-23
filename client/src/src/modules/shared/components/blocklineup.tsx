@@ -78,7 +78,7 @@ const BlockLineup: React.FC<BlockLineupProps> = ({
               e.stopPropagation();
               onDelete?.();
             }}
-            className="w-6 h-6 text-red-500 hover:text-red-400"
+            className="w-6 h-6 text-red-500 hover:text-red-400 outline-none"
             aria-label="delete-lineup"
           >
             <Trash2 size={20} />
@@ -89,7 +89,7 @@ const BlockLineup: React.FC<BlockLineupProps> = ({
               e.stopPropagation();
               onEdit?.();
             }}
-            className="w-6 h-6 text-white hover:text-brand-orange"
+            className="w-6 h-6 text-white hover:text-brand-orange outline-none"
             aria-label="edit-lineup"
           >
             <Pencil size={20} />

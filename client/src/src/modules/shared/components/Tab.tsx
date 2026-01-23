@@ -10,15 +10,21 @@ export default function Tab<TKey extends string = string>({
   selectedKey,
   onSelect,
   variant = "admin",
+  withMargins = true,
 }: {
   tabs: Array<TabItem<TKey>>;
   selectedKey: TKey;
   onSelect: (key: TKey) => void;
   variant?: "admin" | "user";
+  withMargins?: boolean;
 }) {
   if (variant === "user") {
     return (
-      <div className="flex justify-between mt-8 bg-neutral-800 rounded-2xl mb-6 overflow-hidden w-fit">
+      <div
+        className={`flex justify-between bg-neutral-800 rounded-2xl overflow-hidden w-fit ${
+          withMargins ? "mt-8 mb-6" : ""
+        }`}
+      >
         {tabs.map((tab) => (
           <button
             key={String(tab.key)}
@@ -38,7 +44,11 @@ export default function Tab<TKey extends string = string>({
   }
 
   return (
-    <div className="mt-8 mb-6 bg-neutral-800 rounded-2xl overflow-x-auto overflow-y-hidden max-w-full">
+    <div
+      className={`bg-neutral-800 rounded-2xl overflow-x-auto overflow-y-hidden max-w-full ${
+        withMargins ? "mt-8 mb-6" : ""
+      }`}
+    >
       <div className="flex flex-nowrap min-w-full w-max justify-between">
         {tabs.map((tab) => (
           <button

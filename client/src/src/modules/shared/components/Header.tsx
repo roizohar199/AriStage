@@ -199,7 +199,7 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
               )}
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="h-8 w-8 rounded-full overflow-hidden border border-brand-orange flex items-center justify-center text-white text-sm transition-all"
+                className="h-8 w-8 rounded-full overflow-hidden border border-white flex items-center justify-center text-white text-sm hover:border-brand-orange"
               >
                 {user?.avatar ? (
                   <img
@@ -223,21 +223,21 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                     setMenuOpen(false);
                     setPendingModalOpen(true);
                   }}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:text-brand-orange"
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-700/50 rounded-2xl"
                 >
                   <User size={16} />
                   הזמנות ממתינות
                 </button>
                 <button
                   onClick={handleSettings}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:text-brand-orange"
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-700/50 rounded-2xl"
                 >
                   <Settings size={16} />
                   הגדרות מערכת
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:text-brand-orange border-t border-neutral-700"
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-700/50 rounded-2xl"
                 >
                   <LogOut size={16} />
                   התנתק

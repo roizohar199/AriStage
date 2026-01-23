@@ -56,7 +56,7 @@ const Search: React.FC<SearchProps> = ({
             transition-all duration-300
             ${
               open
-                ? "bg-neutral-800 border border-neutral-800 rounded-2xl pr-10 pl-4 placeholder-neutral-500 focus:border-brand-orange"
+                ? "bg-neutral-800 border border-neutral-800 rounded-2xl pr-10 pl-4 placeholder-neutral-500 hover:bg-neutral-700/50 focus:bg-neutral-700"
                 : "bg-neutral-800 border-transparent rounded-2xl cursor-pointer"
             }
           `}

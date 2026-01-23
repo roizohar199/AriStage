@@ -71,7 +71,7 @@ export default function ArtistCard({
           <button
             onClick={onUninvite}
             disabled={disableActions}
-            className="w-6 h-6 text-red-500 hover:text-red-400"
+            className="w-6 h-6 text-red-500 hover:text-red-400 outline-none"
             title="בטל שיתוף מאגר"
           >
             <Trash2 size={20} />

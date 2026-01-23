@@ -13,7 +13,6 @@ import {
   Plus,
   Trash2,
   X,
-  Search as SearchIcon,
   Clock,
   Share2,
   Copy,
@@ -39,6 +38,7 @@ import { io } from "socket.io-client";
 import CardSong from "../../shared/components/cardsong";
 import Charts from "../../shared/components/Charts";
 import DesignActionButton from "../../shared/components/DesignActionButton";
+import Tab, { type TabItem } from "@/modules/shared/components/Tab";
 
 // --- Helper functions ---
 const parseDuration = (d: string | number | undefined) => {
@@ -193,6 +193,11 @@ const AddSongModal = memo(function AddSongModal({
   selectedArtistId,
   setSelectedArtistId,
 }: any) {
+  const tabs: Array<TabItem<"my" | "artists">> = [
+    { key: "my", label: "השירים שלי" },
+    { key: "artists", label: "שירים של אמנים" },
+  ];
+
   return (
     <BaseModal
       open={showModal}
@@ -205,29 +210,14 @@ const AddSongModal = memo(function AddSongModal({
       </div>
 
       {/* Tabs */}
-      <div className="mb-4">
-        <div className="flex gap-3 bg-neutral-800 rounded-2xl p-1 ">
-          <button
-            onClick={() => setModalActiveTab("my")}
-            className={`flex-1 py-2 px-4 rounded-2xl font-semibold transition-all ${
-              modalActiveTab === "my"
-                ? "bg-brand-orange text-black"
-                : "text-neutral-400 hover:text-white"
-            }`}
-          >
-            השירים שלי
-          </button>
-          <button
-            onClick={() => setModalActiveTab("artists")}
-            className={`flex-1 py-2 px-4 rounded-2xl font-semibold transition-all ${
-              modalActiveTab === "artists"
-                ? "bg-brand-orange text-black"
-                : "text-neutral-400 hover:text-white"
-            }`}
-          >
-            שירים של אמנים
-          </button>
-        </div>
+      <div className="flex justify-center mb-4">
+        <Tab
+          tabs={tabs}
+          selectedKey={modalActiveTab}
+          onSelect={(key) => setModalActiveTab(key)}
+          variant="user"
+          withMargins={false}
+        />
       </div>
 
       {/* אמנים - רשימה תמיד נראית בטאב אמנים */}
@@ -248,7 +238,7 @@ const AddSongModal = memo(function AddSongModal({
                 className={`flex-shrink-0 py-2 px-4 rounded-2xl text-sm font-semibold transition-all whitespace-nowrap ${
                   selectedArtistId === artist.id
                     ? "bg-brand-orange text-black"
-                    : "bg-neutral-800 text-neutral-400 hover:text-white"
+                    : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700/50"
                 }`}
               >
                 {artist.full_name}
@@ -258,19 +248,12 @@ const AddSongModal = memo(function AddSongModal({
         </div>
       )}
 
-      <div className="relative mb-4">
-        <SearchIcon
-          size={16}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500"
-        />
-        <input
-          type="text"
-          placeholder="חפש לפי שם, אמן, BPM, סולם..."
-          value={searchModal}
-          onChange={(e) => setSearchModal(e.target.value)}
-          className="w-full bg-neutral-800 rounded-2xl p-2 pr-8 text-sm text-white"
-        />
-      </div>
+      <SearchInput
+        value={searchModal}
+        onChange={(e) => setSearchModal(e.target.value)}
+        variant="song"
+        className="mb-4 w-full"
+      />
 
       <div className="max-h-[400px] overflow-y-auto space-y-3 pr-1">
         {filteredModalSongs.map((s: any) => (
@@ -975,7 +958,7 @@ export default function LineupDetails() {
                       setMenuOpen(false);
                       window.print();
                     }}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:text-brand-orange"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-700/50 rounded-2xl"
                   >
                     <Printer size={16} />
                     הדפס
@@ -986,7 +969,7 @@ export default function LineupDetails() {
                         setMenuOpen(false);
                         handleDownloadAllCharts();
                       }}
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:text-brand-orange"
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-700/50 rounded-2xl"
                     >
                       <FileDown size={16} />
                       הורד צ'ארטים
@@ -998,7 +981,7 @@ export default function LineupDetails() {
                         setMenuOpen(false);
                         handleDownloadAllLyrics();
                       }}
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:text-brand-orange"
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-700/50 rounded-2xl"
                     >
                       <FileDown size={16} />
                       הורד מילים
@@ -1011,14 +994,14 @@ export default function LineupDetails() {
         </div>
         {/* SHARE LINK */}
         {shareUrl && (
-          <div className="bg-brand-orange/10 backdrop-blur-xl p-3 rounded-2xl mb-4 text-sm flex justify-between items-center">
-            <span className="text-neutral-300 truncate">{shareUrl}</span>
+          <div className="bg-neutral-700 backdrop-blur-xl p-3 rounded-2xl mb-4 text-sm flex justify-between items-center">
+            <span className="text-brand-orange truncate">{shareUrl}</span>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 copyShareLink();
               }}
-              className="cursor-pointer active:scale-95 transition"
+              className="cursor-pointer hover:text-brand-orange"
             >
               <Copy size={16} />
             </button>
