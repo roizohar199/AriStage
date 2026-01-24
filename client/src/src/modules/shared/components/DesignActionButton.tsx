@@ -10,16 +10,17 @@ type DesignActionButtonProps = Omit<
 };
 
 const DESIGN_ACTION_BUTTON_BASE_CLASS =
-  "w-auto font-semibold rounded-2xl gap-1 flex flex-row-reverse items-center justify-center px-4 py-2";
+  // Semantic animation: buttons use `animation-press`
+  "w-auto font-semibold rounded-2xl gap-1 flex flex-row-reverse items-center justify-center px-4 py-2 transition outline-none";
 
 const DESIGN_ACTION_BUTTON_VARIANT_CLASS: Record<
   DesignActionButtonVariant,
   string
 > = {
-  primary: "bg-brand-orange text-black hover:bg-brand-orangeLight",
-  danger: "bg-red-600 text-white hover:bg-red-500",
+  primary: "bg-brand-primary text-neutral-100 hover:bg-brand-primaryLight",
+  danger: "bg-red-600 text-neutral-100 hover:bg-red-500",
   cancel:
-    "bg-neutral-700/50 hover:bg-neutral-700 text-white px-5 py-2 font-bold",
+    "bg-neutral-700 hover:bg-neutral-650 text-neutral-100 px-5 py-2 font-bold",
 };
 
 const DesignActionButton = React.forwardRef<

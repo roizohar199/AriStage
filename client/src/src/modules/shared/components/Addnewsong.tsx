@@ -154,8 +154,8 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
       title={editingId ? "עריכת שיר 🎧" : "הוסף שיר חדש"}
       maxWidth="max-w-md"
     >
-      <h2 className="text-xl font-bold mb-4">
-        {editingId ? "עריכת שיר 🎧" : "הוסף שיר חדש"}
+      <h2 className="text-xl font-bold mb-4 text-neutral-100">
+        {editingId ? "עריכת שיר" : "הוסף שיר חדש"}
       </h2>
 
       <form
@@ -170,7 +170,7 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
           placeholder="שם השיר *"
           value={form.title}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
-          className="w-full bg-neutral-800 p-2 rounded-2xl text-sm hover:bg-neutral-700/50 focus:bg-neutral-700"
+          className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
           required
         />
 
@@ -179,7 +179,7 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
           placeholder="אמן"
           value={form.artist}
           onChange={(e) => setForm({ ...form, artist: e.target.value })}
-          className="w-full bg-neutral-800 p-2 rounded-2xl text-sm hover:bg-neutral-700/50 focus:bg-neutral-700"
+          className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
         />
 
         {/* BPM */}
@@ -195,7 +195,7 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
               bpm: e.target.value.replace(/\D/g, ""),
             })
           }
-          className="w-full bg-neutral-800 p-2 rounded-2xl text-sm hover:bg-neutral-700/50 focus:bg-neutral-700"
+          className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
         />
 
         {/* סולם */}
@@ -211,12 +211,16 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
                   setRootOpen((v) => !v);
                   setModeOpen(false);
                 }}
-                className="w-full text-left bg-neutral-800 p-2 rounded-2xl text-sm hover:bg-neutral-700/50 focus:bg-neutral-700"
+                // Semantic animation: buttons use `animation-press`
+                className="w-full bg-neutral-900 p-2 rounded-2xl mb-1 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
               >
                 {getRoot(form.key_sig)}
               </button>
               {rootOpen && (
-                <div className="absolute  w-full bg-neutral-800 rounded-2xl max-h-44 overflow-auto z-20">
+                <div
+                  // Semantic animation: dropdowns use `animation-overlay`
+                  className="absolute w-full bg-neutral-900 rounded-2xl max-h-44 overflow-auto z-20 transition"
+                >
                   {notesKeys.map((note) => (
                     <button
                       key={note}
@@ -228,7 +232,8 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
                         });
                         setRootOpen(false);
                       }}
-                      className="w-full text-left px-3 py-2 hover:bg-neutral-700 text-sm"
+                      // Semantic animation: buttons use `animation-press`
+                      className="w-full x-3 py-2 text-sm  rounded-2xl text-neutral-200 hover:bg-neutral-950 transition"
                     >
                       {note}
                     </button>
@@ -245,12 +250,16 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
                   setModeOpen((v) => !v);
                   setRootOpen(false);
                 }}
-                className="w-full text-left bg-neutral-800 p-2 rounded-2xl text-sm hover:bg-neutral-700/50 focus:bg-neutral-700"
+                // Semantic animation: buttons use `animation-press`
+                className="w-full bg-neutral-900 p-2 rounded-2xl mb-1 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
               >
                 {getMode(form.key_sig)}
               </button>
               {modeOpen && (
-                <div className="absolute mt-1 w-full bg-neutral-800 rounded-2xl max-h-44 overflow-auto z-20">
+                <div
+                  // Semantic animation: dropdowns use `animation-overlay`
+                  className="absolute w-full bg-neutral-900 rounded-2xl max-h-44 overflow-auto z-20 transition"
+                >
                   {scaleModes.map((mode) => (
                     <button
                       key={mode}
@@ -262,7 +271,8 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
                         });
                         setModeOpen(false);
                       }}
-                      className="w-full text-left px-3 py-2 hover:bg-neutral-700 text-sm"
+                      // Semantic animation: buttons use `animation-press`
+                      className="w-full x-3 py-2 text-sm  rounded-2xl text-neutral-200 hover:bg-neutral-950 transition"
                     >
                       {mode}
                     </button>
@@ -290,7 +300,7 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
                   )}`,
                 })
               }
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm text-center hover:bg-neutral-700/50 focus:bg-neutral-700"
+              className="w-full bg-neutral-900 p-2 rounded-2xl text-center mb-1 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
             />
             <span>:</span>
             <input
@@ -306,7 +316,7 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
                   }`,
                 })
               }
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm text-center hover:bg-neutral-700/50 focus:bg-neutral-700"
+              className="w-full bg-neutral-900 p-2 rounded-2xl text-center mb-1 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
             />
           </div>
         </div>
@@ -320,10 +330,10 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
                 type="button"
                 key={tag}
                 onClick={() => setForm({ ...form, notes: tag })}
-                className={`px-3 py-1 rounded-2xl text-sm ${
+                className={`px-3 py-1 rounded-2xl text-sm shadow-surface ${
                   form.notes === tag
-                    ? "bg-brand-orange border-brand-orange text-black"
-                    : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700/50"
+                    ? "bg-brand-primary border-brand-primary text-neutral-100"
+                    : "bg-neutral-900 text-neutral-300 hover:bg-neutral-950"
                 }`}
               >
                 {tag}

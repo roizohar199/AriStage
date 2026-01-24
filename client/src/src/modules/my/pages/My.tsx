@@ -34,7 +34,7 @@ import { AddNewSong, SongForm } from "../../shared/components/Addnewsong";
 import CreateLineup from "../../shared/components/Createlineup";
 import Search from "../../shared/components/Search";
 import Tab, { type TabItem } from "@/modules/shared/components/Tab";
-import Charts from "../../shared/components/Charts";
+import Charts, { ChartViewerModal } from "../../shared/components/Charts";
 import CardSong from "../../shared/components/cardsong";
 import SongLyrics from "../../shared/components/SongLyrics";
 import BlockLineup from "../../shared/components/blocklineup";
@@ -875,7 +875,6 @@ function MyContent(): JSX.Element {
                     privateCharts={privateCharts[s.id] || []}
                     setPrivateCharts={setPrivateCharts}
                     fileInputRefs={fileInputRefs}
-                    viewingChart={viewingChart}
                     setViewingChart={setViewingChart}
                     onConfirm={confirm}
                   />
@@ -949,37 +948,11 @@ function MyContent(): JSX.Element {
             notesKeys={notesKeys}
             keysType={keysType}
           />
-          {/* מודאל צפייה בצ'ארט */}
-          <BaseModal
-            open={!!viewingChart}
+          <ChartViewerModal
+            viewingChart={viewingChart}
             onClose={() => setViewingChart(null)}
-            title="צפייה בצ'ארט"
             maxWidth="max-w-6xl"
-            containerClassName="h-[90vh] flex flex-col"
-            padding="p-0"
-          >
-            <div className="flex items-center justify-between p-4 border-b border-neutral-800">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <FileText size={20} className="text-cyan-400" />
-                צפייה בצ'ארט
-              </h3>
-            </div>
-            <div className="flex-1 overflow-auto p-4">
-              {viewingChart && viewingChart.match(/\.(jpg|jpeg|png|gif)$/i) ? (
-                <img
-                  src={viewingChart}
-                  alt="צ'ארט"
-                  className="max-w-full h-auto mx-auto rounded-lg"
-                />
-              ) : (
-                <iframe
-                  src={viewingChart || ""}
-                  className="w-full h-full rounded-lg border border-neutral-700"
-                  title="PDF Viewer"
-                />
-              )}
-            </div>
-          </BaseModal>
+          />
         </>
       ) : selectedTab === "lineups" ? (
         <>
@@ -1196,11 +1169,11 @@ function MyContent(): JSX.Element {
         title="הזמן אמן למאגר שלך"
         maxWidth="max-w-md"
       >
-        <h2 className="text-xl font-bold mb-4 text-center">
+        <h2 className="text-xl font-bold mb-4 text-start">
           הזמן אמן למאגר שלך
         </h2>
 
-        <p className="text-neutral-400 text-sm mb-4 text-center">
+        <p className="text-neutral-400 text-sm mb-4 text-start">
           הזן את כתובת האימייל של האמן. הוא יקבל מייל עם קישור להצטרפות למאגר
           שלך.
         </p>
@@ -1212,7 +1185,7 @@ function MyContent(): JSX.Element {
               placeholder="artist@example.com"
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm hover:bg-neutral-700 focus:bg-neutral-700"
+              className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
               dir="ltr"
               required
               disabled={inviteLoading}

@@ -42,23 +42,26 @@ const CardSong: React.FC<CardSongProps> = ({
   const durationText = safeDuration(song.duration_sec);
 
   return (
-    <div className="bg-neutral-800 rounded-2xl p-4 flex justify-between items-center shadow-sm hover:shadow-lg transition border border-neutral-800">
+    <div
+      // Semantic animation: cards use `animation-hover`
+      className="bg-neutral-850 rounded-2xl p-4 flex justify-between items-center"
+    >
       <div>
-        <p className="font-semibold text-lg">
+        <p className="font-semibold text-2xl text-brand-primary">
           {index + 1}. {song.title}
         </p>
-        <div className="flex flex-wrap gap-2 mt-2 text-xs">
-          <span className="bg-neutral-900 px-2 py-1 bg-neutral-800 rounded-2xl">
+        <div className="flex flex-wrap gap-1 mt-2 text-sm">
+          <span className="bg-neutral-950 px-2 py-1 rounded-2xl text-neutral-100 shadow-surface">
             {safeKey(song.key_sig)}
           </span>
-          <span className="bg-neutral-900 px-2 py-1 bg-neutral-800 rounded-2xl">
+          <span className="bg-neutral-950 px-2 py-1 rounded-2xl text-neutral-100 shadow-surface">
             {song.bpm} BPM
           </span>
-          <span className="bg-neutral-900 px-2 py-1 bg-neutral-800 rounded-2xl">
+          <span className="bg-neutral-950 px-2 py-1 rounded-2xl text-neutral-100 shadow-surface">
             {song.duration_sec}
           </span>
           {song.notes && (
-            <span className="inline-block px-2 py-1 text-xs bg-brand-orange rounded-2xl text-black font-semibold">
+            <span className="inline-block px-2 py-1 bg-brand-primary rounded-2xl text-neutral-100 shadow-surface">
               {song.notes}
             </span>
           )}
@@ -66,12 +69,13 @@ const CardSong: React.FC<CardSongProps> = ({
         {chartsComponent}
         {lyricsComponent}
       </div>
-      <div className="flex m-4 gap-6 flex-row-reverse items-center">
+      <div className="flex m-4 gap-1 flex-row-reverse items-center">
         {song.is_owner && (
           <>
             <button
               onClick={() => onRemove(song.id)}
-              className="w-6 h-6 text-red-500 hover:text-red-400 outline-none"
+              // Semantic animation: buttons use `animation-press`
+              className="text-red-600 hover:text-red-500 outline-none transition hover:bg-neutral-800 rounded-full p-2"
             >
               <Trash2 size={20} />
             </button>
@@ -79,7 +83,8 @@ const CardSong: React.FC<CardSongProps> = ({
             {onEdit && (
               <button
                 onClick={() => onEdit(song)}
-                className="w-6 h-6 text-white hover:text-brand-orange outline-none"
+                // Semantic animation: buttons use `animation-press`
+                className="outline-none text-neutral-100 hover:text-brand-primary hover:bg-neutral-800 rounded-full p-2 transition"
               >
                 <Edit2 size={20} />
               </button>

@@ -20,37 +20,34 @@ export default function Toast({
     setTimeout(() => setVisible(true), 10);
 
     // יציאה למעלה
-    const hideTimeout = setTimeout(() => setVisible(false), duration - 300);
+    const hideTimeout = setTimeout(() => setVisible(false), duration - 220);
 
     return () => clearTimeout(hideTimeout);
   }, [duration]);
 
   return (
-    <div
-      className={`
-        fixed left-1/2 -translate-x-1/2 z-[9999]
-        px-4 py-2
-        rounded-2xl
-        backdrop-blur-xl shadow-lg
-        flex items-center gap-2
-        text-xs font-medium
-        transition-all duration-500 ease-out
+    <div className="fixed left-1/2 top-6 -translate-x-1/2 z-[9999]">
+      <div
+        // Semantic animation: toast uses enter/exit tokens (transform+opacity only)
+        className={`
+          px-4 py-2
+          rounded-2xl
+          backdrop-blur-xl shadow-lg
+          flex items-center gap-2
+          text-xs font-medium
 
-        ${visible ? "top-6 opacity-100" : "top-[-10px] opacity-0"}
+          ${visible ? "animation-enter" : "animation-exit"}
 
-        ${
-          isError
-            ? "bg-red-500/25 border-red-400/40 text-red-300"
-            : "bg-brand-orange/25 border-brand-orange/40 text-brand-orange"
-        }
-      `}
-    >
-      {isError ? (
-        <AlertTriangle size={16} className="text-red-300" />
-      ) : (
-        <CheckCircle size={16} className="text-brand-orange" />
-      )}
-      <span>{message}</span>
+          ${isError ? "text-red-600" : "text-brand-primary"}
+        `}
+      >
+        {isError ? (
+          <AlertTriangle size={16} className="text-red-600" />
+        ) : (
+          <CheckCircle size={16} className="text-brand-primary" />
+        )}
+        <span>{message}</span>
+      </div>
     </div>
   );
 }

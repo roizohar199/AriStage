@@ -79,7 +79,7 @@ function DesignDropdown<T extends string>({
             setOpen(true);
           }
         }}
-        className={`w-full bg-neutral-800 p-2 rounded-2xl text-sm outline-none hover:bg-neutral-700/50 focus:bg-neutral-700 flex items-center justify-between gap-3 ${
+        className={`w-full bg-neutral-900 p-2 rounded-2xl mb-1 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition flex items-center justify-between gap-3 transition ${
           disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
         }`}
       >
@@ -103,7 +103,7 @@ function DesignDropdown<T extends string>({
           id={`${id}-listbox`}
           role="listbox"
           aria-labelledby={`${id}-label`}
-          className="absolute z-50 mt-1 w-full overflow-hidden rounded-2xl bg-neutral-800 shadow-lg"
+          className="absolute z-50 mt-1 w-full overflow-hidden rounded-2xl bg-neutral-900 shadow-lg"
         >
           {options.map((opt) => {
             const isSelected = opt.value === value;
@@ -120,8 +120,8 @@ function DesignDropdown<T extends string>({
                 }}
                 className={`w-full text-start px-3 py-2 text-sm  ${
                   isSelected
-                    ? "bg-neutral-800 rounded-2xl text-neutral-200 hover:bg-neutral-700/50"
-                    : "bg-neutral-800 rounded-2xl text-neutral-200 hover:bg-neutral-700/50"
+                    ? " rounded-2xl text-neutral-200 hover:bg-neutral-950 transition"
+                    : "rounded-2xl text-neutral-200 hover:bg-neutral-950 transition"
                 }`}
               >
                 {opt.label}
@@ -382,17 +382,17 @@ export default function Settings() {
       )}
 
       {/* Subscription info (always visible) */}
-      <div className="bg-neutral-950/50 rounded-2xl p-6 mb-6 space-y-4">
+      <div className="bg-neutral-850 rounded-2xl p-6 mb-6 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-sm text-neutral-400">סטטוס מנוי</div>
-            <div className="text-lg font-semibold">
+            <div className="text-sm text-neutral-300">סטטוס מנוי</div>
+            <div className="text-lg font-semibold text-neutral-100">
               {isSubscriptionActive ? "פעיל" : "הסתיים"}
             </div>
           </div>
           <div>
-            <div className="text-sm text-neutral-400">מסלול נוכחי</div>
-            <div className="text-lg font-semibold" dir="ltr">
+            <div className="text-sm text-neutral-300">מסלול נוכחי</div>
+            <div className="text-lg font-semibold text-neutral-100" dir="ltr">
               {subscription?.plan ?? "trial"}
             </div>
           </div>
@@ -401,14 +401,14 @@ export default function Settings() {
         {shouldShowUpgrade && (
           <div className="pt-4 border-t border-neutral-800 space-y-4">
             <div>
-              <div className="text-sm text-neutral-400">שדרוג מנוי</div>
-              <div className="text-base text-neutral-200">
+              <div className="text-sm text-neutral-300">שדרוג מנוי</div>
+              <div className="text-base text-neutral-100">
                 בחר מסלול וחזור לשימוש מלא במערכת
               </div>
             </div>
 
             {plansLoading ? (
-              <div className="bg-neutral-900 rounded-2xl p-4 text-neutral-400">
+              <div className="bg-neutral-900 rounded-2xl p-4 text-neutral-200">
                 טוען מחירים...
               </div>
             ) : plans[0] ? (
@@ -416,10 +416,10 @@ export default function Settings() {
                 <button
                   type="button"
                   onClick={() => setSelectedBillingPeriod("monthly")}
-                  className={`text-start bg-neutral-900 rounded-2xl p-5 border transition cursor-pointer ${
+                  className={`text-start rounded-2xl p-5 border transition cursor-pointer ${
                     selectedBillingPeriod === "monthly"
-                      ? "border-brand-orange"
-                      : "border-neutral-800 hover:border-brand-orange/50"
+                      ? "bg-neutral-750 border border-brand-primary"
+                      : "bg-neutral-850 border border-neutral-850"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-4">
@@ -427,8 +427,8 @@ export default function Settings() {
                     <div
                       className={`h-3 w-3 rounded-full border ${
                         selectedBillingPeriod === "monthly"
-                          ? "bg-brand-orange border-brand-orange"
-                          : "border-neutral-600"
+                          ? "bg-neutral-750 border border-brand-primary"
+                          : "bg-neutral-850 border border-neutral-850"
                       }`}
                       aria-hidden
                     />
@@ -442,10 +442,10 @@ export default function Settings() {
                 <button
                   type="button"
                   onClick={() => setSelectedBillingPeriod("yearly")}
-                  className={`text-start bg-neutral-900 rounded-2xl p-5 border transition cursor-pointer ${
+                  className={`text-start rounded-2xl p-5 border transition cursor-pointer ${
                     selectedBillingPeriod === "yearly"
-                      ? "border-brand-orange"
-                      : "border-neutral-800 hover:border-brand-orange/50"
+                      ? "bg-neutral-750 border border-brand-primary"
+                      : "bg-neutral-850 border border-neutral-850"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-4">
@@ -453,8 +453,8 @@ export default function Settings() {
                     <div
                       className={`h-3 w-3 rounded-full border ${
                         selectedBillingPeriod === "yearly"
-                          ? "bg-brand-orange border-brand-orange"
-                          : "border-neutral-600"
+                          ? "bg-neutral-750 border border-brand-primary"
+                          : "bg-neutral-850 border border-neutral-850"
                       }`}
                       aria-hidden
                     />
@@ -474,7 +474,7 @@ export default function Settings() {
             <button
               type="button"
               onClick={() => window.openUpgradeModal?.(selectedBillingPeriod)}
-              className="w-full cursor-pointer bg-brand-orange text-black font-semibold px-4 py-2 rounded-2xl shadow-innerIos transition text-sm"
+              className="w-full cursor-pointer bg-brand-primary text-neutral-950 font-bold px-4 py-2 rounded-2xl shadow-innerIos transition text-sm"
             >
               שדרג מנוי
             </button>
@@ -483,15 +483,12 @@ export default function Settings() {
       </div>
 
       {/* כרטיס מרכזי - זהה למבנה Home */}
-      <div className="space-y-1 rounded-2xl flex flex-col ">
+      <div className="space-y-1 rounded-2xl flex flex-col bg-neutral-850">
         {/* טופס הגדרות */}
-        <form
-          onSubmit={submit}
-          className="space-y-4 bg-neutral-950/50 rounded-2xl p-6"
-        >
+        <form onSubmit={submit} className="space-y-4  rounded-2xl p-6">
           {/* תמונת פרופיל */}
           <div className="flex flex-col items-center space-y-3">
-            <div className="w-28 h-28 rounded-full overflow-hidden bg-neutral-800 border-2 border-brand-orange shadow-md">
+            <div className="w-28 h-28 rounded-full overflow-hidden bg-neutral-950 border-2 border-brand-primary shadow-surface">
               {preview ? (
                 <img
                   src={preview}
@@ -540,94 +537,90 @@ export default function Settings() {
           </div>
 
           {/* שם מלא */}
-          <div>
-            <label className="block text-sm mb-1">שם מלא</label>
-            <input
-              type="text"
-              value={form.full_name}
-              onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm outline-none hover:bg-neutral-700/50 focus:bg-neutral-700"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm mb-1">תפקיד האמן</label>
-            <input
-              type="text"
-              value={form.artist_role}
-              onChange={(e) =>
-                setForm({ ...form, artist_role: e.target.value })
-              }
-              placeholder="גיטריסט, מפיק, בסיסט..."
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm outline-none hover:bg-neutral-700/50 focus:bg-neutral-700"
-            />
-          </div>
-
-          {/* אימייל */}
-          <div>
-            <label className="block text-sm mb-1">אימייל</label>
-            <input
-              type="email"
-              dir="ltr"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm outline-none hover:bg-neutral-700/50 focus:bg-neutral-700"
-            />
-          </div>
-
-          {/* Theme */}
-          <div>
-            <DesignDropdown
-              label="צבע מערכת"
-              value={form.themeIndex}
-              disabled={saving}
-              options={[
-                { value: "0", label: "כהה" },
-                { value: "1", label: "בהיר" },
-              ]}
-              onChange={(themeIndex) => setForm({ ...form, themeIndex })}
-            />
-            <div className="text-xs text-neutral-400 mt-1">
-              נשמר לכל משתמש קבוע
+          <div className="max-w-md w- full space-y-4 mx-auto">
+            <div>
+              <input
+                type="text"
+                value={form.full_name}
+                onChange={(e) =>
+                  setForm({ ...form, full_name: e.target.value })
+                }
+                placeholder="שם מלא"
+                className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
+              />
             </div>
-          </div>
 
-          {/* Language */}
-          <div>
-            <DesignDropdown
-              label="שפת מערכת"
-              value={form.preferred_locale}
-              disabled={saving}
-              options={[
-                { value: "auto", label: "אוטומטי (לפי שפת הדפדפן)" },
-                { value: "he-IL", label: "עברית (RTL)" },
-                { value: "en-US", label: "English (LTR)" },
-              ]}
-              onChange={(preferred_locale) =>
-                setForm({ ...form, preferred_locale })
-              }
-            />
-            <div className="text-xs text-neutral-400 mt-1">
-              משפיע על כיוון (RTL/LTR) ועל מיקום סרגל הגלילה
+            <div>
+              <input
+                type="text"
+                value={form.artist_role}
+                onChange={(e) =>
+                  setForm({ ...form, artist_role: e.target.value })
+                }
+                placeholder="גיטריסט, מפיק, בסיסט..."
+                className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
+              />
             </div>
-          </div>
 
-          {/* סיסמה חדשה */}
-          <div>
-            <label className="block text-sm mb-1">סיסמה חדשה</label>
-            <input
-              type="password"
-              value={form.newPass}
-              onChange={(e) => setForm({ ...form, newPass: e.target.value })}
-              placeholder="לא חובה"
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm outline-none hover:bg-neutral-700/50 focus:bg-neutral-700"
-            />
-          </div>
+            {/* אימייל */}
+            <div>
+              <input
+                type="email"
+                dir="rtl"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                placeholder="אימייל"
+                className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
+              />
+            </div>
 
-          {/* כפתור שמירה */}
-          <DesignActionButtonBig type="submit" disabled={saving}>
-            {saving ? "שומר..." : "שמור שינויים"}
-          </DesignActionButtonBig>
+            {/* סיסמה חדשה */}
+            <div>
+              <input
+                type="password"
+                value={form.newPass}
+                onChange={(e) => setForm({ ...form, newPass: e.target.value })}
+                placeholder="סיסמה חדשה (השאר ריק אם לא משנים)"
+                className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
+              />
+            </div>
+
+            {/* Theme */}
+            <div>
+              <span className="text-sm text-neutral-300">צבע מערכת</span>
+              <DesignDropdown
+                value={form.themeIndex}
+                disabled={saving}
+                options={[
+                  { value: "0", label: "כהה" },
+                  { value: "1", label: "בהיר" },
+                ]}
+                onChange={(themeIndex) => setForm({ ...form, themeIndex })}
+              />
+            </div>
+
+            {/* Language */}
+            <div>
+              <span className="text-sm text-neutral-300">שפת מערכת</span>
+              <DesignDropdown
+                value={form.preferred_locale}
+                disabled={saving}
+                options={[
+                  { value: "auto", label: "אוטומטי (לפי שפת הדפדפן)" },
+                  { value: "he-IL", label: "עברית (RTL)" },
+                  { value: "en-US", label: "English (LTR)" },
+                ]}
+                onChange={(preferred_locale) =>
+                  setForm({ ...form, preferred_locale })
+                }
+              />
+            </div>
+
+            {/* כפתור שמירה */}
+            <DesignActionButtonBig type="submit" disabled={saving}>
+              {saving ? "שומר..." : "שמור שינויים"}
+            </DesignActionButtonBig>
+          </div>
         </form>
 
         {/* שאר העמוד — ללא שינוי */}

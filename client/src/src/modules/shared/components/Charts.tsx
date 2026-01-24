@@ -37,7 +37,6 @@ interface ChartsProps {
   fileInputRefs: React.MutableRefObject<
     Record<number, HTMLInputElement | null>
   >;
-  viewingChart: string | null;
   setViewingChart: React.Dispatch<React.SetStateAction<string | null>>;
   onConfirm: (options: ConfirmOptions) => Promise<boolean>;
 }
@@ -47,47 +46,12 @@ export default function Charts({
   privateCharts,
   setPrivateCharts,
   fileInputRefs,
-  viewingChart,
   setViewingChart,
   onConfirm,
-}: ChartsProps): JSX.Element {
+}: ChartsProps) {
   const { showToast } = useToast();
   const { isEnabled } = useFeatureFlags();
   const chartsEnabled = isEnabled("module.charts", true);
-
-  const [isScrolling, setIsScrolling] = useState(false);
-  const scrollTimerRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (scrollTimerRef.current) {
-        window.clearTimeout(scrollTimerRef.current);
-        scrollTimerRef.current = null;
-      }
-    };
-  }, []);
-
-  const handleViewerScroll = useCallback(() => {
-    setIsScrolling(true);
-    if (scrollTimerRef.current) window.clearTimeout(scrollTimerRef.current);
-    scrollTimerRef.current = window.setTimeout(() => {
-      setIsScrolling(false);
-      scrollTimerRef.current = null;
-    }, 700);
-  }, []);
-
-  if (!chartsEnabled) {
-    return (
-      <div className="bg-neutral-900 grid place-items-center mt-3 p-3 rounded-2xl">
-        <div className="flex items-center gap-2 mb-2">
-          <FileText size={16} className="text-neutral-500" />
-          <span className="text-xs font-semibold text-neutral-400">
-            מודול צ&apos;ארטים כבוי
-          </span>
-        </div>
-      </div>
-    );
-  }
 
   const handleDeleteChart = useCallback(
     async (chartId: number) => {
@@ -101,14 +65,14 @@ export default function Charts({
         showToast("הצ'ארט נמחק בהצלחה", "success");
         setPrivateCharts((prev) => ({
           ...prev,
-          [song.id]: prev[song.id].filter((c) => c.id !== chartId),
+          [song.id]: (prev[song.id] || []).filter((c) => c.id !== chartId),
         }));
       } catch (err) {
         console.error("❌ delete chart error:", err);
         showToast("שגיאה במחיקת הצ'ארט", "error");
       }
     },
-    [song.id, onConfirm, showToast, setPrivateCharts],
+    [onConfirm, setPrivateCharts, showToast, song.id],
   );
 
   const handleDownloadChart = useCallback(
@@ -160,127 +124,174 @@ export default function Charts({
           }),
         );
       } catch (err) {
+        console.error("❌ upload chart error:", err);
         showToast("שגיאה בהעלאת הקובץ", "error");
       }
     },
-    [song.id, showToast, setPrivateCharts],
+    [setPrivateCharts, showToast, song.id],
   );
 
-  return (
-    <>
-      {/* בלוק אייקונים אחד - גם אם אין צ'ארטים */}
+  if (!chartsEnabled) {
+    return (
       <div className="bg-neutral-900 grid place-items-center mt-3 p-3 rounded-2xl">
         <div className="flex items-center gap-2 mb-2">
-          <FileText size={16} className="text-brand-orange" />
-          <span className="text-xs font-semibold text-neutral-300">
-            הצ'ארטים שלי ({privateCharts.length})
+          <FileText size={16} className="text-neutral-500" />
+          <span className="text-xs font-semibold text-neutral-400">
+            מודול צ&apos;ארטים כבוי
           </span>
         </div>
-        <div className="flex flex-wrap grid gap-2">
-          {/* הצ'ארטים */}
-          {privateCharts &&
-            privateCharts.length > 0 &&
-            privateCharts.map((chart, idx) => (
-              <div
-                key={chart.id}
-                className="border-b-2 border-neutral-800 overflow-hidden flex items-center gap-4 px-2 py-1.5"
-              >
-                <span className="text-xs text-white/50 font-bold rounded-2xl">
-                  #{idx + 1}
-                </span>
-                {/* צפייה תמיד מותרת */}
-                <button
-                  onClick={() => setViewingChart(chart.file_path)}
-                  className="w-6 h-6 text-white hover:text-brand-orange outline-none"
-                  title="צפייה"
-                >
-                  <Eye size={16} />
-                </button>
-                <button
-                  onClick={() => handleDownloadChart(chart)}
-                  className="w-6 h-6 text-white hover:text-brand-orange outline-none"
-                  title="הורדה"
-                >
-                  <FileDown size={16} />
-                </button>
-                <button
-                  onClick={() => handleDeleteChart(chart.id)}
-                  className="w-6 h-6 text-red-500 hover:text-red-400 outline-none"
-                  title="מחיקה"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))}
-          {/* כפתור העלאה תמיד גלוי */}
-          <div className="flex items-center gap-1 px-2 py-1.5">
-            <input
-              type="file"
-              accept="application/pdf,image/jpeg,image/png,image/gif,image/jpg"
-              ref={(el) => {
-                if (el) fileInputRefs.current[song.id] = el;
-              }}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  handleUploadChart(file);
-                }
-                e.target.value = "";
-              }}
-              className="hidden"
-            />
+      </div>
+    );
+  }
 
-            <button
-              onClick={() => fileInputRefs.current[song.id]?.click()}
-              className="w-full bg-neutral-700/50 p-2 rounded-2xl flex flex-row-reverse items-center justify-center gap-2 text-brand-orange hover:bg-neutral-700"
-              title="העלה קובץ"
-            >
-              <Upload size={16} />
-              <span className="flex-1 text-xs text-white font-bold">
-                העלה קובץ
-              </span>
-            </button>
-          </div>
-        </div>
+  return (
+    <div className="bg-neutral-950 grid place-items-center mt-3 p-3 rounded-2xl shadow-surface">
+      <div className="flex items-center gap-2 mb-2">
+        <FileText size={16} className="text-brand-primary" />
+        <span className="text-xs font-semibold text-neutral-100">
+          הצ'ארטים שלי ({privateCharts.length})
+        </span>
       </div>
 
-      {/* מודאל צפייה בצ'ארט */}
-      <BaseModal
-        open={!!viewingChart}
-        onClose={() => setViewingChart(null)}
-        title="צפייה בצ'ארט"
-        maxWidth="max-w-4xl"
-        backdropClassName="bg-black/50"
-        backdropContainerClassName="backdrop-blur-md"
-        containerClassName="max-h-[90vh] flex flex-col overflow-hidden"
-        padding="p-0"
-      >
-        <div className="flex justify-between items-center p-4 border-b border-neutral-700 bg-neutral-950">
-          <h3 className="text-white">צפייה בצ'ארט</h3>
-        </div>
-        <div
-          className={`flex-1 overflow-auto p-4 app-scroll ${
-            isScrolling ? "scrolling" : ""
-          }`}
-          onScroll={handleViewerScroll}
+      {/* 1) רשימה */}
+      <div className="flex flex-wrap gap-2 justify-center w-full">
+        {privateCharts?.length > 0 &&
+          privateCharts.map((chart, idx) => (
+            <div
+              key={chart.id}
+              className="border-b-2 border-neutral-800 overflow-hidden flex items-center gap-4 px-2 py-1.5"
+            >
+              <span className="text-xs text-neutral-300 rounded-2xl">
+                #{idx + 1}
+              </span>
+
+              <button
+                onClick={() => setViewingChart(chart.file_path)}
+                className="text-neutral-100 hover:text-brand-primary outline-none hover:bg-neutral-900 rounded-full p-1 transition"
+                title="צפייה"
+              >
+                <Eye size={16} />
+              </button>
+
+              <button
+                onClick={() => handleDownloadChart(chart)}
+                className="text-neutral-100 hover:text-brand-primary outline-none hover:bg-neutral-900 rounded-full p-1 transition"
+                title="הורדה"
+              >
+                <FileDown size={16} />
+              </button>
+
+              <button
+                onClick={() => handleDeleteChart(chart.id)}
+                className="text-red-600 hover:text-red-500 outline-none hover:bg-neutral-900 rounded-full p-1 transition"
+                title="מחיקה"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          ))}
+      </div>
+
+      {/* 2) העלאה — תמיד מתחת */}
+      <div className="w-fit mt-3">
+        <input
+          type="file"
+          accept="application/pdf,image/jpeg,image/png,image/gif,image/jpg"
+          ref={(el) => {
+            if (el) fileInputRefs.current[song.id] = el;
+          }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleUploadChart(file);
+            e.target.value = "";
+          }}
+          className="hidden"
+        />
+
+        <button
+          onClick={() => fileInputRefs.current[song.id]?.click()}
+          className="w-full bg-neutral-800 p-2 rounded-2xl flex flex-row-reverse items-center justify-center gap-2 text-neutral-100 hover:bg-neutral-750 shadow-surface transition"
+          title="העלה קובץ"
         >
-          {viewingChart && viewingChart.toLowerCase().endsWith(".pdf") ? (
-            <iframe
-              src={viewingChart}
-              className="w-full h-[80vh]"
-              style={{ border: "none" }}
-              title="Chart Viewer"
-            />
-          ) : (
-            <img
-              src={viewingChart || ""}
-              alt="צ'ארט"
-              className="block w-full h-auto"
-              style={{ maxHeight: "none" }}
-            />
-          )}
-        </div>
-      </BaseModal>
-    </>
+          <Upload size={16} />
+          <span className="flex-1 text-xs text-neutral-100 font-bold">
+            העלה קובץ
+          </span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export interface ChartViewerModalProps {
+  viewingChart: string | null;
+  onClose: () => void;
+  title?: string;
+  maxWidth?: string;
+}
+
+export function ChartViewerModal({
+  viewingChart,
+  onClose,
+  title = "צפייה בצ'ארט",
+  maxWidth = "max-w-5xl",
+}: ChartViewerModalProps) {
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (scrollTimerRef.current) {
+        window.clearTimeout(scrollTimerRef.current);
+        scrollTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleViewerScroll = useCallback(() => {
+    setIsScrolling(true);
+    if (scrollTimerRef.current) window.clearTimeout(scrollTimerRef.current);
+    scrollTimerRef.current = window.setTimeout(() => {
+      setIsScrolling(false);
+      scrollTimerRef.current = null;
+    }, 700);
+  }, []);
+
+  return (
+    <BaseModal
+      open={!!viewingChart}
+      onClose={onClose}
+      title={title}
+      maxWidth={maxWidth}
+      containerClassName="max-h-[90vh] flex flex-col overflow-hidden"
+      padding="p-0"
+      lockScroll
+    >
+      <div className="flex justify-between items-center p-4 border-b border-neutral-700 bg-neutral-850">
+        <h3 className="h-page">{title}</h3>
+      </div>
+      <div
+        className={`flex-1 overflow-auto p-4 app-scroll ${
+          isScrolling ? "scrolling" : ""
+        }`}
+        onScroll={handleViewerScroll}
+      >
+        {viewingChart && viewingChart.toLowerCase().endsWith(".pdf") ? (
+          <iframe
+            src={viewingChart}
+            className="w-full h-[80vh]"
+            style={{ border: "none" }}
+            title="Chart Viewer"
+          />
+        ) : (
+          <img
+            src={viewingChart || ""}
+            alt="צ'ארט"
+            className="block w-full h-auto"
+            style={{ maxHeight: "none" }}
+          />
+        )}
+      </div>
+    </BaseModal>
   );
 }

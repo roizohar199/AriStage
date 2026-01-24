@@ -101,10 +101,10 @@ export default function SongLyrics({
 
   return (
     <>
-      <div className="bg-neutral-900 grid place-items-center mt-3 p-3 rounded-2xl">
+      <div className="bg-neutral-950 grid place-items-center mt-3 p-3 rounded-2xl shadow-surface">
         <div className="flex items-center gap-2 mb-2">
-          <PenLineIcon size={16} className="text-brand-orange" />
-          <span className="text-xs font-semibold text-neutral-300">
+          <PenLineIcon size={16} className="text-brand-primary" />
+          <span className="text-xs font-semibold text-neutral-100">
             מילים {hasLyrics ? "(קיים)" : "(אין)"}
           </span>
         </div>
@@ -112,11 +112,11 @@ export default function SongLyrics({
         <div className="flex items-center gap-1 px-2 py-1.5">
           <button
             onClick={openModal}
-            className="w-full bg-neutral-700/50 p-2 rounded-2xl flex flex-row-reverse items-center justify-center gap-2 text-brand-orange hover:bg-neutral-700 "
+            className="w-full bg-neutral-800 p-2 rounded-2xl flex flex-row-reverse items-center justify-center gap-2 text-neutral-100 hover:bg-neutral-750 shadow-surface transition"
             title="צפייה במילים"
           >
             <Eye size={16} />
-            <span className="flex-1 text-xs text-white font-bold ">
+            <span className="flex-1 text-xs text-neutral-100 font-bold ">
               צפייה במילים
             </span>
           </button>
@@ -135,7 +135,7 @@ export default function SongLyrics({
             onChange={(e) => setDraft(e.target.value)}
             readOnly={!canEdit}
             placeholder={canEdit ? "הדבק/כתוב כאן את המילים..." : "אין מילים"}
-            className="w-full min-h-[320px] bg-neutral-800 text-white rounded-2xl p-3 focus:outline-none hover:bg-neutral-700/50 focus:bg-neutral-700"
+            className="w-full min-h-[320px] outline-none bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
           />
 
           {canEdit && (

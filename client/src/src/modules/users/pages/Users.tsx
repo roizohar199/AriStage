@@ -202,7 +202,8 @@ export default function Users() {
 
         <button
           onClick={openCreate}
-          className="bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold rounded-full p-2 flex items-center justify-center transition-all"
+          // Semantic animation: buttons use `animation-press`
+          className="bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold rounded-full p-2 flex items-center justify-center animation-press"
         >
           <Plus size={18} />
         </button>
@@ -228,7 +229,8 @@ export default function Users() {
         {filteredUsers.map((u, i) => (
           <div
             key={u.id}
-            className="bg-neutral-900 rounded-2xl p-4 flex justify-between items-center shadow-sm hover:shadow-lg transition border border-neutral-800"
+            // Semantic animation: cards use `animation-hover`
+            className="bg-neutral-900 rounded-2xl p-4 flex justify-between items-center shadow-sm hover:shadow-lg border border-neutral-800 animation-hover"
           >
             {/* LEFT SIDE */}
             <div>
@@ -377,7 +379,8 @@ export default function Users() {
 
           <button
             type="submit"
-            className="w-full bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold py-2 rounded-lg mt-2 transition-all duration-200"
+            // Semantic animation: buttons use `animation-press`
+            className="w-full bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold py-2 rounded-lg mt-2 animation-press"
           >
             {editingId ? "עדכון" : "שמור"}
           </button>

@@ -92,7 +92,7 @@ export default function AppLayout({
         <div
           className="w-full bg-brand-orange text-black py-2 px-4 text-center font-semibold 
           flex flex-col sm:flex-row items-center justify-center gap-3
-          shadow-lg backdrop-blur-md sticky top-0 z-50 lg:order-1"
+          shadow-lg sticky top-0 z-50 lg:order-1"
         >
           <span>
             אתה כרגע מייצג את:{" "}
@@ -118,8 +118,8 @@ export default function AppLayout({
       <main
         ref={scrollAreaRef}
         dir={resolveScrollbarContainerDirFromLocale(effectiveLocale)}
-        className={`flex-1 overflow-y-auto overflow-x-hidden relative app-scroll bg-neutral-900 pt-16 pb-20 md:pb-0 transition-all duration-300 ${
-          isUpgradeModalOpen ? "blur-sm" : ""
+        className={`flex-1 overflow-y-auto overflow-x-hidden relative app-scroll bg-neutral-950 pt-16 pb-20 md:pb-0 ${
+          isUpgradeModalOpen ? "" : ""
         }`}
       >
         <div dir={resolveDirFromLocale(effectiveLocale)} className="w-full">

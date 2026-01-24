@@ -36,7 +36,7 @@ import { useFeatureFlags } from "@/modules/shared/contexts/FeatureFlagsContext.t
 import { API_ORIGIN } from "@/config/apiConfig";
 import { io } from "socket.io-client";
 import CardSong from "../../shared/components/cardsong";
-import Charts from "../../shared/components/Charts";
+import Charts, { ChartViewerModal } from "../../shared/components/Charts";
 import DesignActionButton from "../../shared/components/DesignActionButton";
 import Tab, { type TabItem } from "@/modules/shared/components/Tab";
 
@@ -68,7 +68,6 @@ const SongList = memo(function SongList({
   fileInputRefs,
   privateCharts,
   setPrivateCharts,
-  viewingChart,
   setViewingChart,
   onConfirm,
   onLyricsChanged,
@@ -152,7 +151,6 @@ const SongList = memo(function SongList({
                           privateCharts={privateCharts[s.song_id] || []}
                           setPrivateCharts={setPrivateCharts}
                           fileInputRefs={fileInputRefs}
-                          viewingChart={viewingChart}
                           setViewingChart={setViewingChart}
                           onConfirm={onConfirm}
                         />
@@ -235,7 +233,8 @@ const AddSongModal = memo(function AddSongModal({
                     selectedArtistId === artist.id ? null : artist.id,
                   )
                 }
-                className={`flex-shrink-0 py-2 px-4 rounded-2xl text-sm font-semibold transition-all whitespace-nowrap ${
+                // Semantic animation: buttons use `animation-press`
+                className={`flex-shrink-0 py-2 px-4 rounded-2xl text-sm font-semibold whitespace-nowrap animation-press ${
                   selectedArtistId === artist.id
                     ? "bg-brand-orange text-black"
                     : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700/50"
@@ -1015,7 +1014,6 @@ export default function LineupDetails() {
             fileInputRefs={fileInputRefs}
             privateCharts={privateCharts}
             setPrivateCharts={setPrivateCharts}
-            viewingChart={viewingChart}
             setViewingChart={setViewingChart}
             onConfirm={confirm}
             onLyricsChanged={fetchSongs}
@@ -1035,6 +1033,11 @@ export default function LineupDetails() {
         connectedArtists={connectedArtists}
         selectedArtistId={selectedArtistId}
         setSelectedArtistId={setSelectedArtistId}
+      />
+
+      <ChartViewerModal
+        viewingChart={viewingChart}
+        onClose={() => setViewingChart(null)}
       />
     </div>
   );

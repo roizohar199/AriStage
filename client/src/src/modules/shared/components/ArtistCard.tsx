@@ -21,10 +21,11 @@ export default function ArtistCard({
   return (
     <div
       key={artist.id}
-      className="bg-neutral-800 rounded-2xl p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center"
+      // Semantic animation: cards use `animation-hover`
+      className="bg-neutral-850 rounded-2xl p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center transition"
     >
       {/* תמונת פרופיל */}
-      <div className="w-36 h-36 shrink-0 rounded-full overflow-hidden border-2 border-brand-orange">
+      <div className="w-36 h-36 shrink-0 rounded-full overflow-hidden border-2 border-brand-primary shadow-surface">
         {artist.avatar ? (
           <img
             src={artist.avatar}
@@ -40,7 +41,7 @@ export default function ArtistCard({
           />
         ) : null}
         <div
-          className="w-16 h-16 rounded-full bg-neutral-700 border-2 border-brand-orange flex items-center justify-center"
+          className="w-16 h-16 rounded-full bg-neutral-950 border-2 border-brand-orange flex items-center justify-center shadow-surface"
           style={{ display: artist.avatar ? "none" : "flex" }}
         >
           <User size={24} className="text-neutral-500" />
@@ -48,30 +49,30 @@ export default function ArtistCard({
       </div>
       {/* פרטי האמן */}
       <div className="flex-1 min-w-0 text-start">
-        <h3 className="text-lg font-bold text-white mb-1">
+        <h3 className="h-page text-brand-primary mb-1">
           {artist.full_name || "אמן ללא שם"}
         </h3>
         {artist.artist_role && (
           <div className="mb-2">
-            <span className="flex flex-row-reverse inline-flex items-center gap-1 px-2 py-1 bg-brand-orange rounded-2xl text-black font-semibold text-xs">
-              <Music size={12} />
+            <span className="w-fit text-label bg-neutral-950 px-2 py-1 rounded-2xl text-neutral-100 shadow-surface">
               {artist.artist_role}
             </span>
           </div>
         )}
         {artist.email && (
-          <p className="w-fit bg-neutral-900 px-2 py-1 bg-neutral-800 rounded-2xl text-white text-xs">
+          <p className="w-fit text-label bg-brand-primary px-2 py-1 rounded-2xl text-neutral-100 shadow-surface">
             {artist.email}
           </p>
         )}
       </div>
       {/* כפתור ביטול שיתוף */}
       {onUninvite && (
-        <div className="flex m-4 gap-6 flex-row-reverse items-center">
+        <div className="flex m-4 gap-1 flex-row-reverse items-center">
           <button
             onClick={onUninvite}
             disabled={disableActions}
-            className="w-6 h-6 text-red-500 hover:text-red-400 outline-none"
+            // Semantic animation: buttons use `animation-press`
+            className="text-red-600 hover:text-red-500 outline-none transition hover:bg-neutral-800 rounded-full p-2"
             title="בטל שיתוף מאגר"
           >
             <Trash2 size={20} />

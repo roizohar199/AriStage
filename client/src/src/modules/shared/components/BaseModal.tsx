@@ -1,4 +1,5 @@
 import React, { useEffect, useCallback, useRef, ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 export interface BaseModalProps {
@@ -25,6 +26,7 @@ export default function BaseModal({
   maxWidth = "max-w-md",
   closeOnBackdropClick = true,
   closeOnEsc = true,
+  lockScroll = false,
   backdropClassName = "bg-black/70",
   padding = "p-6",
   showCloseButton = true,
@@ -58,6 +60,17 @@ export default function BaseModal({
     return () => window.removeEventListener("keydown", handleEsc);
   }, [open, closeOnEsc, onClose]);
 
+  useEffect(() => {
+    if (!open || !lockScroll) return;
+    if (typeof document === "undefined") return;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open, lockScroll]);
+
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
     el.classList.add("scrolling");
@@ -80,14 +93,17 @@ export default function BaseModal({
   // ❗ רק כאן עושים תנאי
   if (!open) return null;
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  const modal = (
     <div
-      className={`fixed inset-0 sm:top-16 ${backdropClassName} backdrop-blur-sm flex justify-center items-start sm:items-center z-[100] p-4 transition-all duration-200 ${backdropContainerClassName}`}
+      className={`fixed inset-0 ${backdropClassName} flex justify-center items-center z-[1000] p-4 ${backdropContainerClassName}`}
       onClick={handleBackdropClick}
       role="presentation"
     >
       <div
-        className={`bg-neutral-900 rounded-2xl w-full ${maxWidth} relative shadow-xl ${padding} max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-6rem)] overflow-y-auto app-scroll animate-in fade-in zoom-in-95 duration-200 ${containerClassName}`}
+        // Semantic animation: modals use `animation-overlay`
+        className={`bg-neutral-850 rounded-2xl w-full ${maxWidth} relative shadow-xl ${padding} max-h-[calc(100dvh-2rem)] overflow-y-auto app-scroll animation-overlay ${containerClassName}`}
         onClick={(e) => e.stopPropagation()}
         onScroll={handleScroll}
         role="dialog"
@@ -97,7 +113,8 @@ export default function BaseModal({
         {showCloseButton && (
           <button
             onClick={onClose}
-            className="absolute top-3 left-3 text-neutral-400 hover:text-white transition-colors p-1 hover:bg-neutral-800 rounded-md z-10"
+            // Semantic animation: buttons use `animation-press`
+            className="absolute top-3 left-3 text-neutral-100 hover:text-neutral-300 transition-colors p-1 hover:bg-neutral-800 rounded-md z-10 transition"
             aria-label="Close modal"
             type="button"
           >
@@ -115,4 +132,6 @@ export default function BaseModal({
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }

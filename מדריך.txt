@@ -2,5 +2,5 @@ git pull מושך לפרוייקט במידה ומתכנת עבד
 
 git status לדעת איזה קבצים עבדתי
 git add . לתת לגיט להשים לב איזה קבצים ערכתי ולעקוב אחריהם
-git commit -m "fix RTL" שומר תגובה 
+git commit -m "fix ux/ui color dark mode" שומר תגובה 
 git push origin main

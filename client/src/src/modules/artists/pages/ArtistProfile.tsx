@@ -18,12 +18,11 @@ import {
 import api from "@/modules/shared/lib/api.js";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "@/modules/shared/components/ToastProvider.jsx";
-import BaseModal from "@/modules/shared/components/BaseModal.tsx";
 import ArtistCard from "@/modules/shared/components/ArtistCard";
 import Search from "@/modules/shared/components/Search";
 import BlockLineup from "@/modules/shared/components/blocklineup";
 import CardSong from "@/modules/shared/components/cardsong";
-import Charts from "@/modules/shared/components/Charts";
+import Charts, { ChartViewerModal } from "@/modules/shared/components/Charts";
 import SongLyrics from "@/modules/shared/components/SongLyrics";
 import Tab, { type TabItem } from "@/modules/shared/components/Tab";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
@@ -397,31 +396,10 @@ export default function ArtistProfile() {
           variant="user"
         />
 
-        {/* Chart viewing modal */}
-        <BaseModal
-          open={!!viewingChart}
+        <ChartViewerModal
+          viewingChart={viewingChart}
           onClose={() => setViewingChart(null)}
-          title="צפייה בצ'ארט"
-          maxWidth="max-w-5xl"
-          containerClassName="max-h-[90vh]"
-          padding="p-4"
-        >
-          <div className="overflow-auto max-h-[85vh] rounded-2xl">
-            {viewingChart && viewingChart.endsWith(".pdf") ? (
-              <iframe
-                src={viewingChart}
-                className="w-full h-[80vh] rounded-xl"
-                title="Chart Viewer"
-              />
-            ) : (
-              <img
-                src={viewingChart || ""}
-                alt="Chart"
-                className="w-full h-auto rounded-xl"
-              />
-            )}
-          </div>
-        </BaseModal>
+        />
 
         {/* ליינאפים */}
         {activeTab === "lineups" && (
@@ -504,7 +482,6 @@ export default function ArtistProfile() {
                         privateCharts={privateCharts[s.id] || []}
                         setPrivateCharts={setPrivateCharts}
                         fileInputRefs={fileInputRefs}
-                        viewingChart={viewingChart}
                         setViewingChart={setViewingChart}
                         onConfirm={confirm}
                       />

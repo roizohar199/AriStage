@@ -54,10 +54,11 @@ const Search: React.FC<SearchProps> = ({
             text-sm
             focus:outline-none
             transition-all duration-300
+            outline-none
             ${
               open
-                ? "bg-neutral-800 border border-neutral-800 rounded-2xl pr-10 pl-4 placeholder-neutral-500 hover:bg-neutral-700/50 focus:bg-neutral-700"
-                : "bg-neutral-800 border-transparent rounded-2xl cursor-pointer"
+                ? "bg-neutral-900 text-neutral-100 rounded-2xl pr-10 pl-4 placeholder-neutral-500 shadow-surface"
+                : "bg-neutral-850 rounded-2xl "
             }
           `}
         />
@@ -67,7 +68,7 @@ const Search: React.FC<SearchProps> = ({
           className={`
             absolute inset-0
             flex items-center justify-center
-            text-brand-orange
+            text-neutral-100
             pointer-events-none
             transition-all duration-200
             ${open ? "opacity-0 scale-90" : "opacity-100 scale-100"}
@@ -80,7 +81,7 @@ const Search: React.FC<SearchProps> = ({
         <div
           className={`
             absolute right-3 top-1/2 -translate-y-1/2
-            text-brand-orange
+            text-brand-primary
             transition-all duration-200
             ${open ? "opacity-100 scale-100" : "opacity-0 scale-90"}
           `}

@@ -69,7 +69,7 @@ const CreateLineup: React.FC<CreateLineupProps> = ({
       title={editing ? "עריכת ליינאפ" : "צור ליינאפ חדש"}
       maxWidth="max-w-md"
     >
-      <h2 className="text-xl font-bold mb-4">
+      <h2 className="text-xl font-bold mb-4 text-neutral-100">
         {editing ? "עריכת ליינאפ" : "צור ליינאפ חדש"}
       </h2>
 
@@ -78,7 +78,7 @@ const CreateLineup: React.FC<CreateLineupProps> = ({
           placeholder="שם הליינאפ *"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
-          className="w-full bg-neutral-800 p-2 rounded-2xl text-sm hover:bg-neutral-700/50 focus:bg-neutral-700"
+          className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
           required
         />
 
@@ -87,7 +87,7 @@ const CreateLineup: React.FC<CreateLineupProps> = ({
           placeholder="dd/mm/yyyy"
           value={form.date}
           onChange={(e) => setForm({ ...form, date: e.target.value })}
-          className="w-full bg-neutral-800 p-3 rounded-2xl text-sm hover:bg-neutral-700/50 focus:bg-neutral-700"
+          className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
         />
 
         <input
@@ -95,21 +95,21 @@ const CreateLineup: React.FC<CreateLineupProps> = ({
           placeholder="--:--"
           value={form.time}
           onChange={(e) => setForm({ ...form, time: e.target.value })}
-          className="w-full bg-neutral-800 p-3 rounded-2xl text-sm hover:bg-neutral-700/50 focus:bg-neutral-700"
+          className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
         />
 
         <input
           placeholder="מיקום"
           value={form.location}
           onChange={(e) => setForm({ ...form, location: e.target.value })}
-          className="w-full bg-neutral-800 p-2 rounded-2xl text-sm hover:bg-neutral-700/50 focus:bg-neutral-700"
+          className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
         />
 
         <textarea
           placeholder="תיאור (אופציונלי)"
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
-          className="w-full bg-neutral-800 p-3 rounded-2xl text-sm hover:bg-neutral-700/50 focus:bg-neutral-700 focus:outline-none"
+          className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition outline-none"
           rows={3}
         />
 

@@ -6,11 +6,14 @@ import {
   CheckIcon,
   HardDrive,
   LogOut,
+  Mic,
   MinusIcon,
   Music,
   Music2,
   Music2Icon,
   MusicIcon,
+  PlayCircle,
+  PlayIcon,
   Settings,
   Trash2,
   Upload,
@@ -208,28 +211,26 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
   }, [offlineCacheModalOpen, loadOfflineCacheEntries]);
 
   return (
-    <div className="relative z-[200] w-full h-16 bg-neutral-800">
+    <div className="fixed top-0 left-0 right-0 z-[200] w-full h-16  bg-neutral-950/50 backdrop-blur-xl">
       <div className="h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between md:grid md:grid-cols-3">
         {/* Left: Logo */}
-        <div className="flex items-center gap-2">
-          <Music2Icon size={20} />
-          <span className="text-sm sm:text-base font-semibold tracking-wide text-white">
-            AriStage
-          </span>
+        <div className="flex items-center gap-0  ">
+          <h1 className="h-page text-neutral-100 font-bold">AriStage</h1>
+          <Music2Icon size={24} className="text-brand-primary" />
         </div>
 
         {/* Center: Nav */}
-        <nav className="justify-self-center hidden md:flex items-center gap-4">
+        <nav className="justify-self-center hidden md:flex items-center gap-4 ">
           {nav.map(({ to, label, icon }) => (
             <NavLink
               key={to}
               to={to}
               end
               className={({ isActive }) =>
-                `flex items-center gap-2 text-sm px-2 py-1  ${
+                `flex items-center gap-2 text-sm px-2 py-1 transition ${
                   isActive
-                    ? "border-brand-orange text-brand-orange font-semibold"
-                    : "border-transparent text-neutral-300 hover:text-white font-semibold hover:border-brand-orange/50"
+                    ? "h-section text-neutral-100 font-bold hover:bg-neutral-900 rounded-2xl"
+                    : "h-section text-neutral-300 hover:bg-neutral-900 rounded-2xl"
                 }`
               }
             >
@@ -253,11 +254,11 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                 "info",
               );
             }}
-            className={`h-8 px-3 rounded-full border text-xs font-semibold flex items-center gap-2 transition \
+            className={`h-8 px-3 rounded-full text-label font-semibold flex items-center gap-2 transition \
               ${
                 isEffectiveOffline
-                  ? "bg-red-500/15 border-red-400/50 text-red-200 hover:bg-red-500/20"
-                  : "bg-emerald-500/10 border-emerald-400/40 text-emerald-200 hover:bg-emerald-500/15"
+                  ? "text-red-600 hover:bg-neutral-900"
+                  : "text-brand-primary hover:bg-neutral-900"
               }`}
             title={
               isForcedOffline
@@ -284,7 +285,7 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
               )}
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="h-8 w-8 rounded-full overflow-hidden border border-white flex items-center justify-center text-white text-sm hover:border-brand-orange"
+                className="h-9 w-9 rounded-full overflow-hidden border border-neutral-950 flex items-center justify-center text-neutral-100 text-sm shadow-surface"
               >
                 {user?.avatar ? (
                   <img
@@ -302,13 +303,17 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
 
             {/* Dropdown menu */}
             {menuOpen && (
-              <div className="absolute left-0 top-10 bg-neutral-800 rounded-2xl shadow-lg z-[210] min-w-max">
+              <div
+                // Semantic animation: dropdowns use `animation-overlay`
+                className="absolute top-10 header-user-dropdown bg-neutral-950 rounded-2xl shadow-floating z-[210] min-w-max animation-overlay"
+              >
                 <button
                   onClick={() => {
                     setMenuOpen(false);
                     setOfflineCacheModalOpen(true);
                   }}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-700/50 rounded-2xl"
+                  // Semantic animation: buttons use `animation-press`
+                  className="w-full flex items-center gap-2 px-4 py-2 text-label text-neutral-100 rounded-2xl hover:bg-neutral-900 transition"
                 >
                   <HardDrive size={16} />
                   תוכן Offline
@@ -318,21 +323,24 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                     setMenuOpen(false);
                     setPendingModalOpen(true);
                   }}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-700/50 rounded-2xl"
+                  // Semantic animation: buttons use `animation-press`
+                  className="w-full flex items-center gap-2 px-4 py-2 text-label text-neutral-100 rounded-2xl hover:bg-neutral-900 transition"
                 >
                   <User size={16} />
                   הזמנות ממתינות
                 </button>
                 <button
                   onClick={handleSettings}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-700/50 rounded-2xl"
+                  // Semantic animation: buttons use `animation-press`
+                  className="w-full flex items-center gap-2 px-4 py-2 text-label text-neutral-100 rounded-2xl hover:bg-neutral-900 transition"
                 >
                   <Settings size={16} />
                   הגדרות מערכת
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-700/50 rounded-2xl"
+                  // Semantic animation: buttons use `animation-press`
+                  className="w-full flex items-center gap-2 px-4 py-2 text-label text-neutral-100 rounded-2xl hover:bg-neutral-900 transition"
                 >
                   <LogOut size={16} />
                   התנתק
