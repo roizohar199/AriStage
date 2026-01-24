@@ -189,7 +189,7 @@ export default function AdminUsersTab({
             })
             .map((u) => (
               <CardContainer key={u.id}>
-                <div className="flex-1 min-w-0 text-right">
+                <div className="flex-1 min-w-0 text-start">
                   <h3 className="text-lg font-bold text-white mb-1">
                     {u.full_name ? u.full_name : ""}
                   </h3>

@@ -118,7 +118,7 @@ function DesignDropdown<T extends string>({
                   setOpen(false);
                   buttonRef.current?.focus();
                 }}
-                className={`w-full text-right px-3 py-2 text-sm  ${
+                className={`w-full text-start px-3 py-2 text-sm  ${
                   isSelected
                     ? "bg-neutral-800 rounded-2xl text-neutral-200 hover:bg-neutral-700/50"
                     : "bg-neutral-800 rounded-2xl text-neutral-200 hover:bg-neutral-700/50"
@@ -148,6 +148,7 @@ type SettingsFormState = {
   email: string;
   newPass: string;
   themeIndex: "0" | "1";
+  preferred_locale: "auto" | "he-IL" | "en-US";
   artist_role: string;
   avatar: File | null;
 };
@@ -170,6 +171,7 @@ export default function Settings() {
     email: "",
     newPass: "",
     themeIndex: String(resolveThemeIndex(user?.theme)) as "0" | "1",
+    preferred_locale: ((user as any)?.preferred_locale as any) || "auto",
     artist_role: "",
     avatar: null, // קובץ תמונה חדש
   });
@@ -226,6 +228,10 @@ export default function Settings() {
           full_name: data.full_name || "",
           email: data.email || "",
           themeIndex: String(resolveThemeIndex(data.theme)) as "0" | "1",
+          preferred_locale: (data.preferred_locale || "auto") as
+            | "auto"
+            | "he-IL"
+            | "en-US",
           artist_role: data.artist_role || "",
           avatar: null, // לא לשים פה URL, רק בקובץ preview
         }));
@@ -255,6 +261,7 @@ export default function Settings() {
       fd.append("full_name", form.full_name);
       fd.append("email", form.email);
       fd.append("theme", form.themeIndex);
+      fd.append("preferred_locale", form.preferred_locale);
       fd.append("artist_role", form.artist_role);
 
       if (form.avatar) {
@@ -353,7 +360,7 @@ export default function Settings() {
     return <div className="text-center text-neutral-400 p-6">טוען...</div>;
 
   return (
-    <div dir="rtl" className="min-h-screen text-white p-6">
+    <div className="min-h-screen text-white p-6">
       {/* כותרת עליונה */}
       <header className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">הגדרות מערכת</h1>
@@ -409,7 +416,7 @@ export default function Settings() {
                 <button
                   type="button"
                   onClick={() => setSelectedBillingPeriod("monthly")}
-                  className={`text-right bg-neutral-900 rounded-2xl p-5 border transition cursor-pointer ${
+                  className={`text-start bg-neutral-900 rounded-2xl p-5 border transition cursor-pointer ${
                     selectedBillingPeriod === "monthly"
                       ? "border-brand-orange"
                       : "border-neutral-800 hover:border-brand-orange/50"
@@ -435,7 +442,7 @@ export default function Settings() {
                 <button
                   type="button"
                   onClick={() => setSelectedBillingPeriod("yearly")}
-                  className={`text-right bg-neutral-900 rounded-2xl p-5 border transition cursor-pointer ${
+                  className={`text-start bg-neutral-900 rounded-2xl p-5 border transition cursor-pointer ${
                     selectedBillingPeriod === "yearly"
                       ? "border-brand-orange"
                       : "border-neutral-800 hover:border-brand-orange/50"
@@ -582,6 +589,26 @@ export default function Settings() {
             />
             <div className="text-xs text-neutral-400 mt-1">
               נשמר לכל משתמש קבוע
+            </div>
+          </div>
+
+          {/* Language */}
+          <div>
+            <DesignDropdown
+              label="שפת מערכת"
+              value={form.preferred_locale}
+              disabled={saving}
+              options={[
+                { value: "auto", label: "אוטומטי (לפי שפת הדפדפן)" },
+                { value: "he-IL", label: "עברית (RTL)" },
+                { value: "en-US", label: "English (LTR)" },
+              ]}
+              onChange={(preferred_locale) =>
+                setForm({ ...form, preferred_locale })
+              }
+            />
+            <div className="text-xs text-neutral-400 mt-1">
+              משפיע על כיוון (RTL/LTR) ועל מיקום סרגל הגלילה
             </div>
           </div>
 

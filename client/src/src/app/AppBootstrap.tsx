@@ -8,6 +8,7 @@ import api from "@/modules/shared/lib/api.js";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import { useOfflineStatus } from "@/modules/shared/hooks/useOfflineStatus";
 import { applyThemeFromUser } from "@/modules/shared/lib/theme";
+import { applyLocaleFromUser } from "@/modules/shared/lib/locale";
 
 import ProtectedRoute from "@/modules/shared/components/ProtectedRoute.tsx";
 import Splash from "@/modules/shared/components/Splash.tsx";
@@ -29,6 +30,7 @@ interface User {
   role: string;
   subscription_type?: string;
   theme?: number | string | null;
+  preferred_locale?: string | null;
 }
 
 /* -------------------------------------------------------
@@ -80,6 +82,10 @@ export default function AppBootstrap(): JSX.Element {
   useEffect(() => {
     applyThemeFromUser(effectiveUser);
   }, [effectiveUser?.id, effectiveUser?.theme]);
+
+  useEffect(() => {
+    applyLocaleFromUser(effectiveUser);
+  }, [effectiveUser?.id, effectiveUser?.preferred_locale]);
 
   const isAuthenticated = (() => {
     try {

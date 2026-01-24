@@ -75,6 +75,7 @@ export async function loginUser(email, password) {
     role: user.role,
     artist_role: user.artist_role || null,
     avatar: user.avatar || null,
+    preferred_locale: user.preferred_locale || "he-IL",
     subscription_type: user.subscription_type ?? null,
     subscription_status,
     subscription_expires_at: user.subscription_expires_at ?? null,
@@ -87,6 +88,17 @@ export async function loginUser(email, password) {
 //
 export async function registerUser(payload) {
   const { full_name, email, password, artist_role, tempAvatar } = payload;
+
+  const preferred_locale_raw = payload?.preferred_locale;
+  let preferred_locale = preferred_locale_raw
+    ? String(preferred_locale_raw).trim().replace(/_/g, "-")
+    : "he-IL";
+  if (!preferred_locale || preferred_locale.length > 16) {
+    preferred_locale = "he-IL";
+  }
+  if (!/^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(preferred_locale)) {
+    preferred_locale = "he-IL";
+  }
 
   logger.info("🟡 [REGISTER] registerUser התחיל", {
     full_name,
@@ -125,6 +137,7 @@ export async function registerUser(payload) {
     subscription_type: "trial",
     subscription_status: "trial",
     subscription_expires_at: addDaysMysqlDateTime(30),
+    preferred_locale,
     artist_role: artist_role || null,
     avatar: null,
   });
@@ -172,7 +185,7 @@ export async function registerUser(payload) {
 //
 async function updateAvatarColumn(id, avatarPath) {
   await import("../../database/pool.js").then(({ pool }) =>
-    pool.query("UPDATE users SET avatar = ? WHERE id = ?", [avatarPath, id])
+    pool.query("UPDATE users SET avatar = ? WHERE id = ?", [avatarPath, id]),
   );
 }
 

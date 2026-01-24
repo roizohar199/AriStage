@@ -323,7 +323,7 @@ export default function LineupDetails() {
 
   if (!lineupsEnabled) {
     return (
-      <div dir="rtl" className="text-white relative">
+      <div className="text-white relative">
         <div className="bg-neutral-800 rounded-2xl p-6 text-center">
           <p className="text-neutral-200 font-bold">מודול ליינאפים כבוי</p>
           <p className="text-neutral-400 text-sm mt-2">
@@ -870,7 +870,7 @@ export default function LineupDetails() {
   }
 
   return (
-    <div dir="rtl" className="text-white relative">
+    <div className="text-white relative">
       {/* HEADER */}
 
       <header className="flex items-center gap-3 mb-3">

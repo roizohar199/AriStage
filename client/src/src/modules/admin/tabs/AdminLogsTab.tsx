@@ -474,7 +474,7 @@ export default function AdminLogsTab({
                   key={l.id}
                   type="button"
                   onClick={() => setSelectedLog(l)}
-                  className="w-full text-right px-4 py-3 border-b border-neutral-800 hover:bg-neutral-800/50 transition"
+                  className="w-full text-start px-4 py-3 border-b border-neutral-800 hover:bg-neutral-800/50 transition"
                 >
                   <div className="grid grid-cols-1 md:grid-cols-5 gap-2 items-start">
                     <div

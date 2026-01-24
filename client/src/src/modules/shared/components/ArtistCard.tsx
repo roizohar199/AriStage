@@ -47,7 +47,7 @@ export default function ArtistCard({
         </div>
       </div>
       {/* פרטי האמן */}
-      <div className="flex-1 min-w-0 text-right">
+      <div className="flex-1 min-w-0 text-start">
         <h3 className="text-lg font-bold text-white mb-1">
           {artist.full_name || "אמן ללא שם"}
         </h3>

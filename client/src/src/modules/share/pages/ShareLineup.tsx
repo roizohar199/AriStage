@@ -203,10 +203,10 @@ export default function ShareLineup() {
       {/* כרטיס ליינאפ */}
       <div className="w-full border border-neutral-800 rounded-2xl p-6 relative">
         {/* כותרת */}
-        <h1 className="text-3xl font-bold mb-2 text-right">{lineup.title}</h1>
+        <h1 className="text-3xl font-bold mb-2 text-start">{lineup.title}</h1>
 
         {/* פרטים */}
-        <div className="text-right text-gray-300 mb-6 leading-relaxed">
+        <div className="text-start text-gray-300 mb-6 leading-relaxed">
           {lineup.date && (
             <p>
               <span className="font-semibold">תאריך:</span>{" "}
@@ -260,7 +260,10 @@ export default function ShareLineup() {
               </button>
 
               {menuOpen && (
-                <div className="absolute left-0 top-10 bg-neutral-800 rounded-2xl shadow-lg z-50 min-w-max">
+                <div
+                  className="absolute top-10 bg-neutral-800 rounded-2xl shadow-lg z-50 min-w-max"
+                  style={{ insetInlineStart: 0 }}
+                >
                   <button
                     onClick={() => {
                       setMenuOpen(false);
@@ -276,7 +279,7 @@ export default function ShareLineup() {
           </div>
         </div>
 
-        <div className="space-y-3" dir="rtl">
+        <div className="space-y-3">
           {lineup.songs?.map((song, idx) => (
             <CardSong
               key={song.lineup_song_id ?? song.song_id ?? idx}

@@ -63,6 +63,7 @@ export async function updateProfile(userId, payload) {
     payload.full_name !== undefined ||
     payload.email !== undefined ||
     payload.theme !== undefined ||
+    payload.preferred_locale !== undefined ||
     payload.artist_role !== undefined ||
     payload.avatar !== undefined; // כאן avatar מגיע כמחרוזת מה-controller
 
@@ -70,10 +71,34 @@ export async function updateProfile(userId, payload) {
     throw new AppError(400, "לא נשלחו נתונים לעדכון");
   }
 
+  let preferredLocale: string | undefined;
+  if (payload.preferred_locale !== undefined) {
+    if (payload.preferred_locale === null) {
+      throw new AppError(400, "preferred_locale cannot be null");
+    }
+    const raw = String(payload.preferred_locale).trim();
+    if (!raw) {
+      throw new AppError(400, "preferred_locale cannot be empty");
+    }
+    if (raw.length > 16) {
+      throw new AppError(400, "preferred_locale is too long");
+    }
+    if (raw.toLowerCase() === "auto") {
+      preferredLocale = "auto";
+    } else {
+      // Lightweight validation for BCP-47-ish tags (e.g. he, he-IL, en-US)
+      if (!/^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(raw)) {
+        throw new AppError(400, "preferred_locale format is invalid");
+      }
+      preferredLocale = raw;
+    }
+  }
+
   const affected = await updateSettings(userId, {
     full_name: payload.full_name ?? undefined,
     email: payload.email ?? undefined,
     theme: payload.theme ?? undefined,
+    preferred_locale: preferredLocale ?? undefined,
     artist_role: payload.artist_role ?? undefined,
     // allow explicit null to clear avatar
     avatar: payload.avatar === undefined ? undefined : payload.avatar,

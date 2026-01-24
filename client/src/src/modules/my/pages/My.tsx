@@ -794,7 +794,7 @@ function MyContent(): JSX.Element {
 
   // --- רנדר ---
   return (
-    <div dir="rtl" className="min-h-screen text-white p-6">
+    <div className="min-h-screen text-white p-6">
       <header className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">אישי</h1>
       </header>

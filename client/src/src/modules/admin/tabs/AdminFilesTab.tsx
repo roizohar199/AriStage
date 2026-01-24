@@ -307,7 +307,7 @@ export default function AdminFilesTab({
       ) : (
         filteredFiles.map((f) => (
           <CardContainer key={f.storage_path || String(f.id)}>
-            <div className="flex-1 min-w-0 text-right">
+            <div className="flex-1 min-w-0 text-start">
               <h3 className="text-lg font-bold text-white mb-1">
                 {f.name ||
                   f.file_name ||

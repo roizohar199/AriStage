@@ -6,6 +6,7 @@ export type CurrentUser = {
   full_name?: string;
   role?: string;
   avatar?: string | null;
+  preferred_locale?: string | null;
 };
 
 /**

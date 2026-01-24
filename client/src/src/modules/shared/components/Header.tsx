@@ -6,8 +6,14 @@ import {
   CheckIcon,
   HardDrive,
   LogOut,
+  MinusIcon,
+  Music,
+  Music2,
+  Music2Icon,
+  MusicIcon,
   Settings,
   Trash2,
+  Upload,
   User,
   Wifi,
   WifiOff,
@@ -202,11 +208,11 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
   }, [offlineCacheModalOpen, loadOfflineCacheEntries]);
 
   return (
-    <div className="relative z-[200] w-full h-16 bg-neutral-800/80">
+    <div className="relative z-[200] w-full h-16 bg-neutral-800">
       <div className="h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between md:grid md:grid-cols-3">
         {/* Left: Logo */}
         <div className="flex items-center gap-2">
-          <div className="h-7 w-7 rounded-md bg-neutral-700 border border-neutral-600" />
+          <Music2Icon size={20} />
           <span className="text-sm sm:text-base font-semibold tracking-wide text-white">
             AriStage
           </span>
@@ -360,10 +366,10 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-neutral-900">
                   <tr>
-                    <th className="text-right px-3 py-2 text-neutral-300 font-semibold">
+                    <th className="text-start px-3 py-2 text-neutral-300 font-semibold">
                       Cache
                     </th>
-                    <th className="text-right px-3 py-2 text-neutral-300 font-semibold">
+                    <th className="text-start px-3 py-2 text-neutral-300 font-semibold">
                       URL
                     </th>
                   </tr>
@@ -437,7 +443,7 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                   className="bg-neutral-800 rounded-xl p-4"
                 >
                   <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 text-right">
+                    <div className="flex items-center gap-3 text-start">
                       <div className="h-24 w-24 rounded-full bg-neutral-800 border-2 border-brand-orange overflow-hidden flex items-center justify-center">
                         {invitation.avatar ? (
                           <img

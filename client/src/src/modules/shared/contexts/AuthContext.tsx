@@ -14,6 +14,7 @@ export type CurrentUser = {
   role?: string;
   avatar?: string | null;
   theme?: number | string | null;
+  preferred_locale?: string | null;
   subscription_type?: string;
   subscription_status?: string;
   subscription_expires_at?: string | null;

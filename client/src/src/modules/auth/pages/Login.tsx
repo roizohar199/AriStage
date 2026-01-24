@@ -115,6 +115,12 @@ export default function Login() {
       form.append("email", email);
       form.append("password", password);
       form.append("artist_role", role);
+      // Persist initial locale from the user's browser (future i18n)
+      try {
+        form.append("preferred_locale", navigator.language || "he-IL");
+      } catch {
+        form.append("preferred_locale", "he-IL");
+      }
       if (avatar) form.append("avatar", avatar);
 
       console.log("🟡 [REGISTER] שולח בקשה לשרת...", {
@@ -181,7 +187,8 @@ export default function Login() {
             <input
               type="email"
               placeholder="name@example.com"
-              dir="rtl"
+              dir="ltr"
+              style={{ unicodeBidi: "isolate" }}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white hover:bg-neutral-700/50 focus:bg-neutral-700"
@@ -270,7 +277,8 @@ export default function Login() {
             <input
               type="email"
               placeholder="name@example.com"
-              dir="rtl"
+              dir="ltr"
+              style={{ unicodeBidi: "isolate" }}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white hover:bg-neutral-700/50 focus:bg-neutral-700"
@@ -336,7 +344,8 @@ export default function Login() {
             <input
               type="email"
               placeholder="name@example.com"
-              dir="rtl"
+              dir="ltr"
+              style={{ unicodeBidi: "isolate" }}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white hover:bg-neutral-700/50 focus:bg-neutral-700"
@@ -355,10 +364,7 @@ export default function Login() {
   };
 
   return (
-    <div
-      dir="rtl"
-      className="flex flex-col items-center justify-center min-h-screen text-white"
-    >
+    <div className="flex flex-col items-center justify-center min-h-screen text-white">
       <div className="w-full max-w-sm bg-neutral-950/50 p-6 text-center rounded-2xl backdrop-blur-xl">
         <div className="mb-5">
           <h1 className="text-3xl font-bold text-brand-orange">Ari Stage</h1>
@@ -402,7 +408,7 @@ export default function Login() {
             if (e.target === e.currentTarget) setIsTermsOpen(false);
           }}
         >
-          <div className="w-full max-w-2xl rounded-2xl bg-neutral-950 text-right shadow-2xl border border-neutral-800">
+          <div className="w-full max-w-2xl rounded-2xl bg-neutral-950 text-start shadow-2xl border border-neutral-800">
             <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-800">
               <h2 className="text-lg font-bold text-brand-orange">
                 תקנון שימוש – Ari Stage

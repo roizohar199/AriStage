@@ -34,7 +34,7 @@ export default function Footer() {
           content: (
             <div className="space-y-3 text-sm leading-6 text-neutral-300">
               <p>צריכים עזרה? הנה כמה צעדים מהירים לפני שפונים:</p>
-              <ul className="list-disc pr-5 space-y-1 text-neutral-300">
+              <ul className="list-disc ps-5 space-y-1 text-neutral-300">
                 <li>נסו לרענן את הדף (Ctrl+R).</li>
                 <li>
                   אם מדובר בבעיה בטעינת נתונים, בדקו חיבור אינטרנט והתחברות
@@ -49,7 +49,7 @@ export default function Footer() {
                 <p className="text-neutral-200 font-medium">
                   כדי שנוכל לעזור מהר:
                 </p>
-                <ul className="mt-2 list-disc pr-5 space-y-1 text-neutral-300">
+                <ul className="mt-2 list-disc ps-5 space-y-1 text-neutral-300">
                   <li>מה ניסית לעשות בדיוק?</li>
                   <li>מה הופיע על המסך (שגיאה/התנהגות)?</li>
                   <li>באיזה מכשיר/דפדפן?</li>
@@ -73,7 +73,7 @@ export default function Footer() {
                 ותהליכים. אנחנו עושים מאמץ לשמור על זמינות ותקינות, אבל ייתכנו
                 תקלות זמניות.
               </p>
-              <ul className="list-disc pr-5 space-y-1">
+              <ul className="list-disc ps-5 space-y-1">
                 <li>
                   המשתמש אחראי על התכנים שהוא מעלה/משתף ועל הרשאות השיתוף.
                 </li>
@@ -100,7 +100,7 @@ export default function Footer() {
                 ונתונים שאתם יוצרים במערכת (כמו קבצים/תוכן). אנו משתמשים במידע
                 כדי לספק את השירות, לשפר אותו ולשמור על אבטחה.
               </p>
-              <ul className="list-disc pr-5 space-y-1">
+              <ul className="list-disc ps-5 space-y-1">
                 <li>
                   שיתוף מידע מתבצע בהתאם להרשאות שהוגדרו (משתמשים/צוותים).
                 </li>
@@ -123,7 +123,7 @@ export default function Footer() {
   );
 
   return (
-    <footer dir="rtl" className="w-full bg-neutral-900 px-4 sm:px-6 lg:px-8">
+    <footer className="w-full bg-neutral-900 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl py-4">
         <div className="flex flex-col items-center justify-center gap-3">
           <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
@@ -157,7 +157,7 @@ export default function Footer() {
               <div
                 key={section.key}
                 id={`footer-section-${section.key}`}
-                className="w-full rounded-xl border border-neutral-800 bg-neutral-950/40 p-4 text-right"
+                className="w-full rounded-xl border border-neutral-800 bg-neutral-950/40 p-4 text-start"
               >
                 <div className="flex items-start justify-between gap-3">
                   <h3 className="text-sm font-semibold text-white">

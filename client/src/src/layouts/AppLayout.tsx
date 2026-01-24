@@ -5,6 +5,11 @@ import BottomNav from "@/modules/shared/components/BottomNav.tsx";
 import UpgradeModal from "@/modules/shared/components/UpgradeModal.tsx";
 import SubscriptionBanner from "@/modules/shared/components/SubscriptionBanner.tsx";
 import { useCurrentUser } from "@/modules/shared/hooks/useCurrentUser.ts";
+import {
+  resolveDirFromLocale,
+  resolveEffectiveLocaleFromUser,
+  resolveScrollbarContainerDirFromLocale,
+} from "@/modules/shared/lib/locale";
 
 declare global {
   interface Window {
@@ -39,6 +44,7 @@ export default function AppLayout({
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { user } = useCurrentUser();
   const isAuthenticated = !!user?.id;
+  const effectiveLocale = resolveEffectiveLocaleFromUser(user);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [preferredUpgradeBillingPeriod, setPreferredUpgradeBillingPeriod] =
     useState<"monthly" | "yearly" | null>(null);
@@ -111,21 +117,20 @@ export default function AppLayout({
       {/* Main content - Blur applied only when modal is open */}
       <main
         ref={scrollAreaRef}
-        dir="ltr"
+        dir={resolveScrollbarContainerDirFromLocale(effectiveLocale)}
         className={`flex-1 overflow-y-auto overflow-x-hidden relative app-scroll bg-neutral-900 pt-16 pb-20 md:pb-0 transition-all duration-300 ${
           isUpgradeModalOpen ? "blur-sm" : ""
         }`}
       >
-        <SubscriptionBanner />
-        <div
-          dir="rtl"
-          className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
-        >
-          {children}
-        </div>
+        <div dir={resolveDirFromLocale(effectiveLocale)} className="w-full">
+          <SubscriptionBanner />
+          <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            {children}
+          </div>
 
-        {/* Footer - Fixed bottom */}
-        <Footer />
+          {/* Footer - Fixed bottom */}
+          <Footer />
+        </div>
       </main>
       {/* Bottom nav for mobile */}
       {!hideNav && <BottomNav />}

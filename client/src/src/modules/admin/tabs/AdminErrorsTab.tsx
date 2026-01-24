@@ -174,7 +174,7 @@ export default function AdminErrorsTab({
 
           return (
             <CardContainer key={e.id}>
-              <div className="flex-1 min-w-0 text-right">
+              <div className="flex-1 min-w-0 text-start">
                 <h3 className="text-lg font-bold text-white mb-1">
                   {e.message || "תקלה"}
                 </h3>

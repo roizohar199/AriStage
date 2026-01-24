@@ -370,7 +370,7 @@ export default function AdminModelsTab({
         <div className="space-y-3">
           {filteredModules.map((m) => (
             <CardContainer key={m.key}>
-              <div className="flex-1 min-w-0 text-right">
+              <div className="flex-1 min-w-0 text-start">
                 <h3 className="text-lg font-bold text-white mb-1">{m.label}</h3>
                 <div className="flex flex-wrap gap-2 mt-2">
                   <SmallBadge variant="neutral">{m.key}</SmallBadge>

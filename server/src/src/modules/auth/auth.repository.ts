@@ -15,14 +15,15 @@ export async function createUser({
   subscription_type,
   subscription_status,
   subscription_expires_at,
+  preferred_locale,
   artist_role,
   avatar,
 }) {
   const [result] = await pool.query(
     `
     INSERT INTO users 
-      (full_name, email, password_hash, role, subscription_type, subscription_status, subscription_expires_at, artist_role, avatar)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (full_name, email, password_hash, role, subscription_type, subscription_status, subscription_expires_at, preferred_locale, artist_role, avatar)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     [
       full_name,
@@ -32,9 +33,10 @@ export async function createUser({
       subscription_type,
       subscription_status,
       subscription_expires_at,
+      preferred_locale,
       artist_role,
       avatar,
-    ]
+    ],
   );
 
   // ⭐ מחזיר את ה־ID של המשתמש החדש
@@ -44,14 +46,14 @@ export async function createUser({
 export async function saveResetToken(userId, token, expiresAt) {
   await pool.query(
     "UPDATE users SET reset_token = ?, reset_expires = ? WHERE id = ?",
-    [token, expiresAt, userId]
+    [token, expiresAt, userId],
   );
 }
 
 export async function findUserByResetToken(token) {
   const [rows] = await pool.query(
     "SELECT * FROM users WHERE reset_token = ? AND reset_expires > ? LIMIT 1",
-    [token, Date.now()]
+    [token, Date.now()],
   );
   return rows[0];
 }
@@ -63,6 +65,6 @@ export async function updatePassword(userId, password_hash) {
     SET password_hash = ?, reset_token = NULL, reset_expires = NULL 
     WHERE id = ?
     `,
-    [password_hash, userId]
+    [password_hash, userId],
   );
 }

@@ -4,8 +4,8 @@ import { isElevatedRole } from "../../types/roles.js";
 // ✔ משוך את המשתמש כולל השדות החדשים
 export async function getCurrentUser(id) {
   const [rows] = await pool.query(
-    "SELECT id, full_name, email, role, theme, artist_role, avatar, subscription_type, subscription_status, subscription_started_at, subscription_expires_at FROM users WHERE id=?",
-    [id]
+    "SELECT id, full_name, email, role, theme, preferred_locale, artist_role, avatar, subscription_type, subscription_status, subscription_started_at, subscription_expires_at FROM users WHERE id=?",
+    [id],
   );
   return rows[0];
 }
@@ -29,6 +29,11 @@ export async function updateSettings(id, fields) {
   if (fields.theme !== undefined) {
     clauses.push("theme = ?");
     values.push(fields.theme);
+  }
+
+  if (fields.preferred_locale !== undefined) {
+    clauses.push("preferred_locale = ?");
+    values.push(fields.preferred_locale);
   }
 
   // ⭐ תיאור אמן (artist_role)
@@ -63,7 +68,7 @@ export async function updateSettings(id, fields) {
 export async function updatePassword(id, hash) {
   await pool.query(
     "UPDATE users SET password_hash=?, updated_at=NOW() WHERE id=?",
-    [hash, id]
+    [hash, id],
   );
 }
 
@@ -96,8 +101,8 @@ export async function findUserByEmail(email) {
 // ✔ יצירת משתמש
 export async function insertUser(data) {
   await pool.query(
-    `INSERT INTO users (full_name, email, password_hash, role, subscription_type, subscription_status, subscription_expires_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO users (full_name, email, password_hash, role, subscription_type, subscription_status, subscription_expires_at, preferred_locale)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.full_name,
       data.email,
@@ -106,7 +111,8 @@ export async function insertUser(data) {
       data.subscription_type,
       data.subscription_status ?? null,
       data.subscription_expires_at ?? null,
-    ]
+      data.preferred_locale ?? "he-IL",
+    ],
   );
 }
 
@@ -149,7 +155,7 @@ export async function updateUserRecord(id, data) {
 
   await pool.query(
     `UPDATE users SET ${clauses.join(", ")}, updated_at=NOW() WHERE id=?`,
-    [...values, userId]
+    [...values, userId],
   );
 }
 
@@ -179,7 +185,7 @@ export async function findMyCollection(userId) {
      FROM users u
      INNER JOIN user_hosts uh ON u.id = uh.host_id
      WHERE uh.guest_id = ? AND uh.invitation_status = 'accepted'`,
-    [userId]
+    [userId],
   );
   return rows; // מחזיר רשימה במקום משתמש אחד
 }
@@ -191,7 +197,7 @@ export async function findPendingInvitations(userId) {
      FROM users u
      INNER JOIN user_hosts uh ON u.id = uh.host_id
      WHERE uh.guest_id = ? AND uh.invitation_status = 'pending'`,
-    [userId]
+    [userId],
   );
   return rows; // מחזיר רשימת הזמנות ממתינות
 }
@@ -203,7 +209,7 @@ export async function findConnectedToMe(userId) {
      FROM users u
      INNER JOIN user_hosts uh ON u.id = uh.guest_id
      WHERE uh.host_id = ? AND uh.invitation_status = 'accepted'`,
-    [userId]
+    [userId],
   );
   return rows;
 }
@@ -214,7 +220,7 @@ export async function inviteArtist(artistId, hostId) {
     `INSERT INTO user_hosts (guest_id, host_id, invitation_status)
      VALUES (?, ?, 'pending')
      ON DUPLICATE KEY UPDATE invitation_status = 'pending'`,
-    [artistId, hostId]
+    [artistId, hostId],
   );
   return result.affectedRows > 0;
 }
@@ -223,7 +229,7 @@ export async function inviteArtist(artistId, hostId) {
 export async function uninviteArtist(artistId, hostId) {
   const [result] = await pool.query(
     "DELETE FROM user_hosts WHERE guest_id = ? AND host_id = ?",
-    [artistId, hostId]
+    [artistId, hostId],
   );
   return result.affectedRows > 0;
 }
@@ -234,14 +240,14 @@ export async function leaveCollection(artistId, hostId: number | null = null) {
     // ביטול השתתפות במארח ספציפי
     const [result] = await pool.query(
       "DELETE FROM user_hosts WHERE guest_id = ? AND host_id = ?",
-      [artistId, hostId]
+      [artistId, hostId],
     );
     return result.affectedRows > 0;
   } else {
     // ביטול כל ההשתתפויות (אם לא צוין מארח ספציפי)
     const [result] = await pool.query(
       "DELETE FROM user_hosts WHERE guest_id = ?",
-      [artistId]
+      [artistId],
     );
     return result.affectedRows > 0;
   }
@@ -251,7 +257,7 @@ export async function leaveCollection(artistId, hostId: number | null = null) {
 export async function acceptInvitationStatus(artistId, hostId) {
   const [result] = await pool.query(
     "UPDATE user_hosts SET invitation_status = 'accepted' WHERE guest_id = ? AND host_id = ? AND invitation_status = 'pending'",
-    [artistId, hostId]
+    [artistId, hostId],
   );
   return result.affectedRows > 0;
 }
@@ -260,7 +266,7 @@ export async function acceptInvitationStatus(artistId, hostId) {
 export async function rejectInvitationStatus(artistId, hostId) {
   const [result] = await pool.query(
     "DELETE FROM user_hosts WHERE guest_id = ? AND host_id = ? AND invitation_status = 'pending'",
-    [artistId, hostId]
+    [artistId, hostId],
   );
   return result.affectedRows > 0;
 }
@@ -269,7 +275,7 @@ export async function rejectInvitationStatus(artistId, hostId) {
 export async function isGuest(userId) {
   const [rows] = await pool.query(
     "SELECT host_id FROM user_hosts WHERE guest_id = ? AND invitation_status = 'accepted'",
-    [userId]
+    [userId],
   );
   return rows.map((row) => row.host_id); // מחזיר רשימת מארחים
 }
@@ -278,7 +284,7 @@ export async function isGuest(userId) {
 export async function isHost(userId) {
   const [rows] = await pool.query(
     "SELECT COUNT(*) as count FROM user_hosts WHERE host_id = ? AND invitation_status = 'accepted'",
-    [userId]
+    [userId],
   );
   return Boolean((rows[0]?.count || 0) > 0);
 }
@@ -288,21 +294,21 @@ export async function saveInvitation(email, hostId, token) {
   // בדיקה אם יש הזמנה קיימת לאותו אימייל
   const [existing] = await pool.query(
     "SELECT id FROM user_invitations WHERE email = ? AND host_id = ? AND is_used = 0",
-    [email, hostId]
+    [email, hostId],
   );
 
   if (existing.length > 0) {
     // עדכון הזמנה קיימת
     await pool.query(
       "UPDATE user_invitations SET token = ?, expires_at = DATE_ADD(NOW(), INTERVAL 7 DAY), created_at = NOW() WHERE id = ?",
-      [token, existing[0].id]
+      [token, existing[0].id],
     );
     return existing[0].id;
   } else {
     // יצירת הזמנה חדשה
     const [result] = await pool.query(
       "INSERT INTO user_invitations (email, host_id, token, expires_at) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY))",
-      [email, hostId, token]
+      [email, hostId, token],
     );
     return result.insertId;
   }
@@ -312,7 +318,7 @@ export async function saveInvitation(email, hostId, token) {
 export async function findInvitationByToken(token) {
   const [rows] = await pool.query(
     "SELECT * FROM user_invitations WHERE token = ? AND is_used = 0 AND expires_at > NOW()",
-    [token]
+    [token],
   );
   return rows[0] || null;
 }

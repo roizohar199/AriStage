@@ -20,7 +20,7 @@ export default function Landing() {
       {/* HERO */}
       <section className="flex-1 flex flex-col md:flex-row items-center justify-center gap-10 px-6 pt-10 md:pt-0">
         {/* טקסט */}
-        <div className="text-center md:text-right max-w-lg">
+        <div className="text-center md:text-start max-w-lg">
           <h1 className="text-4xl md:text-6xl font-extrabold text-brand-orange drop-shadow-xl">
             Ari Stage
           </h1>

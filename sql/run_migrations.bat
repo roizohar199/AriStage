@@ -45,6 +45,12 @@ if %errorlevel% neq 0 (
     echo אזהרה: ייתכן שהשדה כבר קיים בטבלת songs
 )
 
+echo [5/5] מוסיף שדה preferred_locale לטבלת users...
+"%MYSQL_PATH%" -u root ari_stage < "%~dp0add_preferred_locale_to_users.sql" 2>&1
+if %errorlevel% neq 0 (
+    echo אזהרה: ייתכן שהשדה כבר קיים בטבלת users
+)
+
 echo.
 echo ========================================
 echo   ✅ Migrations הורצו!

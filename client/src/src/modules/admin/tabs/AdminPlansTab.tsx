@@ -570,7 +570,7 @@ export default function AdminPlansTab({
           </div>
         ) : (
           <div className="bg-neutral-800 rounded-2xl p-4 overflow-x-auto">
-            <table className="min-w-full text-sm text-right">
+            <table className="min-w-full text-sm text-start">
               <thead>
                 <tr className="border-b border-neutral-700 text-neutral-300">
                   <th className="px-3 py-2 font-semibold">key</th>
@@ -705,7 +705,7 @@ export default function AdminPlansTab({
           </div>
         ) : (
           <div className="bg-neutral-800 rounded-2xl p-4 overflow-x-auto">
-            <table className="min-w-full text-sm text-right">
+            <table className="min-w-full text-sm text-start">
               <thead>
                 <tr className="border-b border-neutral-700 text-neutral-300">
                   <th className="px-3 py-2 font-semibold">משתמש</th>

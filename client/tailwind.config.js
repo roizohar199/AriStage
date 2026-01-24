@@ -25,21 +25,19 @@ export default {
         brand: {
           orange: "#F59E0B", // 🍊 צבע כתום עיקרי
           orangeLight: "#ffb93f", // ✨ צבע כתום בהיר להובר/הארה
-          orangeDark: "#ce8200", // ✨ צבע כתום בהיר להובר/הארה
-          dark: "#0A0A0A", // 🖤 רקע כהה ראשי
-          mid: "#1C1C1E", // 🌑 אפור כהה
-          light: "#F2F2F7", // ☁️ טקסט/רקע בהיר
+          orangeDark: "#ce8200", // ✨ צבע כתום כהה להובר/הארה
         },
         neutral: {
-          950: "#0A0A0A",
-          900: "#121212",
-          800: "#1A1A1A",
+          950: "rgb(var(--neutral-950) / <alpha-value>)",
+          900: "rgb(var(--neutral-900) / <alpha-value>)",
+          800: "rgb(var(--neutral-800) / <alpha-value>)",
+          700: "rgb(var(--neutral-700) / <alpha-value>)",
+          600: "rgb(var(--neutral-600) / <alpha-value>)",
+          400: "rgb(var(--neutral-400) / <alpha-value>)",
+          300: "rgb(var(--neutral-300) / <alpha-value>)",
+          200: "rgb(var(--neutral-200) / <alpha-value>)",
+          100: "rgb(var(--neutral-100) / <alpha-value>)",
         },
-      },
-
-      // 🌫️ זכוכית
-      backdropBlur: {
-        glass: "20px",
       },
 
       // 🟧 צללים

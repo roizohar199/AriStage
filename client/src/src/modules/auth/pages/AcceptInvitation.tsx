@@ -50,10 +50,7 @@ export default function AcceptInvitation() {
   };
 
   return (
-    <div
-      dir="rtl"
-      className="min-h-screen bg-gradient-to-b from-[#0A0A0A] via-[#121212] to-[#1C1C1E] flex items-center justify-center p-4"
-    >
+    <div className="min-h-screen bg-gradient-to-b from-[#0A0A0A] via-[#121212] to-[#1C1C1E] flex items-center justify-center p-4">
       <div className="bg-neutral-900 rounded-2xl w-full max-w-md p-8 border border-neutral-800 shadow-xl">
         {loading ? (
           <div className="text-center">
@@ -75,7 +72,9 @@ export default function AcceptInvitation() {
         ) : needsLogin ? (
           <div className="text-center">
             <div className="text-green-400 text-xl mb-4">✅</div>
-            <h2 className="text-2xl font-bold text-white mb-2">הצטרפת למאגר!</h2>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              הצטרפת למאגר!
+            </h2>
             <p className="text-neutral-400 mb-6">{message}</p>
             <button
               onClick={() => navigate("/login")}
@@ -93,7 +92,11 @@ export default function AcceptInvitation() {
               האימייל שלך: <strong>{invitationEmail}</strong>
             </p>
             <button
-              onClick={() => navigate(`/login?tab=register&email=${encodeURIComponent(invitationEmail)}`)}
+              onClick={() =>
+                navigate(
+                  `/login?tab=register&email=${encodeURIComponent(invitationEmail)}`,
+                )
+              }
               className="bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold px-6 py-3 rounded-lg"
             >
               צור חשבון חדש
@@ -111,4 +114,3 @@ export default function AcceptInvitation() {
     </div>
   );
 }
-
