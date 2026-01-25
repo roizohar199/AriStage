@@ -16,7 +16,7 @@ export default function BottomNav() {
 
   const nav = useMemo(
     () => getNavItems(role, pendingCount),
-    [role, pendingCount]
+    [role, pendingCount],
   );
 
   return (
@@ -31,15 +31,15 @@ export default function BottomNav() {
               `flex flex-col items-center justify-center text-center relative flex-1
            ${
              isActive
-               ? "text-brand-orange font-semibold"
-               : "text-neutral-300 font-semibold hover:text-white"
+               ? "text-brand-primary font-semibold"
+               : "text-neutral-300 font-semibold hover:text-neutral-100"
            }`
             }
           >
             <div className="relative">
               {icon}
               {badge && badge > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-black">
+                <span className="absolute -top-1 -right-1 bg-red-500 text-neutral-100 text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-black">
                   {badge > 9 ? "9+" : badge}
                 </span>
               )}

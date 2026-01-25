@@ -60,11 +60,11 @@ export default function AcceptInvitation() {
         ) : error ? (
           <div className="text-center">
             <div className="text-red-400 text-xl mb-4">❌</div>
-            <h2 className="text-2xl font-bold text-white mb-2">שגיאה</h2>
+            <h2 className="text-2xl font-bold text-neutral-100 mb-2">שגיאה</h2>
             <p className="text-neutral-400 mb-6">{error}</p>
             <button
               onClick={() => navigate("/login")}
-              className="bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold px-6 py-3 rounded-lg"
+              className="bg-brand-primary hover:bg-brand-primaryLight text-black font-semibold px-6 py-3 rounded-lg"
             >
               חזרה להתחברות
             </button>
@@ -72,21 +72,23 @@ export default function AcceptInvitation() {
         ) : needsLogin ? (
           <div className="text-center">
             <div className="text-green-400 text-xl mb-4">✅</div>
-            <h2 className="text-2xl font-bold text-white mb-2">
+            <h2 className="text-2xl font-bold text-neutral-100 mb-2">
               הצטרפת למאגר!
             </h2>
             <p className="text-neutral-400 mb-6">{message}</p>
             <button
               onClick={() => navigate("/login")}
-              className="bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold px-6 py-3 rounded-lg"
+              className="bg-brand-primary hover:bg-brand-primaryLight text-black font-semibold px-6 py-3 rounded-lg"
             >
               התחבר עכשיו
             </button>
           </div>
         ) : needsRegistration ? (
           <div className="text-center">
-            <div className="text-brand-orange text-xl mb-4">🎵</div>
-            <h2 className="text-2xl font-bold text-white mb-2">הצטרף למאגר</h2>
+            <div className="text-brand-primary text-xl mb-4">🎵</div>
+            <h2 className="text-2xl font-bold text-neutral-100 mb-2">
+              הצטרף למאגר
+            </h2>
             <p className="text-neutral-400 mb-6">{message}</p>
             <p className="text-neutral-500 text-sm mb-6">
               האימייל שלך: <strong>{invitationEmail}</strong>
@@ -97,7 +99,7 @@ export default function AcceptInvitation() {
                   `/login?tab=register&email=${encodeURIComponent(invitationEmail)}`,
                 )
               }
-              className="bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold px-6 py-3 rounded-lg"
+              className="bg-brand-primary hover:bg-brand-primaryLight text-black font-semibold px-6 py-3 rounded-lg"
             >
               צור חשבון חדש
             </button>
@@ -105,7 +107,7 @@ export default function AcceptInvitation() {
         ) : (
           <div className="text-center">
             <div className="text-green-400 text-xl mb-4">✅</div>
-            <h2 className="text-2xl font-bold text-white mb-2">הצלחה!</h2>
+            <h2 className="text-2xl font-bold text-neutral-100 mb-2">הצלחה!</h2>
             <p className="text-neutral-400 mb-6">{message}</p>
             <p className="text-neutral-500 text-sm">מעביר לדף ההתחברות...</p>
           </div>

@@ -16,12 +16,12 @@ export default function Landing() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen text-white flex flex-col">
+    <div className="min-h-screen text-neutral-100 flex flex-col">
       {/* HERO */}
       <section className="flex-1 flex flex-col md:flex-row items-center justify-center gap-10 px-6 pt-10 md:pt-0">
         {/* טקסט */}
         <div className="text-center md:text-start max-w-lg">
-          <h1 className="text-4xl md:text-6xl font-extrabold text-brand-orange drop-shadow-xl">
+          <h1 className="text-4xl md:text-6xl font-extrabold text-brand-primary drop-shadow-xl">
             Ari Stage
           </h1>
 
@@ -35,7 +35,7 @@ export default function Landing() {
             {/* התחברות */}
             <button
               onClick={() => navigate("/login")}
-              className="bg-brand-orange text-black font-bold px-4 py-2 rounded-2xl transition flex items-center justify-center gap-2 shadow-xl text-sm hover:bg-brand-orangeLight"
+              className="bg-brand-primary text-black font-bold px-4 py-2 rounded-2xl transition flex items-center justify-center gap-2 shadow-xl text-sm hover:bg-brand-primaryLight"
             >
               התחברות
             </button>
@@ -54,8 +54,8 @@ export default function Landing() {
                 const el = document.getElementById("why");
                 if (el) el.scrollIntoView({ behavior: "smooth" });
               }}
-              className="bg-brand-orange/20 flex flex-row-reverse px-4 py-2 rounded-2xl text-brand-orange
-              hover:bg-brand-orange/50 hover:text-white transition flex items-center justify-center gap-2 text-sm"
+              className="bg-brand-primary/20 flex flex-row-reverse px-4 py-2 rounded-2xl text-brand-primary
+              hover:bg-brand-primary/50 hover:text-neutral-100 transition flex items-center justify-center gap-2 text-sm"
             >
               <Play size={18} />
               צפה בדמו
@@ -76,14 +76,14 @@ export default function Landing() {
 
       {/* למה אנחנו – גרסה חדשה ומוכרת */}
       <section id="why" className="py-12 px-5 rounded-2xl mt-10">
-        <h2 className="text-center text-3xl font-bold mb-12 text-brand-orange">
+        <h2 className="text-center text-3xl font-bold mb-12 text-brand-primary">
           למה דווקא Ari Stage?
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto">
           {/* מאגר שירים */}
           <div className="bg-neutral-800 p-6 rounded-2xl shadow-md">
-            <ListMusic size={38} className="text-brand-orange mb-4" />
+            <ListMusic size={38} className="text-brand-primary mb-4" />
             <h3 className="text-xl font-semibold mb-2">מאגר שירים חכם</h3>
             <p className="text-neutral-400 text-sm leading-relaxed">
               כל השירים שלך במקום אחד — כולל BPM, סולם, תגיות, אורך השיר, הערות,
@@ -93,7 +93,7 @@ export default function Landing() {
 
           {/* שיתוף לינאפים אונליין */}
           <div className="bg-neutral-800 p-6 rounded-2xl shadow-md">
-            <Share2 size={38} className="text-brand-orange mb-4" />
+            <Share2 size={38} className="text-brand-primary mb-4" />
             <h3 className="text-xl font-semibold mb-2">שיתוף לינאפ בלחיצה</h3>
             <p className="text-neutral-400 text-sm leading-relaxed">
               שלח לינק לכל הצוות — זמרים, נגנים והפקה — שמתעדכן אונליין עד הרגע
@@ -103,7 +103,7 @@ export default function Landing() {
 
           {/* ליינאפים חכמים */}
           <div className="bg-neutral-800 p-6 rounded-2xl shadow-md">
-            <Music2 size={38} className="text-brand-orange mb-4" />
+            <Music2 size={38} className="text-brand-primary mb-4" />
             <h3 className="text-xl font-semibold mb-2">לינאפים חכמים</h3>
             <p className="text-neutral-400 text-sm leading-relaxed">
               גרירה ושחרור, סדר מהיר, חישוב זמני הופעה אוטומטיים, שמירה, שיתוף
@@ -113,7 +113,7 @@ export default function Landing() {
 
           {/* עדכון בזמן אמת */}
           <div className="bg-neutral-800 p-6 rounded-2xl shadow-md">
-            <Cloud size={38} className="text-brand-orange mb-4" />
+            <Cloud size={38} className="text-brand-primary mb-4" />
             <h3 className="text-xl font-semibold mb-2">עדכונים בזמן אמת</h3>
             <p className="text-neutral-400 text-sm leading-relaxed">
               כל שינוי שאתה מבצע — שיר שנוסף, זמן שהשתנה, הערה שנוספה — מתעדכן
@@ -123,7 +123,7 @@ export default function Landing() {
 
           {/* ניהול אירועים */}
           <div className="bg-neutral-800 p-6 rounded-2xl shadow-md">
-            <Timer size={38} className="text-brand-orange mb-4" />
+            <Timer size={38} className="text-brand-primary mb-4" />
             <h3 className="text-xl font-semibold mb-2">
               ניהול הופעות ואירועים
             </h3>
@@ -135,7 +135,7 @@ export default function Landing() {
 
           {/* אוטומציה חכמה */}
           <div className="bg-neutral-800 p-6 rounded-2xl shadow-md">
-            <Wand2 size={38} className="text-brand-orange mb-4" />
+            <Wand2 size={38} className="text-brand-primary mb-4" />
             <h3 className="text-xl font-semibold mb-2">
               אוטומציה ו-AI בהופעות
             </h3>

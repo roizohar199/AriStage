@@ -71,12 +71,12 @@ function SmallBadge({
 }) {
   const cls =
     variant === "brand"
-      ? "bg-brand-orange text-black font-semibold"
+      ? "bg-brand-primary text-black font-semibold"
       : variant === "success"
-        ? "bg-green-600 text-white font-semibold"
+        ? "bg-green-600 text-neutral-100 font-semibold"
         : variant === "danger"
-          ? "bg-red-600 text-white font-semibold"
-          : "bg-neutral-900 text-white";
+          ? "bg-red-600 text-neutral-100 font-semibold"
+          : "bg-neutral-900 text-neutral-100";
 
   return (
     <span
@@ -424,7 +424,7 @@ export default function AdminReal() {
   // Render
   // ========================
   return (
-    <div className="min-h-screen text-white p-6">
+    <div className="min-h-screen text-neutral-100 p-6">
       <header className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">אדמין</h1>
       </header>

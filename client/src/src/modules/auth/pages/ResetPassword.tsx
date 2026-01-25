@@ -36,9 +36,9 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-neutral-900 text-white px-4">
+    <div className="flex justify-center items-center min-h-screen bg-neutral-900 text-neutral-100 px-4">
       <div className="w-full max-w-sm bg-neutral-800 border border-neutral-700 p-6 rounded-2xl">
-        <h2 className="text-2xl font-bold text-brand-orange text-center mb-4">
+        <h2 className="text-2xl font-bold text-brand-primary text-center mb-4">
           איפוס סיסמה
         </h2>
 
@@ -51,7 +51,7 @@ export default function ResetPassword() {
             placeholder="סיסמה חדשה"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 p-2 rounded-xl text-sm"
+            className="w-full bg-neutral-100/5 border border-neutral-100/10 p-2 rounded-xl text-sm"
           />
 
           <input
@@ -59,12 +59,12 @@ export default function ResetPassword() {
             placeholder="אימות סיסמה"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 p-2 rounded-xl text-sm"
+            className="w-full bg-neutral-100/5 border border-neutral-100/10 p-2 rounded-xl text-sm"
           />
 
           <button
             disabled={loading}
-            className="w-full bg-brand-orange text-black font-bold py-2 rounded-xl"
+            className="w-full bg-brand-primary text-black font-bold py-2 rounded-xl"
           >
             {loading ? "מעדכן..." : "עדכן סיסמה"}
           </button>

@@ -195,7 +195,7 @@ export default function MyArtist() {
   };
 
   return (
-    <div className="min-h-screen text-white p-6">
+    <div className="min-h-screen text-neutral-100 p-6">
       <header className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">משותפים</h1>
       </header>

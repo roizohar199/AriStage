@@ -240,7 +240,7 @@ export default function AdminFilesTab({
         <div className="flex items-center gap-2">
           <span className="text-xs text-neutral-400">סינון לפי משתמש</span>
           <select
-            className="bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white"
+            className="bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-neutral-100"
             value={filterUserId}
             onChange={(e) => setFilterUserId(e.target.value)}
           >
@@ -308,7 +308,7 @@ export default function AdminFilesTab({
         filteredFiles.map((f) => (
           <CardContainer key={f.storage_path || String(f.id)}>
             <div className="flex-1 min-w-0 text-start">
-              <h3 className="text-lg font-bold text-white mb-1">
+              <h3 className="text-lg font-bold text-neutral-100 mb-1">
                 {f.name ||
                   f.file_name ||
                   f.storage_path ||
@@ -340,7 +340,7 @@ export default function AdminFilesTab({
                   href={resolveFileHref(f.file_url) as string}
                   target="_blank"
                   rel="noreferrer"
-                  className="w-6 h-6 text-neutral-300 hover:text-white"
+                  className="w-6 h-6 text-neutral-300 hover:text-neutral-100"
                   title="פתח"
                 >
                   <ExternalLink size={20} />

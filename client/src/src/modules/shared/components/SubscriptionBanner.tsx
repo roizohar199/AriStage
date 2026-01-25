@@ -56,13 +56,13 @@ export default function SubscriptionBanner() {
   };
 
   return (
-    <div className="relative left-1/2 w-screen -translate-x-1/2 bg-gradient-to-r from-brand-orange to-brand-orangeDark text-white py-4">
+    <div className="relative left-1/2 w-screen -translate-x-1/2 bg-gradient-to-r from-brand-primary to-brand-primaryDark text-neutral-100 py-4">
       <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3 text-start">
           <AlertCircle className="h-6 w-6 flex-shrink-0" />
           <div>
             <h3 className="font-semibold text-lg">תקופת הניסיון הסתיימה</h3>
-            <p className="text-sm text-white/90">
+            <p className="text-sm text-neutral-100/90">
               כדי להמשיך להשתמש במערכת יש לשדרג מנוי • מחיר:{" "}
               <strong dir="ltr">
                 {priceLoading
@@ -76,7 +76,7 @@ export default function SubscriptionBanner() {
         </div>
         <button
           onClick={handleUpgrade}
-          className="bg-white text-orange-600 font-semibold px-6 py-2 rounded-lg hover:bg-orange-50 transition-colors whitespace-nowrap"
+          className="bg-neutral-100 text-orange-600 font-semibold px-6 py-2 rounded-lg hover:bg-orange-50 transition-colors whitespace-nowrap"
         >
           שדרג עכשיו
         </button>

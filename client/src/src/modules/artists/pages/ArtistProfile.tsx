@@ -346,8 +346,8 @@ export default function ArtistProfile() {
   };
 
   return (
-    <div className="min-h-screen text-white pb-20">
-      <div className="min-h-screen text-white p-6">
+    <div className="min-h-screen text-neutral-100 pb-20">
+      <div className="min-h-screen text-neutral-100 p-6">
         <header className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">משותפים</h1>
         </header>
@@ -355,9 +355,9 @@ export default function ArtistProfile() {
           {loading || error || !artist ? (
             <>
               {loading && (
-                <div className="min-h-[200px] flex items-center justify-center text-white">
+                <div className="min-h-[200px] flex items-center justify-center text-neutral-100">
                   <div className="text-center">
-                    <div className="w-12 h-12 border-4 border-brand-orange border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                     <p className="text-neutral-400">טוען נתונים...</p>
                   </div>
                 </div>
@@ -377,7 +377,7 @@ export default function ArtistProfile() {
                       }
                       navigate("/my");
                     }}
-                    className="bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold px-6 py-3 rounded-lg"
+                    className="bg-brand-primary hover:bg-brand-primaryLight text-black font-semibold px-6 py-3 rounded-lg"
                   >
                     חזרה לדף הבית
                   </button>

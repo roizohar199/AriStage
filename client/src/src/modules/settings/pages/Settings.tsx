@@ -360,7 +360,7 @@ export default function Settings() {
     return <div className="text-center text-neutral-400 p-6">טוען...</div>;
 
   return (
-    <div className="min-h-screen text-white p-6">
+    <div className="min-h-screen text-neutral-100 p-6">
       {/* כותרת עליונה */}
       <header className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">הגדרות מערכת</h1>
@@ -369,12 +369,12 @@ export default function Settings() {
       {(error || success) && (
         <div className="mb-6 space-y-2">
           {error && (
-            <div className="bg-neutral-950/50 border border-neutral-800 rounded-2xl p-4 text-white">
+            <div className="bg-neutral-950/50 border border-neutral-800 rounded-2xl p-4 text-neutral-100">
               {error}
             </div>
           )}
           {success && (
-            <div className="bg-neutral-950/50 border border-neutral-800 rounded-2xl p-4 text-white">
+            <div className="bg-neutral-950/50 border border-neutral-800 rounded-2xl p-4 text-neutral-100">
               {success}
             </div>
           )}

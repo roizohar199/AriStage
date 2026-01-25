@@ -25,8 +25,8 @@ export default function ConfirmModal({
 }: ConfirmModalProps) {
   const confirmButtonClassName =
     variant === "confirm"
-      ? "bg-brand-orange text-black"
-      : "bg-red-600 hover:bg-red-500 text-white";
+      ? "bg-brand-primary text-black"
+      : "bg-red-600 hover:bg-red-500 text-neutral-100";
 
   return (
     <BaseModal
@@ -54,7 +54,7 @@ export default function ConfirmModal({
           </button>
 
           <button
-            className={`px-5 py-2 font-bold rounded-2xl hover:bg-brand-orangeLight ${confirmButtonClassName}`}
+            className={`px-5 py-2 font-bold rounded-2xl hover:bg-brand-primaryLight ${confirmButtonClassName}`}
             onClick={onConfirm}
             type="button"
           >

@@ -74,7 +74,7 @@ export default function SubscriptionBlocked() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
       <div className="bg-neutral-800 rounded-2xl p-6 border border-neutral-700">
-        <h1 className="text-2xl font-bold text-white">נדרש מנוי פעיל</h1>
+        <h1 className="text-2xl font-bold text-neutral-100">נדרש מנוי פעיל</h1>
         <p className="text-neutral-300 mt-2 leading-relaxed">
           הגישה לחשבון שלך חסומה כרגע כי אין מנוי פעיל.
           <br />
@@ -88,7 +88,7 @@ export default function SubscriptionBlocked() {
         <div className="mt-6 bg-neutral-900 rounded-2xl p-4 border border-neutral-800">
           <div className="flex items-center justify-between">
             <span className="text-neutral-300">מסלולים זמינים</span>
-            <span className="text-white font-bold">
+            <span className="text-neutral-100 font-bold">
               {loading ? "טוען..." : ""}
             </span>
           </div>

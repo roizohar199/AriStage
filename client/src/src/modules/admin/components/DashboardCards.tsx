@@ -22,7 +22,7 @@ export default function DashboardCards({
           key={`${c.label}-${idx}`}
           className="bg-neutral-800 rounded-2xl p-4 flex items-center gap-4"
         >
-          <div className="text-brand-orange shrink-0">{c.icon}</div>
+          <div className="text-brand-primary shrink-0">{c.icon}</div>
           <div className="flex flex-col">
             <span className="text-xl font-bold">{c.value}</span>
             <span className="text-sm text-neutral-300">{c.label}</span>

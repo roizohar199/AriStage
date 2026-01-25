@@ -270,7 +270,7 @@ export default function AdminModelsTab({
       <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex flex-col">
-            <div className="text-white font-bold">מודלים (Modules)</div>
+            <div className="text-neutral-100 font-bold">מודלים (Modules)</div>
             <div className="text-xs text-neutral-400">
               הפעלה/כיבוי מודולים דרך Feature Flags (`module.*`)
             </div>
@@ -371,7 +371,9 @@ export default function AdminModelsTab({
           {filteredModules.map((m) => (
             <CardContainer key={m.key}>
               <div className="flex-1 min-w-0 text-start">
-                <h3 className="text-lg font-bold text-white mb-1">{m.label}</h3>
+                <h3 className="text-lg font-bold text-neutral-100 mb-1">
+                  {m.label}
+                </h3>
                 <div className="flex flex-wrap gap-2 mt-2">
                   <SmallBadge variant="neutral">{m.key}</SmallBadge>
                   {m.source === "default" ? (

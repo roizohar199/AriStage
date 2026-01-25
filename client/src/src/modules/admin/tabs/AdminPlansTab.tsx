@@ -545,7 +545,7 @@ export default function AdminPlansTab({
     <div className="space-y-6">
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="text-lg font-bold text-white">ניהול מסלולים</h3>
+          <h3 className="text-lg font-bold text-neutral-100">ניהול מסלולים</h3>
           {canEdit ? (
             <DesignActionButton onClick={openCreate} type="button">
               <span className="inline-flex items-center gap-2">
@@ -590,7 +590,7 @@ export default function AdminPlansTab({
                       key={p.id}
                       className="border-b border-neutral-800 last:border-0"
                     >
-                      <td className="px-3 py-2 whitespace-nowrap text-white">
+                      <td className="px-3 py-2 whitespace-nowrap text-neutral-100">
                         {p.key}
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap text-neutral-100">
@@ -608,7 +608,9 @@ export default function AdminPlansTab({
                       <td className="px-3 py-2 whitespace-nowrap text-neutral-200">
                         <span
                           className={
-                            p.enabled ? "text-brand-orange" : "text-neutral-400"
+                            p.enabled
+                              ? "text-brand-primary"
+                              : "text-neutral-400"
                           }
                         >
                           {p.enabled ? "כן" : "לא"}
@@ -619,7 +621,7 @@ export default function AdminPlansTab({
                           {canEdit ? (
                             <button
                               onClick={() => openEdit(p)}
-                              className="w-7 h-7 text-white hover:text-brand-orange"
+                              className="w-7 h-7 text-neutral-100 hover:text-brand-primary"
                               title="עריכה"
                               type="button"
                             >
@@ -630,7 +632,7 @@ export default function AdminPlansTab({
                           {canEdit ? (
                             <button
                               onClick={() => handleDelete(p)}
-                              className="w-7 h-7 text-white hover:text-red-500"
+                              className="w-7 h-7 text-neutral-100 hover:text-red-500"
                               title="מחיקה"
                               type="button"
                               disabled={isToggling}
@@ -642,7 +644,7 @@ export default function AdminPlansTab({
                           {canEdit ? (
                             <button
                               onClick={() => disablePlan(p)}
-                              className="text-white"
+                              className="text-neutral-100"
                               title="השבת מסלול"
                               type="button"
                               disabled={isToggling || !p.enabled}
@@ -660,12 +662,12 @@ export default function AdminPlansTab({
                             >
                               {p.enabled ? (
                                 <ToggleRight
-                                  className="text-brand-orange"
+                                  className="text-brand-primary"
                                   size={25}
                                 />
                               ) : (
                                 <ToggleLeft
-                                  className="text-white hover:text-brand-orange"
+                                  className="text-neutral-100 hover:text-brand-primary"
                                   size={25}
                                 />
                               )}
@@ -689,7 +691,7 @@ export default function AdminPlansTab({
       </div>
 
       <div className="space-y-3">
-        <h3 className="text-lg font-bold text-white">תשלומים</h3>
+        <h3 className="text-lg font-bold text-neutral-100">תשלומים</h3>
 
         {paymentsLoading ? (
           <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-6 text-center text-neutral-400">
@@ -722,7 +724,7 @@ export default function AdminPlansTab({
                     key={p.id}
                     className="border-b border-neutral-800 last:border-0"
                   >
-                    <td className="px-3 py-2 whitespace-nowrap text-white">
+                    <td className="px-3 py-2 whitespace-nowrap text-neutral-100">
                       {p.full_name || "—"}
                     </td>
                     <td

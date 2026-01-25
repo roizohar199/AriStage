@@ -61,7 +61,7 @@ function PersonalStats({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div className="bg-neutral-800 rounded-2xl p-4 flex items-center gap-4">
-        <Music size={32} className="text-brand-orange shrink-0" />
+        <Music size={32} className="text-brand-primary shrink-0" />
         <div className="flex flex-col">
           <span className="text-xl font-bold">{stats?.songs ?? 0}</span>
           <span className="text-sm text-neutral-300">שירים שלי </span>
@@ -69,7 +69,7 @@ function PersonalStats({
       </div>
 
       <div className="bg-neutral-800 rounded-2xl p-4 flex items-center gap-4">
-        <CalendarCheck size={32} className="text-brand-orange shrink-0" />
+        <CalendarCheck size={32} className="text-brand-primary shrink-0" />
         <div className="flex flex-col">
           <span className="text-xl font-bold">{stats?.lineups ?? 0}</span>
           <span className="text-sm text-neutral-300">ליינאפים שלי</span>
@@ -77,7 +77,7 @@ function PersonalStats({
       </div>
 
       <div className="bg-neutral-800 rounded-2xl p-4 flex items-center gap-4">
-        <Users size={32} className="text-brand-orange shrink-0" />
+        <Users size={32} className="text-brand-primary shrink-0" />
         <div className="flex flex-col">
           <span className="text-xl font-bold">{connectedArtistsCount}</span>
           <span className="text-sm text-neutral-300">אמנים שלי </span>
@@ -794,7 +794,7 @@ function MyContent(): JSX.Element {
 
   // --- רנדר ---
   return (
-    <div className="min-h-screen text-white p-6">
+    <div className="min-h-screen text-neutral-100 p-6">
       <header className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">אישי</h1>
       </header>

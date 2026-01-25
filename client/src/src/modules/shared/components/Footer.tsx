@@ -134,7 +134,7 @@ export default function Footer() {
                 <button
                   key={section.key}
                   type="button"
-                  className="text-neutral-300 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20 rounded"
+                  className="text-neutral-300 hover:text-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20 rounded"
                   aria-expanded={isOpen}
                   aria-controls={`footer-section-${section.key}`}
                   onClick={() =>
@@ -160,12 +160,12 @@ export default function Footer() {
                 className="w-full rounded-xl border border-neutral-800 bg-neutral-950/40 p-4 text-start"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <h3 className="text-sm font-semibold text-white">
+                  <h3 className="text-sm font-semibold text-neutral-100">
                     {section.title}
                   </h3>
                   <button
                     type="button"
-                    className="text-neutral-400 hover:text-white text-sm"
+                    className="text-neutral-400 hover:text-neutral-100 text-sm"
                     onClick={() => setOpenSection(null)}
                   >
                     סגור

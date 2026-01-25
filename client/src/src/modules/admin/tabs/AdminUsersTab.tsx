@@ -190,7 +190,7 @@ export default function AdminUsersTab({
             .map((u) => (
               <CardContainer key={u.id}>
                 <div className="flex-1 min-w-0 text-start">
-                  <h3 className="text-lg font-bold text-white mb-1">
+                  <h3 className="text-lg font-bold text-neutral-100 mb-1">
                     {u.full_name ? u.full_name : ""}
                   </h3>
 
@@ -219,7 +219,7 @@ export default function AdminUsersTab({
                 <div className="flex gap-6 items-center">
                   <button
                     onClick={() => impersonateUser(u.id)}
-                    className="w-6 h-6 text-white hover:text-brand-orange"
+                    className="w-6 h-6 text-neutral-100 hover:text-brand-primary"
                     title="ייצוג"
                     type="button"
                   >
@@ -228,7 +228,7 @@ export default function AdminUsersTab({
 
                   <button
                     onClick={() => openEditUser(u)}
-                    className="w-6 h-6 text-white hover:text-brand-orange"
+                    className="w-6 h-6 text-neutral-100 hover:text-brand-primary"
                     title="עריכה"
                     type="button"
                   >

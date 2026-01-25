@@ -270,17 +270,17 @@ export default function UpgradeModal({
               className={`mt-0.5 rounded-2xl p-3 border ${
                 isExpired
                   ? "bg-red-500/10 border-red-500/20"
-                  : "bg-brand-orange/10 border-brand-orange/20"
+                  : "bg-brand-primary/10 border-brand-primary/20"
               }`}
             >
               <AlertTriangle
                 className={`h-6 w-6 ${
-                  isExpired ? "text-red-400" : "text-brand-orange"
+                  isExpired ? "text-red-400" : "text-brand-primary"
                 }`}
               />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white">{title}</h2>
+              <h2 className="text-2xl font-bold text-neutral-100">{title}</h2>
               <p className="text-sm text-neutral-300 mt-1">{subtitle}</p>
             </div>
           </div>
@@ -289,7 +289,10 @@ export default function UpgradeModal({
           <div className="flex flex-col items-end gap-2">
             <div className="inline-flex items-center gap-2 rounded-2xl bg-neutral-800 px-3 py-2">
               <span className="text-xs text-neutral-400">מסלול נוכחי</span>
-              <span className="text-sm font-semibold text-white" dir="ltr">
+              <span
+                className="text-sm font-semibold text-neutral-100"
+                dir="ltr"
+              >
                 {currentTier}
               </span>
             </div>
@@ -298,7 +301,7 @@ export default function UpgradeModal({
               <span className="text-xs text-neutral-400">
                 {isExpired ? "הסתיים" : isTrial ? "ניסיון עד" : "בתוקף עד"}
               </span>
-              <span className="text-sm font-semibold text-white">
+              <span className="text-sm font-semibold text-neutral-100">
                 {expiryDate}
               </span>
             </div>
@@ -314,7 +317,7 @@ export default function UpgradeModal({
           <div className="space-y-5">
             {/* Plans list */}
             <div>
-              <div className="text-xl font-semibold text-white">
+              <div className="text-xl font-semibold text-neutral-100">
                 בחר/י מסלול
               </div>
               <div className="text-sm text-neutral-500">
@@ -339,8 +342,8 @@ export default function UpgradeModal({
                   onClick={() => setSelectedBillingPeriod("monthly")}
                   className={`px-4 py-2 rounded-2xl text-sm font-semibold transition ${
                     selectedBillingPeriod === "monthly"
-                      ? "bg-white text-black"
-                      : "text-neutral-300 hover:text-white"
+                      ? "bg-neutral-100 text-black"
+                      : "text-neutral-300 hover:text-neutral-100"
                   }`}
                 >
                   חודשי
@@ -350,8 +353,8 @@ export default function UpgradeModal({
                   onClick={() => setSelectedBillingPeriod("yearly")}
                   className={`px-4 py-2 rounded-2xl text-sm font-semibold transition ${
                     selectedBillingPeriod === "yearly"
-                      ? "bg-white text-black"
-                      : "text-neutral-300 hover:text-white"
+                      ? "bg-neutral-100 text-black"
+                      : "text-neutral-300 hover:text-neutral-100"
                   }`}
                 >
                   שנתי
@@ -392,19 +395,19 @@ export default function UpgradeModal({
                         <div
                           className={`rounded-xl p-2 border ${
                             isSelected
-                              ? "bg-brand-orange/10 border-brand-orange/30 text-brand-orange"
-                              : "bg-neutral-950/30 border-neutral-800 text-neutral-300 group-hover:text-white"
+                              ? "bg-brand-primary/10 border-brand-primary/30 text-brand-primary"
+                              : "bg-neutral-950/30 border-neutral-800 text-neutral-300 group-hover:text-neutral-100"
                           }`}
                         >
                           {planIcon(plan)}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-white">
+                            <h3 className="font-semibold text-neutral-100">
                               {plan.name}
                             </h3>
                             {isSelected ? (
-                              <span className="inline-flex items-center gap-1 rounded-lg bg-brand-orange text-black text-xs font-bold px-2 py-1">
+                              <span className="inline-flex items-center gap-1 rounded-lg bg-brand-primary text-black text-xs font-bold px-2 py-1">
                                 <Check className="h-3.5 w-3.5" />
                                 נבחר
                               </span>
@@ -425,10 +428,10 @@ export default function UpgradeModal({
 
                       <div className="text-left" dir="ltr">
                         <div className="text-xs text-neutral-400">סה"כ</div>
-                        <div className="text-xl font-bold text-white">
+                        <div className="text-xl font-bold text-neutral-100">
                           {plan.currency} {primaryPrice}
                         </div>
-                        <div className="text-xs text-neutral-500">
+                        <div className="text-xs text-neutral-100/70 mt-1">
                           {cadence}
                         </div>
                       </div>
@@ -455,25 +458,25 @@ export default function UpgradeModal({
               <div className="rounded-2xl bg-neutral-700 p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <div className="text-sm font-semibold text-white">
+                    <div className="text-sm font-semibold text-neutral-100">
                       סיכום תשלום
                     </div>
-                    <div className="text-xs text-white/70 mt-1">
+                    <div className="text-xs text-neutral-100/70 mt-1">
                       {selectedPlan?.name} {billingSummary.label}
                     </div>
                     {billingSummary.secondary ? (
-                      <div className="rounded-2xl bg-neutral-800/50 px-3 py-2 text-xs text-white mt-2 font-bold">
+                      <div className="rounded-2xl bg-neutral-800/50 px-3 py-2 text-xs text-neutral-100 mt-2 font-bold">
                         {billingSummary.secondary}
                       </div>
                     ) : null}
                   </div>
 
                   <div className="text-end">
-                    <div className="text-xs text-white/70">לתשלום</div>
-                    <div className="text-2xl font-bold text-white">
+                    <div className="text-xs text-neutral-100/70">לתשלום</div>
+                    <div className="text-2xl font-bold text-neutral-100">
                       {billingSummary.currency} {billingSummary.amount}
                     </div>
-                    <div className="text-xs text-white/70">
+                    <div className="text-xs text-neutral-100/70">
                       {billingSummary.cadence}
                     </div>
                   </div>
@@ -491,7 +494,7 @@ export default function UpgradeModal({
         <button
           onClick={handleUpgrade}
           disabled={submitting || !selectedPlan || !isSelectedPlanEnabled}
-          className="w-full px-6 py-3 bg-brand-orange hover:bg-brand-orangeLight disabled:opacity-70 disabled:cursor-not-allowed text-black font-semibold rounded-2xl transition-colors"
+          className="w-full px-6 py-3 bg-brand-primary hover:bg-brand-primaryLight disabled:opacity-70 disabled:cursor-not-allowed text-black font-semibold rounded-2xl transition-colors"
         >
           {submitting
             ? "מבצע שדרוג (בדיקה)..."

@@ -175,7 +175,7 @@ export default function AdminErrorsTab({
           return (
             <CardContainer key={e.id}>
               <div className="flex-1 min-w-0 text-start">
-                <h3 className="text-lg font-bold text-white mb-1">
+                <h3 className="text-lg font-bold text-neutral-100 mb-1">
                   {e.message || "תקלה"}
                 </h3>
                 <div className="flex flex-wrap gap-2 mt-2">
@@ -201,7 +201,7 @@ export default function AdminErrorsTab({
                   disabled={isResolved}
                   className={`w-6 h-6 ${
                     !isResolved
-                      ? "text-brand-orange hover:text-white"
+                      ? "text-brand-primary hover:text-neutral-100"
                       : "text-neutral-500"
                   }`}
                   title="resolve"

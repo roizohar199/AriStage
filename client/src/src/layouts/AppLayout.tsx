@@ -86,11 +86,11 @@ export default function AppLayout({
   }, []);
 
   return (
-    <div className="h-screen bg-neutral-950 text-white flex flex-col">
+    <div className="h-screen bg-neutral-950 text-neutral-100 flex flex-col">
       {/* 🟧 Impersonation banner */}
       {isImpersonating && (
         <div
-          className="w-full bg-brand-orange text-black py-2 px-4 text-center font-semibold 
+          className="w-full bg-brand-primary text-black py-2 px-4 text-center font-semibold 
           flex flex-col sm:flex-row items-center justify-center gap-3
           shadow-lg sticky top-0 z-50 lg:order-1"
         >
@@ -102,7 +102,7 @@ export default function AppLayout({
           <button
             onClick={onExitImpersonation}
             className="bg-neutral-800/50 transition px-3 py-1 rounded-2xl
-            text-white font-bold text-sm 0 shadow-sm"
+            text-neutral-100 font-bold text-sm 0 shadow-sm"
           >
             חזרה לחשבון המקורי
           </button>

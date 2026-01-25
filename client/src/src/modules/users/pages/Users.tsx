@@ -195,7 +195,7 @@ export default function Users() {
     );
 
   return (
-    <div className="min-h-screen text-white p-6">
+    <div className="min-h-screen text-neutral-100 p-6">
       {/* HEADER */}
       <header className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">ניהול משתמשים</h1>
@@ -203,7 +203,7 @@ export default function Users() {
         <button
           onClick={openCreate}
           // Semantic animation: buttons use `animation-press`
-          className="bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold rounded-full p-2 flex items-center justify-center animation-press"
+          className="bg-brand-primary hover:bg-brand-primaryLight text-black font-semibold rounded-full p-2 flex items-center justify-center animation-press"
         >
           <Plus size={18} />
         </button>
@@ -246,19 +246,19 @@ export default function Users() {
               </div>
               <div className="flex flex-wrap gap-2 mt-2 text-xs">
                 {/* תפקיד */}
-                <span className="flex flex-row-reverse items-center gap-1 px-2 py-1 bg-brand-orange rounded-lg text-black font-semibold">
+                <span className="flex flex-row-reverse items-center gap-1 px-2 py-1 bg-brand-primary rounded-lg text-black font-semibold">
                   <User size={14} /> {u.role}
                 </span>
 
                 {/* מנוי */}
-                <span className="flex flex-row-reverse items-center gap-1 px-2 py-1 bg-brand-orange rounded-lg text-black font-semibold">
+                <span className="flex flex-row-reverse items-center gap-1 px-2 py-1 bg-brand-primary rounded-lg text-black font-semibold">
                   <Star size={14} />
                   {normalizeSubscriptionType(u.subscription_type)}
                 </span>
 
                 {/* אינדיקציה אם האמן כבר מוזמן */}
                 {isArtistInvited(u.id) && (
-                  <span className="flex flex-row-reverse items-center gap-1 px-2 py-1 bg-green-600 rounded-lg text-white font-semibold">
+                  <span className="flex flex-row-reverse items-center gap-1 px-2 py-1 bg-green-600 rounded-lg text-neutral-100 font-semibold">
                     <UserCheck size={14} /> מוזמן
                   </span>
                 )}
@@ -380,7 +380,7 @@ export default function Users() {
           <button
             type="submit"
             // Semantic animation: buttons use `animation-press`
-            className="w-full bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold py-2 rounded-lg mt-2 animation-press"
+            className="w-full bg-brand-primary hover:bg-brand-primaryLight text-black font-semibold py-2 rounded-lg mt-2 animation-press"
           >
             {editingId ? "עדכון" : "שמור"}
           </button>

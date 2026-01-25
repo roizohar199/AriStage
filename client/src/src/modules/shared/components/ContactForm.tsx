@@ -85,7 +85,7 @@ export default function ContactForm({ user }) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-brand-orange hover:bg-brand-orangeLight text-black font-semibold py-2 rounded-lg transition shadow-innerIos hover:shadow-[0_0_12px_rgba(255,136,0,0.4)]"
+        className="w-full bg-brand-primary hover:bg-brand-primaryLight text-black font-semibold py-2 rounded-lg transition shadow-innerIos hover:shadow-[0_0_12px_rgba(255,136,0,0.4)]"
       >
         {loading ? "שולח..." : "שלח הודעה"}
       </button>

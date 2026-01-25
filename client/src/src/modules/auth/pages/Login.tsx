@@ -191,7 +191,7 @@ export default function Login() {
               style={{ unicodeBidi: "isolate" }}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white hover:bg-neutral-700/50 focus:bg-neutral-700"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-neutral-100 hover:bg-neutral-700/50 focus:bg-neutral-700"
               required
             />
             <input
@@ -199,7 +199,7 @@ export default function Login() {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white hover:bg-neutral-700/50 focus:bg-neutral-700"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-neutral-100 hover:bg-neutral-700/50 focus:bg-neutral-700"
               required
             />
             <DesignActionButtonBig type="submit" disabled={loading}>
@@ -261,7 +261,7 @@ export default function Login() {
               placeholder="שם מלא"
               value={full_name}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white hover:bg-neutral-700/50 focus:bg-neutral-700"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-neutral-100 hover:bg-neutral-700/50 focus:bg-neutral-700"
               required
             />
 
@@ -271,7 +271,7 @@ export default function Login() {
               placeholder="תפקיד (זמר, גיטריסט, מתופף...)"
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white hover:bg-neutral-700/50 focus:bg-neutral-700"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-neutral-100 hover:bg-neutral-700/50 focus:bg-neutral-700"
             />
 
             <input
@@ -281,7 +281,7 @@ export default function Login() {
               style={{ unicodeBidi: "isolate" }}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white hover:bg-neutral-700/50 focus:bg-neutral-700"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-neutral-100 hover:bg-neutral-700/50 focus:bg-neutral-700"
               required
             />
 
@@ -290,7 +290,7 @@ export default function Login() {
               placeholder="בחר סיסמה"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white hover:bg-neutral-700/50 focus:bg-neutral-700"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-neutral-100 hover:bg-neutral-700/50 focus:bg-neutral-700"
               required
             />
 
@@ -299,7 +299,7 @@ export default function Login() {
               placeholder="אימות סיסמה"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white hover:bg-neutral-700/50 focus:bg-neutral-700"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-neutral-100 hover:bg-neutral-700/50 focus:bg-neutral-700"
               required
             />
 
@@ -315,7 +315,7 @@ export default function Login() {
                 קראתי את{" "}
                 <button
                   type="button"
-                  className="underline underline-offset-2 text-brand-orange hover:text-brand-orangeLight"
+                  className="underline underline-offset-2 text-brand-primary hover:text-brand-primaryLight"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -348,7 +348,7 @@ export default function Login() {
               style={{ unicodeBidi: "isolate" }}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-white hover:bg-neutral-700/50 focus:bg-neutral-700"
+              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-neutral-100 hover:bg-neutral-700/50 focus:bg-neutral-700"
               required
             />
             <DesignActionButtonBig type="submit" disabled={loading}>
@@ -364,10 +364,10 @@ export default function Login() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen text-white">
+    <div className="flex flex-col items-center justify-center min-h-screen text-neutral-100">
       <div className="w-full max-w-sm bg-neutral-950/50 p-6 text-center rounded-2xl backdrop-blur-xl">
         <div className="mb-5">
-          <h1 className="text-3xl font-bold text-brand-orange">Ari Stage</h1>
+          <h1 className="text-3xl font-bold text-brand-primary">Ari Stage</h1>
           <p className="text-sm text-gray-400 mt-1">
             התחבר או הירשם כדי לנהל את הליינאפ שלך
           </p>
@@ -379,8 +379,8 @@ export default function Login() {
               key={t}
               className={`flex-1 py-2 font-semibold ${
                 tab === t
-                  ? "border-b-2 border-brand-orange overflow-hidden text-brand-orange"
-                  : "text-white hover:text-brand-orangeLight"
+                  ? "border-b-2 border-brand-primary overflow-hidden text-brand-primary"
+                  : "text-neutral-100 hover:text-brand-primaryLight"
               }`}
               onClick={() => {
                 setError("");
@@ -410,12 +410,12 @@ export default function Login() {
         >
           <div className="w-full max-w-2xl rounded-2xl bg-neutral-950 text-start shadow-2xl border border-neutral-800">
             <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-800">
-              <h2 className="text-lg font-bold text-brand-orange">
+              <h2 className="text-lg font-bold text-brand-primary">
                 תקנון שימוש – Ari Stage
               </h2>
               <button
                 onClick={() => setIsTermsOpen(false)}
-                className="text-neutral-400 hover:text-white transition-colors p-1 hover:bg-neutral-800 rounded-md"
+                className="text-neutral-400 hover:text-neutral-100 transition-colors p-1 hover:bg-neutral-800 rounded-md"
                 aria-label="סגור"
                 type="button"
               >
@@ -430,7 +430,7 @@ export default function Login() {
               </p>
 
               <section className="space-y-2">
-                <h3 className="font-semibold text-white">1. מה השירות</h3>
+                <h3 className="font-semibold text-neutral-100">1. מה השירות</h3>
                 <p>
                   Ari Stage היא מערכת לניהול ליינאפים, שירים וחומרים נלווים
                   ("השירות"). ניתן להשתמש בשירות לצורך עבודה אישית או ניהול
@@ -439,7 +439,9 @@ export default function Login() {
               </section>
 
               <section className="space-y-2">
-                <h3 className="font-semibold text-white">2. חשבון משתמש</h3>
+                <h3 className="font-semibold text-neutral-100">
+                  2. חשבון משתמש
+                </h3>
                 <ul className="list-disc pr-5 space-y-1">
                   <li>
                     עליך לספק פרטים נכונים ועדכניים ולשמור על סודיות הסיסמה.
@@ -455,7 +457,7 @@ export default function Login() {
               </section>
 
               <section className="space-y-2">
-                <h3 className="font-semibold text-white">
+                <h3 className="font-semibold text-neutral-100">
                   3. תכנים שהמשתמש מעלה
                 </h3>
                 <ul className="list-disc pr-5 space-y-1">
@@ -475,7 +477,7 @@ export default function Login() {
               </section>
 
               <section className="space-y-2">
-                <h3 className="font-semibold text-white">
+                <h3 className="font-semibold text-neutral-100">
                   4. שימוש מותר ואסור
                 </h3>
                 <ul className="list-disc pr-5 space-y-1">
@@ -492,7 +494,9 @@ export default function Login() {
               </section>
 
               <section className="space-y-2">
-                <h3 className="font-semibold text-white">5. תשלומים ומנויים</h3>
+                <h3 className="font-semibold text-neutral-100">
+                  5. תשלומים ומנויים
+                </h3>
                 <p>
                   חלק מהפיצ'רים עשויים להיות בתשלום. אם קיימים מסלולים/מנויים,
                   התנאים, המחירים והחיובים יוצגו במעמד הרכישה. אי-תשלום עשוי
@@ -501,7 +505,9 @@ export default function Login() {
               </section>
 
               <section className="space-y-2">
-                <h3 className="font-semibold text-white">6. זמינות ושינויים</h3>
+                <h3 className="font-semibold text-neutral-100">
+                  6. זמינות ושינויים
+                </h3>
                 <p>
                   אנו שואפים לזמינות גבוהה אך איננו מתחייבים שהשירות יהיה ללא
                   תקלות או ללא הפסקות. אנו רשאים לעדכן, לשנות או להפסיק חלקים מן
@@ -510,7 +516,7 @@ export default function Login() {
               </section>
 
               <section className="space-y-2">
-                <h3 className="font-semibold text-white">7. פרטיות</h3>
+                <h3 className="font-semibold text-neutral-100">7. פרטיות</h3>
                 <p>
                   אנו משתמשים במידע לצורך אספקת השירות, אבטחה ושיפור חוויית
                   המשתמש. ייתכן שנשתמש בעוגיות/אחסון מקומי (כגון localStorage)
@@ -520,7 +526,7 @@ export default function Login() {
               </section>
 
               <section className="space-y-2">
-                <h3 className="font-semibold text-white">
+                <h3 className="font-semibold text-neutral-100">
                   8. אחריות והגבלת אחריות
                 </h3>
                 <p>
@@ -531,7 +537,7 @@ export default function Login() {
               </section>
 
               <section className="space-y-2">
-                <h3 className="font-semibold text-white">9. יצירת קשר</h3>
+                <h3 className="font-semibold text-neutral-100">9. יצירת קשר</h3>
                 <p>
                   לשאלות, דיווח על בעיה או בקשות, ניתן ליצור קשר דרך ערוצי
                   התמיכה המופיעים באתר.
@@ -539,7 +545,9 @@ export default function Login() {
               </section>
 
               <section className="space-y-2">
-                <h3 className="font-semibold text-white">10. הסכמה לתנאים</h3>
+                <h3 className="font-semibold text-neutral-100">
+                  10. הסכמה לתנאים
+                </h3>
                 <p>
                   בהרשמה לשירות, אתה מאשר שקראת והבנת את התקנון ומסכים לפעול
                   לפיו.

@@ -239,7 +239,7 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
             return (
               <CardContainer key={`sub-${u.id}`}>
                 <div className="flex-1 min-w-0 text-start">
-                  <h3 className="text-lg font-bold text-white mb-1">
+                  <h3 className="text-lg font-bold text-neutral-100 mb-1">
                     {u.full_name || "משתמש ללא שם"}
                   </h3>
                   <div className="flex flex-wrap gap-2 mt-2">

@@ -115,7 +115,7 @@ const SongList = memo(function SongList({
                     {lineup?.is_owner && (
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none select-none">
                         <GripVertical
-                          className="text-neutral-400 hover:text-brand-orange transition-colors"
+                          className="text-neutral-400 hover:text-brand-primary transition-colors"
                           size={20}
                         />
                       </div>
@@ -204,7 +204,9 @@ const AddSongModal = memo(function AddSongModal({
       maxWidth="max-w-2xl"
     >
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-white">הוסף שיר לליינאפ</h2>
+        <h2 className="text-lg font-semibold text-neutral-100">
+          הוסף שיר לליינאפ
+        </h2>
       </div>
 
       {/* Tabs */}
@@ -236,7 +238,7 @@ const AddSongModal = memo(function AddSongModal({
                 // Semantic animation: buttons use `animation-press`
                 className={`flex-shrink-0 py-2 px-4 rounded-2xl text-sm font-semibold whitespace-nowrap animation-press ${
                   selectedArtistId === artist.id
-                    ? "bg-brand-orange text-black"
+                    ? "bg-brand-primary text-black"
                     : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700/50"
                 }`}
               >
@@ -261,7 +263,9 @@ const AddSongModal = memo(function AddSongModal({
             className="bg-neutral-800 rounded-2xl p-4 flex justify-between items-center shadow-sm"
           >
             <div>
-              <p className="font-semibold text-lg text-white">{s.title}</p>
+              <p className="font-semibold text-lg text-neutral-100">
+                {s.title}
+              </p>
               <div className="flex flex-wrap gap-2 mt-2 text-xs">
                 <p className="px-2 py-1 bg-neutral-900 rounded-2xl">
                   BPM {s.bpm || ""}
@@ -279,7 +283,7 @@ const AddSongModal = memo(function AddSongModal({
                   </span>
                 </p>
                 {s.notes && (
-                  <span className="inline-block px-2 py-1 text-xs bg-brand-orange rounded-2xl text-black font-semibold">
+                  <span className="inline-block px-2 py-1 text-xs bg-brand-primary rounded-2xl text-black font-semibold">
                     {s.notes}
                   </span>
                 )}
@@ -287,7 +291,7 @@ const AddSongModal = memo(function AddSongModal({
             </div>
             <button
               onClick={() => addSong(s.id)}
-              className="w-6 h-6 text-white hover:text-brand-orange"
+              className="w-6 h-6 text-neutral-100 hover:text-brand-primary"
             >
               <Plus size={20} />
             </button>
@@ -322,7 +326,7 @@ export default function LineupDetails() {
 
   if (!lineupsEnabled) {
     return (
-      <div className="text-white relative">
+      <div className="text-neutral-100 relative">
         <div className="bg-neutral-800 rounded-2xl p-6 text-center">
           <p className="text-neutral-200 font-bold">מודול ליינאפים כבוי</p>
           <p className="text-neutral-400 text-sm mt-2">
@@ -843,7 +847,7 @@ export default function LineupDetails() {
   // --- UI ---
   if (loading) {
     return (
-      <div className="flex items-center justify-center text-white">
+      <div className="flex items-center justify-center text-neutral-100">
         <div className="text-center">
           <div className="text-xl mb-4">טוען...</div>
         </div>
@@ -852,7 +856,7 @@ export default function LineupDetails() {
   }
   if (error || !lineup) {
     return (
-      <div className="flex items-center justify-center text-white">
+      <div className="flex items-center justify-center text-neutral-100">
         <div className="text-center">
           <div className="text-xl mb-4 text-red-400">
             {error || "ליינאפ לא נמצא"}
@@ -869,7 +873,7 @@ export default function LineupDetails() {
   }
 
   return (
-    <div className="text-white relative">
+    <div className="text-neutral-100 relative">
       {/* HEADER */}
 
       <header className="flex items-center gap-3 mb-3">
@@ -903,8 +907,10 @@ export default function LineupDetails() {
         <div className="flex justify-between items-center w-full gap-4 mb-4">
           {/* Right section: title, duration, songs count (RTL: right side) */}
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-white">{lineup.title}</h1>
-            <div className="flex items-center gap-1 px-2 py-1 bg-neutral-800 rounded-2xl text-brand-orange font-bold text-sm">
+            <h1 className="text-3xl font-bold text-neutral-100">
+              {lineup.title}
+            </h1>
+            <div className="flex items-center gap-1 px-2 py-1 bg-neutral-800 rounded-2xl text-brand-primary font-bold text-sm">
               <Clock size={18} />
               <span
                 dir="ltr"
@@ -914,7 +920,7 @@ export default function LineupDetails() {
                 {totalDuration}
               </span>
             </div>
-            <div className="flex items-center gap-1 px-2 py-1 bg-neutral-800 rounded-2xl text-brand-orange font-bold text-sm">
+            <div className="flex items-center gap-1 px-2 py-1 bg-neutral-800 rounded-2xl text-brand-primary font-bold text-sm">
               <Music4Icon size={18} />
               {songs.length} שירים
             </div>
@@ -925,7 +931,7 @@ export default function LineupDetails() {
               <>
                 <button
                   onClick={generateShareLink}
-                  className="text-white font-semibold rounded-2xl flex flex-row-reverse items-center hover:text-brand-orange gap-2"
+                  className="text-neutral-100 font-semibold rounded-2xl flex flex-row-reverse items-center hover:text-brand-primary gap-2"
                 >
                   <Share2 size={16} />
                   {loadingShare ? "יוצר..." : "שיתוף"}
@@ -994,13 +1000,13 @@ export default function LineupDetails() {
         {/* SHARE LINK */}
         {shareUrl && (
           <div className="bg-neutral-700 backdrop-blur-xl p-3 rounded-2xl mb-4 text-sm flex justify-between items-center">
-            <span className="text-brand-orange truncate">{shareUrl}</span>
+            <span className="text-brand-primary truncate">{shareUrl}</span>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 copyShareLink();
               }}
-              className="cursor-pointer hover:text-brand-orange"
+              className="cursor-pointer hover:text-brand-primary"
             >
               <Copy size={16} />
             </button>

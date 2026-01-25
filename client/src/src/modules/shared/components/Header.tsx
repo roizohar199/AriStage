@@ -211,8 +211,8 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
   }, [offlineCacheModalOpen, loadOfflineCacheEntries]);
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[200] w-full h-16  bg-neutral-950/50 backdrop-blur-xl">
-      <div className="h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between md:grid md:grid-cols-3">
+    <div className="fixed top-0 left-0 right-0 z-[200] w-full h-16  bg-neutral-100/10 backdrop-blur-xl">
+      <div className="h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between md:grid md:grid-cols-3 shadow-surface">
         {/* Left: Logo */}
         <div className="flex items-center gap-0  ">
           <h1 className="h-page text-neutral-100 font-bold">AriStage</h1>
@@ -275,7 +275,7 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
           <div ref={menuRef} className="relative">
             <div className="relative">
               {displayPendingCount > 0 && (
-                <span className="absolute -top-[6px] -right-[6px] z-10 bg-red-500 text-white text-[11px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center border border-neutral-900">
+                <span className="absolute -top-[6px] -right-[6px] z-10 bg-red-500 text-neutral-100 text-[11px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center border border-neutral-900">
                   {displayPendingCount > 99
                     ? "99+"
                     : displayPendingCount > 9
@@ -405,7 +405,7 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
             <button
               type="button"
               onClick={() => loadOfflineCacheEntries()}
-              className="px-4 py-2 rounded-xl bg-neutral-700/60 hover:bg-neutral-700 text-white text-sm font-semibold"
+              className="px-4 py-2 rounded-xl bg-neutral-700/60 hover:bg-neutral-700 text-neutral-100 text-sm font-semibold"
             >
               רענן
             </button>
@@ -417,7 +417,7 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                   "info",
                 );
               }}
-              className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700/70 text-white text-sm font-semibold"
+              className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700/70 text-neutral-100 text-sm font-semibold"
             >
               איך למלא קאש?
             </button>
@@ -432,7 +432,7 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
         maxWidth="max-w-2xl"
       >
         <div className="flex flex-col items-center text-center w-full">
-          <h2 className="text-xl font-bold text-brand-orange mb-2">
+          <h2 className="text-xl font-bold text-brand-primary mb-2">
             הזמנות ממתינות
           </h2>
           <p className="text-neutral-400 text-sm mb-4">
@@ -464,11 +464,11 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                         )}
                       </div>
                       <div className="flex flex-col items-start gap-1">
-                        <span className="text-sm font-semibold text-white">
+                        <span className="text-sm font-semibold text-neutral-100">
                           {invitation.full_name || "משתמש"}
                         </span>
                         {invitation.artist_role && (
-                          <span className="inline-flex items-center px-1 bg-brand-orange rounded-lg text-black font-semibold text-xs">
+                          <span className="inline-flex items-center px-1 bg-brand-primary rounded-lg text-black font-semibold text-xs">
                             {invitation.artist_role}
                           </span>
                         )}
@@ -482,14 +482,14 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                       <button
                         onClick={() => handleAcceptInvitation(invitation.id)}
                         disabled={processingId === invitation.id}
-                        className="w-6 h-6 text-white hover:text-brand-orange"
+                        className="w-6 h-6 text-neutral-100 hover:text-brand-primary"
                       >
                         <Check size={25} />
                       </button>
                       <button
                         onClick={() => handleRejectInvitation(invitation.id)}
                         disabled={processingId === invitation.id}
-                        className="w-6 h-6 text-red-500 hover:text-red-400"
+                        className="w-6 h-6 text-neutral-100 hover:text-brand-primary"
                       >
                         <Trash2 size={20} />
                       </button>

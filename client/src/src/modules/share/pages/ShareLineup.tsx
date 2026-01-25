@@ -199,7 +199,7 @@ export default function ShareLineup() {
     );
 
   return (
-    <div className="min-h-screen text-white p-4 flex flex-col items-center">
+    <div className="min-h-screen text-neutral-100 p-4 flex flex-col items-center">
       {/* כרטיס ליינאפ */}
       <div className="w-full border border-neutral-800 rounded-2xl p-6 relative">
         {/* כותרת */}
@@ -235,10 +235,10 @@ export default function ShareLineup() {
         {/* ⭐ זמן כולל + מספר שירים */}
         <div className="flex justify-between items-center w-full gap-4 mb-4">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 px-2 py-1 bg-neutral-800 rounded-2xl text-brand-orange font-bold text-sm">
+            <div className="flex items-center gap-1 px-2 py-1 bg-neutral-800 rounded-2xl text-brand-primary font-bold text-sm">
               <Music4Icon size={14} /> {lineup.songs.length} שירים
             </div>
-            <div className="flex items-center gap-1 px-2 py-1 bg-neutral-800 rounded-2xl text-brand-orange font-bold text-sm">
+            <div className="flex items-center gap-1 px-2 py-1 bg-neutral-800 rounded-2xl text-brand-primary font-bold text-sm">
               <Clock size={14} />
               <span
                 dir="ltr"

@@ -486,7 +486,7 @@ export default function AdminLogsTab({
                     <div>
                       <SmallBadge variant={levelVariant}>{level}</SmallBadge>
                     </div>
-                    <div className="text-sm font-bold text-white break-all">
+                    <div className="text-sm font-bold text-neutral-100 break-all">
                       {l.action || "LOG"}
                     </div>
                     <div className="md:col-span-2 text-sm text-neutral-200">
@@ -509,10 +509,10 @@ export default function AdminLogsTab({
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
           <div className="w-full max-w-3xl bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-800">
-              <div className="text-white font-bold">Log Details</div>
+              <div className="text-neutral-100 font-bold">Log Details</div>
               <button
                 type="button"
-                className="text-neutral-300 hover:text-white"
+                className="text-neutral-300 hover:text-neutral-100"
                 onClick={() => setSelectedLog(null)}
               >
                 סגור
@@ -522,7 +522,7 @@ export default function AdminLogsTab({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                 <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-3">
                   <div className="text-xs text-neutral-400">Timestamp</div>
-                  <div className="text-white tabular-nums" dir="ltr">
+                  <div className="text-neutral-100 tabular-nums" dir="ltr">
                     {formatLogTimestamp(
                       selectedLog.createdAt || selectedLog.created_at || "",
                     )}
@@ -536,17 +536,19 @@ export default function AdminLogsTab({
                 </div>
                 <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-3">
                   <div className="text-xs text-neutral-400">UserId</div>
-                  <div className="text-white">{selectedLog.userId ?? "—"}</div>
+                  <div className="text-neutral-100">
+                    {selectedLog.userId ?? "—"}
+                  </div>
                 </div>
                 <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-3">
                   <div className="text-xs text-neutral-400">Action</div>
-                  <div className="text-white break-all">
+                  <div className="text-neutral-100 break-all">
                     {selectedLog.action || ""}
                   </div>
                 </div>
                 <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-3">
                   <div className="text-xs text-neutral-400">Level</div>
-                  <div className="text-white">
+                  <div className="text-neutral-100">
                     {selectedLog.level || "info"}
                   </div>
                 </div>
@@ -567,10 +569,10 @@ export default function AdminLogsTab({
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
           <div className="w-full max-w-lg bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-800">
-              <div className="text-white font-bold">ניקוי לוגים</div>
+              <div className="text-neutral-100 font-bold">ניקוי לוגים</div>
               <button
                 type="button"
-                className="text-neutral-300 hover:text-white"
+                className="text-neutral-300 hover:text-neutral-100"
                 onClick={() => {
                   setCleanupOpen(false);
                   setCleanupConfirmText("");
@@ -583,7 +585,7 @@ export default function AdminLogsTab({
             <div className="p-4 space-y-3">
               <div className="text-sm text-neutral-300">
                 פעולה זו מוחקת לוגים מהמערכת. כדי לאשר, הקלד{" "}
-                <span className="font-bold text-white">DELETE LOGS</span>.
+                <span className="font-bold text-neutral-100">DELETE LOGS</span>.
               </div>
 
               <div className="grid grid-cols-1 gap-3">
