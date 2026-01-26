@@ -41,7 +41,7 @@ export default function ArtistCard({
           />
         ) : null}
         <div
-          className="w-16 h-16 rounded-full bg-neutral-950 border-2 border-brand-orange flex items-center justify-center shadow-surface"
+          className="w-16 h-16 rounded-full bg-neutral-950 border-2 border-brand-primary flex items-center justify-center shadow-surface"
           style={{ display: artist.avatar ? "none" : "flex" }}
         >
           <User size={24} className="text-neutral-500" />

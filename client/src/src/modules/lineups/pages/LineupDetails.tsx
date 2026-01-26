@@ -202,6 +202,7 @@ const AddSongModal = memo(function AddSongModal({
       onClose={onClose}
       title="הוסף שיר לליינאפ"
       maxWidth="max-w-2xl"
+      containerClassName="bg-neutral-950"
     >
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold text-neutral-100">
@@ -215,7 +216,7 @@ const AddSongModal = memo(function AddSongModal({
           tabs={tabs}
           selectedKey={modalActiveTab}
           onSelect={(key) => setModalActiveTab(key)}
-          variant="user"
+          variant="lineup"
           withMargins={false}
         />
       </div>
@@ -238,7 +239,7 @@ const AddSongModal = memo(function AddSongModal({
                 // Semantic animation: buttons use `animation-press`
                 className={`flex-shrink-0 py-2 px-4 rounded-2xl text-sm font-semibold whitespace-nowrap animation-press ${
                   selectedArtistId === artist.id
-                    ? "bg-brand-primary text-black"
+                    ? "bg-brand-primary text-neutral-100"
                     : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700/50"
                 }`}
               >
@@ -260,7 +261,7 @@ const AddSongModal = memo(function AddSongModal({
         {filteredModalSongs.map((s: any) => (
           <div
             key={s.id}
-            className="bg-neutral-800 rounded-2xl p-4 flex justify-between items-center shadow-sm"
+            className="bg-neutral-850 rounded-2xl p-4 flex justify-between items-center shadow-surface"
           >
             <div>
               <p className="font-semibold text-lg text-neutral-100">
@@ -283,7 +284,7 @@ const AddSongModal = memo(function AddSongModal({
                   </span>
                 </p>
                 {s.notes && (
-                  <span className="inline-block px-2 py-1 text-xs bg-brand-primary rounded-2xl text-black font-semibold">
+                  <span className="inline-block px-2 py-1 text-xs bg-brand-primary rounded-2xl text-neutral-100 font-semibold">
                     {s.notes}
                   </span>
                 )}
@@ -291,7 +292,7 @@ const AddSongModal = memo(function AddSongModal({
             </div>
             <button
               onClick={() => addSong(s.id)}
-              className="w-6 h-6 text-neutral-100 hover:text-brand-primary"
+              className="outline-none text-neutral-100 hover:text-brand-primary hover:bg-neutral-800 rounded-full p-2 transition"
             >
               <Plus size={20} />
             </button>
@@ -910,7 +911,7 @@ export default function LineupDetails() {
             <h1 className="text-3xl font-bold text-neutral-100">
               {lineup.title}
             </h1>
-            <div className="flex items-center gap-1 px-2 py-1 bg-neutral-800 rounded-2xl text-brand-primary font-bold text-sm">
+            <div className="flex items-center gap-1 px-2 py-1 bg-neutral-850 rounded-2xl text-brand-primary font-bold text-sm">
               <Clock size={18} />
               <span
                 dir="ltr"
@@ -920,9 +921,9 @@ export default function LineupDetails() {
                 {totalDuration}
               </span>
             </div>
-            <div className="flex items-center gap-1 px-2 py-1 bg-neutral-800 rounded-2xl text-brand-primary font-bold text-sm">
+            <div className="flex items-center gap-1 px-2 py-1 bg-neutral-850 rounded-2xl text-brand-primary font-bold text-sm">
               <Music4Icon size={18} />
-              {songs.length} שירים
+              {songs.length}
             </div>
           </div>
           {/* Left section: share, revoke, menu (RTL: left side) */}

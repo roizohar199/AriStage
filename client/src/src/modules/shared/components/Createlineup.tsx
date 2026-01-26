@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import BaseModal from "./BaseModal.tsx";
 import DesignActionButtonBig from "./DesignActionButtonBig";
+import { DateInput, Input, Textarea, TimeInput } from "./FormControls";
 
 interface CreateLineupForm {
   name: string;
@@ -74,42 +75,35 @@ const CreateLineup: React.FC<CreateLineupProps> = ({
       </h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <input
+        <Input
           placeholder="שם הליינאפ *"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
-          className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
           required
         />
 
-        <input
-          type="date"
+        <DateInput
           placeholder="dd/mm/yyyy"
           value={form.date}
           onChange={(e) => setForm({ ...form, date: e.target.value })}
-          className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
         />
 
-        <input
-          type="time"
+        <TimeInput
           placeholder="--:--"
           value={form.time}
           onChange={(e) => setForm({ ...form, time: e.target.value })}
-          className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
         />
 
-        <input
+        <Input
           placeholder="מיקום"
           value={form.location}
           onChange={(e) => setForm({ ...form, location: e.target.value })}
-          className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
         />
 
-        <textarea
+        <Textarea
           placeholder="תיאור (אופציונלי)"
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
-          className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition outline-none"
           rows={3}
         />
 

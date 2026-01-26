@@ -1,6 +1,7 @@
 import React from "react";
 import { Mail, BadgeCheck, Users, Clock } from "lucide-react";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
+import { Input, Select } from "@/modules/shared/components/FormControls";
 import type { AdminUser } from "../pages/Admin";
 import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
 
@@ -268,13 +269,10 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                     </DesignActionButton>
                   ) : (
                     <>
-                      <label className="text-xs text-neutral-300 font-bold">
-                        מסלול מנוי
-                      </label>
-                      <select
+                      <Select
+                        label="מסלול מנוי"
                         value={subForm.subscription_type}
-                        onChange={(e) => {
-                          const value = e.target.value;
+                        onChange={(value) => {
                           setSubscriptionEdits((prev) => {
                             const current = prev[u.id] ?? baseSubForm;
                             return {
@@ -286,28 +284,26 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                             };
                           });
                         }}
-                        className="w-full bg-neutral-900 border border-neutral-800 p-2 rounded-2xl text-sm"
-                      >
-                        {!planOptions.some(
-                          (o) => o.value === subForm.subscription_type,
-                        ) ? (
-                          <option value={subForm.subscription_type}>
-                            {subForm.subscription_type} (legacy)
-                          </option>
-                        ) : null}
-                        {planOptions.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                      <label className="text-xs text-neutral-300 font-bold mt-2">
-                        סטטוס מנוי
-                      </label>
-                      <select
+                        options={(() => {
+                          const hasCurrent = planOptions.some(
+                            (o) => o.value === subForm.subscription_type,
+                          );
+                          if (hasCurrent) return planOptions;
+                          return [
+                            {
+                              value: subForm.subscription_type,
+                              label: `${subForm.subscription_type} (legacy)`,
+                            },
+                            ...planOptions,
+                          ];
+                        })()}
+                        className="mb-0"
+                      />
+
+                      <Select
+                        label="סטטוס מנוי"
                         value={subForm.subscription_status}
-                        onChange={(e) => {
-                          const value = e.target.value;
+                        onChange={(value) => {
                           setSubscriptionEdits((prev) => {
                             const current = prev[u.id] ?? baseSubForm;
                             return {
@@ -319,17 +315,17 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                             };
                           });
                         }}
-                        className="w-full bg-neutral-900 border border-neutral-800 p-2 rounded-2xl text-sm"
-                      >
-                        <option value="active">active</option>
-                        <option value="trial">trial</option>
-                        <option value="expired">expired</option>
-                      </select>
-                      <label className="text-xs text-neutral-300 font-bold mt-2">
-                        תאריכי מנוי (start / end)
-                      </label>
+                        options={[
+                          { value: "active", label: "active" },
+                          { value: "trial", label: "trial" },
+                          { value: "expired", label: "expired" },
+                        ]}
+                        className="mb-0"
+                      />
+
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
-                        <input
+                        <Input
+                          label="start"
                           type="datetime-local"
                           placeholder="subscription_started_at"
                           value={toDateTimeLocalInput(
@@ -348,9 +344,11 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                               };
                             });
                           }}
-                          className="w-full bg-neutral-900 border border-neutral-800 p-2 rounded-2xl text-xs"
+                          className="mb-0"
+                          dir="ltr"
                         />
-                        <input
+                        <Input
+                          label="end"
                           type="datetime-local"
                           placeholder="subscription_expires_at"
                           value={toDateTimeLocalInput(
@@ -369,7 +367,8 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                               };
                             });
                           }}
-                          className="w-full bg-neutral-900 border border-neutral-800 p-2 rounded-2xl text-xs"
+                          className="mb-0"
+                          dir="ltr"
                         />
                       </div>
                       <div className="flex gap-2 mt-2">

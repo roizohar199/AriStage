@@ -17,6 +17,45 @@ const PLACEHOLDERS: Record<SearchVariant, string> = {
   full: "חפש",
 };
 
+const VARIANT_STYLES: Record<
+  SearchVariant,
+  {
+    inputOpenClassName: string;
+    inputClosedClassName: string;
+    iconClosedClassName: string;
+    iconOpenClassName: string;
+  }
+> = {
+  song: {
+    inputOpenClassName:
+      "bg-neutral-900 text-neutral-100 rounded-2xl pr-10 pl-4 placeholder-neutral-500 shadow-surface",
+    inputClosedClassName: "bg-neutral-850 rounded-2xl",
+    iconClosedClassName: "text-neutral-100",
+    iconOpenClassName: "text-brand-primary",
+  },
+  artist: {
+    inputOpenClassName:
+      "bg-neutral-900 text-neutral-100 rounded-2xl pr-10 pl-4 placeholder-neutral-500 shadow-surface",
+    inputClosedClassName: "bg-neutral-850 rounded-2xl",
+    iconClosedClassName: "text-neutral-100",
+    iconOpenClassName: "text-brand-primary",
+  },
+  lineup: {
+    inputOpenClassName:
+      "bg-neutral-900 text-neutral-100 rounded-2xl pr-10 pl-4 placeholder-neutral-500 shadow-surface",
+    inputClosedClassName: "bg-neutral-850 rounded-2xl shadow-surface",
+    iconClosedClassName: "text-neutral-100",
+    iconOpenClassName: "text-brand-primary",
+  },
+  full: {
+    inputOpenClassName:
+      "bg-neutral-900 text-neutral-100 rounded-2xl pr-10 pl-4 placeholder-neutral-500 shadow-surface",
+    inputClosedClassName: "bg-neutral-850 rounded-2xl",
+    iconClosedClassName: "text-neutral-100",
+    iconOpenClassName: "text-brand-primary",
+  },
+};
+
 const Search: React.FC<SearchProps> = ({
   value,
   onChange,
@@ -24,6 +63,7 @@ const Search: React.FC<SearchProps> = ({
   className = "",
 }) => {
   const [open, setOpen] = useState(false);
+  const styles = VARIANT_STYLES[variant];
 
   return (
     <div className={`flex-1 ${className}`}>
@@ -57,8 +97,8 @@ const Search: React.FC<SearchProps> = ({
             outline-none
             ${
               open
-                ? "bg-neutral-900 text-neutral-100 rounded-2xl pr-10 pl-4 placeholder-neutral-500 shadow-surface"
-                : "bg-neutral-850 rounded-2xl "
+                ? styles.inputOpenClassName
+                : styles.inputClosedClassName
             }
           `}
         />
@@ -68,7 +108,7 @@ const Search: React.FC<SearchProps> = ({
           className={`
             absolute inset-0
             flex items-center justify-center
-            text-neutral-100
+            ${styles.iconClosedClassName}
             pointer-events-none
             transition-all duration-200
             ${open ? "opacity-0 scale-90" : "opacity-100 scale-100"}
@@ -81,7 +121,7 @@ const Search: React.FC<SearchProps> = ({
         <div
           className={`
             absolute right-3 top-1/2 -translate-y-1/2
-            text-brand-primary
+            ${styles.iconOpenClassName}
             transition-all duration-200
             ${open ? "opacity-100 scale-100" : "opacity-0 scale-90"}
           `}

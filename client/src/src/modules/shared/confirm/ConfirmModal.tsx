@@ -25,7 +25,7 @@ export default function ConfirmModal({
 }: ConfirmModalProps) {
   const confirmButtonClassName =
     variant === "confirm"
-      ? "bg-brand-primary text-black"
+      ? "bg-brand-primary text-neutral-100"
       : "bg-red-600 hover:bg-red-500 text-neutral-100";
 
   return (

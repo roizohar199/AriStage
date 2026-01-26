@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, ClipboardList, Filter, List } from "lucide-react";
 
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
+import { Input, Select } from "@/modules/shared/components/FormControls";
 import api from "@/modules/shared/lib/api.ts";
 import { useToast } from "@/modules/shared/components/ToastProvider";
 
@@ -266,108 +267,102 @@ export default function AdminLogsTab({
       <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-4">
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-end gap-3">
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-neutral-300 font-bold">
-                Level
-              </label>
-              <select
-                value={logsLevel}
-                onChange={(e) => {
-                  setLogsLevel(e.target.value as any);
+            <div className="min-w-[10rem]">
+              <Select
+                label="Level"
+                value={(logsLevel as string) ?? ""}
+                onChange={(value) => {
+                  setLogsLevel(value as any);
                   setLogsOffset(0);
                 }}
-                className="bg-neutral-950 border border-neutral-800 p-2 rounded-2xl text-sm"
-              >
-                <option value="">All</option>
-                <option value="info">info</option>
-                <option value="warn">warn</option>
-                <option value="error">error</option>
-              </select>
+                options={[
+                  { value: "", label: "All" },
+                  { value: "info", label: "info" },
+                  { value: "warn", label: "warn" },
+                  { value: "error", label: "error" },
+                ]}
+                className="mb-0"
+              />
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-neutral-300 font-bold">
-                Action
-              </label>
-              <select
-                value={logsAction}
-                onChange={(e) => {
-                  setLogsAction(e.target.value);
+            <div className="min-w-[10rem]">
+              <Select
+                label="Action"
+                value={logsAction || ""}
+                onChange={(value) => {
+                  setLogsAction(value);
                   setLogsOffset(0);
                 }}
-                className="bg-neutral-950 border border-neutral-800 p-2 rounded-2xl text-sm min-w-40"
-              >
-                <option value="">All</option>
-                {logsActionOptions.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: "", label: "All" },
+                  ...logsActionOptions.map((a) => ({ value: a, label: a })),
+                ]}
+                className="mb-0"
+              />
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-neutral-300 font-bold">User</label>
-              <select
+            <div className="min-w-[14rem]">
+              <Select
+                label="User"
                 value={logsUserId === "" ? "" : String(logsUserId)}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setLogsUserId(v ? Number(v) : "");
+                onChange={(value) => {
+                  setLogsUserId(value ? Number(value) : "");
                   setLogsOffset(0);
                 }}
-                className="bg-neutral-950 border border-neutral-800 p-2 rounded-2xl text-sm min-w-56"
-              >
-                <option value="">All</option>
-                {users.map((u) => (
-                  <option key={u.id} value={String(u.id)}>
-                    {(u.full_name || "User").trim()} — {u.email}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: "", label: "All" },
+                  ...users.map((u) => ({
+                    value: String(u.id),
+                    label: `${(u.full_name || "User").trim()} — ${u.email}`,
+                  })),
+                ]}
+                className="mb-0"
+              />
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-neutral-300 font-bold">From</label>
-              <input
+            <div className="min-w-[12rem]">
+              <Input
+                label="From"
                 type="datetime-local"
                 value={logsFromDate}
                 onChange={(e) => {
                   setLogsFromDate(e.target.value);
                   setLogsOffset(0);
                 }}
-                className="bg-neutral-950 border border-neutral-800 p-2 rounded-2xl text-sm"
+                className="mb-0"
+                dir="ltr"
               />
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-neutral-300 font-bold">To</label>
-              <input
+            <div className="min-w-[12rem]">
+              <Input
+                label="To"
                 type="datetime-local"
                 value={logsToDate}
                 onChange={(e) => {
                   setLogsToDate(e.target.value);
                   setLogsOffset(0);
                 }}
-                className="bg-neutral-950 border border-neutral-800 p-2 rounded-2xl text-sm"
+                className="mb-0"
+                dir="ltr"
               />
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-neutral-300 font-bold">
-                Page Size
-              </label>
-              <select
+            <div className="min-w-[10rem]">
+              <Select
+                label="Page Size"
                 value={String(logsLimit)}
-                onChange={(e) => {
-                  setLogsLimit(Number(e.target.value));
+                onChange={(value) => {
+                  setLogsLimit(Number(value));
                   setLogsOffset(0);
                 }}
-                className="bg-neutral-950 border border-neutral-800 p-2 rounded-2xl text-sm"
-              >
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-              </select>
+                options={[
+                  { value: "25", label: "25" },
+                  { value: "50", label: "50" },
+                  { value: "100", label: "100" },
+                ]}
+                className="mb-0"
+              />
             </div>
 
             <div className="flex-1" />
@@ -590,15 +585,15 @@ export default function AdminLogsTab({
 
               <div className="grid grid-cols-1 gap-3">
                 <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-3">
-                  <div className="text-xs text-neutral-400">olderThanDays</div>
-                  <input
+                  <Input
+                    label="olderThanDays"
                     type="number"
                     min={1}
-                    value={cleanupOlderThanDays}
+                    value={String(cleanupOlderThanDays)}
                     onChange={(e) =>
                       setCleanupOlderThanDays(Number(e.target.value))
                     }
-                    className="w-full bg-neutral-900 border border-neutral-800 p-2 rounded-2xl text-sm mt-2"
+                    className="mt-2 mb-0"
                   />
                   <div className="text-[11px] text-neutral-500 mt-1">
                     אם beforeDate ריק, יימחקו לוגים ישנים מ-X ימים.
@@ -606,12 +601,12 @@ export default function AdminLogsTab({
                 </div>
 
                 <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-3">
-                  <div className="text-xs text-neutral-400">beforeDate</div>
-                  <input
+                  <Input
+                    label="beforeDate"
                     type="datetime-local"
                     value={cleanupBeforeDate}
                     onChange={(e) => setCleanupBeforeDate(e.target.value)}
-                    className="w-full bg-neutral-900 border border-neutral-800 p-2 rounded-2xl text-sm mt-2"
+                    className="mt-2 mb-0"
                     dir="ltr"
                   />
                   {cleanupBeforeDate.trim() ? (
@@ -628,12 +623,12 @@ export default function AdminLogsTab({
                 </div>
 
                 <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-3">
-                  <div className="text-xs text-neutral-400">Confirmation</div>
-                  <input
+                  <Input
+                    label="Confirmation"
                     type="text"
                     value={cleanupConfirmText}
                     onChange={(e) => setCleanupConfirmText(e.target.value)}
-                    className="w-full bg-neutral-900 border border-neutral-800 p-2 rounded-2xl text-sm mt-2"
+                    className="mt-2 mb-0"
                   />
                 </div>
               </div>

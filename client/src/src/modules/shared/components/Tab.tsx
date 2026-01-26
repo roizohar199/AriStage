@@ -5,6 +5,8 @@ export type TabItem<TKey extends string = string> = {
   label: React.ReactNode;
 };
 
+type TabVariant = "admin" | "user" | "login" | "lineup";
+
 export default function Tab<TKey extends string = string>({
   tabs,
   selectedKey,
@@ -15,7 +17,7 @@ export default function Tab<TKey extends string = string>({
   tabs: Array<TabItem<TKey>>;
   selectedKey: TKey;
   onSelect: (key: TKey) => void;
-  variant?: "admin" | "user";
+  variant?: TabVariant;
   withMargins?: boolean;
 }) {
   const tabsCount = Math.max(1, tabs.length);
@@ -26,20 +28,62 @@ export default function Tab<TKey extends string = string>({
   const widthPct = 100 / tabsCount;
   const startPct = activeIndex * widthPct;
 
-  if (variant === "user") {
+  const USER_LIKE_VARIANT_STYLES: Record<
+    Exclude<TabVariant, "admin">,
+    {
+      containerClassName: string;
+      tabClassName: string;
+      selectedTabClassName: string;
+      unselectedTabClassName: string;
+      indicatorClassName: string;
+    }
+  > = {
+    user: {
+      containerClassName:
+        "relative flex justify-between bg-neutral-850 rounded-2xl overflow-hidden w-fit transition",
+      tabClassName: "px-6 py-2 transition",
+      selectedTabClassName: "text-brand-primary font-semibold",
+      unselectedTabClassName: "text-neutral-100 hover:text-brand-primaryLight",
+      indicatorClassName:
+        "absolute bottom-0 h-0.5 bg-brand-primary transition-[inset-inline-start] duration-300 ease-in-out",
+    },
+    login: {
+      containerClassName:
+        "relative flex justify-between bg-neutral-850 rounded-2xl overflow-hidden w-fit transition",
+      tabClassName: "px-6 py-2 transition",
+      selectedTabClassName: "text-brand-primary font-semibold",
+      unselectedTabClassName: "text-neutral-100 hover:text-brand-primaryLight",
+      indicatorClassName:
+        "absolute bottom-0 h-0.5 bg-brand-primary transition-[inset-inline-start] duration-300 ease-in-out",
+    },
+    lineup: {
+      containerClassName:
+        "relative flex justify-between bg-neutral-850 rounded-2xl overflow-hidden w-fit transition",
+      tabClassName: "px-6 py-2 transition",
+      selectedTabClassName: "text-brand-primary font-semibold",
+      unselectedTabClassName: "text-neutral-100 hover:text-brand-primaryLight",
+      indicatorClassName:
+        "absolute bottom-0 h-0.5 bg-brand-primary transition-[inset-inline-start] duration-300 ease-in-out",
+    },
+  };
+
+  const userLikeStyles =
+    variant === "admin" ? null : USER_LIKE_VARIANT_STYLES[variant];
+
+  if (userLikeStyles) {
     return (
       <div
-        className={`relative flex justify-between bg-neutral-850 rounded-2xl overflow-hidden w-fit transition ${
+        className={`${userLikeStyles.containerClassName} ${
           withMargins ? "mt-8 mb-6" : ""
         }`}
       >
         {tabs.map((tab) => (
           <button
             key={String(tab.key)}
-            className={`px-6 py-2 transition ${
+            className={`${userLikeStyles.tabClassName} ${
               selectedKey === tab.key
-                ? "text-brand-primary font-semibold"
-                : "text-neutral-100 hover:text-brand-primaryLight"
+                ? userLikeStyles.selectedTabClassName
+                : userLikeStyles.unselectedTabClassName
             }`}
             onClick={() => onSelect(tab.key)}
             type="button"
@@ -50,7 +94,7 @@ export default function Tab<TKey extends string = string>({
 
         {/* Sliding indicator (RTL/LTR safe) */}
         <span
-          className="absolute bottom-0 h-0.5 bg-brand-primary transition-[inset-inline-start] duration-300 ease-in-out"
+          className={userLikeStyles.indicatorClassName}
           style={{
             width: `${widthPct}%`,
             insetInlineStart: `${startPct}%`,

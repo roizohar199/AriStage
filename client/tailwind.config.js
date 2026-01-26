@@ -47,6 +47,7 @@ export default {
           200: "rgb(var(--neutral-200) / <alpha-value>)",
           150: "rgb(var(--neutral-150) / <alpha-value>)",
           100: "rgb(var(--neutral-100) / <alpha-value>)",
+          50: "rgb(var(--neutral-50) / <alpha-value>)",
         },
       },
 
@@ -92,7 +93,7 @@ export default {
     },
   },
   plugins: [
-    // NOTE: יש לך brand.primary/primaryLight/primaryDark, אין "brand.orange".
+    // NOTE: יש לך brand.primary/primaryLight/primaryDark, אין "brand.primary".
     // לכן מחליפים ל-primary כדי שה-plugin באמת יעבוד.
     plugin(({ addBase, theme }) => {
       const brandPrimary = theme("colors.brand.primary"); // "rgb(var(--brand-primary) / <alpha-value>)"

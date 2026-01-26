@@ -22,6 +22,7 @@ import { useToast } from "@/modules/shared/components/ToastProvider";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import api from "@/modules/shared/lib/api.ts";
 import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
+import { Input } from "@/modules/shared/components/FormControls";
 
 // 1) Types
 export type Plan = {
@@ -233,86 +234,78 @@ function PlanForm({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-2">
-            <label className="text-xs text-neutral-300 font-bold">key</label>
-            <input
+            <Input
+              label="key"
               value={form.key}
               onChange={(e) => setForm((p) => ({ ...p, key: e.target.value }))}
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
               disabled={!canEdit || submitting || mode === "edit"}
               placeholder="pro"
+              className="mb-0"
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-xs text-neutral-300 font-bold">name</label>
-            <input
+            <Input
+              label="name"
               value={form.name}
               onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
               disabled={!canEdit || submitting}
               placeholder="Pro"
+              className="mb-0"
             />
           </div>
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-xs text-neutral-300 font-bold">
-            description
-          </label>
-          <input
+          <Input
+            label="description"
             value={form.description}
             onChange={(e) =>
               setForm((p) => ({ ...p, description: e.target.value }))
             }
-            className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
             disabled={!canEdit || submitting}
             placeholder="אופציונלי"
+            className="mb-0"
           />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="flex flex-col gap-2">
-            <label className="text-xs text-neutral-300 font-bold">
-              currency
-            </label>
-            <input
+            <Input
+              label="currency"
               value={form.currency}
               onChange={(e) =>
                 setForm((p) => ({ ...p, currency: e.target.value }))
               }
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
               disabled={!canEdit || submitting}
               placeholder="ILS"
+              className="mb-0"
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-xs text-neutral-300 font-bold">
-              monthly_price
-            </label>
-            <input
+            <Input
+              label="monthly_price"
               type="number"
               value={form.monthly_price}
               onChange={(e) =>
                 setForm((p) => ({ ...p, monthly_price: e.target.value }))
               }
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
               disabled={!canEdit || submitting}
+              className="mb-0"
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-xs text-neutral-300 font-bold">
-              yearly_price
-            </label>
-            <input
+            <Input
+              label="yearly_price"
               type="number"
               value={form.yearly_price}
               onChange={(e) =>
                 setForm((p) => ({ ...p, yearly_price: e.target.value }))
               }
-              className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
               disabled={!canEdit || submitting}
+              className="mb-0"
             />
           </div>
         </div>
@@ -324,7 +317,7 @@ function PlanForm({
             onChange={(e) =>
               setForm((p) => ({ ...p, enabled: e.target.checked }))
             }
-            className="accent-brand-orange"
+            className="accent-brand-primary"
             disabled={!canEdit || submitting}
           />
           <span className="text-sm text-neutral-200">enabled</span>

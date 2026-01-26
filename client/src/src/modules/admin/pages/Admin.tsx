@@ -71,7 +71,7 @@ function SmallBadge({
 }) {
   const cls =
     variant === "brand"
-      ? "bg-brand-primary text-black font-semibold"
+      ? "bg-brand-primary text-neutral-100 font-semibold"
       : variant === "success"
         ? "bg-green-600 text-neutral-100 font-semibold"
         : variant === "danger"

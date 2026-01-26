@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import api from "@/modules/shared/lib/api.js";
+import { Input, Textarea, Field } from "./FormControls";
 
 export default function ContactForm({ user }) {
   const [form, setForm] = useState({
@@ -39,44 +40,36 @@ export default function ContactForm({ user }) {
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      {/* נושא */}
-      <div>
-        <label className="block text-sm mb-1">נושא ההודעה</label>
-        <input
+      <Field label="נושא ההודעה" required>
+        <Input
           type="text"
           value={form.subject}
           onChange={(e) => setForm({ ...form, subject: e.target.value })}
-          className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm focus:border-orange-500 outline-none"
           placeholder="מה הנושא?"
           required
         />
-      </div>
+      </Field>
 
-      {/* תוכן */}
-      <div>
-        <label className="block text-sm mb-1">תוכן ההודעה</label>
-        <textarea
+      <Field label="תוכן ההודעה" required>
+        <Textarea
           value={form.message}
           onChange={(e) => setForm({ ...form, message: e.target.value })}
-          className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm h-28 focus:border-orange-500 outline-none"
           placeholder="איך אפשר לעזור?"
           required
-        ></textarea>
-      </div>
+          rows={4}
+        />
+      </Field>
 
-      {/* טלפון */}
-      <div>
-        <label className="block text-sm mb-1">טלפון לחזרה</label>
-        <input
+      <Field label="טלפון לחזרה" required>
+        <Input
           type="tel"
           dir="ltr"
           value={form.phone}
           onChange={(e) => setForm({ ...form, phone: e.target.value })}
-          className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm focus:border-orange-500 outline-none"
           placeholder="050-0000000"
           required
         />
-      </div>
+      </Field>
 
       {/* סטטוסים */}
       {error && <p className="text-red-400 text-sm">{error}</p>}
@@ -85,7 +78,7 @@ export default function ContactForm({ user }) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-brand-primary hover:bg-brand-primaryLight text-black font-semibold py-2 rounded-lg transition shadow-innerIos hover:shadow-[0_0_12px_rgba(255,136,0,0.4)]"
+        className="w-full bg-brand-primary hover:bg-brand-primaryLight text-neutral-100 font-semibold py-2 rounded-lg transition shadow-innerIos hover:shadow-[0_0_12px_rgba(255,136,0,0.4)]"
       >
         {loading ? "שולח..." : "שלח הודעה"}
       </button>

@@ -5,6 +5,11 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import DesignActionButtonBig from "@/modules/shared/components/DesignActionButtonBig";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
+import {
+  EmailInput,
+  Input,
+  PasswordInput,
+} from "@/modules/shared/components/FormControls";
 import { X } from "lucide-react";
 
 export default function Login() {
@@ -184,22 +189,20 @@ export default function Login() {
       case "login":
         return (
           <form onSubmit={handleLogin} className="space-y-4">
-            <input
-              type="email"
+            <EmailInput
               placeholder="name@example.com"
               dir="ltr"
               style={{ unicodeBidi: "isolate" }}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-neutral-100 hover:bg-neutral-700/50 focus:bg-neutral-700"
+              className="mb-0"
               required
             />
-            <input
-              type="password"
+            <PasswordInput
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-neutral-100 hover:bg-neutral-700/50 focus:bg-neutral-700"
+              className="mb-0"
               required
             />
             <DesignActionButtonBig type="submit" disabled={loading}>
@@ -256,50 +259,47 @@ export default function Login() {
                 }}
               />
             </div>
-            <input
+            <Input
               type="text"
               placeholder="שם מלא"
               value={full_name}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-neutral-100 hover:bg-neutral-700/50 focus:bg-neutral-700"
+              className="mb-0"
               required
             />
 
             {/* ROLE */}
-            <input
+            <Input
               type="text"
               placeholder="תפקיד (זמר, גיטריסט, מתופף...)"
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-neutral-100 hover:bg-neutral-700/50 focus:bg-neutral-700"
+              className="mb-0"
             />
 
-            <input
-              type="email"
+            <EmailInput
               placeholder="name@example.com"
               dir="ltr"
               style={{ unicodeBidi: "isolate" }}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-neutral-100 hover:bg-neutral-700/50 focus:bg-neutral-700"
+              className="mb-0"
               required
             />
 
-            <input
-              type="password"
+            <PasswordInput
               placeholder="בחר סיסמה"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-neutral-100 hover:bg-neutral-700/50 focus:bg-neutral-700"
+              className="mb-0"
               required
             />
 
-            <input
-              type="password"
+            <PasswordInput
               placeholder="אימות סיסמה"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-neutral-100 hover:bg-neutral-700/50 focus:bg-neutral-700"
+              className="mb-0"
               required
             />
 
@@ -308,7 +308,7 @@ export default function Login() {
                 type="checkbox"
                 checked={agreed}
                 onChange={(e) => setAgreed(e.target.checked)}
-                className="mr-2 m-2 accent-brand-orange"
+                className="mr-2 m-2 accent-brand-primary"
                 required
               />
               <span>
@@ -341,14 +341,13 @@ export default function Login() {
       case "reset":
         return (
           <form onSubmit={handleReset} className="space-y-4">
-            <input
-              type="email"
+            <EmailInput
               placeholder="name@example.com"
               dir="ltr"
               style={{ unicodeBidi: "isolate" }}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-neutral-800 rounded-2xl px-3 py-2 text-sm text-neutral-100 hover:bg-neutral-700/50 focus:bg-neutral-700"
+              className="mb-0"
               required
             />
             <DesignActionButtonBig type="submit" disabled={loading}>

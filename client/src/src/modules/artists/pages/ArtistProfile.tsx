@@ -377,7 +377,7 @@ export default function ArtistProfile() {
                       }
                       navigate("/my");
                     }}
-                    className="bg-brand-primary hover:bg-brand-primaryLight text-black font-semibold px-6 py-3 rounded-lg"
+                    className="bg-brand-primary hover:bg-brand-primaryLight text-neutral-100 font-semibold px-6 py-3 rounded-lg"
                   >
                     חזרה לדף הבית
                   </button>

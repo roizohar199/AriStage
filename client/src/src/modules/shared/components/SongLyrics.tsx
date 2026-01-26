@@ -13,6 +13,7 @@ import { useToast } from "./ToastProvider";
 import { useFeatureFlags } from "@/modules/shared/contexts/FeatureFlagsContext.tsx";
 import { ConfirmOptions } from "../confirm/types";
 import DesignActionButton from "./DesignActionButton";
+import { Textarea } from "./FormControls";
 
 type SongLyricsProps = {
   songId: number;
@@ -130,12 +131,12 @@ export default function SongLyrics({
         maxWidth="max-w-3xl"
       >
         <div className="space-y-3 p-4">
-          <textarea
+          <Textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             readOnly={!canEdit}
             placeholder={canEdit ? "הדבק/כתוב כאן את המילים..." : "אין מילים"}
-            className="w-full min-h-[320px] outline-none bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
+            className="min-h-[320px] mb-0"
           />
 
           {canEdit && (

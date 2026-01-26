@@ -5,6 +5,12 @@ import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { Mail, User, Star } from "lucide-react";
 import BaseModal from "@/modules/shared/components/BaseModal.tsx";
 import { normalizeSubscriptionType } from "@/modules/shared/hooks/useSubscription.ts";
+import {
+  EmailInput,
+  Input,
+  PasswordInput,
+  Select,
+} from "@/modules/shared/components/FormControls";
 
 export default function Users() {
   const confirm = useConfirm();
@@ -203,24 +209,21 @@ export default function Users() {
         <button
           onClick={openCreate}
           // Semantic animation: buttons use `animation-press`
-          className="bg-brand-primary hover:bg-brand-primaryLight text-black font-semibold rounded-full p-2 flex items-center justify-center animation-press"
+          className="bg-brand-primary hover:bg-brand-primaryLight text-neutral-100 font-semibold rounded-full p-2 flex items-center justify-center animation-press"
         >
           <Plus size={18} />
         </button>
       </header>
 
       {/* SEARCH */}
-      <div className="relative mb-6">
-        <input
+      <div className="mb-6">
+        <Input
           type="text"
           placeholder="חפש לפי שם, אימייל או תפקיד..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-xl bg-neutral-900 border border-neutral-800 p-3 pl-10 text-sm placeholder-neutral-500"
-        />
-        <Search
-          size={18}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+          rightIcon={<Search size={18} />}
+          className="mb-0"
         />
       </div>
 
@@ -246,12 +249,12 @@ export default function Users() {
               </div>
               <div className="flex flex-wrap gap-2 mt-2 text-xs">
                 {/* תפקיד */}
-                <span className="flex flex-row-reverse items-center gap-1 px-2 py-1 bg-brand-primary rounded-lg text-black font-semibold">
+                <span className="flex flex-row-reverse items-center gap-1 px-2 py-1 bg-brand-primary rounded-lg text-neutral-100 font-semibold">
                   <User size={14} /> {u.role}
                 </span>
 
                 {/* מנוי */}
-                <span className="flex flex-row-reverse items-center gap-1 px-2 py-1 bg-brand-primary rounded-lg text-black font-semibold">
+                <span className="flex flex-row-reverse items-center gap-1 px-2 py-1 bg-brand-primary rounded-lg text-neutral-100 font-semibold">
                   <Star size={14} />
                   {normalizeSubscriptionType(u.subscription_type)}
                 </span>
@@ -322,65 +325,60 @@ export default function Users() {
         </h2>
 
         <form onSubmit={submit} className="space-y-3">
-          <input
+          <Input
             type="text"
             placeholder="שם מלא *"
             value={form.full_name}
             onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-            className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm focus:border-orange-500 outline-none"
+            className="mb-0"
             required
           />
 
-          <input
-            type="email"
+          <EmailInput
             placeholder="אימייל *"
             dir="ltr"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             disabled={!!editingId}
-            className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm focus:border-orange-500 outline-none"
+            className="mb-0"
             required={!editingId}
           />
 
           {!editingId && (
-            <input
-              type="password"
+            <PasswordInput
               placeholder="סיסמה *"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm focus:border-orange-500 outline-none"
+              className="mb-0"
               required
             />
           )}
 
-          <select
+          <Select
             value={form.role}
-            onChange={(e) => setForm({ ...form, role: e.target.value })}
-            className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm focus:border-orange-500 outline-none"
-          >
-            {/* manager חולק חלק מההרשאות המוגבהות בצד השרת (مثل יצירת משתמשים
-                וצפייה ברשימת כל המשתמשים), גם אם כרגע אין לו ממשק ניהול
-                נפרד בצד הלקוח. */}
-            <option value="admin">Admin</option>
-            <option value="manager">Manager</option>
-            <option value="user">User</option>
-          </select>
+            onChange={(role) => setForm({ ...form, role })}
+            options={[
+              { value: "admin", label: "Admin" },
+              { value: "manager", label: "Manager" },
+              { value: "user", label: "User" },
+            ]}
+          />
 
-          <select
+          <Select
             value={form.subscription_type}
-            onChange={(e) =>
-              setForm({ ...form, subscription_type: e.target.value })
+            onChange={(subscription_type) =>
+              setForm({ ...form, subscription_type })
             }
-            className="w-full bg-neutral-800 p-2 rounded-lg border border-neutral-700 text-sm focus:border-orange-500 outline-none"
-          >
-            <option value="trial">Trial</option>
-            <option value="pro">Pro</option>
-          </select>
+            options={[
+              { value: "trial", label: "Trial" },
+              { value: "pro", label: "Pro" },
+            ]}
+          />
 
           <button
             type="submit"
             // Semantic animation: buttons use `animation-press`
-            className="w-full bg-brand-primary hover:bg-brand-primaryLight text-black font-semibold py-2 rounded-lg mt-2 animation-press"
+            className="w-full bg-brand-primary hover:bg-brand-primaryLight text-neutral-100 font-semibold py-2 rounded-lg mt-2 animation-press"
           >
             {editingId ? "עדכון" : "שמור"}
           </button>

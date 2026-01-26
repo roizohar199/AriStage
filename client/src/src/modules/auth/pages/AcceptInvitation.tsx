@@ -54,7 +54,7 @@ export default function AcceptInvitation() {
       <div className="bg-neutral-900 rounded-2xl w-full max-w-md p-8 border border-neutral-800 shadow-xl">
         {loading ? (
           <div className="text-center">
-            <div className="w-12 h-12 border-4 border-brand-orange border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-neutral-400">מטפל בהזמנה...</p>
           </div>
         ) : error ? (
@@ -64,7 +64,7 @@ export default function AcceptInvitation() {
             <p className="text-neutral-400 mb-6">{error}</p>
             <button
               onClick={() => navigate("/login")}
-              className="bg-brand-primary hover:bg-brand-primaryLight text-black font-semibold px-6 py-3 rounded-lg"
+              className="bg-brand-primary hover:bg-brand-primaryLight text-neutral-100 font-semibold px-6 py-3 rounded-lg"
             >
               חזרה להתחברות
             </button>
@@ -78,7 +78,7 @@ export default function AcceptInvitation() {
             <p className="text-neutral-400 mb-6">{message}</p>
             <button
               onClick={() => navigate("/login")}
-              className="bg-brand-primary hover:bg-brand-primaryLight text-black font-semibold px-6 py-3 rounded-lg"
+              className="bg-brand-primary hover:bg-brand-primaryLight text-neutral-100 font-semibold px-6 py-3 rounded-lg"
             >
               התחבר עכשיו
             </button>
@@ -99,7 +99,7 @@ export default function AcceptInvitation() {
                   `/login?tab=register&email=${encodeURIComponent(invitationEmail)}`,
                 )
               }
-              className="bg-brand-primary hover:bg-brand-primaryLight text-black font-semibold px-6 py-3 rounded-lg"
+              className="bg-brand-primary hover:bg-brand-primaryLight text-neutral-100 font-semibold px-6 py-3 rounded-lg"
             >
               צור חשבון חדש
             </button>

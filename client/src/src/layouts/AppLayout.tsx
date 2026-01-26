@@ -90,7 +90,7 @@ export default function AppLayout({
       {/* 🟧 Impersonation banner */}
       {isImpersonating && (
         <div
-          className="w-full bg-brand-primary text-black py-2 px-4 text-center font-semibold 
+          className="w-full bg-brand-primary text-neutral-100 py-2 px-4 text-center font-semibold 
           flex flex-col sm:flex-row items-center justify-center gap-3
           shadow-lg sticky top-0 z-50 lg:order-1"
         >

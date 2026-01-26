@@ -5,6 +5,7 @@ import api from "@/modules/shared/lib/api.ts";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "@/modules/shared/components/ToastProvider";
 import Search from "@/modules/shared/components/Search";
+import { Select } from "@/modules/shared/components/FormControls";
 import type { AdminUser } from "../pages/Admin";
 import { API_ORIGIN } from "@/config/apiConfig";
 import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
@@ -238,19 +239,20 @@ export default function AdminFilesTab({
 
       <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-neutral-400">סינון לפי משתמש</span>
-          <select
-            className="bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-neutral-100"
-            value={filterUserId}
-            onChange={(e) => setFilterUserId(e.target.value)}
-          >
-            <option value="">כל המשתמשים</option>
-            {(users || []).map((u) => (
-              <option key={u.id} value={String(u.id)}>
-                {u.full_name ? `${u.full_name} (${u.email})` : u.email}
-              </option>
-            ))}
-          </select>
+          <div className="min-w-[240px]">
+            <Select
+              label="סינון לפי משתמש"
+              value={filterUserId}
+              onChange={(next) => setFilterUserId(next)}
+              options={[
+                { value: "", label: "כל המשתמשים" },
+                ...(users || []).map((u) => ({
+                  value: String(u.id),
+                  label: u.full_name ? `${u.full_name} (${u.email})` : u.email,
+                })),
+              ]}
+            />
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2 items-center sm:mr-auto">

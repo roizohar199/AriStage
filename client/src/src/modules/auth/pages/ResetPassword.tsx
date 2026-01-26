@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "@/modules/shared/lib/api.js";
 import { emitToast } from "@/modules/shared/lib/toastBus.js";
+import { PasswordInput } from "@/modules/shared/components/FormControls";
 
 export default function ResetPassword() {
   const { token } = useParams();
@@ -46,25 +47,21 @@ export default function ResetPassword() {
         {error && <p className="text-red-400 text-sm mb-2">{error}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="password"
+          <PasswordInput
             placeholder="סיסמה חדשה"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full bg-neutral-100/5 border border-neutral-100/10 p-2 rounded-xl text-sm"
           />
 
-          <input
-            type="password"
+          <PasswordInput
             placeholder="אימות סיסמה"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
-            className="w-full bg-neutral-100/5 border border-neutral-100/10 p-2 rounded-xl text-sm"
           />
 
           <button
             disabled={loading}
-            className="w-full bg-brand-primary text-black font-bold py-2 rounded-xl"
+            className="w-full bg-brand-primary text-neutral-100 font-bold py-2 rounded-xl"
           >
             {loading ? "מעדכן..." : "עדכן סיסמה"}
           </button>

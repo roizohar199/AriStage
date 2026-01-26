@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import api from "@/modules/shared/lib/api.js";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
@@ -6,133 +6,12 @@ import { useSubscription } from "@/modules/shared/hooks/useSubscription.ts";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
 import DesignActionButtonBig from "@/modules/shared/components/DesignActionButtonBig";
 import { resolveThemeIndex } from "@/modules/shared/lib/theme";
-
-type DropdownOption<T extends string> = {
-  value: T;
-  label: string;
-};
-
-function DesignDropdown<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-  disabled,
-}: {
-  label: string;
-  value: T;
-  options: DropdownOption<T>[];
-  onChange: (next: T) => void;
-  disabled?: boolean;
-}) {
-  const id = useId();
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
-  const [open, setOpen] = useState(false);
-
-  const selected = options.find((o) => o.value === value) ?? options[0];
-
-  useEffect(() => {
-    if (!open) return;
-
-    const onMouseDown = (e: MouseEvent) => {
-      const target = e.target as Node | null;
-      if (!target) return;
-      if (containerRef.current?.contains(target)) return;
-      setOpen(false);
-    };
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        setOpen(false);
-        buttonRef.current?.focus();
-      }
-    };
-
-    document.addEventListener("mousedown", onMouseDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onMouseDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
-
-  return (
-    <div ref={containerRef} className="relative">
-      <label className="block text-sm mb-1" id={`${id}-label`}>
-        {label}
-      </label>
-
-      <button
-        ref={buttonRef}
-        type="button"
-        disabled={disabled}
-        aria-labelledby={`${id}-label`}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls={`${id}-listbox`}
-        onClick={() => setOpen((v) => !v)}
-        onKeyDown={(e) => {
-          if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            setOpen(true);
-          }
-        }}
-        className={`w-full bg-neutral-900 p-2 rounded-2xl mb-1 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition flex items-center justify-between gap-3 transition ${
-          disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
-        }`}
-      >
-        <span className="truncate">{selected?.label}</span>
-        <svg
-          className={`h-4 w-4 text-neutral-300 transition ${open ? "rotate-180" : ""}`}
-          viewBox="0 0 20 20"
-          fill="currentColor"
-          aria-hidden
-        >
-          <path
-            fillRule="evenodd"
-            d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08Z"
-            clipRule="evenodd"
-          />
-        </svg>
-      </button>
-
-      {open && (
-        <div
-          id={`${id}-listbox`}
-          role="listbox"
-          aria-labelledby={`${id}-label`}
-          className="absolute z-50 mt-1 w-full overflow-hidden rounded-2xl bg-neutral-900 shadow-lg"
-        >
-          {options.map((opt) => {
-            const isSelected = opt.value === value;
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                role="option"
-                aria-selected={isSelected}
-                onClick={() => {
-                  onChange(opt.value);
-                  setOpen(false);
-                  buttonRef.current?.focus();
-                }}
-                className={`w-full text-start px-3 py-2 text-sm  ${
-                  isSelected
-                    ? " rounded-2xl text-neutral-200 hover:bg-neutral-950 transition"
-                    : "rounded-2xl text-neutral-200 hover:bg-neutral-950 transition"
-                }`}
-              >
-                {opt.label}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
+import {
+  EmailInput,
+  Input,
+  PasswordInput,
+  Select,
+} from "@/modules/shared/components/FormControls";
 
 type SubscriptionPlan = {
   tier: string;
@@ -418,8 +297,8 @@ export default function Settings() {
                   onClick={() => setSelectedBillingPeriod("monthly")}
                   className={`text-start rounded-2xl p-5 border transition cursor-pointer ${
                     selectedBillingPeriod === "monthly"
-                      ? "bg-neutral-750 border border-brand-primary"
-                      : "bg-neutral-850 border border-neutral-850"
+                      ? "bg-neutral-950 border border-brand-primary"
+                      : "bg-neutral-900 border border-neutral-900"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-4">
@@ -427,8 +306,8 @@ export default function Settings() {
                     <div
                       className={`h-3 w-3 rounded-full border ${
                         selectedBillingPeriod === "monthly"
-                          ? "bg-neutral-750 border border-brand-primary"
-                          : "bg-neutral-850 border border-neutral-850"
+                          ? "bg-neutral-950 border border-brand-primary"
+                          : "bg-neutral-900 border border-neutral-900"
                       }`}
                       aria-hidden
                     />
@@ -444,8 +323,8 @@ export default function Settings() {
                   onClick={() => setSelectedBillingPeriod("yearly")}
                   className={`text-start rounded-2xl p-5 border transition cursor-pointer ${
                     selectedBillingPeriod === "yearly"
-                      ? "bg-neutral-750 border border-brand-primary"
-                      : "bg-neutral-850 border border-neutral-850"
+                      ? "bg-neutral-950 border border-brand-primary"
+                      : "bg-neutral-900 border border-neutral-900"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-4">
@@ -453,8 +332,8 @@ export default function Settings() {
                     <div
                       className={`h-3 w-3 rounded-full border ${
                         selectedBillingPeriod === "yearly"
-                          ? "bg-neutral-750 border border-brand-primary"
-                          : "bg-neutral-850 border border-neutral-850"
+                          ? "bg-neutral-950 border border-brand-primary"
+                          : "bg-neutral-900 border border-neutral-900"
                       }`}
                       aria-hidden
                     />
@@ -539,56 +418,54 @@ export default function Settings() {
           {/* שם מלא */}
           <div className="max-w-md w- full space-y-4 mx-auto">
             <div>
-              <input
+              <Input
                 type="text"
                 value={form.full_name}
                 onChange={(e) =>
                   setForm({ ...form, full_name: e.target.value })
                 }
                 placeholder="שם מלא"
-                className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
+                className="mb-0"
               />
             </div>
 
             <div>
-              <input
+              <Input
                 type="text"
                 value={form.artist_role}
                 onChange={(e) =>
                   setForm({ ...form, artist_role: e.target.value })
                 }
                 placeholder="גיטריסט, מפיק, בסיסט..."
-                className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
+                className="mb-0"
               />
             </div>
 
             {/* אימייל */}
             <div>
-              <input
-                type="email"
+              <EmailInput
                 dir="rtl"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 placeholder="אימייל"
-                className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
+                className="mb-0"
               />
             </div>
 
             {/* סיסמה חדשה */}
             <div>
-              <input
-                type="password"
+              <PasswordInput
                 value={form.newPass}
                 onChange={(e) => setForm({ ...form, newPass: e.target.value })}
                 placeholder="סיסמה חדשה (השאר ריק אם לא משנים)"
-                className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
+                className="mb-0"
               />
             </div>
 
             {/* Theme */}
             <div>
-              <span className="text-sm text-neutral-300">צבע מערכת</span>
-              <DesignDropdown
+              <Select
+                label="צבע מערכת"
                 value={form.themeIndex}
                 disabled={saving}
                 options={[
@@ -601,8 +478,8 @@ export default function Settings() {
 
             {/* Language */}
             <div>
-              <span className="text-sm text-neutral-300">שפת מערכת</span>
-              <DesignDropdown
+              <Select
+                label="שפת מערכת"
                 value={form.preferred_locale}
                 disabled={saving}
                 options={[

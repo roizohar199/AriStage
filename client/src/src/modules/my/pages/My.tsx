@@ -45,6 +45,7 @@ import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import { useFeatureFlags } from "@/modules/shared/contexts/FeatureFlagsContext.tsx";
 import DesignActionButton from "../../shared/components/DesignActionButton";
 import DesignActionButtonBig from "../../shared/components/DesignActionButtonBig";
+import { EmailInput } from "@/modules/shared/components/FormControls";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "../../shared/components/ToastProvider";
 import ArtistCard from "../../shared/components/ArtistCard";
@@ -1180,12 +1181,11 @@ function MyContent(): JSX.Element {
 
         <form onSubmit={sendInvitation} className="space-y-4">
           <div>
-            <input
-              type="email"
+            <EmailInput
               placeholder="artist@example.com"
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
-              className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
+              className="mb-0"
               dir="ltr"
               required
               disabled={inviteLoading}

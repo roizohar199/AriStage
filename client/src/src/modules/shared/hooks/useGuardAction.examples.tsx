@@ -3,7 +3,10 @@
  * Copy these patterns to protect actions in your app
  */
 
+import React, { useState, type FormEvent } from "react";
+
 import { useGuardAction } from "@/modules/shared/hooks/useGuardAction";
+import { Input } from "@/modules/shared/components/FormControls";
 import api from "@/modules/shared/lib/api";
 
 // ============================================
@@ -40,7 +43,7 @@ function EditLineupButton({ lineupId }: { lineupId: number }) {
     },
     {
       message: "עריכת ליינאפ זמינה רק עם מנוי פעיל",
-    }
+    },
   );
 
   return <button onClick={() => handleEdit(lineupId)}>Edit</button>;
@@ -59,7 +62,7 @@ function DeleteSongButton({ songId }: { songId: number }) {
     },
     {
       message: "מחיקת שיר זמינה רק עם מנוי פעיל",
-    }
+    },
   );
 
   return (
@@ -84,7 +87,7 @@ function UploadChartButton({ songId }: { songId: number }) {
     },
     {
       message: "העלאת תווים זמינה רק עם מנוי פעיל",
-    }
+    },
   );
 
   return (
@@ -114,12 +117,17 @@ function CreateLineupForm() {
     },
     {
       message: "יצירת ליינאפ זמינה רק עם מנוי פעיל",
-    }
+    },
   );
 
   return (
     <form onSubmit={handleSubmit}>
-      <input value={name} onChange={(e) => setName(e.target.value)} />
+      <Input
+        label="Name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className="mb-0"
+      />
       <button type="submit">Create Lineup</button>
     </form>
   );
@@ -138,7 +146,7 @@ function BulkDeleteButton({ selectedIds }: { selectedIds: number[] }) {
     },
     {
       message: "מחיקה מרובה זמינה רק עם מנוי פעיל",
-    }
+    },
   );
 
   return (

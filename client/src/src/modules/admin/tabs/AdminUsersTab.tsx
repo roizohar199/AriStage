@@ -13,6 +13,7 @@ import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
 
 import BaseModal from "@/modules/shared/components/BaseModal";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
+import { Input, Select } from "@/modules/shared/components/FormControls";
 
 import type { AdminUser } from "../pages/Admin";
 
@@ -259,29 +260,27 @@ export default function AdminUsersTab({
         <form onSubmit={saveUser} className="flex flex-col gap-4">
           <h2 className="text-xl font-bold">עריכת משתמש</h2>
 
-          <input
+          <Input
             value={userForm.full_name}
             onChange={(e) =>
               setUserForm((p) => ({ ...p, full_name: e.target.value }))
             }
             placeholder="שם"
-            className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
+            className="mb-0"
           />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex flex-col gap-2">
-              <label className="text-xs text-neutral-300 font-bold">role</label>
-              <select
+              <Select
+                label="role"
                 value={userForm.role}
-                onChange={(e) =>
-                  setUserForm((p) => ({ ...p, role: e.target.value }))
-                }
-                className="w-full bg-neutral-800 p-2 rounded-2xl text-sm"
-              >
-                <option value="user">user</option>
-                <option value="manager">manager</option>
-                <option value="admin">admin</option>
-              </select>
+                onChange={(role) => setUserForm((p) => ({ ...p, role }))}
+                options={[
+                  { value: "user", label: "user" },
+                  { value: "manager", label: "manager" },
+                  { value: "admin", label: "admin" },
+                ]}
+              />
             </div>
           </div>
 

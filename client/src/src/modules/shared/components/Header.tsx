@@ -285,7 +285,7 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
               )}
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="h-9 w-9 rounded-full overflow-hidden border border-neutral-950 flex items-center justify-center text-neutral-100 text-sm shadow-surface"
+                className="h-9 w-9 rounded-full overflow-hidden flex items-center justify-center text-neutral-100 text-sm shadow-surface"
               >
                 {user?.avatar ? (
                   <img
@@ -452,7 +452,7 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                 >
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3 text-start">
-                      <div className="h-24 w-24 rounded-full bg-neutral-800 border-2 border-brand-orange overflow-hidden flex items-center justify-center">
+                      <div className="h-24 w-24 rounded-full bg-neutral-800 border-2 border-brand-primary overflow-hidden flex items-center justify-center">
                         {invitation.avatar ? (
                           <img
                             src={invitation.avatar}
@@ -468,7 +468,7 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                           {invitation.full_name || "משתמש"}
                         </span>
                         {invitation.artist_role && (
-                          <span className="inline-flex items-center px-1 bg-brand-primary rounded-lg text-black font-semibold text-xs">
+                          <span className="inline-flex items-center px-1 bg-brand-primary rounded-lg text-neutral-100 font-semibold text-xs">
                             {invitation.artist_role}
                           </span>
                         )}

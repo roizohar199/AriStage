@@ -261,6 +261,7 @@ export default function UpgradeModal({
       closeOnEsc={!submitting}
       showCloseButton={!submitting}
       padding="p-8"
+      containerClassName="bg-neutral-950"
     >
       <div className="space-y-6 text-start p-2">
         {/* Header */}
@@ -342,7 +343,7 @@ export default function UpgradeModal({
                   onClick={() => setSelectedBillingPeriod("monthly")}
                   className={`px-4 py-2 rounded-2xl text-sm font-semibold transition ${
                     selectedBillingPeriod === "monthly"
-                      ? "bg-neutral-100 text-black"
+                      ? "bg-neutral-100 text-neutral-950"
                       : "text-neutral-300 hover:text-neutral-100"
                   }`}
                 >
@@ -353,7 +354,7 @@ export default function UpgradeModal({
                   onClick={() => setSelectedBillingPeriod("yearly")}
                   className={`px-4 py-2 rounded-2xl text-sm font-semibold transition ${
                     selectedBillingPeriod === "yearly"
-                      ? "bg-neutral-100 text-black"
+                      ? "bg-neutral-100 text-neutral-950"
                       : "text-neutral-300 hover:text-neutral-100"
                   }`}
                 >
@@ -386,8 +387,8 @@ export default function UpgradeModal({
                       !isEnabled
                         ? "bg-neutral-900/40 border-neutral-800 opacity-60 cursor-not-allowed"
                         : isSelected
-                          ? "bg-neutral-700/50 border-brand-orange"
-                          : "bg-neutral-800 border-neutral-800 hover:border-brand-orange/50"
+                          ? "bg-neutral-700/50 border-brand-primary"
+                          : "bg-neutral-800 border-neutral-800 hover:border-brand-primary/50"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -407,7 +408,7 @@ export default function UpgradeModal({
                               {plan.name}
                             </h3>
                             {isSelected ? (
-                              <span className="inline-flex items-center gap-1 rounded-lg bg-brand-primary text-black text-xs font-bold px-2 py-1">
+                              <span className="inline-flex items-center gap-1 rounded-lg bg-brand-primary text-neutral-100 text-xs font-bold px-2 py-1">
                                 <Check className="h-3.5 w-3.5" />
                                 נבחר
                               </span>
@@ -494,7 +495,7 @@ export default function UpgradeModal({
         <button
           onClick={handleUpgrade}
           disabled={submitting || !selectedPlan || !isSelectedPlanEnabled}
-          className="w-full px-6 py-3 bg-brand-primary hover:bg-brand-primaryLight disabled:opacity-70 disabled:cursor-not-allowed text-black font-semibold rounded-2xl transition-colors"
+          className="w-full px-6 py-3 bg-brand-primary hover:bg-brand-primaryLight disabled:opacity-70 disabled:cursor-not-allowed text-neutral-100 font-semibold rounded-2xl transition-colors"
         >
           {submitting
             ? "מבצע שדרוג (בדיקה)..."

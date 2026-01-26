@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import BaseModal from "./BaseModal.tsx";
 import DesignActionButtonBig from "./DesignActionButtonBig";
+import { Input, Select } from "./FormControls";
 
 /* ---------- Types ---------- */
 
@@ -120,25 +121,6 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
 }) => {
   const [form, setForm] = useState<SongForm>(initialForm);
 
-  // dropmenu states & ref for outside clicks
-  const [rootOpen, setRootOpen] = useState(false);
-  const [modeOpen, setModeOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      ) {
-        setRootOpen(false);
-        setModeOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   useEffect(() => {
     setForm({
       ...initialForm,
@@ -166,24 +148,24 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
         className="space-y-4"
       >
         {/* שם השיר */}
-        <input
+        <Input
           placeholder="שם השיר *"
           value={form.title}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
-          className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
+          className="mb-0"
           required
         />
 
         {/* אמן */}
-        <input
+        <Input
           placeholder="אמן"
           value={form.artist}
           onChange={(e) => setForm({ ...form, artist: e.target.value })}
-          className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
+          className="mb-0"
         />
 
         {/* BPM */}
-        <input
+        <Input
           placeholder="BPM"
           type="number"
           min={1}
@@ -195,90 +177,45 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
               bpm: e.target.value.replace(/\D/g, ""),
             })
           }
-          className="w-full bg-neutral-900 p-2 rounded-2xl mb-2 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
+          className="mb-0"
         />
 
         {/* סולם */}
         <div>
-          <p className="text-sm text-neutral-400 mb-1">סולם השיר:</p>
+          <p className="text-sm text-neutral-400 mb-1 ">סולם השיר:</p>
 
-          <div className="flex gap-2" ref={dropdownRef}>
-            {/* Root Dropmenu */}
-            <div className="relative flex-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setRootOpen((v) => !v);
-                  setModeOpen(false);
-                }}
-                // Semantic animation: buttons use `animation-press`
-                className="w-full bg-neutral-900 p-2 rounded-2xl mb-1 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
-              >
-                {getRoot(form.key_sig)}
-              </button>
-              {rootOpen && (
-                <div
-                  // Semantic animation: dropdowns use `animation-overlay`
-                  className="absolute w-full bg-neutral-900 rounded-2xl max-h-44 overflow-auto z-20 transition"
-                >
-                  {notesKeys.map((note) => (
-                    <button
-                      key={note}
-                      type="button"
-                      onClick={() => {
-                        setForm({
-                          ...form,
-                          key_sig: `${note} ${getMode(form.key_sig)}`,
-                        });
-                        setRootOpen(false);
-                      }}
-                      // Semantic animation: buttons use `animation-press`
-                      className="w-full x-3 py-2 text-sm  rounded-2xl text-neutral-200 hover:bg-neutral-950 transition"
-                    >
-                      {note}
-                    </button>
-                  ))}
-                </div>
-              )}
+          <div className="flex gap-2 flex-row-reverse">
+            <div className="flex-1 ">
+              <Select
+                value={getRoot(form.key_sig)}
+                onChange={(value) =>
+                  setForm({
+                    ...form,
+                    key_sig: `${value} ${getMode(form.key_sig)}`,
+                  })
+                }
+                options={notesKeys.map((note) => ({
+                  value: note,
+                  label: note,
+                }))}
+                className="mb-0 "
+              />
             </div>
-
-            {/* Mode Dropmenu */}
-            <div className="relative flex-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setModeOpen((v) => !v);
-                  setRootOpen(false);
-                }}
-                // Semantic animation: buttons use `animation-press`
-                className="w-full bg-neutral-900 p-2 rounded-2xl mb-1 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
-              >
-                {getMode(form.key_sig)}
-              </button>
-              {modeOpen && (
-                <div
-                  // Semantic animation: dropdowns use `animation-overlay`
-                  className="absolute w-full bg-neutral-900 rounded-2xl max-h-44 overflow-auto z-20 transition"
-                >
-                  {scaleModes.map((mode) => (
-                    <button
-                      key={mode}
-                      type="button"
-                      onClick={() => {
-                        setForm({
-                          ...form,
-                          key_sig: `${getRoot(form.key_sig)} ${mode}`,
-                        });
-                        setModeOpen(false);
-                      }}
-                      // Semantic animation: buttons use `animation-press`
-                      className="w-full x-3 py-2 text-sm  rounded-2xl text-neutral-200 hover:bg-neutral-950 transition"
-                    >
-                      {mode}
-                    </button>
-                  ))}
-                </div>
-              )}
+            <div className="flex-1">
+              <Select
+                value={getMode(form.key_sig)}
+                onChange={(value) =>
+                  setForm({
+                    ...form,
+                    key_sig: `${getRoot(form.key_sig)} ${value}`,
+                  })
+                }
+                options={scaleModes.map((mode) => ({
+                  value: mode,
+                  label: mode,
+                }))}
+                className="mb-0"
+              />
             </div>
           </div>
         </div>
@@ -286,8 +223,8 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
         {/* משך זמן */}
         <div>
           <p className="text-sm text-neutral-400 mb-1">משך זמן:</p>
-          <div className="flex flex-justify-between flex-row-reverse gap-2 items-center">
-            <input
+          <div className="w-fit flex justify-between flex-row-reverse gap-2 items-center">
+            <Input
               type="number"
               min={0}
               max={59}
@@ -300,10 +237,10 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
                   )}`,
                 })
               }
-              className="w-full bg-neutral-900 p-2 rounded-2xl text-center mb-1 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
+              className="w-full text-center mb-0"
             />
             <span>:</span>
-            <input
+            <Input
               type="number"
               min={0}
               max={59}
@@ -316,7 +253,7 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
                   }`,
                 })
               }
-              className="w-full bg-neutral-900 p-2 rounded-2xl text-center mb-1 text-neutral-100 text-label focus:bg-neutral-950 shadow-surface transition"
+              className="w-full text-center mb-0"
             />
           </div>
         </div>

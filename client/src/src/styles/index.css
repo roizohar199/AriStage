@@ -123,7 +123,8 @@ button:disabled {
   --neutral-250: 36 36 36; /* #242424 */
   --neutral-200: 24 24 24; /* #181818 */
   --neutral-150: 12 12 12; /* #0c0c0c */
-  --neutral-100: 0 0 0; /* #000000 */
+  --neutral-100: 24 24 24; /* #181818 */
+  --neutral-50: 0 0 0; /* #000000 */
 
   /* brand (עדיף לשמור קבוע; אם אתה מתעקש לשנות—אפשר) */
   --brand-primary: 245 158 11;
@@ -171,7 +172,7 @@ button:disabled {
 }
 
 .app-scroll.scrolling {
-  scrollbar-color: rgb(var(--tw-color-brand-orange)) transparent;
+  scrollbar-color: rgb(var(--tw-color-brand-primary)) transparent;
 }
 
 .app-scroll::-webkit-scrollbar {
@@ -189,7 +190,7 @@ button:disabled {
 }
 
 .app-scroll.scrolling::-webkit-scrollbar-thumb {
-  background-color: rgb(var(--tw-color-brand-orange));
+  background-color: rgb(var(--tw-color-brand-primary));
 }
 
 /* --- SAFE AREA FOR BOTTOM NAV --- */

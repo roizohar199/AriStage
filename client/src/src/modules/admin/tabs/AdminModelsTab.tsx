@@ -5,6 +5,7 @@ import api from "@/modules/shared/lib/api.ts";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
 import { useToast } from "@/modules/shared/components/ToastProvider";
 import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
+import { Input } from "@/modules/shared/components/FormControls";
 
 type SmallBadgeVariant = "neutral" | "brand" | "success" | "danger";
 
@@ -282,38 +283,36 @@ export default function AdminModelsTab({
 
         <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-neutral-300 font-bold">Key</label>
-            <input
+            <Input
+              label="Key"
               value={createForm.key}
               onChange={(e) =>
                 setCreateForm((p) => ({ ...p, key: e.target.value }))
               }
-              className="bg-neutral-950 border border-neutral-800 p-2 rounded-2xl text-sm"
               placeholder="module.myFeature"
+              className="mb-0"
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-neutral-300 font-bold">Label</label>
-            <input
+            <Input
+              label="Label"
               value={createForm.label}
               onChange={(e) =>
                 setCreateForm((p) => ({ ...p, label: e.target.value }))
               }
-              className="bg-neutral-950 border border-neutral-800 p-2 rounded-2xl text-sm"
               placeholder="לדוגמה: הוספת שירים"
+              className="mb-0"
             />
           </div>
           <div className="flex flex-col gap-1 md:col-span-2">
-            <label className="text-xs text-neutral-300 font-bold">
-              Description
-            </label>
-            <input
+            <Input
+              label="Description"
               value={createForm.description}
               onChange={(e) =>
                 setCreateForm((p) => ({ ...p, description: e.target.value }))
               }
-              className="bg-neutral-950 border border-neutral-800 p-2 rounded-2xl text-sm"
               placeholder="תיאור (אופציונלי) — אם ריק נשתמש ב-Label"
+              className="mb-0"
             />
           </div>
 
@@ -325,7 +324,7 @@ export default function AdminModelsTab({
                 onChange={(e) =>
                   setCreateForm((p) => ({ ...p, enabled: e.target.checked }))
                 }
-                className="accent-brand-orange"
+                className="accent-brand-primary"
               />
               enabled
             </label>
