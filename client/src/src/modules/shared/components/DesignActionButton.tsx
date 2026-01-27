@@ -17,10 +17,10 @@ const DESIGN_ACTION_BUTTON_VARIANT_CLASS: Record<
   DesignActionButtonVariant,
   string
 > = {
-  primary: "bg-brand-primary text-neutral-100 hover:bg-brand-primaryLight ",
-  danger: "bg-red-600 text-neutral-100 hover:bg-red-500",
+  primary: "bg-brand-primary text-black hover:bg-brand-primaryLight ",
+  danger: "bg-red-600 text-white hover:bg-red-500",
   cancel:
-    "bg-neutral-700 hover:bg-neutral-650 text-neutral-100 px-5 py-2 font-bold",
+    "bg-neutral-700 hover:bg-neutral-650 text-neutral-950 px-5 py-2 font-bold",
 };
 
 const DesignActionButton = React.forwardRef<

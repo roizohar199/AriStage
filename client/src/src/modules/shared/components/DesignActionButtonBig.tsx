@@ -7,7 +7,7 @@ type DesignActionButtonBigProps = Omit<
 
 const DESIGN_ACTION_BUTTON_BIG_CLASS =
   // Semantic animation: buttons use `animation-press`
-  "w-full bg-brand-primary text-neutral-100 transition font-semibold rounded-2xl px-4 py-2 mt-2 hover:bg-brand-primaryLight ";
+  "w-full bg-brand-primary text-black transition font-semibold rounded-2xl px-4 py-2 mt-2 hover:bg-brand-primaryLight ";
 
 const DesignActionButtonBig = React.forwardRef<
   HTMLButtonElement,

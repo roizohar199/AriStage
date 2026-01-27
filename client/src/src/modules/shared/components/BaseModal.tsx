@@ -27,7 +27,7 @@ export default function BaseModal({
   closeOnBackdropClick = true,
   closeOnEsc = true,
   lockScroll = false,
-  backdropClassName = "bg-black/70",
+  backdropClassName = "bg-black/50",
   padding = "p-6",
   showCloseButton = true,
   containerClassName = "",
