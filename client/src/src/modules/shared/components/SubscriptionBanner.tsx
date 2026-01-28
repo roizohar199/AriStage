@@ -76,7 +76,7 @@ export default function SubscriptionBanner() {
         </div>
         <button
           onClick={handleUpgrade}
-          className="bg-neutral-100 text-brand-primary font-semibold px-6 py-2 rounded-lg hover:bg-primary-50 transition-colors whitespace-nowrap"
+          className="bg-neutral-950 text-neutral-100 font-semibold px-6 py-2 rounded-lg hover:bg-primary-50 transition-colors whitespace-nowrap "
         >
           שדרג עכשיו
         </button>

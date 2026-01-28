@@ -61,7 +61,7 @@ const CardSong: React.FC<CardSongProps> = ({
             {song.duration_sec}
           </span>
           {song.notes && (
-            <span className="inline-block px-2 py-1 bg-brand-primary rounded-2xl text-neutral-100 shadow-surface">
+            <span className="inline-block px-2 py-1 bg-brand-primary rounded-2xl text-black shadow-surface">
               {song.notes}
             </span>
           )}

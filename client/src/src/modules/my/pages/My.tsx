@@ -49,6 +49,7 @@ import { EmailInput } from "@/modules/shared/components/FormControls";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "../../shared/components/ToastProvider";
 import ArtistCard from "../../shared/components/ArtistCard";
+import Bord from "@/modules/shared/components/bord";
 
 import { io } from "socket.io-client";
 
@@ -61,29 +62,13 @@ function PersonalStats({
 }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div className="bg-neutral-800 rounded-2xl p-4 flex items-center gap-4">
-        <Music size={32} className="text-brand-primary shrink-0" />
-        <div className="flex flex-col">
-          <span className="text-xl font-bold">{stats?.songs ?? 0}</span>
-          <span className="text-sm text-neutral-300">שירים שלי </span>
-        </div>
-      </div>
-
-      <div className="bg-neutral-800 rounded-2xl p-4 flex items-center gap-4">
-        <CalendarCheck size={32} className="text-brand-primary shrink-0" />
-        <div className="flex flex-col">
-          <span className="text-xl font-bold">{stats?.lineups ?? 0}</span>
-          <span className="text-sm text-neutral-300">ליינאפים שלי</span>
-        </div>
-      </div>
-
-      <div className="bg-neutral-800 rounded-2xl p-4 flex items-center gap-4">
-        <Users size={32} className="text-brand-primary shrink-0" />
-        <div className="flex flex-col">
-          <span className="text-xl font-bold">{connectedArtistsCount}</span>
-          <span className="text-sm text-neutral-300">אמנים שלי </span>
-        </div>
-      </div>
+      <Bord Icon={Music} value={stats?.songs ?? 0} label="שירים שלי" />
+      <Bord
+        Icon={CalendarCheck}
+        value={stats?.lineups ?? 0}
+        label="ליינאפים שלי"
+      />
+      <Bord Icon={Users} value={connectedArtistsCount} label="אמנים שלי" />
     </div>
   );
 }
@@ -1097,7 +1082,7 @@ function MyContent(): JSX.Element {
                   טוען אמנים...
                 </div>
               ) : myInvitedArtists.length === 0 ? (
-                <div className="bg-neutral-800 rounded-2xl p-6 text-center">
+                <div className="bg-neutral-850 rounded-2xl p-6 text-center">
                   <User size={32} className="mx-auto mb-3 text-neutral-600" />
                   <p className="text-neutral-400 text-sm">
                     אין אמנים במאגר שלך כרגע

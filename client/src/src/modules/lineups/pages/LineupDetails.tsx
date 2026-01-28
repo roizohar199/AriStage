@@ -953,18 +953,18 @@ export default function LineupDetails() {
             <div className="relative">
               <button
                 onClick={() => setMenuOpen((v) => !v)}
-                className="bg-neutral-800 p-2 rounded-full hover:bg-neutral-700/50 "
+                className="bg-neutral-850 p-2 rounded-full hover:bg-neutral-800"
               >
                 <MoreHorizontal size={18} />
               </button>
               {menuOpen && (
-                <div className="absolute left-0 top-10 bg-neutral-800 rounded-2xl shadow-lg z-50 min-w-max">
+                <div className="absolute left-0 top-10 bg-neutral-850 rounded-2xl shadow-lg z-50 min-w-max">
                   <button
                     onClick={() => {
                       setMenuOpen(false);
                       window.print();
                     }}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-700/50 rounded-2xl"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-800 rounded-2xl"
                   >
                     <Printer size={16} />
                     הדפס
@@ -1000,7 +1000,7 @@ export default function LineupDetails() {
         </div>
         {/* SHARE LINK */}
         {shareUrl && (
-          <div className="bg-neutral-700 backdrop-blur-xl p-3 rounded-2xl mb-4 text-sm flex justify-between items-center">
+          <div className="bg-neutral-850 backdrop-blur-xl p-3 rounded-2xl mb-4 text-sm flex justify-between items-center">
             <span className="text-brand-primary truncate">{shareUrl}</span>
             <button
               onClick={(e) => {

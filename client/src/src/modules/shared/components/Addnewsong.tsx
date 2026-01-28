@@ -269,7 +269,7 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
                 onClick={() => setForm({ ...form, notes: tag })}
                 className={`px-3 py-1 rounded-2xl text-sm shadow-surface ${
                   form.notes === tag
-                    ? "bg-brand-primary border-brand-primary text-neutral-100"
+                    ? "bg-brand-primary border-brand-primary text-black"
                     : "bg-neutral-900 text-neutral-300 hover:bg-neutral-950"
                 }`}
               >

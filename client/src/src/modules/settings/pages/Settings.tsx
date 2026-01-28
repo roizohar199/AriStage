@@ -350,13 +350,14 @@ export default function Settings() {
               </div>
             )}
 
-            <button
-              type="button"
-              onClick={() => window.openUpgradeModal?.(selectedBillingPeriod)}
-              className="w-full cursor-pointer bg-brand-primary text-neutral-950 font-bold px-4 py-2 rounded-2xl shadow-innerIos transition text-sm"
-            >
-              שדרג מנוי
-            </button>
+            <div className="max-w-md w- full space-y-4 mx-auto">
+              <DesignActionButtonBig
+                type="button"
+                onClick={() => window.openUpgradeModal?.(selectedBillingPeriod)}
+              >
+                שדרג מנוי
+              </DesignActionButtonBig>
+            </div>
           </div>
         )}
       </div>

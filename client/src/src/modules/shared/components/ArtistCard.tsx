@@ -22,7 +22,7 @@ export default function ArtistCard({
     <div
       key={artist.id}
       // Semantic animation: cards use `animation-hover`
-      className="bg-neutral-850 rounded-2xl p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center transition"
+      className="bg-neutral-850 rounded-2xl p-4 flex flex-col sm:flex-row gap-4 items-center sm:items-center justify-center transition"
     >
       {/* תמונת פרופיל */}
       <div className="w-36 h-36 shrink-0 rounded-full overflow-hidden border-2 border-brand-primary shadow-surface">
@@ -48,22 +48,24 @@ export default function ArtistCard({
         </div>
       </div>
       {/* פרטי האמן */}
-      <div className="flex-1 min-w-0 text-start">
-        <h3 className="h-page text-brand-primary mb-1">
-          {artist.full_name || "אמן ללא שם"}
-        </h3>
-        {artist.artist_role && (
-          <div className="mb-2">
-            <span className="w-fit text-label bg-neutral-950 px-2 py-1 rounded-2xl text-neutral-100 shadow-surface">
-              {artist.artist_role}
-            </span>
-          </div>
-        )}
-        {artist.email && (
-          <p className="w-fit text-label bg-brand-primary px-2 py-1 rounded-2xl text-neutral-100 shadow-surface">
-            {artist.email}
-          </p>
-        )}
+      <div className="w-full text-center sm:text-start">
+        <div className="flex-1 min-w-0 text-center sm:text-start">
+          <h3 className="h-page text-brand-primary mb-1">
+            {artist.full_name || "אמן ללא שם"}
+          </h3>
+          {artist.artist_role && (
+            <div className="mb-2">
+              <span className="w-fit text-label bg-neutral-950 px-2 py-1 rounded-2xl text-neutral-100 shadow-surface">
+                {artist.artist_role}
+              </span>
+            </div>
+          )}
+          {artist.email && (
+            <p className="w-fit text-label bg-brand-primary px-2 py-1 rounded-2xl text-black shadow-surface text-center sm:text-start mx-auto sm:mx-0">
+              {artist.email}
+            </p>
+          )}
+        </div>
       </div>
       {/* כפתור ביטול שיתוף */}
       {onUninvite && (

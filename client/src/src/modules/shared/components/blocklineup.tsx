@@ -33,7 +33,7 @@ const BlockLineup: React.FC<BlockLineupProps> = ({
       role="button"
       onClick={onOpen}
       // Semantic animation: cards use `animation-hover`
-      className="relative aspect-square bg-neutral-850 p-4 rounded-2xl flex flex-col justify-center items-center text-center select-none hover:bg-neutral-900 "
+      className="relative aspect-square bg-neutral-850 p-4 rounded-2xl flex flex-col justify-center items-center text-center select-none hover:bg-neutral-800 "
     >
       {/* מספור – תמיד נראה */}
       {typeof index === "number" && (
@@ -66,7 +66,7 @@ const BlockLineup: React.FC<BlockLineupProps> = ({
 
           {/* מיקום */}
           <div className="flex items-center justify-left gap-2 mt-2 text-sm w-full">
-            <span className="flex items-center gap-1 px-2 py-1 bg-brand-primary rounded-2xl text-neutral-100 flex-row-reverse w-full justify-center shadow-surface">
+            <span className="flex items-center gap-1 px-2 py-1 bg-brand-primary rounded-2xl text-black flex-row-reverse w-full justify-center shadow-surface">
               <MapPin size={14} />
               {lineup?.location || "לא צוין מיקום"}
             </span>

@@ -26,7 +26,7 @@ export function getNavItems(role: string, pendingCount: number): NavItem[] {
   // בצד השרת admin עדיין יכול לגשת לאותם APIs בדיוק כמו user.
   if (role === "admin") {
     items = items.filter(
-      (item) => item.to !== "/my" && item.to !== "/MyArtist"
+      (item) => item.to !== "/my" && item.to !== "/MyArtist",
     );
     items.push({ to: "/admin", label: "אדמין", icon: <Shield size={22} /> });
   }

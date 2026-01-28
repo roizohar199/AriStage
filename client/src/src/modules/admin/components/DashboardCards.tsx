@@ -1,4 +1,5 @@
 import React from "react";
+import Bord from "@/modules/shared/components/bord";
 
 export type DashboardCard = {
   icon: React.ReactNode;
@@ -18,16 +19,12 @@ export default function DashboardCards({
       className={`grid grid-cols-1 sm:grid-cols-3 gap-4 ${className}`.trim()}
     >
       {cards.map((c, idx) => (
-        <div
+        <Bord
           key={`${c.label}-${idx}`}
-          className="bg-neutral-800 rounded-2xl p-4 flex items-center gap-4"
-        >
-          <div className="text-brand-primary shrink-0">{c.icon}</div>
-          <div className="flex flex-col">
-            <span className="text-xl font-bold">{c.value}</span>
-            <span className="text-sm text-neutral-300">{c.label}</span>
-          </div>
-        </div>
+          icon={c.icon}
+          value={c.value}
+          label={c.label}
+        />
       ))}
     </div>
   );
