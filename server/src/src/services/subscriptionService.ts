@@ -3,6 +3,7 @@ import {
   getUserSubscriptionState,
   markUserSubscriptionExpired,
 } from "../modules/subscriptions/subscriptions.repository.js";
+import { getTrialDays } from "./trialUtils.js";
 
 export type BillingPeriod = "monthly" | "yearly";
 
@@ -12,7 +13,7 @@ export type UserSubscriptionSnapshot = {
 };
 
 export async function ensureUserSubscriptionFresh(
-  userId: number
+  userId: number,
 ): Promise<UserSubscriptionSnapshot> {
   if (!Number.isFinite(userId) || userId <= 0) {
     throw new Error("Invalid userId for ensureUserSubscriptionFresh");
@@ -47,18 +48,22 @@ export async function ensureUserSubscriptionFresh(
 
 export async function activateProForUser(
   params: { userId: number; billingPeriod: BillingPeriod },
-  dbOverride?: any
+  dbOverride?: any,
 ): Promise<void> {
   // Backward compatible wrapper
   return activatePlanForUser(
-    { userId: params.userId, planKey: "pro", billingPeriod: params.billingPeriod },
-    dbOverride
+    {
+      userId: params.userId,
+      planKey: "pro",
+      billingPeriod: params.billingPeriod,
+    },
+    dbOverride,
   );
 }
 
 export async function activatePlanForUser(
   params: { userId: number; planKey: string; billingPeriod: BillingPeriod },
-  dbOverride?: any
+  dbOverride?: any,
 ): Promise<void> {
   const { userId, billingPeriod, planKey } = params;
   const normalizedPlanKey = String(planKey ?? "").trim();
@@ -81,10 +86,29 @@ export async function activatePlanForUser(
 
   const [result] = await db.query(
     "UPDATE users SET subscription_type = ?, subscription_status = 'active', subscription_started_at = NOW(), subscription_expires_at = DATE_ADD(NOW(), INTERVAL ? DAY), updated_at = NOW() WHERE id = ?",
-    [normalizedPlanKey, days, userId]
+    [normalizedPlanKey, days, userId],
   );
 
   if (!result || !result.affectedRows) {
     throw new Error("Failed to activate subscription for user");
+  }
+}
+
+// Activate a trial for a user using dynamic trial_days from settings
+export async function activateTrialForUser(
+  userId: number,
+  dbOverride?: any,
+): Promise<void> {
+  if (!Number.isFinite(userId) || userId <= 0) {
+    throw new Error("Invalid userId for activateTrialForUser");
+  }
+  const trialDays = await getTrialDays();
+  const db = dbOverride || pool;
+  const [result] = await db.query(
+    "UPDATE users SET subscription_status = 'trial', subscription_started_at = NOW(), subscription_expires_at = DATE_ADD(NOW(), INTERVAL ? DAY), updated_at = NOW() WHERE id = ?",
+    [trialDays, userId],
+  );
+  if (!result || !result.affectedRows) {
+    throw new Error("Failed to activate trial for user");
   }
 }

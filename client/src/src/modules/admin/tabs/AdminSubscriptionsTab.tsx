@@ -371,7 +371,7 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                           dir="ltr"
                         />
                       </div>
-                      <div className="flex gap-2 mt-2">
+                      <div className="flex gap-2 mt-2 flex flex-row-reverse">
                         <DesignActionButton
                           type="button"
                           onClick={async () => {
@@ -417,7 +417,6 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                               return next;
                             });
                           }}
-                          className="text-xs text-neutral-400 hover:text-neutral-200"
                         >
                           ביטול
                         </button>

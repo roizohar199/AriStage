@@ -14,6 +14,8 @@ export type SubscriptionModel = {
   plan: SubscriptionPlan;
   expiresAt: Date | null;
   permissions: SubscriptionPermissions;
+  trial_days?: number;
+  subscription_started_at?: string | null;
 };
 
 function parseExpiresAt(raw: unknown): Date | null {
@@ -34,7 +36,9 @@ function parseExpiresAt(raw: unknown): Date | null {
 // Normalize any raw subscription_type value into a stable plan key.
 // Keep legacy/empty values as "trial" for backward compatibility.
 export function normalizeSubscriptionType(value: unknown): SubscriptionPlan {
-  const raw = String(value ?? "").trim().toLowerCase();
+  const raw = String(value ?? "")
+    .trim()
+    .toLowerCase();
   return raw || "trial";
 }
 
@@ -60,7 +64,7 @@ export function useSubscription(): SubscriptionModel | null {
 
   // Admin is always effectively active in the current system
   const status: "active" | "trial" | "expired" =
-    user.role === "admin" ? "active" : baseStatus ?? "expired";
+    user.role === "admin" ? "active" : (baseStatus ?? "expired");
 
   const plan = normalizeSubscriptionType(user.subscription_type);
 
@@ -85,5 +89,7 @@ export function useSubscription(): SubscriptionModel | null {
     plan,
     expiresAt,
     permissions,
+    trial_days: user.trial_days,
+    subscription_started_at: user.subscription_started_at,
   };
 }

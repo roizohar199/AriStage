@@ -18,6 +18,7 @@ import { env } from "../../config/env.js";
 import { logger } from "../../core/logger.js";
 import { resolveSubscriptionStatus } from "../subscriptions/resolveSubscriptionStatus.js";
 import { touchUserLastSeen } from "../users/users.repository.js";
+import { activateTrialForUser } from "../../services/subscriptionService.js";
 
 export const resetSafeResponse = {
   message: "אם המייל קיים — נשלח אליו קישור לאיפוס",
@@ -136,11 +137,15 @@ export async function registerUser(payload) {
     role: "user",
     subscription_type: "trial",
     subscription_status: "trial",
-    subscription_expires_at: addDaysMysqlDateTime(30),
+    // Will be set according to dynamic trial_days
+    subscription_expires_at: null,
     preferred_locale,
     artist_role: artist_role || null,
     avatar: null,
   });
+
+  // Ensure trial uses dynamic trial_days and records subscription_started_at
+  await activateTrialForUser(userId);
 
   logger.info("✅ [REGISTER] משתמש נוצר", { userId });
 

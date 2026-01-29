@@ -9,7 +9,7 @@ export type SubscriptionSettings = {
 
 export async function getSubscriptionSettings(): Promise<SubscriptionSettings> {
   const [rows] = await pool.query(
-    "SELECT is_enabled, price_ils, trial_days FROM subscriptions_settings WHERE id = 1 LIMIT 1"
+    "SELECT is_enabled, price_ils, trial_days FROM subscriptions_settings WHERE id = 1 LIMIT 1",
   );
 
   const settings = (rows as any[])[0];
@@ -17,7 +17,7 @@ export async function getSubscriptionSettings(): Promise<SubscriptionSettings> {
     throw new AppError(
       500,
       "Missing subscriptions_settings row (id=1)",
-      undefined
+      undefined,
     );
   }
 
@@ -31,14 +31,15 @@ export async function getSubscriptionSettings(): Promise<SubscriptionSettings> {
 export type UserSubscriptionState = {
   subscription_status: string | null;
   subscription_expires_at: Date | null;
+  subscription_started_at: Date | null;
 };
 
 export async function getUserSubscriptionState(
-  userId: number
+  userId: number,
 ): Promise<UserSubscriptionState> {
   const [rows] = await pool.query(
-    "SELECT subscription_status, subscription_expires_at FROM users WHERE id = ? LIMIT 1",
-    [userId]
+    "SELECT subscription_status, subscription_expires_at, subscription_started_at FROM users WHERE id = ? LIMIT 1",
+    [userId],
   );
 
   const user = (rows as any[])[0];
@@ -49,6 +50,7 @@ export async function getUserSubscriptionState(
   return {
     subscription_status: user.subscription_status ?? null,
     subscription_expires_at: user.subscription_expires_at ?? null,
+    subscription_started_at: user.subscription_started_at ?? null,
   };
 }
 
@@ -58,7 +60,7 @@ export async function markUserSubscriptionExpired(userId: number) {
   }
   await pool.query(
     "UPDATE users SET subscription_status = 'expired', updated_at = NOW() WHERE id = ?",
-    [userId]
+    [userId],
   );
 }
 

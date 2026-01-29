@@ -363,8 +363,8 @@ export default function Login() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen text-neutral-100">
-      <div className="w-full max-w-sm bg-neutral-950/50 p-6 text-center rounded-2xl backdrop-blur-xl">
+    <div className="flex flex-col items-center -translate-y-16 justify-center min-h-screen text-neutral-100">
+      <div className="w-full max-w-sm bg-neutral-850 p-6 text-center rounded-2xl backdrop-blur-xl">
         <div className="mb-5">
           <h1 className="text-3xl font-bold text-brand-primary">Ari Stage</h1>
           <p className="text-sm text-gray-400 mt-1">

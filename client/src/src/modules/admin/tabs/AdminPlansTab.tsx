@@ -56,6 +56,12 @@ type AdminPaymentRow = {
   created_at?: string;
 };
 
+type SubscriptionSettings = {
+  is_enabled: number;
+  price_ils: number;
+  trial_days: number;
+};
+
 // 2) API helpers
 async function getPlans(): Promise<Plan[]> {
   const { data } = await api.get("/admin/plans", {
@@ -127,6 +133,29 @@ function formatPaymentDate(raw?: string | null): string {
   } catch {
     return "—";
   }
+}
+
+async function getSubscriptionSettings(): Promise<SubscriptionSettings | null> {
+  const { data } = await api.get("/subscriptions/settings", {
+    skipErrorToast: true,
+  } as any);
+
+  if (!data || typeof data !== "object") return null;
+  return {
+    is_enabled: Number((data as any).is_enabled ?? 0),
+    price_ils: Number((data as any).price_ils ?? 0),
+    trial_days: Number((data as any).trial_days ?? 14),
+  };
+}
+
+async function updateSubscriptionSettings(payload: {
+  trial_days: number;
+}): Promise<SubscriptionSettings> {
+  const { data } = await api.put("/subscriptions/settings", payload, {
+    skipErrorToast: true,
+  } as any);
+
+  return data as SubscriptionSettings;
 }
 
 // 4) Internal modal (PlanForm)
@@ -355,6 +384,10 @@ export default function AdminPlansTab({
   const [paymentsLoading, setPaymentsLoading] = useState<boolean>(true);
   const [paymentsError, setPaymentsError] = useState<string | null>(null);
 
+  const [trialDaysInput, setTrialDaysInput] = useState<string>("14");
+  const [trialDaysLoading, setTrialDaysLoading] = useState<boolean>(true);
+  const [trialDaysSaving, setTrialDaysSaving] = useState<boolean>(false);
+
   const fetchPlans = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -376,6 +409,28 @@ export default function AdminPlansTab({
   useEffect(() => {
     fetchPlans();
   }, [fetchPlans]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadSettings = async () => {
+      setTrialDaysLoading(true);
+      try {
+        const settings = await getSubscriptionSettings();
+        if (!isMounted) return;
+        if (settings) setTrialDaysInput(String(settings.trial_days ?? 14));
+      } catch (err) {
+        console.error("Admin getSubscriptionSettings failed", err);
+      } finally {
+        if (isMounted) setTrialDaysLoading(false);
+      }
+    };
+
+    loadSettings();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -534,8 +589,76 @@ export default function AdminPlansTab({
     dashboard.totalPlans,
   ]);
 
+  const saveTrialDays = async () => {
+    if (!canEdit) return;
+
+    const parsed = Number(trialDaysInput);
+    if (!Number.isFinite(parsed)) {
+      showToast("ימי ניסיון לא תקינים", "error");
+      return;
+    }
+
+    const value = Math.max(0, Math.trunc(parsed));
+
+    setTrialDaysSaving(true);
+    try {
+      await updateSubscriptionSettings({ trial_days: value });
+      setTrialDaysInput(String(value));
+      showToast("ימי ניסיון עודכנו", "success");
+    } catch (err: any) {
+      if (err?.response?.status === 403) {
+        showToast("אין הרשאה לעדכן ימי ניסיון", "error");
+      } else {
+        showToast("שגיאה בעדכון ימי ניסיון", "error");
+      }
+    } finally {
+      setTrialDaysSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-lg font-bold text-neutral-100">הגדרות מנוי</h3>
+        </div>
+
+        <div className="bg-neutral-800 rounded-2xl p-4">
+          <div className="flex flex-col gap-3">
+            <p className="text-sm text-neutral-300">
+              קובע כמה ימים יש למשתמש במצב ניסיון (trial) לפני שפג תוקף.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-end">
+              <Input
+                label="ימי ניסיון"
+                type="number"
+                value={trialDaysInput}
+                onChange={(e) => setTrialDaysInput(e.target.value)}
+                disabled={!canEdit || trialDaysLoading || trialDaysSaving}
+                className="mb-0"
+              />
+
+              {canEdit ? (
+                <DesignActionButton
+                  type="button"
+                  onClick={saveTrialDays}
+                  disabled={trialDaysLoading || trialDaysSaving}
+                >
+                  {trialDaysSaving ? "שומר..." : "שמור"}
+                </DesignActionButton>
+              ) : (
+                <div className="text-xs text-neutral-500">Read-only</div>
+              )}
+            </div>
+
+            {trialDaysLoading ? (
+              <div className="text-xs text-neutral-500">טוען...</div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-lg font-bold text-neutral-100">ניהול מסלולים</h3>

@@ -33,6 +33,7 @@ import crypto from "crypto";
 import { transporter } from "../../integrations/mail/transporter.js";
 import { env } from "../../config/env.js";
 import { getPlanByKey } from "../plans/plans.repository.js";
+import { getTrialDays } from "../../services/trialUtils.js";
 
 function toMysqlDateTime(date: Date): string {
   return date.toISOString().slice(0, 19).replace("T", " ");
@@ -209,7 +210,10 @@ export async function createUserAccount(currentUser, payload) {
     }
   }
   const subscription_status = nextTypeLower === "trial" ? "trial" : "active";
-  const subscription_expires_at = addDaysMysqlDateTime(30);
+  const subscription_expires_at =
+    nextTypeLower === "trial"
+      ? addDaysMysqlDateTime(await getTrialDays())
+      : addDaysMysqlDateTime(30);
 
   await insertUser({
     full_name: payload.full_name,

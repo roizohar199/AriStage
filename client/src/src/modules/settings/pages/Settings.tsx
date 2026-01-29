@@ -38,12 +38,39 @@ export default function Settings() {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const isTrial = subscription?.status === "trial";
   const isSubscriptionActive =
-    user?.role === "admin" ||
-    subscription?.status === "active" ||
-    subscription?.status === "trial";
-
+    user?.role === "admin" || subscription?.status === "active" || isTrial;
   const shouldShowUpgrade = !isSubscriptionActive;
+
+  // Trial countdown logic (show only days left)
+  // Prefer expiresAt so it works even if started_at/trial_days are missing.
+  let trialCountdown: string | null = null;
+  if (isTrial) {
+    const nowMs = Date.now();
+    let endMs = subscription?.expiresAt
+      ? new Date(subscription.expiresAt).getTime()
+      : NaN;
+
+    // Fallback: sometimes the cached user object may not hydrate expiresAt yet
+    if (Number.isNaN(endMs) && (user as any)?.subscription_expires_at) {
+      const raw = String((user as any).subscription_expires_at).trim();
+      const normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
+      endMs = new Date(normalized).getTime();
+    }
+
+    if (Number.isFinite(endMs)) {
+      const diffMs = endMs - nowMs;
+      if (diffMs > 0) {
+        const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        trialCountdown = `נותרו ${days} ימי ניסיון`;
+      } else {
+        trialCountdown = "תקופת הניסיון הסתיימה";
+      }
+    } else {
+      trialCountdown = "לא ניתן לחשב ימי ניסיון (חסר תאריך סיום)";
+    }
+  }
 
   const [form, setForm] = useState<SettingsFormState>({
     full_name: "",
@@ -266,8 +293,13 @@ export default function Settings() {
           <div>
             <div className="text-sm text-neutral-300">סטטוס מנוי</div>
             <div className="text-lg font-semibold text-neutral-100">
-              {isSubscriptionActive ? "פעיל" : "הסתיים"}
+              {isTrial
+                ? "מצב ניסיון"
+                : isSubscriptionActive
+                  ? "פעיל"
+                  : "הסתיים"}
             </div>
+            {/* Trial countdown (under plan) */}
           </div>
           <div>
             <div className="text-sm text-neutral-300">מסלול נוכחי</div>
@@ -276,6 +308,12 @@ export default function Settings() {
             </div>
           </div>
         </div>
+        {/* Show trial days left directly under plan */}
+        {isTrial && trialCountdown && (
+          <div className="w-fit bg-neutral-950 px-2 py-1 rounded-2xl text-xs text-neutral-100 shadow-surface">
+            {trialCountdown}
+          </div>
+        )}
 
         {shouldShowUpgrade && (
           <div className="pt-4 border-t border-neutral-800 space-y-4">

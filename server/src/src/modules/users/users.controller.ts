@@ -23,6 +23,7 @@ import {
   acceptInvitation,
 } from "./users.service.js";
 import { resolveSubscriptionStatus } from "../subscriptions/resolveSubscriptionStatus.js";
+import { getSubscriptionSettings } from "../subscriptions/subscriptions.repository.js";
 
 /* -------------------------------------------------------
    ⭐ פונקציה אחידה לתיקון URL של תמונה — פתרון לבעיה שלך
@@ -74,6 +75,12 @@ export const usersController = {
       if (req.user?.role !== "admin") {
         user.subscription_status = resolveSubscriptionStatus(user);
       }
+    }
+
+    // Add dynamic trial_days for client countdown
+    if (user?.subscription_status === "trial") {
+      const settings = await getSubscriptionSettings();
+      user.trial_days = settings.trial_days;
     }
 
     if (user?.avatar) {

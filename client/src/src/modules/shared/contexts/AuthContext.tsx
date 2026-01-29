@@ -17,7 +17,9 @@ export type CurrentUser = {
   preferred_locale?: string | null;
   subscription_type?: string;
   subscription_status?: string;
+  subscription_started_at?: string | null;
   subscription_expires_at?: string | null;
+  trial_days?: number;
 };
 
 export type ResolvedSubscriptionStatus = "active" | "trial" | "expired";

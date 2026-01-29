@@ -42,8 +42,8 @@ export const subscriptionsController = {
     await ensureUserSubscriptionFresh(userId);
 
     const [rows] = await pool.query(
-      "SELECT role, subscription_type, subscription_status, subscription_expires_at FROM users WHERE id = ? LIMIT 1",
-      [userId]
+      "SELECT role, subscription_type, subscription_status, subscription_expires_at, subscription_started_at FROM users WHERE id = ? LIMIT 1",
+      [userId],
     );
 
     const user = (rows as any[])[0];
@@ -56,17 +56,27 @@ export const subscriptionsController = {
     if (user.role !== "admin") {
       resolvedStatus = resolveSubscriptionStatus(user);
     }
+
+    // Fetch trial_days from settings if user is in trial
+    let trial_days: number | undefined = undefined;
+    if (resolvedStatus === "trial") {
+      const settings = await getSubscriptionSettings();
+      trial_days = settings.trial_days;
+    }
+
     res.json({
       subscription_type: user.subscription_type ?? null,
       subscription_status: resolvedStatus,
       subscription_expires_at: user.subscription_expires_at ?? null,
+      subscription_started_at: user.subscription_started_at ?? null,
+      trial_days,
       isActive: resolvedStatus === "active",
       isExpired: resolvedStatus === "expired",
     });
   }),
 
   updateSettings: asyncHandler(async (req, res) => {
-    const { price_ils, is_enabled } = req.body || {};
+    const { price_ils, is_enabled, trial_days } = req.body || {};
     // Minimal update query
     const clauses: string[] = [];
     const values: any[] = [];
@@ -78,6 +88,10 @@ export const subscriptionsController = {
       clauses.push("is_enabled = ?");
       values.push(Number(is_enabled));
     }
+    if (trial_days !== undefined) {
+      clauses.push("trial_days = ?");
+      values.push(Number(trial_days));
+    }
     if (!clauses.length) {
       return res.status(400).json({ error: "No fields to update" });
     }
@@ -85,7 +99,7 @@ export const subscriptionsController = {
     await import("../../database/pool.js").then(async ({ pool }) => {
       await pool.query(
         `UPDATE subscriptions_settings SET ${clauses.join(", ")} WHERE id = ?`,
-        values
+        values,
       );
     });
     const updated = await getSubscriptionSettings();
