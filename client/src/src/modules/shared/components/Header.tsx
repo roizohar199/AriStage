@@ -28,6 +28,7 @@ import { useToast } from "@/modules/shared/components/ToastProvider.jsx";
 import { usePendingInvitations } from "@/modules/shared/hooks/usePendingInvitations.ts";
 import { useCurrentUser } from "@/modules/shared/hooks/useCurrentUser.ts";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
+import { useFeatureFlags } from "@/modules/shared/contexts/FeatureFlagsContext.tsx";
 import api from "@/modules/shared/lib/api.js";
 import AcceptInvitation from "../../auth/pages/AcceptInvitation";
 import { useOfflineStatus } from "@/modules/shared/hooks/useOfflineStatus";
@@ -49,8 +50,15 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { isEffectiveOffline, isForcedOffline, toggleForcedOffline } =
-    useOfflineStatus();
+  const { isEnabled } = useFeatureFlags();
+  const offlineOnlineEnabled = isEnabled("module.offlineOnline", true);
+
+  const {
+    isEffectiveOffline,
+    isForcedOffline,
+    toggleForcedOffline,
+    setForcedOffline,
+  } = useOfflineStatus();
   const [menuOpen, setMenuOpen] = useState(false);
   const [pendingModalOpen, setPendingModalOpen] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<
@@ -210,6 +218,12 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
     }
   }, [offlineCacheModalOpen, loadOfflineCacheEntries]);
 
+  useEffect(() => {
+    if (!offlineOnlineEnabled && isForcedOffline) {
+      setForcedOffline(false);
+    }
+  }, [offlineOnlineEnabled, isForcedOffline, setForcedOffline]);
+
   return (
     <div className="fixed top-0 left-0 right-0 z-[200] w-full h-16  bg-neutral-100/10 backdrop-blur-xl">
       <div className="h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between md:grid md:grid-cols-3 shadow-surface">
@@ -244,33 +258,35 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
         <div className="md:justify-self-end flex items-center gap-3 relative">
           {rightActions}
 
-          <button
-            type="button"
-            onClick={() => {
-              toggleForcedOffline();
-              const next = !isForcedOffline;
-              showToast(
-                next ? "עברת למצב Offline (ללא רשת)" : "חזרת למצב Online",
-                "info",
-              );
-            }}
-            className={`h-8 px-3 rounded-full text-label font-semibold flex items-center gap-2 transition \
-              ${
-                isEffectiveOffline
-                  ? "text-red-600 hover:bg-neutral-900"
-                  : "text-brand-primary hover:bg-neutral-900"
-              }`}
-            title={
-              isForcedOffline
-                ? "מצב Offline כפוי פעיל"
-                : isEffectiveOffline
-                  ? "אין חיבור אינטרנט"
-                  : "Online"
-            }
-          >
-            {isEffectiveOffline ? <WifiOff size={16} /> : <Wifi size={16} />}
-            {isEffectiveOffline ? "Offline" : "Online"}
-          </button>
+          {offlineOnlineEnabled ? (
+            <button
+              type="button"
+              onClick={() => {
+                toggleForcedOffline();
+                const next = !isForcedOffline;
+                showToast(
+                  next ? "עברת למצב Offline (ללא רשת)" : "חזרת למצב Online",
+                  "info",
+                );
+              }}
+              className={`h-8 px-3 rounded-full text-label font-semibold flex items-center gap-2 transition \
+                ${
+                  isEffectiveOffline
+                    ? "text-red-600 hover:bg-neutral-900"
+                    : "text-brand-primary hover:bg-neutral-900"
+                }`}
+              title={
+                isForcedOffline
+                  ? "מצב Offline כפוי פעיל"
+                  : isEffectiveOffline
+                    ? "אין חיבור אינטרנט"
+                    : "Online"
+              }
+            >
+              {isEffectiveOffline ? <WifiOff size={16} /> : <Wifi size={16} />}
+              {isEffectiveOffline ? "Offline" : "Online"}
+            </button>
+          ) : null}
 
           <div ref={menuRef} className="relative">
             <div className="relative">
@@ -307,17 +323,19 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                 // Semantic animation: dropdowns use `animation-overlay`
                 className="absolute top-10 header-user-dropdown bg-neutral-950 rounded-2xl shadow-floating z-[210] min-w-max animation-overlay"
               >
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setOfflineCacheModalOpen(true);
-                  }}
-                  // Semantic animation: buttons use `animation-press`
-                  className="w-full flex items-center gap-2 px-4 py-2 text-label text-neutral-100 rounded-2xl hover:bg-neutral-900 transition"
-                >
-                  <HardDrive size={16} />
-                  תוכן Offline
-                </button>
+                {offlineOnlineEnabled ? (
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setOfflineCacheModalOpen(true);
+                    }}
+                    // Semantic animation: buttons use `animation-press`
+                    className="w-full flex items-center gap-2 px-4 py-2 text-label text-neutral-100 rounded-2xl hover:bg-neutral-900 transition"
+                  >
+                    <HardDrive size={16} />
+                    תוכן Offline
+                  </button>
+                ) : null}
                 <button
                   onClick={() => {
                     setMenuOpen(false);

@@ -6,9 +6,11 @@ import { io } from "socket.io-client";
 import { API_ORIGIN } from "@/config/apiConfig";
 import api from "@/modules/shared/lib/api.js";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
+import { useFeatureFlags } from "@/modules/shared/contexts/FeatureFlagsContext.tsx";
 import { useOfflineStatus } from "@/modules/shared/hooks/useOfflineStatus";
 import { applyThemeFromUser } from "@/modules/shared/lib/theme";
 import { applyLocaleFromUser } from "@/modules/shared/lib/locale";
+import { registerSW } from "virtual:pwa-register";
 
 import ProtectedRoute from "@/modules/shared/components/ProtectedRoute.tsx";
 import Splash from "@/modules/shared/components/Splash.tsx";
@@ -67,7 +69,11 @@ function exitImpersonation(): void {
 export default function AppBootstrap(): JSX.Element {
   const location = useLocation();
   const { user: ctxUser, loading: authLoading, subscriptionStatus } = useAuth();
+  const { isEnabled } = useFeatureFlags();
   const { isEffectiveOffline } = useOfflineStatus();
+
+  const offlineOnlineEnabled = isEnabled("module.offlineOnline", true);
+  const effectiveOffline = offlineOnlineEnabled ? isEffectiveOffline : false;
 
   /* -----------------------------------------
      🟦 המשתמש הנוכחי (moved from App.tsx)
@@ -116,12 +122,33 @@ export default function AppBootstrap(): JSX.Element {
 
   useEffect(() => {
     if (!socket) return;
-    if (isEffectiveOffline) {
+    if (effectiveOffline) {
       socket.disconnect();
     } else if (!socket.connected) {
       socket.connect();
     }
-  }, [isEffectiveOffline, socket]);
+  }, [effectiveOffline, socket]);
+
+  useEffect(() => {
+    // Gate PWA offline behavior (service worker) behind feature flag.
+    // If disabled, attempt to unregister existing SW registrations.
+    if (!offlineOnlineEnabled) {
+      if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .getRegistrations()
+          .then((regs) => Promise.all(regs.map((r) => r.unregister())))
+          .catch(() => {});
+      }
+      return;
+    }
+
+    registerSW({
+      immediate: true,
+      onOfflineReady() {
+        emitToast("✅ האפליקציה מוכנה לשימוש Offline", "success");
+      },
+    });
+  }, [offlineOnlineEnabled]);
 
   useEffect(() => {
     if (!socket || !currentUser?.id) {

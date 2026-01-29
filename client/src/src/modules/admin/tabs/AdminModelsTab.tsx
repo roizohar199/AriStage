@@ -29,6 +29,11 @@ const DEFAULT_MODULES: Array<{
   description: string;
 }> = [
   {
+    key: "module.offlineOnline",
+    label: "Offline / Online",
+    description: "מצב Offline/Online, קאש (PWA), וזיהוי חיבור רשת",
+  },
+  {
     key: "module.charts",
     label: "צ'ארטים",
     description: "ניהול צ'ארטים וקבצי תווים",
