@@ -224,32 +224,36 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
     }
   }, [offlineOnlineEnabled, isForcedOffline, setForcedOffline]);
 
+  // Responsive: header is bottom on mobile, top on desktop
+  // Use Tailwind classes for position and breakpoints
   return (
-    <div className="fixed top-0 left-0 right-0 z-[200] w-full h-16  bg-neutral-100/10 backdrop-blur-xl">
-      <div className="h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between md:grid md:grid-cols-3 shadow-surface">
-        {/* Left: Logo */}
-        <div className="flex items-center gap-0  ">
+    <div className="w-full h-16 bg-neutral-100/10 backdrop-blur-xl z-[200] fixed bottom-0 md:top-0 md:bottom-auto">
+      <div className="h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between shadow-surface">
+        {/* Left: Logo - hide on mobile */}
+        <div className="items-center gap-0 hidden md:flex">
           <h1 className="h-page text-neutral-100 font-bold">AriStage</h1>
           <Music2Icon size={24} className="text-brand-primary" />
         </div>
 
-        {/* Center: Nav */}
-        <nav className="justify-self-center hidden md:flex items-center gap-4 ">
+        {/* Center: Nav - always visible */}
+        <nav className="justify-self-center flex items-center gap-4 w-full md:w-auto">
           {nav.map(({ to, label, icon }) => (
             <NavLink
               key={to}
               to={to}
               end
               className={({ isActive }) =>
-                `flex items-center gap-2 text-sm px-2 py-1 transition ${
+                `flex flex-col items-center justify-center text-center relative flex-1 md:flex-row md:items-center md:justify-start md:gap-2 text-sm px-2 py-1 transition ${
                   isActive
                     ? "h-section text-neutral-100 font-bold hover:bg-neutral-900 rounded-2xl"
                     : "h-section text-neutral-300 hover:bg-neutral-900 rounded-2xl"
                 }`
               }
             >
-              <span className="opacity-90">{icon}</span>
-              <span>{label}</span>
+              <span className="text-xl md:text-base">{icon}</span>
+              <span className="text-[11px] mt-1 md:mt-0 md:text-sm">
+                {label}
+              </span>
             </NavLink>
           ))}
         </nav>
@@ -269,7 +273,7 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                   "info",
                 );
               }}
-              className={`h-8 px-3 rounded-full text-label font-semibold flex items-center gap-2 transition \
+              className={`flex flex-col items-center justify-center text-center md:flex-row md:items-center md:justify-start md:gap-2 h-8 px-3 rounded-full text-label font-semibold gap-0 md:gap-2 transition \
                 ${
                   isEffectiveOffline
                     ? "text-red-600 hover:bg-neutral-900"
@@ -283,8 +287,16 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                     : "Online"
               }
             >
-              {isEffectiveOffline ? <WifiOff size={16} /> : <Wifi size={16} />}
-              {isEffectiveOffline ? "Offline" : "Online"}
+              <span className="text-xl md:text-base">
+                {isEffectiveOffline ? (
+                  <WifiOff size={16} />
+                ) : (
+                  <Wifi size={16} />
+                )}
+              </span>
+              <span className="text-[11px] mt-1 md:mt-0 md:text-sm">
+                {isEffectiveOffline ? "Offline" : "Online"}
+              </span>
             </button>
           ) : null}
 
@@ -317,12 +329,9 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
               </button>
             </div>
 
-            {/* Dropdown menu */}
+            {/* Dropdown menu - open upwards on mobile bottom header */}
             {menuOpen && (
-              <div
-                // Semantic animation: dropdowns use `animation-overlay`
-                className="absolute top-10 header-user-dropdown bg-neutral-950 rounded-2xl shadow-floating z-[210] min-w-max animation-overlay"
-              >
+              <div className="header-user-dropdown bg-neutral-950 rounded-2xl shadow-floating z-[210] min-w-[180px] max-w-[95vw] absolute right-0 md:top-10 md:right-0 md:left-auto md:bottom-auto bottom-14">
                 {offlineOnlineEnabled ? (
                   <button
                     onClick={() => {

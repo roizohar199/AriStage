@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import Footer from "@/modules/shared/components/Footer.tsx";
 import Header from "@/modules/shared/components/Header.tsx";
-import BottomNav from "@/modules/shared/components/BottomNav.tsx";
 import UpgradeModal from "@/modules/shared/components/UpgradeModal.tsx";
 import SubscriptionBanner from "@/modules/shared/components/SubscriptionBanner.tsx";
 import { useCurrentUser } from "@/modules/shared/hooks/useCurrentUser.ts";
@@ -29,7 +28,6 @@ interface AppLayoutProps {
   isImpersonating: boolean;
   currentUser: User;
   onExitImpersonation: () => void;
-  hideNav: boolean;
   children: React.ReactNode;
 }
 
@@ -37,7 +35,6 @@ export default function AppLayout({
   isImpersonating,
   currentUser,
   onExitImpersonation,
-  hideNav,
   children,
 }: AppLayoutProps) {
   const scrollAreaRef = useRef<HTMLElement | null>(null);
@@ -118,9 +115,7 @@ export default function AppLayout({
       <main
         ref={scrollAreaRef}
         dir={resolveScrollbarContainerDirFromLocale(effectiveLocale)}
-        className={`flex-1 overflow-y-auto overflow-x-hidden relative app-scroll bg-neutral-950 pt-16 pb-20 md:pb-0 ${
-          isUpgradeModalOpen ? "" : ""
-        }`}
+        className={`flex-1 overflow-y-auto overflow-x-hidden relative app-scroll bg-neutral-950 ${window.innerWidth >= 768 ? "pt-16 pb-0" : "pt-0 pb-20"}`}
       >
         <div dir={resolveDirFromLocale(effectiveLocale)} className="w-full">
           <SubscriptionBanner />
@@ -132,8 +127,6 @@ export default function AppLayout({
           <Footer />
         </div>
       </main>
-      {/* Bottom nav for mobile */}
-      {!hideNav && <BottomNav />}
 
       {/* Subscription Upgrade Modal */}
       <UpgradeModal
