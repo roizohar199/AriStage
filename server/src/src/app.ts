@@ -27,7 +27,9 @@ export function createApp(): Application {
           "frame-ancestors": [
             "'self'",
             "http://localhost:5173",
-            ...(env.nodeEnv === "development" ? ["http://10.0.0.99:5173"] : []),
+            ...(env.nodeEnv === "development"
+              ? ["http://10.100.102.99:5173"]
+              : []),
           ],
           ...(env.nodeEnv === "development"
             ? {
@@ -37,9 +39,9 @@ export function createApp(): Application {
                     "connect-src"
                   ] || ["'self'"]),
                   "http://localhost:5000",
-                  "http://10.0.0.99:5000",
+                  "http://10.100.102.99:5000",
                   "ws://localhost:5000",
-                  "ws://10.0.0.99:5000",
+                  "ws://10.100.102.99:5000",
                 ],
               }
             : {}),

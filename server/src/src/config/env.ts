@@ -11,7 +11,7 @@ dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 const fallbackOrigins = ["http://localhost:5173", "http://localhost:5174"];
 // Dev-only: allow local-network client access alongside localhost
 const devNetworkOrigins =
-  process.env.NODE_ENV === "development" ? ["http://10.0.0.99:5173"] : [];
+  process.env.NODE_ENV === "development" ? ["http://10.100.102.99:5173"] : [];
 const extraOrigins = (process.env.CORS_EXTRA_ORIGINS || "")
   .split(",")
   .map((origin) => origin.trim())
