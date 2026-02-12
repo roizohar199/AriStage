@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { requireAuth, requireRoles } from "../../middleware/auth.js";
+import { requireAuth, requireRoles } from "../../middleware/auth";
 import {
   adminNoCache,
   adminNoCacheIfAdmin,
-} from "../../middleware/adminNoCache.middleware.js";
-import { featureFlagsController } from "./featureFlags.controller.js";
+} from "../../middleware/adminNoCache.middleware";
+import { featureFlagsController } from "./featureFlags.controller";
 
 export const featureFlagsRouter = Router();
 
@@ -14,7 +14,7 @@ featureFlagsRouter.use(requireAuth);
 featureFlagsRouter.get(
   "/client",
   adminNoCacheIfAdmin,
-  featureFlagsController.listClient
+  featureFlagsController.listClient,
 );
 
 // Admin management

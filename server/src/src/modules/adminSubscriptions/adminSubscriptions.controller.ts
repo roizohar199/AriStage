@@ -1,9 +1,9 @@
-import { asyncHandler } from "../../core/asyncHandler.js";
-import { AppError } from "../../core/errors.js";
+import { asyncHandler } from "../../core/asyncHandler";
+import { AppError } from "../../core/errors";
 import {
   adminSubscriptionsRepository,
   type AdminSubscriptionListRow,
-} from "./adminSubscriptions.repository.js";
+} from "./adminSubscriptions.repository";
 
 import type { Request, Response } from "express";
 
@@ -61,12 +61,12 @@ export const adminSubscriptionsController = {
   listSubscriptions: asyncHandler(async (req: Request, res: Response) => {
     // Keep consistent with adminUsers: optional limit/offset, cap limit at 200
     const { limit, offset } = parseOptionalLimitOffset(
-      req.query as unknown as AdminSubscriptionsListQuery
+      req.query as unknown as AdminSubscriptionsListQuery,
     );
 
     const rows = await adminSubscriptionsRepository.listSubscriptions(
       limit,
-      offset
+      offset,
     );
     const payload = Array.isArray(rows) ? rows.map(mapRowToDto) : [];
     res.json(payload);

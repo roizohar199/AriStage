@@ -1,10 +1,10 @@
 import { Router } from "express";
 import { requireAuth, requireRoles } from "../../src/middleware/auth";
-import { pool } from "../../src/database/pool.js";
-import { AppError } from "../../src/core/errors.js";
+import { pool } from "../../src/database/pool";
+import { AppError } from "../../src/core/errors";
 import fs from "fs/promises";
 import path from "path";
-import { getUploadsRoot } from "../../src/utils/uploadsRoot.js";
+import { getUploadsRoot } from "../../src/utils/uploadsRoot";
 
 const router = Router();
 router.use(requireAuth, requireRoles(["admin", "manager"]));

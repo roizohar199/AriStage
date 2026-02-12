@@ -1,5 +1,5 @@
 // Utility to fetch trial_days from settings
-import { getSubscriptionSettings } from "../modules/subscriptions/subscriptions.repository.js";
+import { getSubscriptionSettings } from "../modules/subscriptions/subscriptions.repository";
 
 export async function getTrialDays(): Promise<number> {
   const settings = await getSubscriptionSettings();

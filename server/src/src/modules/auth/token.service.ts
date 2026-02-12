@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { env } from "../../config/env.js";
+import { env } from "../../config/env";
 
 export function signToken(payload) {
   if (!payload?.id) {
@@ -16,7 +16,7 @@ export function signToken(payload) {
       avatar: payload.avatar || null,
     },
     env.jwtSecret,
-    { expiresIn: "7d" }
+    { expiresIn: "7d" },
   );
 }
 

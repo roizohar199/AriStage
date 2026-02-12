@@ -1,5 +1,5 @@
-import { asyncHandler } from "../../core/asyncHandler.js";
-import { getSharedLineup } from "./share.service.js";
+import { asyncHandler } from "../../core/asyncHandler";
+import { getSharedLineup } from "./share.service";
 
 export const shareController = {
   getByToken: asyncHandler(async (req, res) => {
@@ -7,4 +7,3 @@ export const shareController = {
     res.json(payload);
   }),
 };
-

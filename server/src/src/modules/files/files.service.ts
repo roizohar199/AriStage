@@ -1,4 +1,4 @@
-import { AppError } from "../../core/errors.js";
+import { AppError } from "../../core/errors";
 import fs from "fs/promises";
 import path from "path";
 import {
@@ -8,9 +8,9 @@ import {
   insertFile,
   listFiles,
   updateFile,
-} from "./files.repository.js";
-import { isElevatedRole } from "../../types/roles.js";
-import { getUploadsRoot } from "../../utils/uploadsRoot.js";
+} from "./files.repository";
+import { isElevatedRole } from "../../types/roles";
+import { getUploadsRoot } from "../../utils/uploadsRoot";
 
 function normalizeUploadsDiskPath(fileUrl: unknown): string | null {
   if (!fileUrl) return null;

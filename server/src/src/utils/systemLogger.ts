@@ -1,5 +1,5 @@
-import { pool } from "../database/pool.js";
-import { logger } from "../core/logger.js";
+import { pool } from "../database/pool";
+import { logger } from "../core/logger";
 
 export type SystemLogLevel = "info" | "warn" | "error";
 
@@ -8,7 +8,7 @@ export async function logSystemEvent(
   action: string,
   message: string,
   context?: Record<string, any> | null,
-  userId?: number
+  userId?: number,
 ) {
   const safeLevel: SystemLogLevel =
     level === "warn" || level === "error" ? level : "info";
@@ -31,7 +31,7 @@ export async function logSystemEvent(
     // Preferred schema (per spec)
     await pool.query(
       "INSERT INTO system_logs (level, action, message, context, userId, createdAt) VALUES (?, ?, ?, ?, ?, NOW())",
-      [safeLevel, safeAction, safeMessage, contextJson, safeUserId]
+      [safeLevel, safeAction, safeMessage, contextJson, safeUserId],
     );
     return;
   } catch (err: any) {
@@ -44,7 +44,7 @@ export async function logSystemEvent(
           safeUserId != null ? String(safeUserId) : null,
           safeMessage,
           contextJson,
-        ]
+        ],
       );
       return;
     } catch (fallbackErr: any) {

@@ -1,9 +1,9 @@
-import { pool } from "../database/pool.js";
+import { pool } from "../database/pool";
 import {
   getUserSubscriptionState,
   markUserSubscriptionExpired,
-} from "../modules/subscriptions/subscriptions.repository.js";
-import { getTrialDays } from "./trialUtils.js";
+} from "../modules/subscriptions/subscriptions.repository";
+import { getTrialDays } from "./trialUtils";
 
 export type BillingPeriod = "monthly" | "yearly";
 

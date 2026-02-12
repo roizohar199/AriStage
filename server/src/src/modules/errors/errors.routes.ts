@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { requireAuth, requireRoles } from "../../middleware/auth.js";
-import { adminNoCache } from "../../middleware/adminNoCache.middleware.js";
-import { errorsController } from "./errors.controller.js";
+import { requireAuth, requireRoles } from "../../middleware/auth";
+import { adminNoCache } from "../../middleware/adminNoCache.middleware";
+import { errorsController } from "./errors.controller";
 
 export const errorsRouter = Router();
 

@@ -13,15 +13,6 @@ import {
   Select,
 } from "@/modules/shared/components/FormControls";
 
-type SubscriptionPlan = {
-  tier: string;
-  monthlyPrice: number;
-  yearlyPrice: number;
-  currency: string;
-};
-
-type BillingPeriod = "monthly" | "yearly";
-
 type SettingsFormState = {
   full_name: string;
   email: string;
@@ -88,40 +79,6 @@ export default function Settings() {
   const [deletingAvatar, setDeletingAvatar] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
-  const [plansLoading, setPlansLoading] = useState(false);
-  const [selectedBillingPeriod, setSelectedBillingPeriod] =
-    useState<BillingPeriod>("yearly");
-
-  useEffect(() => {
-    if (!shouldShowUpgrade) {
-      setPlans([]);
-      setPlansLoading(false);
-      return;
-    }
-
-    let mounted = true;
-    setPlansLoading(true);
-
-    (api as any)
-      .get("/subscriptions/plans", { skipErrorToast: true })
-      .then(({ data }: any) => {
-        if (!mounted) return;
-        setPlans(Array.isArray(data) ? data : []);
-      })
-      .catch(() => {
-        if (!mounted) return;
-        setPlans([]);
-      })
-      .finally(() => {
-        if (mounted) setPlansLoading(false);
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, [shouldShowUpgrade]);
 
   // 📥 טעינת פרטי משתמש
   useEffect(() => {
@@ -320,78 +277,14 @@ export default function Settings() {
             <div>
               <div className="text-sm text-neutral-300">שדרוג מנוי</div>
               <div className="text-base text-neutral-100">
-                בחר מסלול וחזור לשימוש מלא במערכת
+                לחץ כדי לשדרג ולחזור לשימוש מלא במערכת
               </div>
             </div>
-
-            {plansLoading ? (
-              <div className="bg-neutral-900 rounded-2xl p-4 text-neutral-200">
-                טוען מחירים...
-              </div>
-            ) : plans[0] ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button
-                  type="button"
-                  onClick={() => setSelectedBillingPeriod("monthly")}
-                  className={`text-start rounded-2xl p-5 border transition cursor-pointer ${
-                    selectedBillingPeriod === "monthly"
-                      ? "bg-neutral-950 border border-brand-primary"
-                      : "bg-neutral-900 border border-neutral-900"
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="font-semibold mb-2">מסלול חודשי</div>
-                    <div
-                      className={`h-3 w-3 rounded-full border ${
-                        selectedBillingPeriod === "monthly"
-                          ? "bg-neutral-950 border border-brand-primary"
-                          : "bg-neutral-900 border border-neutral-900"
-                      }`}
-                      aria-hidden
-                    />
-                  </div>
-                  <div className="text-2xl font-bold" dir="ltr">
-                    {plans[0].monthlyPrice} ₪
-                    <span className="text-sm text-neutral-400"> / חודש</span>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setSelectedBillingPeriod("yearly")}
-                  className={`text-start rounded-2xl p-5 border transition cursor-pointer ${
-                    selectedBillingPeriod === "yearly"
-                      ? "bg-neutral-950 border border-brand-primary"
-                      : "bg-neutral-900 border border-neutral-900"
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="font-semibold mb-2">מסלול שנתי</div>
-                    <div
-                      className={`h-3 w-3 rounded-full border ${
-                        selectedBillingPeriod === "yearly"
-                          ? "bg-neutral-950 border border-brand-primary"
-                          : "bg-neutral-900 border border-neutral-900"
-                      }`}
-                      aria-hidden
-                    />
-                  </div>
-                  <div className="text-2xl font-bold" dir="ltr">
-                    {plans[0].yearlyPrice} ₪
-                    <span className="text-sm text-neutral-400"> / שנה</span>
-                  </div>
-                </button>
-              </div>
-            ) : (
-              <div className="bg-neutral-900 rounded-2xl p-4 text-neutral-400">
-                לא הצלחנו לטעון מחירים כרגע
-              </div>
-            )}
 
             <div className="max-w-md w- full space-y-4 mx-auto">
               <DesignActionButtonBig
                 type="button"
-                onClick={() => window.openUpgradeModal?.(selectedBillingPeriod)}
+                onClick={() => window.openUpgradeModal?.()}
               >
                 שדרג מנוי
               </DesignActionButtonBig>

@@ -1,8 +1,8 @@
-import { verifyToken } from "../modules/auth/token.service.js";
-import { AppError } from "../core/errors.js";
-import { env } from "../config/env.js";
-import { isKnownRole } from "../types/roles.js";
-import { touchUserLastSeen } from "../modules/users/users.repository.js";
+import { verifyToken } from "../modules/auth/token.service";
+import { AppError } from "../core/errors";
+import { env } from "../config/env";
+import { isKnownRole } from "../types/roles";
+import { touchUserLastSeen } from "../modules/users/users.repository";
 
 import type { NextFunction, Request, Response } from "express";
 
@@ -14,7 +14,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     if (!header.startsWith("Bearer ")) {
       throw new AppError(
         401,
-        "Unauthorized - Missing or invalid Authorization header"
+        "Unauthorized - Missing or invalid Authorization header",
       );
     }
 
@@ -62,7 +62,7 @@ export function requireRoles(roles: string[] = []) {
       "roles:",
       roles,
       "user:",
-      req.user
+      req.user,
     );
     if (!roles.length) return next();
 

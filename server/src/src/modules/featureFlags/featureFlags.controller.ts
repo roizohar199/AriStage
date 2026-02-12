@@ -1,8 +1,8 @@
-import { asyncHandler } from "../../core/asyncHandler.js";
-import { AppError } from "../../core/errors.js";
-import { getFeatureFlags, setFeatureFlag } from "./featureFlags.service.js";
-import { logSystemEvent } from "../../utils/systemLogger.js";
-import { clearFeatureFlagsCache } from "../../middleware/featureFlags.js";
+import { asyncHandler } from "../../core/asyncHandler";
+import { AppError } from "../../core/errors";
+import { getFeatureFlags, setFeatureFlag } from "./featureFlags.service";
+import { logSystemEvent } from "../../utils/systemLogger";
+import { clearFeatureFlagsCache } from "../../middleware/featureFlags";
 
 export const featureFlagsController = {
   list: asyncHandler(async (_req, res) => {
@@ -13,7 +13,7 @@ export const featureFlagsController = {
   listClient: asyncHandler(async (_req, res) => {
     const rows = await getFeatureFlags();
     const clientRows = (Array.isArray(rows) ? rows : []).filter((r: any) =>
-      String(r?.key || "").startsWith("module.")
+      String(r?.key || "").startsWith("module."),
     );
     res.json(clientRows);
   }),
@@ -34,7 +34,7 @@ export const featureFlagsController = {
       "FEATURE_FLAG_TOGGLED",
       "Feature flag toggled",
       { key, enabled, description },
-      (req as any).user?.id
+      (req as any).user?.id,
     );
 
     res.json({ ok: true });

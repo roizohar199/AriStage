@@ -1,5 +1,5 @@
-import { pool } from "../../database/pool.js";
-import { AppError } from "../../core/errors.js";
+import { pool } from "../../database/pool";
+import { AppError } from "../../core/errors";
 
 export type SubscriptionSettings = {
   is_enabled: number;

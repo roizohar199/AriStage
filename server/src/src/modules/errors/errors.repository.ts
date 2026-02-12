@@ -1,4 +1,4 @@
-import { pool } from "../../database/pool.js";
+import { pool } from "../../database/pool";
 
 export type SystemErrorRow = {
   id: number;
@@ -11,7 +11,7 @@ export type SystemErrorRow = {
 };
 
 export async function listSystemErrors(
-  limit: number
+  limit: number,
 ): Promise<SystemErrorRow[]> {
   const safeLimit = Math.max(1, Math.min(200, Math.floor(limit || 50)));
 
@@ -20,7 +20,7 @@ export async function listSystemErrors(
      FROM system_errors
      ORDER BY created_at DESC
      LIMIT ?`,
-    [safeLimit]
+    [safeLimit],
   );
 
   return Array.isArray(rows) ? (rows as any) : [];
@@ -28,11 +28,11 @@ export async function listSystemErrors(
 
 export async function setSystemErrorResolved(
   id: number,
-  resolved: boolean
+  resolved: boolean,
 ): Promise<boolean> {
   const [result]: any = await pool.query(
     `UPDATE system_errors SET resolved = ? WHERE id = ?`,
-    [resolved ? 1 : 0, id]
+    [resolved ? 1 : 0, id],
   );
 
   return Boolean(result?.affectedRows);
@@ -59,6 +59,6 @@ export async function insertSystemError(input: {
       input.user?.slice(0, 512) || null,
       statusValue,
       input.stack ? input.stack.slice(0, 8000) : null,
-    ]
+    ],
   );
 }

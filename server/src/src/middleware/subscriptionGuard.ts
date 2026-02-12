@@ -1,4 +1,4 @@
-import { requireActiveSubscription } from "./subscription.js";
+import { requireActiveSubscription } from "./subscription";
 
 // Thin wrapper around the existing subscription middleware.
 // NOTE: We intentionally keep the existing behavior (HTTP 402 +

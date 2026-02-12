@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { requireAuth, requireRoles } from "../../middleware/auth.js";
-import { requireActiveSubscription } from "../../middleware/subscription.js";
-import { requireFeatureFlagEnabled } from "../../middleware/featureFlags.js";
-import { emitRefreshOnMutation } from "../../middleware/refresh.js";
-import { usersController } from "./users.controller.js";
-import { uploadUserAvatar } from "../shared/upload.js"; // ⭐ שימוש נכון
+import { requireAuth, requireRoles } from "../../middleware/auth";
+import { requireActiveSubscription } from "../../middleware/subscription";
+import { requireFeatureFlagEnabled } from "../../middleware/featureFlags";
+import { emitRefreshOnMutation } from "../../middleware/refresh";
+import { usersController } from "./users.controller";
+import { uploadUserAvatar } from "../shared/upload"; // ⭐ שימוש נכון
 
 const router = Router();
 
@@ -16,11 +16,10 @@ router.get(
 );
 
 router.use(requireAuth);
-router.use(requireActiveSubscription);
-
 // כל פעולה של POST/PUT/DELETE במודול Users תגרום ל־global:refresh
 router.use(emitRefreshOnMutation);
 
+// Account/self-service routes should be available even when subscription is inactive
 router.get("/me", usersController.me);
 
 // ⭐ מאגר אמנים — מי הזמין אותי
@@ -47,6 +46,9 @@ router.put(
 router.delete("/avatar", usersController.deleteAvatar);
 
 router.put("/password", usersController.updatePassword);
+
+// Everything else in the users module requires an active subscription for write actions
+router.use(requireActiveSubscription);
 
 router.get("/", usersController.list);
 

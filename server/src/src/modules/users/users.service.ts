@@ -1,9 +1,9 @@
 import bcrypt from "bcryptjs";
-import { AppError } from "../../core/errors.js";
-import { signToken } from "../auth/token.service.js";
+import { AppError } from "../../core/errors";
+import { signToken } from "../auth/token.service";
 import fs from "fs";
 import path from "path";
-import { joinUploadsPath } from "../../utils/uploadsRoot.js";
+import { joinUploadsPath } from "../../utils/uploadsRoot";
 
 import {
   findMyCollection,
@@ -17,7 +17,7 @@ import {
   markInvitationAsUsed,
   acceptInvitationStatus as acceptInvitationStatusRepo,
   rejectInvitationStatus as rejectInvitationStatusRepo,
-} from "./users.repository.js";
+} from "./users.repository";
 import {
   deleteUserById,
   findUserByEmail,
@@ -28,12 +28,12 @@ import {
   updatePassword,
   updateSettings,
   updateUserRecord,
-} from "./users.repository.js";
+} from "./users.repository";
 import crypto from "crypto";
-import { transporter } from "../../integrations/mail/transporter.js";
-import { env } from "../../config/env.js";
-import { getPlanByKey } from "../plans/plans.repository.js";
-import { getTrialDays } from "../../services/trialUtils.js";
+import { transporter } from "../../integrations/mail/transporter";
+import { env } from "../../config/env";
+import { getPlanByKey } from "../plans/plans.repository";
+import { getTrialDays } from "../../services/trialUtils";
 
 function toMysqlDateTime(date: Date): string {
   return date.toISOString().slice(0, 19).replace("T", " ");
@@ -316,7 +316,7 @@ export async function inviteArtistToMyCollection(hostId, artistId) {
   }
 
   // בדיקה אם האמן כבר מוזמן על ידי המארח הזה
-  const { isGuest } = await import("./users.repository.js");
+  const { isGuest } = await import("./users.repository");
   const existingHosts = await isGuest(artistId);
   if (existingHosts.includes(hostId)) {
     throw new AppError(400, "האמן כבר מוזמן על ידי המארח הזה");
@@ -354,7 +354,7 @@ export async function leaveMyCollection(
   artistId,
   hostId: number | null = null,
 ) {
-  const { isGuest } = await import("./users.repository.js");
+  const { isGuest } = await import("./users.repository");
   const existingHosts = await isGuest(artistId);
   const existingHostsArray: number[] = Array.isArray(existingHosts)
     ? existingHosts
@@ -384,7 +384,7 @@ export async function leaveMyCollection(
 
 // ⭐ קבלת הזמנות ממתינות לאישור
 export async function getPendingInvitations(userId) {
-  const { findPendingInvitations } = await import("./users.repository.js");
+  const { findPendingInvitations } = await import("./users.repository");
   return await findPendingInvitations(userId);
 }
 
@@ -416,7 +416,7 @@ export async function checkIfGuest(userId) {
 
 // ⭐ בדיקה אם משתמש הוא מארח
 export async function checkIfHost(userId) {
-  const { isHost } = await import("./users.repository.js");
+  const { isHost } = await import("./users.repository");
   return await isHost(userId);
 }
 
@@ -435,7 +435,7 @@ export async function sendArtistInvitation(hostId, hostName, email) {
     }
 
     // בדיקה אם כבר מוזמן על ידי המארח הזה
-    const { isGuest } = await import("./users.repository.js");
+    const { isGuest } = await import("./users.repository");
     const existingHosts = await isGuest(existingUser.id);
     if (existingHosts.includes(hostId)) {
       throw new AppError(400, "האמן כבר מוזמן על ידי המארח הזה");

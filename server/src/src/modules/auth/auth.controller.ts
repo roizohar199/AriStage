@@ -1,14 +1,14 @@
-import { asyncHandler } from "../../core/asyncHandler.js";
+import { asyncHandler } from "../../core/asyncHandler";
 import {
   loginUser,
   registerUser,
   requestPasswordReset,
   resetPasswordWithToken,
   resetSafeResponse,
-} from "./auth.service.js";
-import { logger } from "../../core/logger.js";
+} from "./auth.service";
+import { logger } from "../../core/logger";
 import { Request, Response } from "express";
-import { logSystemEvent } from "../../utils/systemLogger.js";
+import { logSystemEvent } from "../../utils/systemLogger";
 
 export const authController = {
   login: asyncHandler(async (req: Request, res: Response) => {
@@ -20,7 +20,7 @@ export const authController = {
         "ADMIN_LOGIN",
         "Admin login success",
         { email: payload.email },
-        payload.id
+        payload.id,
       );
     }
 

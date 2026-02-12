@@ -1,5 +1,5 @@
-import { asyncHandler } from "../../core/asyncHandler.js";
-import { env } from "../../config/env.js";
+import { asyncHandler } from "../../core/asyncHandler";
+import { env } from "../../config/env";
 import {
   changePassword,
   createUserAccount,
@@ -21,9 +21,9 @@ import {
   checkIfGuest,
   sendArtistInvitation,
   acceptInvitation,
-} from "./users.service.js";
-import { resolveSubscriptionStatus } from "../subscriptions/resolveSubscriptionStatus.js";
-import { getSubscriptionSettings } from "../subscriptions/subscriptions.repository.js";
+} from "./users.service";
+import { resolveSubscriptionStatus } from "../subscriptions/resolveSubscriptionStatus";
+import { getSubscriptionSettings } from "../subscriptions/subscriptions.repository";
 
 /* -------------------------------------------------------
    ⭐ פונקציה אחידה לתיקון URL של תמונה — פתרון לבעיה שלך
@@ -189,7 +189,7 @@ export const usersController = {
     const result = await inviteArtistToMyCollection(hostId, artistId);
 
     if (global.io) {
-      const { emitToHost, emitToUser } = await import("../../core/socket.js");
+      const { emitToHost, emitToUser } = await import("../../core/socket");
       await emitToHost(global.io, hostId, "user:invited", { artistId, hostId });
       await emitToUser(global.io, artistId, "invitation:pending", {
         hostId,
@@ -211,7 +211,7 @@ export const usersController = {
     const result = await uninviteArtistFromMyCollection(hostId, artistId);
 
     if (global.io) {
-      const { emitToHost } = await import("../../core/socket.js");
+      const { emitToHost } = await import("../../core/socket");
       await emitToHost(global.io, hostId, "user:uninvited", {
         artistId,
         hostId,
@@ -228,7 +228,7 @@ export const usersController = {
     const result = await leaveMyCollection(artistId, hostId);
 
     if (global.io) {
-      const { emitToUserAndHost } = await import("../../core/socket.js");
+      const { emitToUserAndHost } = await import("../../core/socket");
       await emitToUserAndHost(global.io, artistId, "user:left-collection", {
         artistId,
         hostId,
@@ -247,12 +247,12 @@ export const usersController = {
     }
 
     const { acceptInvitationStatus: acceptInvitationStatusService } =
-      await import("./users.service.js");
+      await import("./users.service");
 
     const result = await acceptInvitationStatusService(userId, hostId);
 
     if (global.io) {
-      const { emitToUserAndHost } = await import("../../core/socket.js");
+      const { emitToUserAndHost } = await import("../../core/socket");
       await emitToUserAndHost(global.io, userId, "user:invitation-accepted", {
         userId,
         hostId,
@@ -275,12 +275,12 @@ export const usersController = {
     }
 
     const { rejectInvitationStatus: rejectInvitationStatusService } =
-      await import("./users.service.js");
+      await import("./users.service");
 
     const result = await rejectInvitationStatusService(userId, hostId);
 
     if (global.io) {
-      const { emitToUserAndHost } = await import("../../core/socket.js");
+      const { emitToUserAndHost } = await import("../../core/socket");
       await emitToUserAndHost(global.io, userId, "user:invitation-rejected", {
         userId,
         hostId,
@@ -291,7 +291,7 @@ export const usersController = {
   }),
 
   checkGuest: asyncHandler(async (req, res) => {
-    const { checkIfGuest, checkIfHost } = await import("./users.service.js");
+    const { checkIfGuest, checkIfHost } = await import("./users.service");
     const hostIds = await checkIfGuest(req.user.id);
     const isHost = await checkIfHost(req.user.id);
 

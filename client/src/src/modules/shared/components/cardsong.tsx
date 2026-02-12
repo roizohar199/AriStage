@@ -23,10 +23,12 @@ interface CardSongProps {
   index: number;
   safeKey: (key: string) => string;
   safeDuration: (duration: string | number) => string;
-  onEdit: (song: Song) => void;
+  onEdit?: (song: Song) => void;
   onRemove: (songId: number) => void;
   chartsComponent: React.ReactNode;
   lyricsComponent?: React.ReactNode;
+  compact?: boolean;
+  hideActions?: boolean;
 }
 
 const CardSong: React.FC<CardSongProps> = ({
@@ -38,16 +40,24 @@ const CardSong: React.FC<CardSongProps> = ({
   onRemove,
   chartsComponent,
   lyricsComponent,
+  compact = false,
+  hideActions = false,
 }) => {
   const durationText = safeDuration(song.duration_sec);
 
   return (
     <div
       // Semantic animation: cards use `animation-hover`
-      className="bg-neutral-850 rounded-2xl p-4 flex justify-between items-center"
+      className={`bg-neutral-850 rounded-2xl flex justify-between items-center ${
+        compact ? "p-3" : "p-4"
+      }`}
     >
       <div>
-        <p className="font-semibold text-2xl text-brand-primary">
+        <p
+          className={`font-semibold text-brand-primary ${
+            compact ? "text-xl" : "text-2xl"
+          }`}
+        >
           {index + 1}. {song.title}
         </p>
         <div className="flex flex-wrap gap-1 mt-2 text-sm">
@@ -69,29 +79,31 @@ const CardSong: React.FC<CardSongProps> = ({
         {chartsComponent}
         {lyricsComponent}
       </div>
-      <div className="flex m-4 gap-1 flex-row-reverse items-center">
-        {song.is_owner && (
-          <>
-            <button
-              onClick={() => onRemove(song.id)}
-              // Semantic animation: buttons use `animation-press`
-              className="text-red-600 hover:text-red-500 outline-none transition hover:bg-neutral-800 rounded-full p-2"
-            >
-              <Trash2 size={20} />
-            </button>
-
-            {onEdit && (
+      {!hideActions && (
+        <div className="flex m-4 gap-1 flex-row-reverse items-center">
+          {song.is_owner && (
+            <>
               <button
-                onClick={() => onEdit(song)}
+                onClick={() => onRemove(song.id)}
                 // Semantic animation: buttons use `animation-press`
-                className="outline-none text-neutral-100 hover:text-brand-primary hover:bg-neutral-800 rounded-full p-2 transition"
+                className="text-red-600 hover:text-red-500 outline-none transition hover:bg-neutral-800 rounded-full p-2"
               >
-                <Edit2 size={20} />
+                <Trash2 size={20} />
               </button>
-            )}
-          </>
-        )}
-      </div>
+
+              {onEdit && (
+                <button
+                  onClick={() => onEdit(song)}
+                  // Semantic animation: buttons use `animation-press`
+                  className="outline-none text-neutral-100 hover:text-brand-primary hover:bg-neutral-800 rounded-full p-2 transition"
+                >
+                  <Edit2 size={20} />
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 };

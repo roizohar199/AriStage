@@ -1,6 +1,6 @@
-import { AppError } from "../core/errors.js";
-import { logger } from "../core/logger.js";
-import { recordSystemErrorBestEffort } from "../modules/errors/errors.service.js";
+import { AppError } from "../core/errors";
+import { logger } from "../core/logger";
+import { recordSystemErrorBestEffort } from "../modules/errors/errors.service";
 
 export function errorHandler(err, req, res, next) {
   if (res.headersSent) {

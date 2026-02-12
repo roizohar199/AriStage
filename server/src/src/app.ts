@@ -4,12 +4,12 @@ import cors from "cors";
 import morgan from "morgan";
 import path from "path";
 import { fileURLToPath } from "url";
-import { registerModules } from "./modules/index.js";
-import { createCorsOptions } from "./config/cors.js";
-import { env } from "./config/env.js";
-import { notFoundHandler } from "./middleware/not-found.js";
-import { errorHandler } from "./middleware/error-handler.js";
-import { getUploadsRoot } from "./utils/uploadsRoot.js";
+import { registerModules } from "./modules/index";
+import { createCorsOptions } from "./config/cors";
+import { env } from "./config/env";
+import { notFoundHandler } from "./middleware/not-found";
+import { errorHandler } from "./middleware/error-handler";
+import { getUploadsRoot } from "./utils/uploadsRoot";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

@@ -1,4 +1,4 @@
-import { pool } from "../../database/pool.js";
+import { pool } from "../../database/pool";
 
 export async function countAll(table) {
   const [rows] = await pool.query(`SELECT COUNT(*) AS count FROM ${table}`);
@@ -8,8 +8,7 @@ export async function countAll(table) {
 export async function countWhere(table, column, value) {
   const [rows] = await pool.query(
     `SELECT COUNT(*) AS count FROM ${table} WHERE ${column} = ?`,
-    [value]
+    [value],
   );
   return rows[0].count;
 }
-

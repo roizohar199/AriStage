@@ -1,4 +1,4 @@
-import { corsMethods, env } from "./env.js";
+import { corsMethods, env } from "./env";
 
 function normalizeOrigin(origin: string = ""): string {
   return origin.replace(/\/$/, "");
@@ -9,7 +9,7 @@ const socketAllowedOrigins = Array.from(
   new Set([
     env.clientUrl ? normalizeOrigin(env.clientUrl) : undefined,
     ...normalizedOrigins,
-  ])
+  ]),
 ).filter(Boolean) as string[];
 
 export function createCorsOptions(): any {

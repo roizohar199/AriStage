@@ -1,6 +1,6 @@
-import { AppError } from "../../core/errors.js";
-import { countAll, countWhere } from "./dashboard.repository.js";
-import { pool } from "../../database/pool.js";
+import { AppError } from "../../core/errors";
+import { countAll, countWhere } from "./dashboard.repository";
+import { pool } from "../../database/pool";
 import os from "os";
 
 let lastCpuUsage = process.cpuUsage();
@@ -125,7 +125,7 @@ export async function getSharedDashboardStats(user) {
   // קבלת רשימת אמנים שהזמינו אותי
   const [artistsRows] = await pool.query(
     `SELECT DISTINCT host_id FROM artist_access WHERE guest_id = ?`,
-    [user.id]
+    [user.id],
   );
 
   const hostIds = artistsRows.map((row) => row.host_id);
@@ -143,14 +143,14 @@ export async function getSharedDashboardStats(user) {
   const placeholders = hostIds.map(() => "?").join(", ");
   const [songsRows] = await pool.query(
     `SELECT COUNT(*) AS count FROM songs WHERE user_id IN (${placeholders})`,
-    hostIds
+    hostIds,
   );
   const songsCount = songsRows[0].count;
 
   // חישוב סך הליינאפים של כל האמנים
   const [lineupsRows] = await pool.query(
     `SELECT COUNT(*) AS count FROM lineups WHERE created_by IN (${placeholders})`,
-    hostIds
+    hostIds,
   );
   const lineupsCount = lineupsRows[0].count;
 

@@ -1,14 +1,14 @@
 import { Router } from "express";
-import { requireAuth } from "../../middleware/auth.js";
-import { requireFeatureFlagEnabled } from "../../middleware/featureFlags.js";
+import { requireAuth } from "../../middleware/auth";
+import { requireFeatureFlagEnabled } from "../../middleware/featureFlags";
 import {
   createMockPayment,
   findPaymentById,
   markPaymentPaid,
-} from "./payments.repository.js";
-import { getPlanByKey } from "../plans/plans.repository.js";
-import { activatePlanForUser } from "../../services/subscriptionService.js";
-import { AppError } from "../../core/errors.js";
+} from "./payments.repository";
+import { getPlanByKey } from "../plans/plans.repository";
+import { activatePlanForUser } from "../../services/subscriptionService";
+import { AppError } from "../../core/errors";
 
 const router = Router();
 

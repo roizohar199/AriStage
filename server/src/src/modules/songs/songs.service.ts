@@ -1,9 +1,9 @@
-import { getSongChartsByUser } from "./songs.repository.js";
+import { getSongChartsByUser } from "./songs.repository";
 // שליפת כל הצ'ארטים של שיר עבור המשתמש
 export async function getPrivateChartsForSong(songId, user) {
   return await getSongChartsByUser(songId, user.id);
 }
-import { insertSongChart } from "./songs.repository.js";
+import { insertSongChart } from "./songs.repository";
 // העלאת צ'ארט פרטי למשתמש
 export async function uploadPrivateChartPdfForSong(songId, user, filePath) {
   // ודא שהשיר קיים
@@ -19,7 +19,7 @@ export async function uploadPrivateChartPdfForSong(songId, user, filePath) {
   });
   return chartId;
 }
-import { AppError } from "../../core/errors.js";
+import { AppError } from "../../core/errors";
 import {
   deleteSong,
   findSongOwnership,
@@ -31,8 +31,8 @@ import {
   deleteSongChartPdf,
   upsertSongLyrics,
   deleteSongLyrics,
-} from "./songs.repository.js";
-import { checkIfGuest } from "../users/users.service.js";
+} from "./songs.repository";
+import { checkIfGuest } from "../users/users.service";
 
 export async function getSongs(user) {
   // בדיקה אם המשתמש הוא אורח - מחזיר רשימת מארחים

@@ -1,5 +1,5 @@
-import { pool } from "../../database/pool.js";
-import { isElevatedRole } from "../../types/roles.js";
+import { pool } from "../../database/pool";
+import { isElevatedRole } from "../../types/roles";
 
 // ✔ משוך את המשתמש כולל השדות החדשים
 export async function getCurrentUser(id) {

@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { authController } from "./auth.controller.js";
-import { uploadTempAvatar } from "../shared/upload.js";
+import { authController } from "./auth.controller";
+import { uploadTempAvatar } from "../shared/upload";
 
 const router = Router();
 
@@ -10,7 +10,7 @@ router.post("/login", authController.login);
 router.post(
   "/register",
   uploadTempAvatar.single("avatar"),
-  authController.register
+  authController.register,
 );
 
 router.post("/reset-request", authController.resetRequest);

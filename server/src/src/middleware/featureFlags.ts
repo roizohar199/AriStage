@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 
-import { listFeatureFlags } from "../modules/featureFlags/featureFlags.repository.js";
+import { listFeatureFlags } from "../modules/featureFlags/featureFlags.repository";
 
 type CachedFlags = {
   loadedAt: number;
@@ -57,7 +57,7 @@ export function requireFeatureFlagEnabled(
   options?: {
     defaultEnabled?: boolean;
     adminBypass?: boolean;
-  }
+  },
 ) {
   const flagKey = String(key || "").trim();
   const defaultEnabled = options?.defaultEnabled ?? true;
@@ -66,7 +66,7 @@ export function requireFeatureFlagEnabled(
   return async function featureFlagMiddleware(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) {
     try {
       if (!flagKey) return next();
@@ -91,4 +91,3 @@ export function requireFeatureFlagEnabled(
     }
   };
 }
-

@@ -1,11 +1,11 @@
-import { asyncHandler } from "../../core/asyncHandler.js";
-import { AppError } from "../../core/errors.js";
-import { logSystemEvent } from "../../utils/systemLogger.js";
+import { asyncHandler } from "../../core/asyncHandler";
+import { AppError } from "../../core/errors";
+import { logSystemEvent } from "../../utils/systemLogger";
 import {
   adminUsersRepository,
   type AdminUserListRow,
   type AdminUserSubscriptionRow,
-} from "./adminUsers.repository.js";
+} from "./adminUsers.repository";
 
 import type { Request, Response } from "express";
 
@@ -52,7 +52,7 @@ function parseNullableIsoDate(value: unknown): string | null | undefined {
     throw new AppError(
       400,
       "subscription_expires_at must be a valid date",
-      undefined
+      undefined,
     );
   }
   // Store as MySQL DATETIME compatible string
@@ -103,9 +103,9 @@ function normalizeStatus(value: unknown): string | null | undefined {
     throw new AppError(
       400,
       `subscription_status must be one of: ${Array.from(
-        ALLOWED_SUBSCRIPTION_STATUSES
+        ALLOWED_SUBSCRIPTION_STATUSES,
       ).join(", ")}`,
-      undefined
+      undefined,
     );
   }
   return s;
@@ -136,7 +136,7 @@ function mapSubscriptionRowToDto(row: AdminUserSubscriptionRow) {
 export const adminUsersController = {
   listUsers: asyncHandler(async (req: Request, res: Response) => {
     const { limit, offset } = parseOptionalLimitOffset(
-      req.query as unknown as AdminUsersListQuery
+      req.query as unknown as AdminUsersListQuery,
     );
     const rows = await adminUsersRepository.listUsers(limit, offset);
     const payload = Array.isArray(rows) ? rows.map(mapListRowToDto) : [];
@@ -165,24 +165,23 @@ export const adminUsersController = {
       throw new AppError(401, "Unauthorized", undefined);
     }
 
-    const existing = await adminUsersRepository.getUserSubscription(
-      targetUserId
-    );
+    const existing =
+      await adminUsersRepository.getUserSubscription(targetUserId);
     if (!existing) throw new AppError(404, "User not found", undefined);
 
     const incomingStatus =
       body.subscription_status !== undefined
         ? normalizeStatus(body.subscription_status)
         : body.status !== undefined
-        ? normalizeStatus(body.status)
-        : undefined;
+          ? normalizeStatus(body.status)
+          : undefined;
 
     const incomingExpires =
       body.subscription_expires_at !== undefined
         ? parseNullableIsoDate(body.subscription_expires_at)
         : body.expiresAt !== undefined
-        ? parseNullableIsoDate(body.expiresAt)
-        : undefined;
+          ? parseNullableIsoDate(body.expiresAt)
+          : undefined;
 
     if (incomingStatus === undefined && incomingExpires === undefined) {
       throw new AppError(400, "No subscription fields provided", undefined);
@@ -194,14 +193,14 @@ export const adminUsersController = {
         throw new AppError(
           400,
           "subscription_expires_at is required when subscription_status is active or trial",
-          undefined
+          undefined,
         );
       }
       if (incomingExpires === null) {
         throw new AppError(
           400,
           "subscription_expires_at must be a future date when subscription_status is active or trial",
-          undefined
+          undefined,
         );
       }
       const expiresMs = new Date(incomingExpires.replace(" ", "T")).getTime();
@@ -209,7 +208,7 @@ export const adminUsersController = {
         throw new AppError(
           400,
           "subscription_expires_at must be a future date when subscription_status is active or trial",
-          undefined
+          undefined,
         );
       }
     }
@@ -228,16 +227,15 @@ export const adminUsersController = {
     console.log("[ADMIN SUB PASS TO REPO]", payload);
     const affected = await adminUsersRepository.updateUserSubscription(
       targetUserId,
-      payload
+      payload,
     );
 
     if (!affected) {
       throw new AppError(400, "No subscription fields provided", undefined);
     }
 
-    const updated = await adminUsersRepository.getUserSubscription(
-      targetUserId
-    );
+    const updated =
+      await adminUsersRepository.getUserSubscription(targetUserId);
     if (!updated) throw new AppError(404, "User not found", undefined);
 
     const updatedDto = mapSubscriptionRowToDto(updated);
@@ -251,7 +249,7 @@ export const adminUsersController = {
         newStatus: updatedDto.subscription_status,
         newExpiresAt: updatedDto.subscription_expires_at,
       },
-      adminUserId
+      adminUserId,
     );
 
     res.json(updatedDto);

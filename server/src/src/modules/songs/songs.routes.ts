@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { requireAuth } from "../../middleware/auth.js";
-import { requireActiveSubscription } from "../../middleware/subscription.js";
-import { requireFeatureFlagEnabled } from "../../middleware/featureFlags.js";
-import { emitRefreshOnMutation } from "../../middleware/refresh.js";
-import { songsController } from "./songs.controller.js";
-import { uploadSongChartPdf } from "../shared/upload.js";
+import { requireAuth } from "../../middleware/auth";
+import { requireActiveSubscription } from "../../middleware/subscription";
+import { requireFeatureFlagEnabled } from "../../middleware/featureFlags";
+import { emitRefreshOnMutation } from "../../middleware/refresh";
+import { songsController } from "./songs.controller";
+import { uploadSongChartPdf } from "../shared/upload";
 
 const router = Router();
 
@@ -15,11 +15,15 @@ router.use(requireActiveSubscription);
 router.use(emitRefreshOnMutation);
 
 router.get("/", songsController.list);
-router.post("/", requireFeatureFlagEnabled("module.addSongs"), songsController.create);
+router.post(
+  "/",
+  requireFeatureFlagEnabled("module.addSongs"),
+  songsController.create,
+);
 router.get(
   "/:id/private-charts",
   requireFeatureFlagEnabled("module.charts"),
-  songsController.getPrivateCharts
+  songsController.getPrivateCharts,
 );
 router.post(
   "/:id/private-charts",
@@ -41,11 +45,15 @@ router.delete(
   requireFeatureFlagEnabled("module.charts"),
   songsController.deletePrivateChart,
 );
-router.put("/:id", requireFeatureFlagEnabled("module.addSongs"), songsController.update);
+router.put(
+  "/:id",
+  requireFeatureFlagEnabled("module.addSongs"),
+  songsController.update,
+);
 router.delete(
   "/:id",
   requireFeatureFlagEnabled("module.addSongs"),
-  songsController.remove
+  songsController.remove,
 );
 router.post(
   "/:id/upload-chart",
@@ -65,18 +73,18 @@ router.post(
 router.delete(
   "/:id/delete-chart",
   requireFeatureFlagEnabled("module.charts"),
-  songsController.deleteChart
+  songsController.deleteChart,
 );
 
 router.put(
   "/:id/lyrics",
   requireFeatureFlagEnabled("module.lyrics"),
-  songsController.upsertLyrics
+  songsController.upsertLyrics,
 );
 router.delete(
   "/:id/lyrics",
   requireFeatureFlagEnabled("module.lyrics"),
-  songsController.deleteLyrics
+  songsController.deleteLyrics,
 );
 
 export const songsRouter = router;

@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { requireAuth } from "../../middleware/auth.js";
-import { requireActiveSubscription } from "../../middleware/subscription.js";
-import { emitRefreshOnMutation } from "../../middleware/refresh.js";
-import { filesController } from "./files.controller.js";
+import { requireAuth } from "../../middleware/auth";
+import { requireActiveSubscription } from "../../middleware/subscription";
+import { emitRefreshOnMutation } from "../../middleware/refresh";
+import { filesController } from "./files.controller";
 
 const router = Router();
 

@@ -3,22 +3,22 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 
-import { AppError } from "../../core/errors.js";
-import { signToken } from "./token.service.js";
+import { AppError } from "../../core/errors";
+import { signToken } from "./token.service";
 import {
   createUser,
   findUserByEmail,
   findUserByResetToken,
   saveResetToken,
   updatePassword,
-} from "./auth.repository.js";
+} from "./auth.repository";
 
-import { transporter } from "../../integrations/mail/transporter.js";
-import { env } from "../../config/env.js";
-import { logger } from "../../core/logger.js";
-import { resolveSubscriptionStatus } from "../subscriptions/resolveSubscriptionStatus.js";
-import { touchUserLastSeen } from "../users/users.repository.js";
-import { activateTrialForUser } from "../../services/subscriptionService.js";
+import { transporter } from "../../integrations/mail/transporter";
+import { env } from "../../config/env";
+import { logger } from "../../core/logger";
+import { resolveSubscriptionStatus } from "../subscriptions/resolveSubscriptionStatus";
+import { touchUserLastSeen } from "../users/users.repository";
+import { activateTrialForUser } from "../../services/subscriptionService";
 
 export const resetSafeResponse = {
   message: "אם המייל קיים — נשלח אליו קישור לאיפוס",
@@ -189,7 +189,7 @@ export async function registerUser(payload) {
 // עזר קטן: עדכון שדה avatar בטבלה
 //
 async function updateAvatarColumn(id, avatarPath) {
-  await import("../../database/pool.js").then(({ pool }) =>
+  await import("../../database/pool").then(({ pool }) =>
     pool.query("UPDATE users SET avatar = ? WHERE id = ?", [avatarPath, id]),
   );
 }

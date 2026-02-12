@@ -1,5 +1,5 @@
 import mysql from "mysql2/promise";
-import { env } from "../config/env.js";
+import { env } from "../config/env";
 
 // אם אין סיסמה, לא שולחים את השדה password בכלל
 const poolConfig: any = {
@@ -56,7 +56,7 @@ async function configureConnection(connection: any) {
     // אם יש שגיאה, רק לוג - לא לשבור את החיבור
     console.warn(
       "⚠️ Warning: Could not set charset for connection:",
-      err.message
+      err.message,
     );
   }
 }
@@ -64,28 +64,29 @@ async function configureConnection(connection: any) {
 async function ensureDynamicPlanKeysSchema() {
   try {
     const [rows] = await pool.query(
-      "SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND ((TABLE_NAME = 'users' AND COLUMN_NAME = 'subscription_type') OR (TABLE_NAME = 'payments' AND COLUMN_NAME = 'plan'))"
+      "SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND ((TABLE_NAME = 'users' AND COLUMN_NAME = 'subscription_type') OR (TABLE_NAME = 'payments' AND COLUMN_NAME = 'plan'))",
     );
 
     const list = Array.isArray(rows) ? (rows as any[]) : [];
 
     const usersType = list.find(
-      (r) => r?.TABLE_NAME === "users" && r?.COLUMN_NAME === "subscription_type"
+      (r) =>
+        r?.TABLE_NAME === "users" && r?.COLUMN_NAME === "subscription_type",
     )?.DATA_TYPE;
     const paymentsType = list.find(
-      (r) => r?.TABLE_NAME === "payments" && r?.COLUMN_NAME === "plan"
+      (r) => r?.TABLE_NAME === "payments" && r?.COLUMN_NAME === "plan",
     )?.DATA_TYPE;
 
     if (String(usersType).toLowerCase() === "enum") {
       await pool.query(
-        "ALTER TABLE `users` MODIFY COLUMN `subscription_type` VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'trial'"
+        "ALTER TABLE `users` MODIFY COLUMN `subscription_type` VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'trial'",
       );
       console.log("✅ DB migrated: users.subscription_type -> VARCHAR(64)");
     }
 
     if (String(paymentsType).toLowerCase() === "enum") {
       await pool.query(
-        "ALTER TABLE `payments` MODIFY COLUMN `plan` VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL"
+        "ALTER TABLE `payments` MODIFY COLUMN `plan` VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL",
       );
       console.log("✅ DB migrated: payments.plan -> VARCHAR(64)");
     }
@@ -93,7 +94,7 @@ async function ensureDynamicPlanKeysSchema() {
     // Do not crash the server if schema migration fails; log for debugging.
     console.warn(
       "⚠️ Warning: could not ensure dynamic plan keys schema:",
-      err?.message ?? err
+      err?.message ?? err,
     );
   }
 }

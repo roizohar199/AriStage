@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { subscriptionsController } from "./subscriptions.controller.js";
-import { requireAuth, requireRoles } from "../../middleware/auth.js";
+import { subscriptionsController } from "./subscriptions.controller";
+import { requireAuth, requireRoles } from "../../middleware/auth";
 
 const router = Router();
 
@@ -12,7 +12,7 @@ router.put(
   "/settings",
   requireAuth,
   requireRoles(["admin"]),
-  subscriptionsController.updateSettings
+  subscriptionsController.updateSettings,
 );
 
 export const subscriptionsRouter = router;

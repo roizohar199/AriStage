@@ -1,7 +1,7 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { joinUploadsPath } from "../../utils/uploadsRoot.js";
+import { joinUploadsPath } from "../../utils/uploadsRoot";
 
 // פונקציה לבניית נתיב מוחלט לתיקיית uploads בשורש הפרויקט
 function uploadsRoot(...sub) {

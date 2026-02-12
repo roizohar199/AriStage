@@ -1,4 +1,4 @@
-import { AppError } from "../../core/errors.js";
+import { AppError } from "../../core/errors";
 import {
   getNextPosition,
   insertLineupSong,
@@ -9,13 +9,13 @@ import {
   getLineupSongById,
   deleteLineupSongChartPdf,
   getLineupSongByLineupAndSong,
-} from "./lineupSongs.repository.js";
+} from "./lineupSongs.repository";
 import {
   lineupBelongsToUser,
   findLineupById,
-} from "../lineups/lineups.repository.js";
-import { checkIfGuest } from "../users/users.service.js";
-import { emitToUserAndHost } from "../../core/socket.js";
+} from "../lineups/lineups.repository";
+import { checkIfGuest } from "../users/users.service";
+import { emitToUserAndHost } from "../../core/socket";
 
 async function ensureAccess(lineupId, user) {
   if (user.role === "admin") return true;
@@ -58,7 +58,7 @@ const emitUpdate = async (lineupId, event = "lineup-updated", data = {}) => {
     const lineup = await findLineupById(lineupId);
     if (lineup && lineup.created_by) {
       // שליחה למארח ולכל האמנים שלו
-      const { emitToHost } = await import("../../core/socket.js");
+      const { emitToHost } = await import("../../core/socket");
       await emitToHost(global.io, lineup.created_by, "lineup-updated", payload);
       if (event !== "lineup-updated") {
         await emitToHost(global.io, lineup.created_by, event, payload);

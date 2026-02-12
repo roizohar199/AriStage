@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { emitToUserAndHost } from "../core/socket.js";
+import { emitToUserAndHost } from "../core/socket";
 
 /**
  * כל בקשת POST/PUT/PATCH/DELETE שנסגרת ב־2xx/3xx
@@ -8,7 +8,7 @@ import { emitToUserAndHost } from "../core/socket.js";
 export function emitRefreshOnMutation(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   console.log(
     "[TEMP][REFRESH] emitRefreshOnMutation",
@@ -16,7 +16,7 @@ export function emitRefreshOnMutation(
     req.path,
     req.body,
     "user:",
-    req.user
+    req.user,
   );
   const methodsToWatch = ["POST", "PUT", "PATCH", "DELETE"];
 

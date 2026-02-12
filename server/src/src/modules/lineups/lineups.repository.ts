@@ -1,5 +1,5 @@
-import { pool } from "../../database/pool.js";
-import { isElevatedRole } from "../../types/roles.js";
+import { pool } from "../../database/pool";
+import { isElevatedRole } from "../../types/roles";
 
 export async function listLineups(role, userId, hostId = null) {
   let query = "SELECT * FROM lineups";
@@ -23,7 +23,7 @@ export async function listLineups(role, userId, hostId = null) {
 export async function listLineupsByUserId(targetUserId) {
   const [rows] = await pool.query(
     "SELECT * FROM lineups WHERE created_by = ? ORDER BY id DESC",
-    [targetUserId]
+    [targetUserId],
   );
   return rows;
 }
@@ -40,7 +40,7 @@ export async function insertLineup(data) {
       data.location,
       data.description,
       data.created_by,
-    ]
+    ],
   );
 
   return findLineupById(result.insertId);
@@ -51,7 +51,7 @@ export async function updateLineupRecord(id, data) {
     `UPDATE lineups 
        SET title = ?, date = ?, time = ?, location = ?, description = ?
        WHERE id = ?`,
-    [data.title, data.date, data.time, data.location, data.description, id]
+    [data.title, data.date, data.time, data.location, data.description, id],
   );
 
   return findLineupById(id);
@@ -65,7 +65,7 @@ export async function findLineupById(id) {
 export async function lineupBelongsToUser(id, userId) {
   const [rows] = await pool.query(
     "SELECT id FROM lineups WHERE id = ? AND created_by = ?",
-    [id, userId]
+    [id, userId],
   );
   return rows.length > 0;
 }
@@ -73,7 +73,7 @@ export async function lineupBelongsToUser(id, userId) {
 export async function findActiveShare(lineupId) {
   const [rows] = await pool.query(
     "SELECT share_token FROM lineup_shares WHERE lineup_id = ? ORDER BY id DESC LIMIT 1",
-    [lineupId]
+    [lineupId],
   );
   return rows[0];
 }
@@ -81,7 +81,7 @@ export async function findActiveShare(lineupId) {
 export async function insertShareToken(lineupId, token) {
   await pool.query(
     "INSERT INTO lineup_shares (lineup_id, share_token) VALUES (?, ?)",
-    [lineupId, token]
+    [lineupId, token],
   );
   return token;
 }
@@ -110,7 +110,7 @@ export async function listSharedLineups(userId) {
        AND uh.invitation_status = 'accepted'
        AND l.created_by != ?
      ORDER BY l.id DESC`,
-    [userId, userId]
+    [userId, userId],
   );
   return rows;
 }

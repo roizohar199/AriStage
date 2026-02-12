@@ -1,21 +1,21 @@
-import { authRouter } from "./auth/auth.routes.js";
-import { songsRouter } from "./songs/songs.routes.js";
-import { lineupsRouter } from "./lineups/lineups.routes.js";
-import { usersRouter } from "./users/users.routes.js";
-import { lineupSongsRouter } from "./lineupSongs/lineupSongs.routes.js";
-import { filesRouter } from "./files/files.routes.js";
-import { dashboardRouter } from "./dashboard/dashboard.routes.js";
-import { shareRouter } from "./share/share.routes.js";
-import { supportRouter } from "./support/support.routes.js";
-import { healthRouter } from "./health/health.routes.js";
-import { subscriptionsRouter } from "./subscriptions/subscriptions.routes.js";
-import { paymentsRouter } from "./payments/payments.routes.js";
-import { logsRouter } from "./logs/logs.routes.js";
-import { errorsRouter } from "./errors/errors.routes.js";
-import { featureFlagsRouter } from "./featureFlags/featureFlags.routes.js";
-import { plansRouter } from "./plans/plans.routes.js";
+import { authRouter } from "./auth/auth.routes";
+import { songsRouter } from "./songs/songs.routes";
+import { lineupsRouter } from "./lineups/lineups.routes";
+import { usersRouter } from "./users/users.routes";
+import { lineupSongsRouter } from "./lineupSongs/lineupSongs.routes";
+import { filesRouter } from "./files/files.routes";
+import { dashboardRouter } from "./dashboard/dashboard.routes";
+import { shareRouter } from "./share/share.routes";
+import { supportRouter } from "./support/support.routes";
+import { healthRouter } from "./health/health.routes";
+import { subscriptionsRouter } from "./subscriptions/subscriptions.routes";
+import { paymentsRouter } from "./payments/payments.routes";
+import { logsRouter } from "./logs/logs.routes";
+import { errorsRouter } from "./errors/errors.routes";
+import { featureFlagsRouter } from "./featureFlags/featureFlags.routes";
+import { plansRouter } from "./plans/plans.routes";
 
-import adminRouter from "../../routes/admin.js";
+import adminRouter from "../../routes/admin";
 
 export function registerModules(app) {
   app.use("/api/health", healthRouter);

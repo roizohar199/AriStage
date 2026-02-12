@@ -1,4 +1,4 @@
-import { pool } from "../../database/pool.js";
+import { pool } from "../../database/pool";
 
 export type FeatureFlagRow = {
   key: string;
@@ -8,7 +8,7 @@ export type FeatureFlagRow = {
 
 export async function listFeatureFlags(): Promise<FeatureFlagRow[]> {
   const [rows] = await pool.query(
-    `SELECT \`key\`, description, enabled FROM feature_flags ORDER BY \`key\` ASC`
+    `SELECT \`key\`, description, enabled FROM feature_flags ORDER BY \`key\` ASC`,
   );
 
   return Array.isArray(rows) ? (rows as any) : [];
@@ -26,8 +26,8 @@ export async function upsertFeatureFlag(input: {
     input.description === undefined
       ? null
       : input.description === null
-      ? null
-      : String(input.description).trim() || null;
+        ? null
+        : String(input.description).trim() || null;
 
   await pool.query(
     `INSERT INTO feature_flags (\`key\`, enabled, description, updated_at)
@@ -36,6 +36,6 @@ export async function upsertFeatureFlag(input: {
        enabled = VALUES(enabled),
        description = COALESCE(VALUES(description), description),
        updated_at = NOW()`,
-    [key, input.enabled ? 1 : 0, description]
+    [key, input.enabled ? 1 : 0, description],
   );
 }

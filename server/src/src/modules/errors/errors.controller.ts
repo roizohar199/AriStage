@@ -1,7 +1,7 @@
-import { asyncHandler } from "../../core/asyncHandler.js";
-import { AppError } from "../../core/errors.js";
-import { getSystemErrors, resolveSystemError } from "./errors.service.js";
-import { logSystemEvent } from "../../utils/systemLogger.js";
+import { asyncHandler } from "../../core/asyncHandler";
+import { AppError } from "../../core/errors";
+import { getSystemErrors, resolveSystemError } from "./errors.service";
+import { logSystemEvent } from "../../utils/systemLogger";
 
 export const errorsController = {
   list: asyncHandler(async (req, res) => {
@@ -24,7 +24,7 @@ export const errorsController = {
         "ERROR_RESOLVED",
         "Error marked as resolved",
         { errorId: id },
-        (req as any).user?.id
+        (req as any).user?.id,
       );
     }
 

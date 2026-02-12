@@ -1,8 +1,8 @@
-import { asyncHandler } from "../../core/asyncHandler.js";
+import { asyncHandler } from "../../core/asyncHandler";
 import {
   getDashboardPayload,
   getSharedDashboardStats,
-} from "./dashboard.service.js";
+} from "./dashboard.service";
 
 export const dashboardController = {
   stats: asyncHandler(async (req, res) => {

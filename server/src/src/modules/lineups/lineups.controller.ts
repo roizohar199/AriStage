@@ -1,4 +1,4 @@
-import { asyncHandler } from "../../core/asyncHandler.js";
+import { asyncHandler } from "../../core/asyncHandler";
 import {
   createLineup,
   createShareLink,
@@ -11,9 +11,9 @@ import {
   getSharedLineups,
   updateLineup,
   deleteLineup,
-} from "./lineups.service.js";
-import { emitToUserAndHost, emitToUserUpdates } from "../../core/socket.js";
-import { listLineupSongsForLyricsExport } from "../lineupSongs/lineupSongs.repository.js";
+} from "./lineups.service";
+import { emitToUserAndHost, emitToUserUpdates } from "../../core/socket";
+import { listLineupSongsForLyricsExport } from "../lineupSongs/lineupSongs.repository";
 
 export const lineupsController = {
   public: asyncHandler(async (req, res) => {
@@ -58,7 +58,7 @@ export const lineupsController = {
     }
 
     // בדיקה שהמשתמש הנוכחי הוא אורח והמשתמש המבוקש הוא אחד מהמארחים שלו
-    const { checkIfGuest } = await import("../users/users.service.js");
+    const { checkIfGuest } = await import("../users/users.service");
     const hostIds = await checkIfGuest(req.user.id);
     const hostIdsArray: number[] = Array.isArray(hostIds)
       ? hostIds

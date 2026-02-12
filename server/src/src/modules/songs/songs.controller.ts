@@ -1,7 +1,7 @@
-import { deleteSongChart } from "./songs.repository.js";
-import { getPrivateChartsForSong } from "./songs.service.js";
-import { uploadPrivateChartPdfForSong } from "./songs.service.js";
-import { asyncHandler } from "../../core/asyncHandler.js";
+import { deleteSongChart } from "./songs.repository";
+import { getPrivateChartsForSong } from "./songs.service";
+import { uploadPrivateChartPdfForSong } from "./songs.service";
+import { asyncHandler } from "../../core/asyncHandler";
 import {
   createSong,
   getSongs,
@@ -11,9 +11,9 @@ import {
   removeChartPdfForSong,
   setLyricsForSong,
   removeLyricsForSong,
-} from "./songs.service.js";
-import { getSongById } from "./songs.repository.js";
-import { emitToUserAndHost, emitToUserUpdates } from "../../core/socket.js";
+} from "./songs.service";
+import { getSongById } from "./songs.repository";
+import { emitToUserAndHost, emitToUserUpdates } from "../../core/socket";
 
 export const songsController = {
   deletePrivateChart: asyncHandler(async (req, res) => {

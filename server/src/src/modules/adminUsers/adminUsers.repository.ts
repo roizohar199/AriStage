@@ -1,4 +1,4 @@
-import { pool } from "../../database/pool.js";
+import { pool } from "../../database/pool";
 
 export type AdminUserListRow = {
   id: number;
@@ -28,7 +28,7 @@ export type AdminUpdateUserSubscriptionPayload = {
 
 async function listUsers(
   limit?: number,
-  offset?: number
+  offset?: number,
 ): Promise<AdminUserListRow[]> {
   const values: any[] = [];
   let sql = `SELECT id, full_name, email, role, subscription_type, subscription_status, subscription_started_at, subscription_expires_at, last_seen_at, created_at FROM users ORDER BY created_at DESC`;
@@ -48,18 +48,18 @@ async function listUsers(
 }
 
 async function getUserSubscription(
-  userId: number
+  userId: number,
 ): Promise<AdminUserSubscriptionRow | null> {
   const [rows] = await pool.query(
     "SELECT subscription_status, subscription_expires_at FROM users WHERE id = ? LIMIT 1",
-    [userId]
+    [userId],
   );
   return (rows as any[])[0] || null;
 }
 
 async function updateUserSubscription(
   userId: number,
-  payload: AdminUpdateUserSubscriptionPayload
+  payload: AdminUpdateUserSubscriptionPayload,
 ): Promise<number> {
   if (!Number.isFinite(userId) || userId <= 0) {
     throw new Error("Invalid userId for subscription update");
@@ -100,13 +100,13 @@ async function updateUserSubscription(
   // Immediate SELECT after update
   const [rows] = await pool.query(
     `SELECT subscription_type, subscription_status, subscription_started_at, subscription_expires_at FROM users WHERE id = ?`,
-    [userId]
+    [userId],
   );
   console.log("[ADMIN SUB AFTER SELECT]", rows[0]);
   // Focused SELECT for subscription_type only
   const [rows2] = await pool.query(
     "SELECT subscription_type FROM users WHERE id = ?",
-    [userId]
+    [userId],
   );
   console.log("[ADMIN SUB AFTER SELECT TYPE ONLY]", rows2[0]);
   return (result as any).affectedRows || 0;

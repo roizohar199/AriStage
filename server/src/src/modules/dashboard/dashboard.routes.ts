@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { requireAuth } from "../../middleware/auth.js";
-import { requireActiveSubscription } from "../../middleware/subscription.js";
-import { adminNoCacheIfAdmin } from "../../middleware/adminNoCache.middleware.js";
-import { dashboardController } from "./dashboard.controller.js";
+import { requireAuth } from "../../middleware/auth";
+import { requireActiveSubscription } from "../../middleware/subscription";
+import { adminNoCacheIfAdmin } from "../../middleware/adminNoCache.middleware";
+import { dashboardController } from "./dashboard.controller";
 
 const router = Router();
 

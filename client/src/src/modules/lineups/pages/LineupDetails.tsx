@@ -71,6 +71,7 @@ const SongList = memo(function SongList({
   setViewingChart,
   onConfirm,
   onLyricsChanged,
+  dragMode,
 }: any) {
   const safeKey = (key: string) => key || "N/A";
   const safeDuration = (duration: string | number) => {
@@ -101,7 +102,7 @@ const SongList = memo(function SongList({
                 key={`ls-${s.lineupSongId}`}
                 draggableId={`ls-${s.lineupSongId}`}
                 index={index}
-                isDragDisabled={!lineup?.is_owner}
+                isDragDisabled={!lineup?.is_owner || !dragMode}
               >
                 {(provided, snapshot) => (
                   <div
@@ -112,8 +113,8 @@ const SongList = memo(function SongList({
                       snapshot.isDragging ? "opacity-50" : ""
                     } relative`}
                   >
-                    {lineup?.is_owner && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none select-none">
+                    {lineup?.is_owner && dragMode && (
+                      <div className="absolute left-2 top-1/2 -translate-y-1/2 z-10 pointer-events-none select-none bg-neutral-950/70 backdrop-blur px-2 py-2 rounded-full">
                         <GripVertical
                           className="text-neutral-400 hover:text-brand-primary transition-colors"
                           size={20}
@@ -136,34 +137,40 @@ const SongList = memo(function SongList({
                       safeDuration={safeDuration}
                       onEdit={undefined} // 👈 זה הקסם
                       onRemove={onRemoveSong} // 👈 מחיקה נשארת
+                      compact={!!dragMode}
+                      hideActions={!!dragMode}
                       chartsComponent={
-                        <Charts
-                          song={{
-                            id: s.song_id,
-                            title: s.title,
-                            artist: s.artist,
-                            bpm: s.bpm,
-                            key_sig: s.key_sig,
-                            duration_sec: s.duration_sec,
-                            notes: s.notes,
-                            is_owner: true,
-                          }}
-                          privateCharts={privateCharts[s.song_id] || []}
-                          setPrivateCharts={setPrivateCharts}
-                          fileInputRefs={fileInputRefs}
-                          setViewingChart={setViewingChart}
-                          onConfirm={onConfirm}
-                        />
+                        dragMode ? null : (
+                          <Charts
+                            song={{
+                              id: s.song_id,
+                              title: s.title,
+                              artist: s.artist,
+                              bpm: s.bpm,
+                              key_sig: s.key_sig,
+                              duration_sec: s.duration_sec,
+                              notes: s.notes,
+                              is_owner: true,
+                            }}
+                            privateCharts={privateCharts[s.song_id] || []}
+                            setPrivateCharts={setPrivateCharts}
+                            fileInputRefs={fileInputRefs}
+                            setViewingChart={setViewingChart}
+                            onConfirm={onConfirm}
+                          />
+                        )
                       }
                       lyricsComponent={
-                        <SongLyrics
-                          songId={s.song_id}
-                          songTitle={s.title}
-                          lyricsText={s.lyrics_text}
-                          canEdit={!!s.can_edit}
-                          onConfirm={onConfirm}
-                          onChanged={onLyricsChanged}
-                        />
+                        dragMode ? null : (
+                          <SongLyrics
+                            songId={s.song_id}
+                            songTitle={s.title}
+                            lyricsText={s.lyrics_text}
+                            canEdit={!!s.can_edit}
+                            onConfirm={onConfirm}
+                            onChanged={onLyricsChanged}
+                          />
+                        )
                       }
                     />
                   </div>
@@ -356,6 +363,7 @@ export default function LineupDetails() {
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [loadingShare, setLoadingShare] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [dragMode, setDragMode] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
   const [hostId, setHostId] = useState<number | null>(null);
   const [isHost, setIsHost] = useState(false);
@@ -905,31 +913,44 @@ export default function LineupDetails() {
 
       {/* SONG LIST */}
       <div className="pl-3 mb-3">
-        <div className="flex justify-between items-center w-full gap-4 mb-4">
-          {/* Right section: title, duration, songs count (RTL: right side) */}
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-neutral-100">
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center w-full mb-4">
+          {/* Right section: title + meta (RTL: right side) */}
+          <div className="min-w-0 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <h1 className="text-2xl sm:text-3xl font-bold text-neutral-100 break-words leading-tight">
               {lineup.title}
             </h1>
-            <div className="flex items-center gap-1 px-2 py-1 bg-neutral-850 rounded-2xl text-brand-primary font-bold text-sm">
-              <Clock size={18} />
-              <span
-                dir="ltr"
-                style={{ unicodeBidi: "isolate" }}
-                className="tabular-nums"
-              >
-                {totalDuration}
-              </span>
-            </div>
-            <div className="flex items-center gap-1 px-2 py-1 bg-neutral-850 rounded-2xl text-brand-primary font-bold text-sm">
-              <Music4Icon size={18} />
-              {songs.length}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1 px-2 py-1 bg-neutral-850 rounded-2xl text-brand-primary font-bold text-sm">
+                <Clock size={18} />
+                <span
+                  dir="ltr"
+                  style={{ unicodeBidi: "isolate" }}
+                  className="tabular-nums"
+                >
+                  {totalDuration}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 px-2 py-1 bg-neutral-850 rounded-2xl text-brand-primary font-bold text-sm">
+                <Music4Icon size={18} />
+                {songs.length}
+              </div>
             </div>
           </div>
-          {/* Left section: share, revoke, menu (RTL: left side) */}
-          <div className="flex items-center gap-3">
-            {lineup?.is_owner && (
-              <>
+
+          {/* Left section: actions (share/revoke + menu). Stacks nicely on mobile */}
+          <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3 w-full sm:w-auto">
+            {lineup?.is_owner ? (
+              <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
+                <button
+                  onClick={() => setDragMode((v) => !v)}
+                  aria-pressed={dragMode}
+                  className={`font-semibold rounded-2xl flex flex-row-reverse items-center gap-2 transition-colors ${
+                    dragMode ? "text-brand-primary" : "text-neutral-100"
+                  }`}
+                >
+                  <GripVertical size={16} />
+                  {dragMode ? "גרירה פעילה" : "מצב גרירה"}
+                </button>
                 <button
                   onClick={generateShareLink}
                   className="text-neutral-100 font-semibold rounded-2xl flex flex-row-reverse items-center hover:text-brand-primary gap-2"
@@ -946,11 +967,13 @@ export default function LineupDetails() {
                     בטל
                   </button>
                 )}
-              </>
+              </div>
+            ) : (
+              <div className="flex-1" />
             )}
 
             {/* 3 dots menu */}
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <button
                 onClick={() => setMenuOpen((v) => !v)}
                 className="bg-neutral-850 p-2 rounded-full hover:bg-neutral-800"
@@ -1000,14 +1023,16 @@ export default function LineupDetails() {
         </div>
         {/* SHARE LINK */}
         {shareUrl && (
-          <div className="bg-neutral-850 backdrop-blur-xl p-3 rounded-2xl mb-4 text-sm flex justify-between items-center">
-            <span className="text-brand-primary truncate">{shareUrl}</span>
+          <div className="bg-neutral-850 backdrop-blur-xl p-3 rounded-2xl mb-4 text-sm flex items-center gap-3">
+            <span className="text-brand-primary truncate min-w-0 flex-1">
+              {shareUrl}
+            </span>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 copyShareLink();
               }}
-              className="cursor-pointer hover:text-brand-primary"
+              className="cursor-pointer hover:text-brand-primary flex-shrink-0"
             >
               <Copy size={16} />
             </button>
@@ -1024,6 +1049,7 @@ export default function LineupDetails() {
             setViewingChart={setViewingChart}
             onConfirm={confirm}
             onLyricsChanged={fetchSongs}
+            dragMode={dragMode}
           />
         </DragDropContext>
       </div>

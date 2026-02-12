@@ -1,5 +1,5 @@
-import { asyncHandler } from "../../core/asyncHandler.js";
-import { sendContactMessage } from "./support.service.js";
+import { asyncHandler } from "../../core/asyncHandler";
+import { sendContactMessage } from "./support.service";
 
 export const supportController = {
   contact: asyncHandler(async (req, res) => {
@@ -7,4 +7,3 @@ export const supportController = {
     res.json({ ok: true });
   }),
 };
-

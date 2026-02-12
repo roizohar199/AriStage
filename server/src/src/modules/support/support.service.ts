@@ -1,4 +1,4 @@
-import { transporter } from "../../integrations/mail/transporter.js";
+import { transporter } from "../../integrations/mail/transporter";
 
 export async function sendContactMessage({
   full_name,
@@ -22,4 +22,3 @@ export async function sendContactMessage({
       `,
   });
 }
-

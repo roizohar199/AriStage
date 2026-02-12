@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { shareController } from "./share.controller.js";
-import { requireFeatureFlagEnabled } from "../../middleware/featureFlags.js";
+import { shareController } from "./share.controller";
+import { requireFeatureFlagEnabled } from "../../middleware/featureFlags";
 
 const router = Router();
 

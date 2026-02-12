@@ -1,9 +1,9 @@
-import { logger } from "../../core/logger.js";
+import { logger } from "../../core/logger";
 import {
   insertSystemError,
   listSystemErrors,
   setSystemErrorResolved,
-} from "./errors.repository.js";
+} from "./errors.repository";
 
 export async function getSystemErrors(params: { limit?: any }) {
   const limit = params?.limit != null ? Number(params.limit) : 50;

@@ -63,7 +63,11 @@ export default function UpgradeModal({
       .get("/plans/available", { skipErrorToast: true } as any)
       .then(({ data }) => {
         if (!mounted) return;
-        const nextPlans = Array.isArray(data) ? (data as AvailablePlan[]) : [];
+        const nextPlans = Array.isArray(data)
+          ? (data as AvailablePlan[])
+          : Array.isArray((data as any)?.plans)
+            ? ((data as any).plans as AvailablePlan[])
+            : [];
         setPlans(nextPlans);
 
         const firstEnabledPlanId =

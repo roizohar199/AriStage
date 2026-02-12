@@ -1,5 +1,5 @@
-import { asyncHandler } from "../../core/asyncHandler.js";
-import { getHealthSnapshot } from "./health.service.js";
+import { asyncHandler } from "../../core/asyncHandler";
+import { getHealthSnapshot } from "./health.service";
 
 export const healthController = {
   check: asyncHandler(async (req, res) => {
@@ -7,4 +7,3 @@ export const healthController = {
     res.json(result);
   }),
 };
-

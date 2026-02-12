@@ -1,10 +1,10 @@
-import { asyncHandler } from "../../core/asyncHandler.js";
+import { asyncHandler } from "../../core/asyncHandler";
 import {
   createFile,
   getFiles,
   removeFile,
   updateFileDetails,
-} from "./files.service.js";
+} from "./files.service";
 
 export const filesController = {
   list: asyncHandler(async (req, res) => {

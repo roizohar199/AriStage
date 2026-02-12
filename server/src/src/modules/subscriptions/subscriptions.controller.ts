@@ -1,11 +1,11 @@
-import { asyncHandler } from "../../core/asyncHandler.js";
+import { asyncHandler } from "../../core/asyncHandler";
 import {
   getSubscriptionSettings,
   getSubscriptionPlans,
-} from "./subscriptions.repository.js";
-import { ensureUserSubscriptionFresh } from "../../services/subscriptionService.js";
-import { resolveSubscriptionStatus } from "./resolveSubscriptionStatus.js";
-import { pool } from "../../database/pool.js";
+} from "./subscriptions.repository";
+import { ensureUserSubscriptionFresh } from "../../services/subscriptionService";
+import { resolveSubscriptionStatus } from "./resolveSubscriptionStatus";
+import { pool } from "../../database/pool";
 
 export const subscriptionsController = {
   getPublic: asyncHandler(async (req, res) => {
@@ -96,7 +96,7 @@ export const subscriptionsController = {
       return res.status(400).json({ error: "No fields to update" });
     }
     values.push(1); // id=1
-    await import("../../database/pool.js").then(async ({ pool }) => {
+    await import("../../database/pool").then(async ({ pool }) => {
       await pool.query(
         `UPDATE subscriptions_settings SET ${clauses.join(", ")} WHERE id = ?`,
         values,

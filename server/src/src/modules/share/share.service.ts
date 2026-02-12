@@ -1,9 +1,9 @@
-import { AppError } from "../../core/errors.js";
+import { AppError } from "../../core/errors";
 import {
   findActiveShareToken,
   findLineupById,
   listSharedSongs,
-} from "./share.repository.js";
+} from "./share.repository";
 
 export async function getSharedLineup(token) {
   const share = await findActiveShareToken(token);
@@ -23,4 +23,3 @@ export async function getSharedLineup(token) {
     songs,
   };
 }
-

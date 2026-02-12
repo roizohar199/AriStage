@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { requireAuth } from "../../middleware/auth.js";
-import { requireActiveSubscription } from "../../middleware/subscription.js";
-import { requireFeatureFlagEnabled } from "../../middleware/featureFlags.js";
-import { emitRefreshOnMutation } from "../../middleware/refresh.js";
-import { lineupsController } from "./lineups.controller.js";
+import { requireAuth } from "../../middleware/auth";
+import { requireActiveSubscription } from "../../middleware/subscription";
+import { requireFeatureFlagEnabled } from "../../middleware/featureFlags";
+import { emitRefreshOnMutation } from "../../middleware/refresh";
+import { lineupsController } from "./lineups.controller";
 
 const router = Router();
 

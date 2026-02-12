@@ -1,4 +1,4 @@
-import { asyncHandler } from "../../core/asyncHandler.js";
+import { asyncHandler } from "../../core/asyncHandler";
 import {
   addSongToLineup,
   getLineupSongs,
@@ -6,7 +6,7 @@ import {
   reorderLineupSongs,
   uploadChartPdfForSong,
   removeChartPdfForSong,
-} from "./lineupSongs.service.js";
+} from "./lineupSongs.service";
 
 export const lineupSongsController = {
   list: asyncHandler(async (req, res) => {
@@ -14,8 +14,8 @@ export const lineupSongsController = {
 
     // בדיקה אם הליינאפ שייך למשתמש או למארח שלו (אם הוא אורח)
     const { lineupBelongsToUser } =
-      await import("../lineups/lineups.repository.js");
-    const { checkIfGuest } = await import("../users/users.service.js");
+      await import("../lineups/lineups.repository");
+    const { checkIfGuest } = await import("../users/users.service");
     const lineupId = parseInt(req.params.lineupId);
 
     let isLineupOwner =

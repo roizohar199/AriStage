@@ -177,7 +177,7 @@ server/import-database.bat
 # Cursor IDE
 .cursor/plans/
 .cursor/cache/
-plans/
+/plans/
 
 # ============================================
 # Keep empty directories

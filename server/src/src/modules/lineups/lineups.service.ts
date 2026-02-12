@@ -1,7 +1,7 @@
 import crypto from "crypto";
-import { AppError } from "../../core/errors.js";
-import { env } from "../../config/env.js";
-import { getSharedLineup } from "../share/share.service.js";
+import { AppError } from "../../core/errors";
+import { env } from "../../config/env";
+import { getSharedLineup } from "../share/share.service";
 import {
   deactivateShare,
   findActiveShare,
@@ -14,8 +14,8 @@ import {
   listSharedLineups,
   deleteLineupRecord,
   updateLineupRecord,
-} from "./lineups.repository.js";
-import { checkIfGuest } from "../users/users.service.js";
+} from "./lineups.repository";
+import { checkIfGuest } from "../users/users.service";
 
 const emitLineupEvent = async (lineupId, event, payload) => {
   if (!global.io) return;
@@ -28,7 +28,7 @@ const emitLineupEvent = async (lineupId, event, payload) => {
     const lineup = await findLineupById(lineupId);
     if (lineup && lineup.created_by) {
       // שליחה למארח ולכל האמנים שלו
-      const { emitToHost } = await import("../../core/socket.js");
+      const { emitToHost } = await import("../../core/socket");
       await emitToHost(global.io, lineup.created_by, event, payload);
     }
   } catch (err: any) {
@@ -99,8 +99,8 @@ export async function getLineupById(lineupId, user) {
   const hostIdsArray: number[] = Array.isArray(hostIds)
     ? hostIds
     : hostIds
-    ? [hostIds]
-    : [];
+      ? [hostIds]
+      : [];
 
   // בדיקה אם הליינאפ שייך לאחד המארחים
   for (const hostId of hostIdsArray) {
@@ -208,9 +208,8 @@ export async function deleteLineup(userId, lineupId) {
 
   // ⭐ הוספת שידור מחיקה בזמן אמת
   if (global.io) {
-    const { emitToUserAndHost, emitToUserUpdates } = await import(
-      "../../core/socket.js"
-    );
+    const { emitToUserAndHost, emitToUserUpdates } =
+      await import("../../core/socket");
 
     await emitToUserAndHost(global.io, userId, "lineup:deleted", { lineupId });
     await emitToUserUpdates(global.io, userId, "lineup:deleted", { lineupId });

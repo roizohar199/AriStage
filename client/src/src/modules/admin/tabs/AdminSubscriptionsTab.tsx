@@ -150,7 +150,11 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
         const { data } = await api.get("/plans/available", {
           skipErrorToast: true,
         } as any);
-        const next = Array.isArray(data) ? data : [];
+        const next = Array.isArray(data)
+          ? data
+          : Array.isArray((data as any)?.plans)
+            ? (data as any).plans
+            : [];
         if (mounted) setPlans(next);
       } catch {
         if (mounted) setPlans([]);

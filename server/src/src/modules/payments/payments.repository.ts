@@ -1,7 +1,7 @@
-import { pool } from "../../database/pool.js";
-import { getPlanByKey } from "../plans/plans.repository.js";
+import { pool } from "../../database/pool";
+import { getPlanByKey } from "../plans/plans.repository";
 
-import type { BillingPeriod } from "../../services/subscriptionService.js";
+import type { BillingPeriod } from "../../services/subscriptionService";
 
 export type PaymentRecord = {
   id: number;
@@ -20,7 +20,7 @@ export type PaymentRecord = {
 export async function createMockPayment(
   userId: number,
   planKey: string,
-  billingPeriod: BillingPeriod
+  billingPeriod: BillingPeriod,
 ): Promise<PaymentRecord> {
   if (!Number.isFinite(userId) || userId <= 0) {
     throw new Error("Invalid userId for createMockPayment");
@@ -36,11 +36,15 @@ export async function createMockPayment(
     throw new Error(`Unknown plan for createMockPayment: ${normalizedPlanKey}`);
   }
   if (!plan.enabled) {
-    throw new Error(`Plan is disabled for createMockPayment: ${normalizedPlanKey}`);
+    throw new Error(
+      `Plan is disabled for createMockPayment: ${normalizedPlanKey}`,
+    );
   }
 
   const amount =
-    billingPeriod === "yearly" ? Number(plan.yearly_price) : Number(plan.monthly_price);
+    billingPeriod === "yearly"
+      ? Number(plan.yearly_price)
+      : Number(plan.monthly_price);
   const currency = String(plan.currency);
 
   const transactionId = `mock_${Date.now()}_${Math.random()
@@ -49,7 +53,7 @@ export async function createMockPayment(
 
   const [result] = await pool.query(
     "INSERT INTO payments (user_id, provider, transaction_id, plan, billing_period, amount, currency, status) VALUES (?, 'mock', ?, ?, ?, ?, ?, 'pending')",
-    [userId, transactionId, normalizedPlanKey, billingPeriod, amount, currency]
+    [userId, transactionId, normalizedPlanKey, billingPeriod, amount, currency],
   );
 
   const insertId = (result as any).insertId as number;
@@ -62,7 +66,7 @@ export async function createMockPayment(
 }
 
 export async function findPaymentById(
-  id: number
+  id: number,
 ): Promise<PaymentRecord | null> {
   const [rows] = await pool.query("SELECT * FROM payments WHERE id = ?", [id]);
   const payment = (rows as any[])[0];
@@ -71,13 +75,13 @@ export async function findPaymentById(
 
 export async function markPaymentPaid(
   id: number,
-  dbOverride?: any
+  dbOverride?: any,
 ): Promise<void> {
   const db = dbOverride || pool;
 
   const [result] = await db.query(
     "UPDATE payments SET status = 'paid', paid_at = NOW() WHERE id = ?",
-    [id]
+    [id],
   );
 
   if (!result || !result.affectedRows) {
@@ -97,7 +101,7 @@ export type AdminPaymentRow = {
 
 export async function listPaymentsWithUsers(): Promise<AdminPaymentRow[]> {
   const [rows] = await pool.query(
-    "SELECT p.id, u.full_name, u.email, p.plan, p.amount, p.status, p.created_at FROM payments p INNER JOIN users u ON p.user_id = u.id ORDER BY p.created_at DESC"
+    "SELECT p.id, u.full_name, u.email, p.plan, p.amount, p.status, p.created_at FROM payments p INNER JOIN users u ON p.user_id = u.id ORDER BY p.created_at DESC",
   );
 
   return rows as AdminPaymentRow[];

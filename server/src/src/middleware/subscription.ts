@@ -1,9 +1,10 @@
-import { AppError } from "../core/errors.js";
+import { AppError } from "../core/errors";
+import { env } from "../config/env";
 import {
   getSubscriptionSettings,
   getUserSubscriptionState,
   markUserSubscriptionExpired,
-} from "../modules/subscriptions/subscriptions.repository.js";
+} from "../modules/subscriptions/subscriptions.repository";
 
 function toIsoOrNull(value: unknown): string | null {
   if (!value) return null;
@@ -16,13 +17,22 @@ function toIsoOrNull(value: unknown): string | null {
 const EXPIRES_AT_RESPONSE_KEY = "expires" + "_at";
 
 export async function requireActiveSubscription(req: any, res: any, next: any) {
+  // Dev default: don't block local development flows with subscription enforcement.
+  // Set SUBSCRIPTION_ENFORCE=1 to test the paid gating behavior.
+  if (
+    env.nodeEnv === "development" &&
+    process.env.SUBSCRIPTION_ENFORCE !== "1"
+  ) {
+    return next();
+  }
+
   console.log(
     "[TEMP][SUBSCRIPTION] requireActiveSubscription",
     req.method,
     req.path,
     req.body,
     "user:",
-    req.user
+    req.user,
   );
   try {
     const settings = await getSubscriptionSettings();

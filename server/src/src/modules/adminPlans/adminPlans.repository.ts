@@ -1,5 +1,5 @@
-import { pool } from "../../database/pool.js";
-import type { Plan, PlanRow } from "./adminPlans.types.js";
+import { pool } from "../../database/pool";
+import type { Plan, PlanRow } from "./adminPlans.types";
 
 function mapRowToPlan(row: PlanRow): Plan {
   return {
@@ -42,7 +42,7 @@ export async function createPlan(input: CreatePlanInput): Promise<Plan> {
       input.monthly_price,
       input.yearly_price,
       enabledValue,
-    ]
+    ],
   );
 
   const insertedId = Number((result as any).insertId);
@@ -66,7 +66,7 @@ export type UpdatePlanInput = {
 
 export async function updatePlan(
   id: number,
-  input: UpdatePlanInput
+  input: UpdatePlanInput,
 ): Promise<Plan | null> {
   const enabledValue = input.enabled ? 1 : 0;
 
@@ -81,7 +81,7 @@ export async function updatePlan(
       input.yearly_price,
       enabledValue,
       id,
-    ]
+    ],
   );
 
   if ((result as any).affectedRows === 0) return null;
@@ -90,13 +90,13 @@ export async function updatePlan(
 
 export async function setPlanEnabled(
   id: number,
-  enabled: boolean
+  enabled: boolean,
 ): Promise<Plan | null> {
   const enabledValue = enabled ? 1 : 0;
 
   const [result] = await pool.query(
     "UPDATE plans SET enabled = ? WHERE id = ?",
-    [enabledValue, id]
+    [enabledValue, id],
   );
 
   if ((result as any).affectedRows === 0) return null;
