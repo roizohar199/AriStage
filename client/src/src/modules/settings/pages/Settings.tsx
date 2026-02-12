@@ -6,6 +6,8 @@ import { useSubscription } from "@/modules/shared/hooks/useSubscription.ts";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
 import DesignActionButtonBig from "@/modules/shared/components/DesignActionButtonBig";
 import { resolveThemeIndex } from "@/modules/shared/lib/theme";
+import Avatar from "@/modules/shared/components/Avatar";
+import { getAvatarInitial } from "@/modules/shared/lib/avatar";
 import {
   EmailInput,
   Input,
@@ -24,7 +26,7 @@ type SettingsFormState = {
 };
 
 export default function Settings() {
-  const { user, refreshUser } = useAuth();
+  const { user, setUser, refreshUser } = useAuth();
   const subscription = useSubscription();
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -192,6 +194,9 @@ export default function Settings() {
 
       localStorage.setItem("ari_user", JSON.stringify(userData));
 
+      // Update in-memory AuthContext immediately so UI (Header etc.) falls back to initials without refresh.
+      setUser(userData || null);
+
       window.dispatchEvent(
         new CustomEvent("data-refresh", {
           detail: { type: "user", action: "updated" },
@@ -300,17 +305,22 @@ export default function Settings() {
           {/* תמונת פרופיל */}
           <div className="flex flex-col items-center space-y-3">
             <div className="w-28 h-28 rounded-full overflow-hidden bg-neutral-950 border-2 border-brand-primary shadow-surface">
-              {preview ? (
-                <img
-                  src={preview}
-                  alt="avatar"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="flex items-center justify-center w-full h-full text-neutral-500 text-xs">
-                  ללא תמונה
-                </div>
-              )}
+              <Avatar
+                src={preview}
+                name={form.full_name || user?.full_name || null}
+                email={form.email || user?.email || null}
+                alt="avatar"
+                className="w-full h-full"
+                imgClassName="w-full h-full object-cover"
+                fallbackClassName="w-full h-full flex items-center justify-center bg-neutral-700 text-neutral-100 text-3xl font-bold"
+                fallback={getAvatarInitial(
+                  form.full_name ||
+                    user?.full_name ||
+                    form.email ||
+                    user?.email,
+                  "A",
+                )}
+              />
             </div>
 
             <div className="flex items-center flex-row-reverse gap-2 justify-center">

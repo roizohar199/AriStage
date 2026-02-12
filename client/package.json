@@ -11,6 +11,7 @@
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
     "axios": "^1.7.7",
+    "dexie": "^4.3.0",
     "framer-motion": "^12.23.26",
     "jspdf": "^3.0.3",
     "jspdf-autotable": "^5.0.2",

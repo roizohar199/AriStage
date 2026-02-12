@@ -1,5 +1,7 @@
 import React from "react";
 import { User, Music, Trash2 } from "lucide-react";
+import Avatar from "@/modules/shared/components/Avatar";
+import { getAvatarInitial } from "@/modules/shared/lib/avatar";
 
 interface ArtistCardProps {
   artist: {
@@ -26,26 +28,16 @@ export default function ArtistCard({
     >
       {/* תמונת פרופיל */}
       <div className="w-36 h-36 shrink-0 rounded-full overflow-hidden border-2 border-brand-primary shadow-surface">
-        {artist.avatar ? (
-          <img
-            src={artist.avatar}
-            alt={artist.full_name}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.style.display = "none";
-              if (target.nextSibling) {
-                (target.nextSibling as HTMLElement).style.display = "flex";
-              }
-            }}
-          />
-        ) : null}
-        <div
-          className="w-16 h-16 rounded-full bg-neutral-950 border-2 border-brand-primary flex items-center justify-center shadow-surface"
-          style={{ display: artist.avatar ? "none" : "flex" }}
-        >
-          <User size={24} className="text-neutral-500" />
-        </div>
+        <Avatar
+          src={artist.avatar}
+          name={artist.full_name}
+          email={artist.email}
+          alt={artist.full_name || "Artist"}
+          className="w-full h-full"
+          imgClassName="w-full h-full object-cover"
+          fallbackClassName="w-full h-full flex items-center justify-center bg-neutral-700 text-neutral-100 text-5xl font-bold"
+          fallback={getAvatarInitial(artist.full_name || artist.email, "A")}
+        />
       </div>
       {/* פרטי האמן */}
       <div className="w-full text-center sm:text-start">

@@ -29,6 +29,8 @@ import { usePendingInvitations } from "@/modules/shared/hooks/usePendingInvitati
 import { useCurrentUser } from "@/modules/shared/hooks/useCurrentUser.ts";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import { useFeatureFlags } from "@/modules/shared/contexts/FeatureFlagsContext.tsx";
+import Avatar from "@/modules/shared/components/Avatar";
+import { getAvatarInitial } from "@/modules/shared/lib/avatar";
 import api from "@/modules/shared/lib/api.js";
 import AcceptInvitation from "../../auth/pages/AcceptInvitation";
 import { useOfflineStatus } from "@/modules/shared/hooks/useOfflineStatus";
@@ -79,9 +81,7 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
   const pendingCount = usePendingInvitations(user?.id);
   const nav = getNavItems(role, pendingCount);
 
-  const initials = (user?.full_name || user?.email || "A")
-    .slice(0, 1)
-    .toUpperCase();
+  const initials = getAvatarInitial(user?.full_name || user?.email, "A");
 
   const loadPendingInvitations = useCallback(async () => {
     if (!user?.id) {
@@ -236,14 +236,14 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
         </div>
 
         {/* Center: Nav - always visible */}
-        <nav className="justify-self-center flex items-center gap-4 w-full md:w-auto">
+        <nav className="flex flex-1 items-center justify-center gap-2 md:flex-none md:w-auto md:gap-4">
           {nav.map(({ to, label, icon }) => (
             <NavLink
               key={to}
               to={to}
               end
               className={({ isActive }) =>
-                `flex flex-col items-center justify-center text-center relative flex-1 md:flex-row md:items-center md:justify-start md:gap-2 text-sm px-2 py-1 transition ${
+                `relative flex flex-col items-center justify-center text-center flex-none min-w-[72px] md:min-w-0 md:flex-row md:items-center md:justify-start md:gap-2 text-sm px-3 py-2 md:px-2 md:py-1 transition ${
                   isActive
                     ? "h-section text-neutral-100 font-bold hover:bg-neutral-900 rounded-2xl"
                     : "h-section text-neutral-300 hover:bg-neutral-900 rounded-2xl"
@@ -315,17 +315,16 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                 onClick={() => setMenuOpen(!menuOpen)}
                 className="h-9 w-9 rounded-full overflow-hidden flex items-center justify-center text-neutral-100 text-sm shadow-surface"
               >
-                {user?.avatar ? (
-                  <img
-                    src={user.avatar}
-                    alt="Avatar"
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span className="h-full w-full flex items-center justify-center bg-neutral-700">
-                    {initials}
-                  </span>
-                )}
+                <Avatar
+                  src={user?.avatar}
+                  name={user?.full_name}
+                  email={user?.email}
+                  alt="Avatar"
+                  className="h-full w-full"
+                  imgClassName="h-full w-full object-cover"
+                  fallbackClassName="h-full w-full flex items-center justify-center bg-neutral-700"
+                  fallback={initials}
+                />
               </button>
             </div>
 
@@ -480,15 +479,15 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3 text-start">
                       <div className="h-24 w-24 rounded-full bg-neutral-800 border-2 border-brand-primary overflow-hidden flex items-center justify-center">
-                        {invitation.avatar ? (
-                          <img
-                            src={invitation.avatar}
-                            alt={invitation.full_name || "Avatar"}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <User size={20} className="text-neutral-400" />
-                        )}
+                        <Avatar
+                          src={invitation.avatar}
+                          name={invitation.full_name}
+                          alt={invitation.full_name || "Avatar"}
+                          className="h-full w-full"
+                          imgClassName="h-full w-full object-cover"
+                          fallbackClassName="h-full w-full flex items-center justify-center bg-neutral-700 text-neutral-100 font-semibold"
+                          fallback={getAvatarInitial(invitation.full_name, "U")}
+                        />
                       </div>
                       <div className="flex flex-col items-start gap-1">
                         <span className="text-sm font-semibold text-neutral-100">
