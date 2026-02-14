@@ -35,7 +35,7 @@ export default function Landing() {
             {/* התחברות */}
             <button
               onClick={() => navigate("/login")}
-              className="bg-brand-primary text-neutral-100 font-bold px-4 py-2 rounded-2xl transition flex items-center justify-center gap-2 shadow-xl text-sm hover:bg-brand-primaryLight"
+              className="bg-brand-primary text-neutral-950 font-bold px-4 py-2 rounded-2xl transition flex items-center justify-center gap-2 shadow-xl text-sm hover:bg-brand-primaryLight"
             >
               התחברות
             </button>

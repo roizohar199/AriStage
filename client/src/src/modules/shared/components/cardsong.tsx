@@ -53,13 +53,17 @@ const CardSong: React.FC<CardSongProps> = ({
       }`}
     >
       <div>
+        <p className="w-6 h-6 rounded-full bg-neutral-950 text-neutral-300 text-sm font-bold flex items-center justify-center shadow-surface">
+          {index + 1}
+        </p>
         <p
-          className={`font-semibold text-brand-primary ${
+          className={`font-semibold text-neutral-100 ${
             compact ? "text-xl" : "text-2xl"
           }`}
         >
-          {index + 1}. {song.title}
+          {song.title}
         </p>
+        <p className="text-neutral-400">{song.artist}</p>
         <div className="flex flex-wrap gap-1 mt-2 text-sm">
           <span className="bg-neutral-950 px-2 py-1 rounded-2xl text-neutral-100 shadow-surface">
             {safeKey(song.key_sig)}
@@ -80,13 +84,13 @@ const CardSong: React.FC<CardSongProps> = ({
         {lyricsComponent}
       </div>
       {!hideActions && (
-        <div className="flex m-4 gap-1 flex-row-reverse items-center">
+        <div className="flex m-4 gap-4 flex-row-reverse items-center">
           {song.is_owner && (
             <>
               <button
                 onClick={() => onRemove(song.id)}
                 // Semantic animation: buttons use `animation-press`
-                className="text-red-600 hover:text-red-500 outline-none transition hover:bg-neutral-800 rounded-full p-2"
+                className="outline-none bg-red-600 text-white rounded-full p-2 hover:bg-red-500 transition"
               >
                 <Trash2 size={20} />
               </button>
@@ -95,7 +99,7 @@ const CardSong: React.FC<CardSongProps> = ({
                 <button
                   onClick={() => onEdit(song)}
                   // Semantic animation: buttons use `animation-press`
-                  className="outline-none text-neutral-100 hover:text-brand-primary hover:bg-neutral-800 rounded-full p-2 transition"
+                  className="outline-none bg-brand-primary text-black rounded-full p-2 hover:bg-brand-primaryLight transition"
                 >
                   <Edit2 size={20} />
                 </button>

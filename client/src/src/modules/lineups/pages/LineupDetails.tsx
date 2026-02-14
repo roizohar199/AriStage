@@ -274,14 +274,15 @@ const AddSongModal = memo(function AddSongModal({
               <p className="font-semibold text-lg text-neutral-100">
                 {s.title}
               </p>
+              <p className="text-neutral-400 text-xs">{s.artist}</p>
               <div className="flex flex-wrap gap-2 mt-2 text-xs">
-                <p className="px-2 py-1 bg-neutral-900 rounded-2xl">
+                <p className="px-2 py-1 bg-neutral-950 rounded-2xl">
                   BPM {s.bpm || ""}
                 </p>
-                <p className="px-2 py-1 bg-neutral-900 rounded-2xl">
+                <p className="px-2 py-1 bg-neutral-950 rounded-2xl">
                   {s.key_sig || "-"}
                 </p>
-                <p className="px-2 py-1 bg-neutral-900 rounded-2xl">
+                <p className="px-2 py-1 bg-neutral-950 rounded-2xl">
                   <span
                     dir="ltr"
                     style={{ unicodeBidi: "isolate" }}
@@ -291,7 +292,7 @@ const AddSongModal = memo(function AddSongModal({
                   </span>
                 </p>
                 {s.notes && (
-                  <span className="inline-block px-2 py-1 text-xs bg-brand-primary rounded-2xl text-neutral-100 font-semibold">
+                  <span className="inline-block px-2 py-1 text-xs bg-brand-primary rounded-2xl text-black font-semibold">
                     {s.notes}
                   </span>
                 )}
@@ -299,9 +300,9 @@ const AddSongModal = memo(function AddSongModal({
             </div>
             <button
               onClick={() => addSong(s.id)}
-              className="outline-none text-neutral-100 hover:text-brand-primary hover:bg-neutral-800 rounded-full p-2 transition"
+              className="outline-none bg-green-600 text-white rounded-full p-2 hover:bg-green-500 transition"
             >
-              <Plus size={20} />
+              <Plus size={16} />
             </button>
           </div>
         ))}
@@ -920,7 +921,7 @@ export default function LineupDetails() {
               {lineup.title}
             </h1>
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1 px-2 py-1 bg-neutral-850 rounded-2xl text-brand-primary font-bold text-sm">
+              <div className="flex items-center gap-1 px-2 py-1 bg-neutral-850 rounded-2xl text-neutral-100 font-bold text-sm">
                 <Clock size={18} />
                 <span
                   dir="ltr"
@@ -930,7 +931,7 @@ export default function LineupDetails() {
                   {totalDuration}
                 </span>
               </div>
-              <div className="flex items-center gap-1 px-2 py-1 bg-neutral-850 rounded-2xl text-brand-primary font-bold text-sm">
+              <div className="flex items-center gap-1 px-2 py-1 bg-neutral-850 rounded-2xl text-neutral-100 font-bold text-sm">
                 <Music4Icon size={18} />
                 {songs.length}
               </div>
@@ -945,7 +946,9 @@ export default function LineupDetails() {
                   onClick={() => setDragMode((v) => !v)}
                   aria-pressed={dragMode}
                   className={`font-semibold rounded-2xl flex flex-row-reverse items-center gap-2 transition-colors ${
-                    dragMode ? "text-brand-primary" : "text-neutral-100"
+                    dragMode
+                      ? "text-brand-primary"
+                      : "text-neutral-100 hover:text-brand-primary"
                   }`}
                 >
                   <GripVertical size={16} />
@@ -981,7 +984,7 @@ export default function LineupDetails() {
                 <MoreHorizontal size={18} />
               </button>
               {menuOpen && (
-                <div className="absolute left-0 top-10 bg-neutral-850 rounded-2xl shadow-lg z-50 min-w-max">
+                <div className="absolute left-0 top-10 bg-neutral-850 rounded-2xl shadow-floating z-50 min-w-max">
                   <button
                     onClick={() => {
                       setMenuOpen(false);

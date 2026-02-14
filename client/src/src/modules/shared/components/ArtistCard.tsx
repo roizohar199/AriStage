@@ -42,7 +42,7 @@ export default function ArtistCard({
       {/* פרטי האמן */}
       <div className="w-full text-center sm:text-start">
         <div className="flex-1 min-w-0 text-center sm:text-start">
-          <h3 className="h-page text-brand-primary mb-1">
+          <h3 className="h-page text-neutral-100 mb-1">
             {artist.full_name || "אמן ללא שם"}
           </h3>
           {artist.artist_role && (
@@ -61,12 +61,12 @@ export default function ArtistCard({
       </div>
       {/* כפתור ביטול שיתוף */}
       {onUninvite && (
-        <div className="flex m-4 gap-1 flex-row-reverse items-center">
+        <div className="flex m-4 gap-4 flex-row-reverse items-center">
           <button
             onClick={onUninvite}
             disabled={disableActions}
             // Semantic animation: buttons use `animation-press`
-            className="text-red-600 hover:text-red-500 outline-none transition hover:bg-neutral-800 rounded-full p-2"
+            className="outline-none bg-red-600 text-white rounded-full p-2 hover:bg-red-500 transition"
             title="בטל שיתוף מאגר"
           >
             <Trash2 size={20} />

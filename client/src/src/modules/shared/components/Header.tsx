@@ -277,7 +277,7 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                 ${
                   isEffectiveOffline
                     ? "text-red-600 hover:bg-neutral-900"
-                    : "text-brand-primary hover:bg-neutral-900"
+                    : "text-green-600 hover:bg-neutral-900"
                 }`}
               title={
                 isForcedOffline

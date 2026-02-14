@@ -37,13 +37,13 @@ const BlockLineup: React.FC<BlockLineupProps> = ({
     >
       {/* מספור – תמיד נראה */}
       {typeof index === "number" && (
-        <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-neutral-950 text-neutral-300 text-xs font-bold flex items-center justify-center shadow-surface">
+        <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-neutral-950 text-neutral-300 text-sm font-bold flex items-center justify-center shadow-surface">
           {index + 1}
         </div>
       )}
 
       <div className="w-full flex-1 flex flex-col justify-center items-center gap-0">
-        <p className="font-semibold text-2xl text-brand-primary">
+        <p className="font-semibold text-2xl text-neutral-100">
           {lineup?.title}
         </p>
 
@@ -74,14 +74,14 @@ const BlockLineup: React.FC<BlockLineupProps> = ({
         </div>
       </div>
       {lineup?.is_owner && (
-        <div className="flex flex-row-reverse">
+        <div className="flex m-4 gap-4 flex-row-reverse items-center">
           <button
             onClick={(e) => {
               e.stopPropagation();
               onDelete?.();
             }}
             // Semantic animation: buttons use `animation-press`
-            className="text-red-600 hover:text-red-500 outline-none transition hover:bg-neutral-800 rounded-full p-2"
+            className="outline-none bg-red-600 text-white rounded-full p-2 hover:bg-red-500 transition"
             aria-label="delete-lineup"
           >
             <Trash2 size={20} />
@@ -93,7 +93,7 @@ const BlockLineup: React.FC<BlockLineupProps> = ({
               onEdit?.();
             }}
             // Semantic animation: buttons use `animation-press`
-            className="outline-none text-neutral-100 hover:text-brand-primary hover:bg-neutral-800 rounded-full p-2 transition"
+            className="outline-none bg-brand-primary text-black rounded-full p-2 hover:bg-brand-primaryLight transition"
             aria-label="edit-lineup"
           >
             <Pencil size={20} />
