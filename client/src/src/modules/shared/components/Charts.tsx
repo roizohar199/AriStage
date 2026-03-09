@@ -5,6 +5,7 @@ import { useFeatureFlags } from "@/modules/shared/contexts/FeatureFlagsContext.t
 import { useToast } from "./ToastProvider";
 import { ConfirmOptions } from "../confirm/types";
 import BaseModal from "./BaseModal.tsx";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 interface Chart {
   id: number;
@@ -49,6 +50,7 @@ export default function Charts({
   setViewingChart,
   onConfirm,
 }: ChartsProps) {
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const { isEnabled } = useFeatureFlags();
   const chartsEnabled = isEnabled("module.charts", true);
@@ -56,35 +58,35 @@ export default function Charts({
   const handleDeleteChart = useCallback(
     async (chartId: number) => {
       const ok = await onConfirm({
-        title: "מחיקת צ'ארט",
-        message: "בטוח שאתה רוצה למחוק את הצ'ארט?",
+        title: t("songs.chartsUi.deleteTitle"),
+        message: t("songs.chartsUi.deleteMessage"),
       });
       if (!ok) return;
       try {
         await api.delete(`/songs/${song.id}/private-charts/${chartId}`);
-        showToast("הצ'ארט נמחק בהצלחה", "success");
+        showToast(t("songs.chartsUi.deleteSuccess"), "success");
         setPrivateCharts((prev) => ({
           ...prev,
           [song.id]: (prev[song.id] || []).filter((c) => c.id !== chartId),
         }));
       } catch (err) {
         console.error("❌ delete chart error:", err);
-        showToast("שגיאה במחיקת הצ'ארט", "error");
+        showToast(t("songs.chartsUi.deleteError"), "error");
       }
     },
-    [onConfirm, setPrivateCharts, showToast, song.id],
+    [onConfirm, setPrivateCharts, showToast, song.id, t],
   );
 
   const handleDownloadChart = useCallback(
     (chart: Chart) => {
       const link = document.createElement("a");
       link.href = chart.file_path;
-      link.download = `${song.title || "chart"}.pdf`;
+      link.download = `${song.title || t("songs.chartsUi.defaultFileName")}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     },
-    [song.title],
+    [song.title, t],
   );
 
   const handleUploadChart = useCallback(
@@ -97,7 +99,7 @@ export default function Charts({
         "image/jpg",
       ];
       if (!allowedTypes.includes(file.type)) {
-        showToast("רק קבצי PDF או תמונה (JPG, PNG, GIF) מותרים", "error");
+        showToast(t("songs.chartsUi.invalidFileType"), "error");
         return;
       }
       try {
@@ -106,7 +108,7 @@ export default function Charts({
         await api.post(`/songs/${song.id}/private-charts`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        showToast("הקובץ הועלה בהצלחה", "success");
+        showToast(t("songs.chartsUi.uploadSuccess"), "success");
         try {
           const { data: chartsData } = await api.get(
             `/songs/${song.id}/private-charts`,
@@ -125,10 +127,10 @@ export default function Charts({
         );
       } catch (err) {
         console.error("❌ upload chart error:", err);
-        showToast("שגיאה בהעלאת הקובץ", "error");
+        showToast(t("songs.chartsUi.uploadError"), "error");
       }
     },
-    [setPrivateCharts, showToast, song.id],
+    [setPrivateCharts, showToast, song.id, t],
   );
 
   if (!chartsEnabled) {
@@ -137,7 +139,7 @@ export default function Charts({
         <div className="flex items-center gap-2 mb-2">
           <FileText size={16} className="text-neutral-500" />
           <span className="text-xs font-semibold text-neutral-400">
-            מודול צ&apos;ארטים כבוי
+            {t("songs.chartsUi.moduleDisabled")}
           </span>
         </div>
       </div>
@@ -149,7 +151,9 @@ export default function Charts({
       <div className="flex items-center gap-2 mb-2">
         <FileText size={16} className="text-brand-primary" />
         <span className="text-xs font-semibold text-neutral-100">
-          הצ'ארטים שלי ({privateCharts.length})
+          {t("songs.chartsUi.myChartsWithCount", {
+            count: privateCharts.length,
+          })}
         </span>
       </div>
 
@@ -168,7 +172,7 @@ export default function Charts({
               <button
                 onClick={() => setViewingChart(chart.file_path)}
                 className="text-neutral-100 hover:text-brand-primary outline-none hover:bg-neutral-900 rounded-full p-1 transition"
-                title="צפייה"
+                title={t("common.view")}
               >
                 <Eye size={16} />
               </button>
@@ -176,7 +180,7 @@ export default function Charts({
               <button
                 onClick={() => handleDownloadChart(chart)}
                 className="text-neutral-100 hover:text-brand-primary outline-none hover:bg-neutral-900 rounded-full p-1 transition"
-                title="הורדה"
+                title={t("common.download")}
               >
                 <FileDown size={16} />
               </button>
@@ -184,7 +188,7 @@ export default function Charts({
               <button
                 onClick={() => handleDeleteChart(chart.id)}
                 className="text-red-600 hover:text-red-500 outline-none hover:bg-neutral-900 rounded-full p-1 transition"
-                title="מחיקה"
+                title={t("common.delete")}
               >
                 <Trash2 size={16} />
               </button>
@@ -211,11 +215,11 @@ export default function Charts({
         <button
           onClick={() => fileInputRefs.current[song.id]?.click()}
           className="w-full bg-neutral-800 p-2 rounded-2xl flex flex-row-reverse items-center justify-center gap-2 text-neutral-100 hover:bg-neutral-750 shadow-surface transition"
-          title="העלה קובץ"
+          title={t("songs.chartsUi.uploadFile")}
         >
           <Upload size={16} />
           <span className="flex-1 text-xs text-neutral-100 font-bold">
-            העלה קובץ
+            {t("songs.chartsUi.uploadFile")}
           </span>
         </button>
       </div>
@@ -233,9 +237,11 @@ export interface ChartViewerModalProps {
 export function ChartViewerModal({
   viewingChart,
   onClose,
-  title = "צפייה בצ'ארט",
+  title,
   maxWidth = "max-w-5xl",
 }: ChartViewerModalProps) {
+  const { t } = useTranslation();
+  const resolvedTitle = title ?? t("songs.chartsUi.viewerTitle");
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimerRef = useRef<number | null>(null);
 
@@ -261,14 +267,14 @@ export function ChartViewerModal({
     <BaseModal
       open={!!viewingChart}
       onClose={onClose}
-      title={title}
+      title={resolvedTitle}
       maxWidth={maxWidth}
       containerClassName="max-h-[90vh] flex flex-col overflow-hidden"
       padding="p-0"
       lockScroll
     >
       <div className="flex justify-between items-center p-4 border-b border-neutral-700 bg-neutral-850">
-        <h3 className="h-page">{title}</h3>
+        <h3 className="h-page">{resolvedTitle}</h3>
       </div>
       <div
         className={`flex-1 overflow-auto p-4 app-scroll ${
@@ -281,12 +287,12 @@ export function ChartViewerModal({
             src={viewingChart}
             className="w-full h-[80vh]"
             style={{ border: "none" }}
-            title="Chart Viewer"
+            title={resolvedTitle}
           />
         ) : (
           <img
             src={viewingChart || ""}
-            alt="צ'ארט"
+            alt={t("songs.chartsUi.chartAlt")}
             className="block w-full h-auto"
             style={{ maxHeight: "none" }}
           />

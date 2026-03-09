@@ -9,6 +9,7 @@ import { Select } from "@/modules/shared/components/FormControls";
 import type { AdminUser } from "../pages/Admin";
 import { API_ORIGIN } from "@/config/apiConfig";
 import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 type SmallBadgeVariant = "neutral" | "brand" | "success" | "danger";
 
@@ -54,6 +55,7 @@ export default function AdminFilesTab({
 }: Props) {
   const confirm = useConfirm();
   const { showToast } = useToast();
+  const { t, locale } = useTranslation();
 
   const [files, setFiles] = useState<FileRow[]>([]);
   const [filesLoading, setFilesLoading] = useState(true);
@@ -71,23 +73,26 @@ export default function AdminFilesTab({
     return `${gb.toFixed(2)}GB`;
   }, []);
 
-  const formatDateTime = useCallback((raw?: string) => {
-    if (!raw) return "—";
-    try {
-      const normalized = String(raw).trim().replace(" ", "T");
-      const d = new Date(normalized);
-      const ms = d.getTime();
-      if (Number.isNaN(ms)) return "—";
-      const day = String(d.getDate()).padStart(2, "0");
-      const month = String(d.getMonth() + 1).padStart(2, "0");
-      const year = d.getFullYear();
-      const hours = String(d.getHours()).padStart(2, "0");
-      const minutes = String(d.getMinutes()).padStart(2, "0");
-      return `${day}/${month}/${year} ${hours}:${minutes}`;
-    } catch {
-      return "—";
-    }
-  }, []);
+  const formatDateTime = useCallback(
+    (raw?: string) => {
+      if (!raw) return "—";
+      try {
+        const normalized = String(raw).trim().replace(" ", "T");
+        const d = new Date(normalized);
+        const ms = d.getTime();
+        if (Number.isNaN(ms)) return "—";
+
+        try {
+          return d.toLocaleString(locale);
+        } catch {
+          return d.toLocaleString();
+        }
+      } catch {
+        return "—";
+      }
+    },
+    [locale],
+  );
 
   const resolveFileHref = useCallback((fileUrl?: string) => {
     if (!fileUrl) return null;
@@ -173,18 +178,22 @@ export default function AdminFilesTab({
       {
         icon: <Files size={32} />,
         value: dashboard.total,
-        label: 'סה"כ קבצים',
+        label: t("admin.filesTab.dashboard.totalFiles"),
       },
-      { icon: <Files size={32} />, value: dashboard.filtered, label: "מוצגים" },
+      {
+        icon: <Files size={32} />,
+        value: dashboard.filtered,
+        label: t("admin.filesTab.dashboard.shown"),
+      },
       {
         icon: <Users size={32} />,
         value: formatBytes(dashboard.knownBytes),
-        label: "נפח ידוע",
+        label: t("admin.filesTab.dashboard.knownSize"),
       },
       {
         icon: <Trash2 size={32} />,
         value: dashboard.unknownCount,
-        label: "בלי גודל",
+        label: t("admin.filesTab.dashboard.unknownSize"),
       },
     ]);
   }, [
@@ -194,12 +203,13 @@ export default function AdminFilesTab({
     dashboard.total,
     dashboard.unknownCount,
     formatBytes,
+    t,
   ]);
 
   const deleteStorageFile = async (storagePath: string) => {
     const ok = await confirm({
-      title: "מחיקה",
-      message: "בטוח למחוק קובץ זה מהשרת?",
+      title: t("users.deleteConfirmTitle"),
+      message: t("admin.filesTab.confirm.deleteFile"),
     });
     if (!ok) return;
 
@@ -210,13 +220,12 @@ export default function AdminFilesTab({
       await loadFiles();
     } catch (err: any) {
       if (err?.response?.status === 404) {
-        showToast(
-          "TODO: backend endpoint required: DELETE /admin/files",
-          "info",
-        );
+        showToast(t("admin.filesTab.messages.deleteEndpointRequired"), "info");
         return;
       }
-      const msg = err?.response?.data?.message || "שגיאה במחיקת הקובץ";
+      const msg =
+        err?.response?.data?.message ||
+        t("admin.filesTab.messages.deleteFileError");
       showToast(msg, "error");
     }
   };
@@ -225,7 +234,9 @@ export default function AdminFilesTab({
     <div className="space-y-3">
       <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-neutral-400">קבצים בשרת (Uploads)</span>
+          <span className="text-xs text-neutral-400">
+            {t("admin.filesTab.header.title")}
+          </span>
         </div>
 
         <button
@@ -233,7 +244,7 @@ export default function AdminFilesTab({
           className="text-xs text-neutral-400 hover:text-neutral-200"
           onClick={loadFiles}
         >
-          רענן
+          {t("common.refresh")}
         </button>
       </div>
 
@@ -241,11 +252,11 @@ export default function AdminFilesTab({
         <div className="flex items-center gap-2">
           <div className="min-w-[240px]">
             <Select
-              label="סינון לפי משתמש"
+              label={t("admin.filesTab.filters.byUser")}
               value={filterUserId}
               onChange={(next) => setFilterUserId(next)}
               options={[
-                { value: "", label: "כל המשתמשים" },
+                { value: "", label: t("admin.filesTab.filters.allUsers") },
                 ...(users || []).map((u) => ({
                   value: String(u.id),
                   label: u.full_name ? `${u.full_name} (${u.email})` : u.email,
@@ -257,14 +268,18 @@ export default function AdminFilesTab({
 
         <div className="flex flex-wrap gap-2 items-center sm:mr-auto">
           <SmallBadge variant="neutral">
-            {`קבצים: ${storageSummary.count}`}
+            {t("admin.filesTab.badges.files", { count: storageSummary.count })}
           </SmallBadge>
           <SmallBadge variant="neutral">
-            {`סה\"כ: ${formatBytes(storageSummary.knownBytes)}`}
+            {t("admin.filesTab.badges.totalKnownSize", {
+              size: formatBytes(storageSummary.knownBytes),
+            })}
           </SmallBadge>
           {storageSummary.unknownCount ? (
             <SmallBadge variant="neutral">
-              {`לא ידוע: ${storageSummary.unknownCount}`}
+              {t("admin.filesTab.badges.unknownSize", {
+                count: storageSummary.unknownCount,
+              })}
             </SmallBadge>
           ) : null}
         </div>
@@ -275,34 +290,36 @@ export default function AdminFilesTab({
             className="text-xs text-neutral-400 hover:text-neutral-200 sm:mr-auto"
             onClick={() => setFilterUserId("")}
           >
-            נקה סינון
+            {t("admin.filesTab.filters.clear")}
           </button>
         ) : null}
       </div>
 
       {filesLoading ? (
         <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-6 text-center text-neutral-400">
-          טוען קבצים...
+          {t("admin.filesTab.loading")}
         </div>
       ) : filesUnsupported ? (
         <div className="bg-neutral-800 rounded-2xl p-6 text-center">
           <Files size={32} className="mx-auto mb-3 text-neutral-600" />
           <p className="text-neutral-400 text-sm">
-            TODO: backend endpoint required
+            {t("admin.filesTab.unsupported")}
           </p>
           <p className="text-neutral-500 text-xs mt-1">GET /admin/files</p>
         </div>
       ) : filteredFiles.length === 0 ? (
         <div className="bg-neutral-800 rounded-2xl p-6 text-center">
           <Files size={32} className="mx-auto mb-3 text-neutral-600" />
-          <p className="text-neutral-400 text-sm">אין קבצים להצגה</p>
+          <p className="text-neutral-400 text-sm">
+            {t("admin.filesTab.empty")}
+          </p>
           {searchValue.trim() ? (
             <button
               type="button"
               onClick={() => setSearchValue("")}
               className="text-xs text-neutral-400 hover:text-neutral-200 mt-2"
             >
-              נקה חיפוש
+              {t("admin.filesTab.clearSearch")}
             </button>
           ) : null}
         </div>
@@ -343,7 +360,7 @@ export default function AdminFilesTab({
                   target="_blank"
                   rel="noreferrer"
                   className="w-6 h-6 text-neutral-300 hover:text-neutral-100"
-                  title="פתח"
+                  title={t("common.view")}
                 >
                   <ExternalLink size={20} />
                 </a>
@@ -352,10 +369,13 @@ export default function AdminFilesTab({
                 onClick={() =>
                   f.storage_path
                     ? deleteStorageFile(String(f.storage_path))
-                    : showToast("לא ניתן למחוק: חסר storage_path", "error")
+                    : showToast(
+                        t("admin.filesTab.messages.missingStoragePath"),
+                        "error",
+                      )
                 }
                 className="w-6 h-6 text-red-500 hover:text-red-400"
-                title="מחיקה"
+                title={t("common.delete")}
                 type="button"
               >
                 <Trash2 size={20} />

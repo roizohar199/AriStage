@@ -4,6 +4,7 @@ import DesignActionButton from "@/modules/shared/components/DesignActionButton";
 import { Input, Select } from "@/modules/shared/components/FormControls";
 import type { AdminUser } from "../pages/Admin";
 import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 type SubscriptionEdit = {
   subscription_type: string;
@@ -73,6 +74,7 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
   api,
   setDashboardCards,
 }) => {
+  const { t } = useTranslation();
   const [plans, setPlans] = React.useState<
     { id: number; key: string; name: string; enabled: boolean }[]
   >([]);
@@ -105,21 +107,25 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
 
   React.useLayoutEffect(() => {
     setDashboardCards?.([
-      { icon: <Users size={32} />, value: dashboardStats.total, label: 'סה"כ' },
+      {
+        icon: <Users size={32} />,
+        value: dashboardStats.total,
+        label: t("admin.subscriptionsTab.dashboard.total"),
+      },
       {
         icon: <BadgeCheck size={32} />,
         value: dashboardStats.paid,
-        label: "מנויים (לא trial)",
+        label: t("admin.subscriptionsTab.dashboard.paid"),
       },
       {
         icon: <Users size={32} />,
         value: dashboardStats.trial,
-        label: "trial",
+        label: t("admin.subscriptionsTab.dashboard.trial"),
       },
       {
         icon: <Clock size={32} />,
         value: dashboardStats.expiringSoon,
-        label: "פג תוקף בקרוב (7 ימים)",
+        label: t("admin.subscriptionsTab.dashboard.expiringSoon7d"),
       },
     ]);
   }, [
@@ -128,6 +134,7 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
     dashboardStats.paid,
     dashboardStats.total,
     dashboardStats.trial,
+    t,
   ]);
 
   React.useEffect(() => {
@@ -170,7 +177,7 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
 
   const planOptions = React.useMemo(() => {
     const options: { value: string; label: string }[] = [
-      { value: "trial", label: "trial" },
+      { value: "trial", label: t("admin.subscriptionsTab.planOptions.trial") },
     ];
     const seen = new Set<string>(["trial"]);
 
@@ -182,29 +189,37 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
       const enabled = Boolean(p?.enabled);
       options.push({
         value: key,
-        label: `${name || key} (${key})${enabled ? "" : " (disabled)"}`,
+        label: `${name || key} (${key})${
+          enabled ? "" : t("admin.subscriptionsTab.planOptions.disabledSuffix")
+        }`,
       });
     }
 
     return options;
-  }, [plans]);
+  }, [plans, t]);
 
   return (
     <div className="space-y-3">
       {usersLoading ? (
         <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-6 text-center text-neutral-400">
-          טוען מנויים...
+          {t("admin.subscriptionsTab.loading")}
         </div>
       ) : usersUnsupported ? (
         <div className="bg-neutral-800 rounded-2xl p-6 text-center">
           <BadgeCheck size={32} className="mx-auto mb-3 text-neutral-600" />
-          <p className="text-neutral-400 text-sm">Admin endpoint missing</p>
-          <p className="text-neutral-500 text-xs mt-1">GET /admin/users</p>
+          <p className="text-neutral-400 text-sm">
+            {t("admin.usersTab.unsupported.title")}
+          </p>
+          <p className="text-neutral-500 text-xs mt-1">
+            {t("admin.usersTab.unsupported.endpoint")}
+          </p>
         </div>
       ) : users.length === 0 ? (
         <div className="bg-neutral-800 rounded-2xl p-6 text-center">
           <BadgeCheck size={32} className="mx-auto mb-3 text-neutral-600" />
-          <p className="text-neutral-400 text-sm">אין נתונים להצגה</p>
+          <p className="text-neutral-400 text-sm">
+            {t("admin.subscriptionsTab.empty")}
+          </p>
           <p className="text-neutral-500 text-xs mt-1">GET /admin/users</p>
         </div>
       ) : (
@@ -245,7 +260,7 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
               <CardContainer key={`sub-${u.id}`}>
                 <div className="flex-1 min-w-0 text-start">
                   <h3 className="text-lg font-bold text-neutral-100 mb-1">
-                    {u.full_name || "משתמש ללא שם"}
+                    {u.full_name || t("admin.subscriptionsTab.userNoName")}
                   </h3>
                   <div className="flex flex-wrap gap-2 mt-2">
                     <SmallBadge icon={<Mail size={14} />}>{u.email}</SmallBadge>
@@ -269,12 +284,12 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                         }));
                       }}
                     >
-                      ערוך מנוי
+                      {t("admin.subscriptionsTab.actions.edit")}
                     </DesignActionButton>
                   ) : (
                     <>
                       <Select
-                        label="מסלול מנוי"
+                        label={t("admin.subscriptionsTab.form.planLabel")}
                         value={subForm.subscription_type}
                         onChange={(value) => {
                           setSubscriptionEdits((prev) => {
@@ -296,7 +311,9 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                           return [
                             {
                               value: subForm.subscription_type,
-                              label: `${subForm.subscription_type} (legacy)`,
+                              label: `${subForm.subscription_type} ${t(
+                                "admin.subscriptionsTab.planOptions.legacySuffix",
+                              )}`,
                             },
                             ...planOptions,
                           ];
@@ -305,7 +322,7 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                       />
 
                       <Select
-                        label="סטטוס מנוי"
+                        label={t("admin.subscriptionsTab.form.statusLabel")}
                         value={subForm.subscription_status}
                         onChange={(value) => {
                           setSubscriptionEdits((prev) => {
@@ -320,16 +337,25 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                           });
                         }}
                         options={[
-                          { value: "active", label: "active" },
-                          { value: "trial", label: "trial" },
-                          { value: "expired", label: "expired" },
+                          {
+                            value: "active",
+                            label: t("admin.subscriptionsTab.status.active"),
+                          },
+                          {
+                            value: "trial",
+                            label: t("admin.subscriptionsTab.status.trial"),
+                          },
+                          {
+                            value: "expired",
+                            label: t("admin.subscriptionsTab.status.expired"),
+                          },
                         ]}
                         className="mb-0"
                       />
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
                         <Input
-                          label="start"
+                          label={t("admin.subscriptionsTab.form.startLabel")}
                           type="datetime-local"
                           placeholder="subscription_started_at"
                           value={toDateTimeLocalInput(
@@ -352,7 +378,7 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                           dir="ltr"
                         />
                         <Input
-                          label="end"
+                          label={t("admin.subscriptionsTab.form.endLabel")}
                           type="datetime-local"
                           placeholder="subscription_expires_at"
                           value={toDateTimeLocalInput(
@@ -398,18 +424,23 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                                 `/admin/users/${u.id}/subscription`,
                                 payload,
                               );
-                              showToast("Subscription updated", "success");
+                              showToast(
+                                t("admin.subscriptionsTab.messages.updated"),
+                                "success",
+                              );
                               setEditingSubscriptionUserId(null);
                               await reload();
                             } catch (err: any) {
                               const msg =
                                 err?.response?.data?.message ||
-                                "שגיאה בעדכון מנוי";
+                                t(
+                                  "admin.subscriptionsTab.messages.updateFailed",
+                                );
                               showToast(msg, "error");
                             }
                           }}
                         >
-                          שמור מנוי
+                          {t("admin.subscriptionsTab.actions.save")}
                         </DesignActionButton>
                         <button
                           type="button"
@@ -422,12 +453,11 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                             });
                           }}
                         >
-                          ביטול
+                          {t("common.cancel")}
                         </button>
                       </div>
                       <p className="text-[11px] text-neutral-500">
-                        שינוי זה מעדכן רק שדות מנוי של המשתמש (plan/status/
-                        start/end) ולא משנה מחירי מסלולים.
+                        {t("admin.subscriptionsTab.form.note")}
                       </p>
                     </>
                   )}

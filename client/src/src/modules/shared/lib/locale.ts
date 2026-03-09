@@ -59,9 +59,81 @@ export function getBrowserLocale(): string {
   return "he-IL";
 }
 
+/**
+ * Get effective browser locale filtered by enabled locales.
+ * If browser language is not in enabled list, returns default locale.
+ */
+export function getBrowserLocaleFiltered(
+  enabledLocales: string[],
+  defaultLocale: string = "he-IL",
+): string {
+  const browserLocale = getBrowserLocale();
+
+  // Check if browser locale is enabled
+  if (enabledLocales.includes(browserLocale)) {
+    return browserLocale;
+  }
+
+  // Try to match language without region (e.g., "en" matches "en-US")
+  const browserLang = browserLocale.split("-")[0];
+  const matchingLocale = enabledLocales.find(
+    (locale) => locale.split("-")[0] === browserLang,
+  );
+
+  if (matchingLocale) {
+    return matchingLocale;
+  }
+
+  // Fallback to default locale
+  return defaultLocale;
+}
+
 export function resolveEffectiveLocaleFromUser(user: any): string {
   const preferred = normalizeLocale(user?.preferred_locale);
-  return preferred || getBrowserLocale();
+  if (preferred) return preferred;
+
+  // If user has chosen "auto" (or has no preference), the system default
+  // should follow the browser locale, but only within the enabled locales list.
+  const fallbackEnabledLocales = ["he-IL", "en-US"];
+  const fallbackDefaultLocale = "he-IL";
+
+  try {
+    if (typeof window !== "undefined") {
+      const cached = window.localStorage?.getItem("ari_system_settings");
+      if (cached) {
+        const parsed = JSON.parse(cached) as any;
+        const enabled = Array.isArray(parsed?.enabled_locales)
+          ? parsed.enabled_locales.filter((x: any) => typeof x === "string")
+          : null;
+        const defaultLocale =
+          typeof parsed?.default_locale === "string" && parsed.default_locale
+            ? parsed.default_locale
+            : null;
+
+        const mode =
+          parsed?.default_locale_mode === "fixed" ? "fixed" : "browser";
+
+        const enabledLocales =
+          enabled && enabled.length > 0 ? enabled : fallbackEnabledLocales;
+        const effectiveDefaultLocale = defaultLocale || fallbackDefaultLocale;
+
+        if (mode === "fixed") {
+          return enabledLocales.includes(effectiveDefaultLocale)
+            ? effectiveDefaultLocale
+            : fallbackDefaultLocale;
+        }
+
+        return getBrowserLocaleFiltered(enabledLocales, effectiveDefaultLocale);
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  return getBrowserLocaleFiltered(
+    fallbackEnabledLocales,
+    fallbackDefaultLocale,
+  );
 }
 
 export function applyDocumentLocale(locale: string): void {

@@ -11,6 +11,7 @@ import BaseModal from "./BaseModal.tsx";
 import api from "@/modules/shared/lib/api.ts";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import { useSubscription } from "@/modules/shared/hooks/useSubscription.ts";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 type BillingPeriod = "monthly" | "yearly";
 
@@ -36,6 +37,7 @@ export default function UpgradeModal({
   onClose,
   initialBillingPeriod,
 }: UpgradeModalProps) {
+  const { t, locale } = useTranslation();
   const { subscriptionBlockedPayload, refreshUser, user, subscriptionStatus } =
     useAuth();
   const subscription = useSubscription();
@@ -101,7 +103,7 @@ export default function UpgradeModal({
     if (!raw) return "—";
     try {
       const date = raw instanceof Date ? raw : new Date(String(raw));
-      return date.toLocaleDateString("he-IL", {
+      return date.toLocaleDateString(locale || "he-IL", {
         year: "numeric",
         month: "long",
         day: "numeric",
@@ -136,12 +138,12 @@ export default function UpgradeModal({
   const handleUpgrade = async () => {
     if (submitting) return;
     if (!selectedPlan) {
-      setError("אין מסלול זמין לשדרוג כרגע");
+      setError(t("billing.upgradeModal.noPlanAvailable"));
       return;
     }
 
     if (selectedPlan.enabled === false) {
-      setError("המסלול הנבחר אינו זמין כרגע");
+      setError(t("billing.upgradeModal.planNotAvailable"));
       return;
     }
 
@@ -175,23 +177,23 @@ export default function UpgradeModal({
       onClose();
     } catch (err) {
       console.error("Mock subscription upgrade failed", err);
-      setError("אירעה שגיאה בשדרוג המנוי (בדיקה). נסה שוב.");
+      setError(t("billing.upgradeModal.upgradeError"));
     } finally {
       setSubmitting(false);
     }
   };
 
   const title = isExpired
-    ? "המנוי פג תוקף"
+    ? t("billing.upgradeModal.titleExpired")
     : isTrial
-      ? "את/ה בתקופת ניסיון"
-      : "שדרוג מנוי";
+      ? t("billing.upgradeModal.titleTrial")
+      : t("billing.upgradeModal.titleUpgrade");
 
   const subtitle = isExpired
-    ? "כדי להמשיך להשתמש במערכת, יש לחדש מנוי"
+    ? t("billing.upgradeModal.subtitleExpired")
     : isTrial
-      ? "בחר/י מסלול וחזור/י לשימוש מלא במערכת"
-      : "בחר/י מסלול וחזור/י לשימוש מלא במערכת";
+      ? t("billing.upgradeModal.subtitleChoosePlan")
+      : t("billing.upgradeModal.subtitleChoosePlan");
 
   const planIcon = (plan: AvailablePlan) => {
     const key = `${plan.key} ${plan.name}`.toLowerCase();
@@ -226,9 +228,9 @@ export default function UpgradeModal({
 
     if (selectedBillingPeriod === "monthly") {
       return {
-        label: "חודשי",
+        label: t("billing.upgradeModal.billingMonthly"),
         amount: monthly,
-        cadence: "לחודש",
+        cadence: t("billing.upgradeModal.cadencePerMonth"),
         secondary: null as string | null,
         currency,
       };
@@ -241,20 +243,30 @@ export default function UpgradeModal({
 
     const secondaryParts: string[] = [];
     if (monthlyEquivalent !== null) {
-      secondaryParts.push(`≈ ${monthlyEquivalent} ${currency} לחודש`);
+      secondaryParts.push(
+        t("billing.upgradeModal.monthlyEquivalent", {
+          amount: monthlyEquivalent,
+          currency,
+        }),
+      );
     }
     if (savings && savings > 0) {
-      secondaryParts.push(`חיסכון ${savings} ${currency}`);
+      secondaryParts.push(
+        t("billing.upgradeModal.savings", {
+          amount: savings,
+          currency,
+        }),
+      );
     }
 
     return {
-      label: "שנתי",
+      label: t("billing.upgradeModal.billingYearly"),
       amount: yearly,
-      cadence: "לשנה",
+      cadence: t("billing.upgradeModal.cadencePerYear"),
       secondary: secondaryParts.length ? secondaryParts.join(" • ") : null,
       currency,
     };
-  }, [selectedPlan, selectedBillingPeriod]);
+  }, [selectedPlan, selectedBillingPeriod, t]);
 
   return (
     <BaseModal
@@ -293,7 +305,9 @@ export default function UpgradeModal({
           {/* Status pills */}
           <div className="flex flex-col items-end gap-2">
             <div className="inline-flex items-center gap-2 rounded-2xl bg-neutral-800 px-3 py-2">
-              <span className="text-xs text-neutral-400">מסלול נוכחי</span>
+              <span className="text-xs text-neutral-400">
+                {t("billing.upgradeModal.currentPlan")}
+              </span>
               <span
                 className="text-sm font-semibold text-neutral-100"
                 dir="ltr"
@@ -304,7 +318,11 @@ export default function UpgradeModal({
             <div className="inline-flex items-center gap-2 rounded-2xl bg-neutral-800 px-3 py-2">
               <Calendar className="h-4 w-4 text-neutral-400" />
               <span className="text-xs text-neutral-400">
-                {isExpired ? "הסתיים" : isTrial ? "ניסיון עד" : "בתוקף עד"}
+                {isExpired
+                  ? t("billing.upgradeModal.statusEnded")
+                  : isTrial
+                    ? t("billing.upgradeModal.statusTrialUntil")
+                    : t("billing.upgradeModal.statusValidUntil")}
               </span>
               <span className="text-sm font-semibold text-neutral-100">
                 {expiryDate}
@@ -316,17 +334,17 @@ export default function UpgradeModal({
         {/* Upgrade Options */}
         {loading ? (
           <div className="bg-neutral-900/60 rounded-2xl p-6 border border-neutral-800">
-            <p className="text-neutral-400">טוען מסלולים...</p>
+            <p className="text-neutral-400">{t("billing.loadingPlans")}</p>
           </div>
         ) : plans.length ? (
           <div className="space-y-5">
             {/* Plans list */}
             <div>
               <div className="text-xl font-semibold text-neutral-100">
-                בחר/י מסלול
+                {t("billing.upgradeModal.choosePlan")}
               </div>
               <div className="text-sm text-neutral-500">
-                אפשר לבחור מסלול אחר בכל רגע
+                {t("billing.upgradeModal.changeAnytime")}
               </div>
             </div>
 
@@ -334,10 +352,10 @@ export default function UpgradeModal({
             <div className="flex items-center justify-between gap-4 border border-neutral-800 rounded-2xl p-2">
               <div>
                 <div className="text-sm font-semibold text-neutral-300">
-                  תקופת חיוב
+                  {t("billing.upgradeModal.billingPeriod")}
                 </div>
                 <div className="text-xs text-neutral-500">
-                  ניתן לשנות לפני תשלום
+                  {t("billing.upgradeModal.canChangeBeforePayment")}
                 </div>
               </div>
 
@@ -351,7 +369,7 @@ export default function UpgradeModal({
                       : "text-neutral-300 hover:text-neutral-100"
                   }`}
                 >
-                  חודשי
+                  {t("billing.upgradeModal.billingMonthly")}
                 </button>
                 <button
                   type="button"
@@ -362,7 +380,7 @@ export default function UpgradeModal({
                       : "text-neutral-300 hover:text-neutral-100"
                   }`}
                 >
-                  שנתי
+                  {t("billing.upgradeModal.billingYearly")}
                 </button>
               </div>
             </div>
@@ -376,7 +394,9 @@ export default function UpgradeModal({
                     ? plan.monthly_price
                     : plan.yearly_price;
                 const cadence =
-                  selectedBillingPeriod === "monthly" ? "לחודש" : "לשנה";
+                  selectedBillingPeriod === "monthly"
+                    ? t("billing.upgradeModal.cadencePerMonth")
+                    : t("billing.upgradeModal.cadencePerYear");
 
                 return (
                   <button
@@ -414,12 +434,12 @@ export default function UpgradeModal({
                             {isSelected ? (
                               <span className="inline-flex items-center gap-1 rounded-lg bg-brand-primary text-neutral-100 text-xs font-bold px-2 py-1">
                                 <Check className="h-3.5 w-3.5" />
-                                נבחר
+                                {t("billing.upgradeModal.selected")}
                               </span>
                             ) : null}
                             {!isEnabled ? (
                               <span className="inline-flex items-center rounded-lg bg-neutral-800 text-neutral-200 text-xs font-semibold px-2 py-1">
-                                לא זמין
+                                {t("common.notAvailable")}
                               </span>
                             ) : null}
                           </div>
@@ -432,7 +452,9 @@ export default function UpgradeModal({
                       </div>
 
                       <div className="text-left" dir="ltr">
-                        <div className="text-xs text-neutral-400">סה"כ</div>
+                        <div className="text-xs text-neutral-400">
+                          {t("billing.upgradeModal.total")}
+                        </div>
                         <div className="text-xl font-bold text-neutral-100">
                           {plan.currency} {primaryPrice}
                         </div>
@@ -447,10 +469,16 @@ export default function UpgradeModal({
                       dir="ltr"
                     >
                       <span>
-                        {plan.currency} {plan.monthly_price} / month
+                        {t("billing.upgradeModal.pricePerMonthShort", {
+                          currency: plan.currency,
+                          price: plan.monthly_price,
+                        })}
                       </span>
                       <span>
-                        {plan.currency} {plan.yearly_price} / year
+                        {t("billing.upgradeModal.pricePerYearShort", {
+                          currency: plan.currency,
+                          price: plan.yearly_price,
+                        })}
                       </span>
                     </div>
                   </button>
@@ -464,7 +492,7 @@ export default function UpgradeModal({
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div className="text-sm font-semibold text-neutral-100">
-                      סיכום תשלום
+                      {t("billing.upgradeModal.paymentSummary")}
                     </div>
                     <div className="text-xs text-neutral-100/70 mt-1">
                       {selectedPlan?.name} {billingSummary.label}
@@ -477,7 +505,9 @@ export default function UpgradeModal({
                   </div>
 
                   <div className="text-end">
-                    <div className="text-xs text-neutral-100/70">לתשלום</div>
+                    <div className="text-xs text-neutral-100/70">
+                      {t("billing.upgradeModal.amountDue")}
+                    </div>
                     <div className="text-2xl font-bold text-neutral-100">
                       {billingSummary.currency} {billingSummary.amount}
                     </div>
@@ -491,7 +521,7 @@ export default function UpgradeModal({
           </div>
         ) : (
           <div className="bg-neutral-900/60 rounded-2xl p-6 border border-neutral-800">
-            <p className="text-neutral-300">אין מסלולים זמינים כרגע.</p>
+            <p className="text-neutral-300">{t("billing.noPlansAvailable")}</p>
           </div>
         )}
 
@@ -502,10 +532,14 @@ export default function UpgradeModal({
           className="w-full px-6 py-3 bg-brand-primary hover:bg-brand-primaryLight disabled:opacity-70 disabled:cursor-not-allowed text-neutral-100 font-semibold rounded-2xl transition-colors"
         >
           {submitting
-            ? "מבצע שדרוג (בדיקה)..."
+            ? t("billing.upgradeModal.upgrading")
             : billingSummary && billingSummary.amount !== null
-              ? `המשך לתשלום - ${billingSummary.amount} ${billingSummary.currency} ${billingSummary.cadence}`
-              : "המשך לתשלום"}
+              ? t("billing.upgradeModal.proceedToPaymentWithAmount", {
+                  amount: billingSummary.amount,
+                  currency: billingSummary.currency,
+                  cadence: billingSummary.cadence,
+                })
+              : t("billing.upgradeModal.proceedToPayment")}
         </button>
 
         {error && (

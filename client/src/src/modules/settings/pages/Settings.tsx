@@ -1,13 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import api from "@/modules/shared/lib/api.js";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
+import { useSystemSettings } from "@/modules/shared/contexts/SystemSettingsContext.tsx";
 import { useSubscription } from "@/modules/shared/hooks/useSubscription.ts";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
 import DesignActionButtonBig from "@/modules/shared/components/DesignActionButtonBig";
 import { resolveThemeIndex } from "@/modules/shared/lib/theme";
 import Avatar from "@/modules/shared/components/Avatar";
 import { getAvatarInitial } from "@/modules/shared/lib/avatar";
+import { applyLocaleFromUser } from "@/modules/shared/lib/locale";
 import {
   EmailInput,
   Input,
@@ -26,7 +29,9 @@ type SettingsFormState = {
 };
 
 export default function Settings() {
+  const { t } = useTranslation();
   const { user, setUser, refreshUser } = useAuth();
+  const { i18nSettings } = useSystemSettings();
   const subscription = useSubscription();
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -56,12 +61,12 @@ export default function Settings() {
       const diffMs = endMs - nowMs;
       if (diffMs > 0) {
         const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-        trialCountdown = `נותרו ${days} ימי ניסיון`;
+        trialCountdown = t("settings.trialDaysLeft", { days });
       } else {
-        trialCountdown = "תקופת הניסיון הסתיימה";
+        trialCountdown = t("settings.trialEnded");
       }
     } else {
-      trialCountdown = "לא ניתן לחשב ימי ניסיון (חסר תאריך סיום)";
+      trialCountdown = t("settings.trialCalculationError");
     }
   }
 
@@ -105,7 +110,7 @@ export default function Settings() {
           setPreview(data.avatar); // תצוגת תמונה קיימת
         }
       } catch (err) {
-        setError("שגיאה בטעינת הנתונים");
+        setError(t("settings.loadError"));
       } finally {
         setLoading(false);
       }
@@ -142,12 +147,15 @@ export default function Settings() {
         await api.put("/users/password", { newPass: form.newPass });
       }
 
-      setSuccess("הפרטים נשמרו בהצלחה!");
+      setSuccess(t("settings.saveSuccess"));
       setForm({ ...form, newPass: "" });
 
       // עדכון משתמש דרך AuthContext (וגם sync ל-localStorage בתוך refreshUser)
       await refreshUser();
       const userData = JSON.parse(localStorage.getItem("ari_user") || "{}");
+
+      // Apply locale changes to document immediately
+      applyLocaleFromUser(userData);
 
       // עדכון כל הקומפוננטות דרך custom event
       window.dispatchEvent(
@@ -165,11 +173,11 @@ export default function Settings() {
         err?.response?.data?.code === "SUBSCRIPTION_REQUIRED";
 
       if (isSubscriptionBlocked) {
-        setError("המנוי אינו פעיל. כדי לשמור שינויים יש לשדרג מנוי.");
+        setError(t("settings.subscriptionRequired"));
         return;
       }
 
-      setError(err.response?.data?.error || "שגיאה בעדכון הנתונים");
+      setError(err.response?.data?.error || t("settings.updateError"));
     } finally {
       setSaving(false);
     }
@@ -177,7 +185,7 @@ export default function Settings() {
 
   const deleteAvatar = async () => {
     if (!preview) return;
-    if (!window.confirm("למחוק את תמונת הפרופיל?")) return;
+    if (!window.confirm(t("settings.confirmDeleteAvatar"))) return;
 
     setError(null);
     setSuccess(null);
@@ -206,7 +214,7 @@ export default function Settings() {
         new CustomEvent("user-updated", { detail: userData }),
       );
 
-      setSuccess("התמונה נמחקה בהצלחה!");
+      setSuccess(t("settings.avatarDeleteSuccess"));
     } catch (err: any) {
       console.error(err);
       const isSubscriptionBlocked =
@@ -214,24 +222,28 @@ export default function Settings() {
         err?.response?.data?.code === "SUBSCRIPTION_REQUIRED";
 
       if (isSubscriptionBlocked) {
-        setError("המנוי אינו פעיל. כדי למחוק תמונה יש לשדרג מנוי.");
+        setError(t("settings.subscriptionRequiredForDelete"));
         return;
       }
 
-      setError(err.response?.data?.error || "שגיאה במחיקת התמונה");
+      setError(err.response?.data?.error || t("settings.avatarDeleteError"));
     } finally {
       setDeletingAvatar(false);
     }
   };
 
   if (loading)
-    return <div className="text-center text-neutral-400 p-6">טוען...</div>;
+    return (
+      <div className="text-center text-neutral-400 p-6">
+        {t("common.loading")}
+      </div>
+    );
 
   return (
     <div className="min-h-screen text-neutral-100 p-6">
       {/* כותרת עליונה */}
       <header className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">הגדרות מערכת</h1>
+        <h1 className="text-3xl font-bold">{t("settings.title")}</h1>
       </header>
 
       {(error || success) && (
@@ -253,18 +265,22 @@ export default function Settings() {
       <div className="bg-neutral-850 rounded-2xl p-6 mb-6 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-sm text-neutral-300">סטטוס מנוי</div>
+            <div className="text-sm text-neutral-300">
+              {t("settings.subscriptionStatus")}
+            </div>
             <div className="text-lg font-semibold text-neutral-100">
               {isTrial
-                ? "מצב ניסיון"
+                ? t("settings.trialStatus")
                 : isSubscriptionActive
-                  ? "פעיל"
-                  : "הסתיים"}
+                  ? t("settings.active")
+                  : t("settings.expired")}
             </div>
             {/* Trial countdown (under plan) */}
           </div>
           <div>
-            <div className="text-sm text-neutral-300">מסלול נוכחי</div>
+            <div className="text-sm text-neutral-300">
+              {t("settings.currentPlan")}
+            </div>
             <div className="text-lg font-semibold text-neutral-100" dir="ltr">
               {subscription?.plan ?? "trial"}
             </div>
@@ -280,9 +296,11 @@ export default function Settings() {
         {shouldShowUpgrade && (
           <div className="pt-4 border-t border-neutral-800 space-y-4">
             <div>
-              <div className="text-sm text-neutral-300">שדרוג מנוי</div>
+              <div className="text-sm text-neutral-300">
+                {t("settings.upgradePlan")}
+              </div>
               <div className="text-base text-neutral-100">
-                לחץ כדי לשדרג ולחזור לשימוש מלא במערכת
+                {t("settings.upgradeDescription")}
               </div>
             </div>
 
@@ -291,7 +309,7 @@ export default function Settings() {
                 type="button"
                 onClick={() => window.openUpgradeModal?.()}
               >
-                שדרג מנוי
+                {t("settings.upgradeButton")}
               </DesignActionButtonBig>
             </div>
           </div>
@@ -329,7 +347,7 @@ export default function Settings() {
                 onClick={() => fileInputRef.current?.click()}
                 disabled={saving || deletingAvatar}
               >
-                החלף תמונה
+                {t("settings.changeAvatar")}
               </DesignActionButton>
 
               {preview && (
@@ -339,7 +357,9 @@ export default function Settings() {
                   onClick={deleteAvatar}
                   disabled={saving || deletingAvatar}
                 >
-                  {deletingAvatar ? "מוחק..." : "מחק תמונה"}
+                  {deletingAvatar
+                    ? t("common.deleting")
+                    : t("settings.deleteAvatar")}
                 </DesignActionButton>
               )}
             </div>
@@ -366,7 +386,7 @@ export default function Settings() {
                 onChange={(e) =>
                   setForm({ ...form, full_name: e.target.value })
                 }
-                placeholder="שם מלא"
+                placeholder={t("settings.fullName")}
                 className="mb-0"
               />
             </div>
@@ -378,7 +398,7 @@ export default function Settings() {
                 onChange={(e) =>
                   setForm({ ...form, artist_role: e.target.value })
                 }
-                placeholder="גיטריסט, מפיק, בסיסט..."
+                placeholder={t("settings.artistRole")}
                 className="mb-0"
               />
             </div>
@@ -389,7 +409,7 @@ export default function Settings() {
                 dir="rtl"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="אימייל"
+                placeholder={t("auth.email")}
                 className="mb-0"
               />
             </div>
@@ -399,7 +419,7 @@ export default function Settings() {
               <PasswordInput
                 value={form.newPass}
                 onChange={(e) => setForm({ ...form, newPass: e.target.value })}
-                placeholder="סיסמה חדשה (השאר ריק אם לא משנים)"
+                placeholder={t("settings.newPasswordOptional")}
                 className="mb-0"
               />
             </div>
@@ -407,12 +427,12 @@ export default function Settings() {
             {/* Theme */}
             <div>
               <Select
-                label="צבע מערכת"
+                label={t("settings.theme")}
                 value={form.themeIndex}
                 disabled={saving}
                 options={[
-                  { value: "0", label: "כהה" },
-                  { value: "1", label: "בהיר" },
+                  { value: "0", label: t("settings.darkMode") },
+                  { value: "1", label: t("settings.lightMode") },
                 ]}
                 onChange={(themeIndex) => setForm({ ...form, themeIndex })}
               />
@@ -421,13 +441,20 @@ export default function Settings() {
             {/* Language */}
             <div>
               <Select
-                label="שפת מערכת"
+                label={t("settings.language")}
                 value={form.preferred_locale}
                 disabled={saving}
                 options={[
-                  { value: "auto", label: "אוטומטי (לפי שפת הדפדפן)" },
-                  { value: "he-IL", label: "עברית (RTL)" },
-                  { value: "en-US", label: "English (LTR)" },
+                  { value: "auto", label: t("settings.languageAuto") },
+                  ...i18nSettings.enabled_locales.map((locale) => ({
+                    value: locale,
+                    label:
+                      locale === "he-IL"
+                        ? t("settings.languageHebrew")
+                        : locale === "en-US"
+                          ? t("settings.languageEnglish")
+                          : locale,
+                  })),
                 ]}
                 onChange={(preferred_locale) =>
                   setForm({ ...form, preferred_locale })
@@ -437,7 +464,7 @@ export default function Settings() {
 
             {/* כפתור שמירה */}
             <DesignActionButtonBig type="submit" disabled={saving}>
-              {saving ? "שומר..." : "שמור שינויים"}
+              {saving ? t("common.saving") : t("settings.saveChanges")}
             </DesignActionButtonBig>
           </div>
         </form>

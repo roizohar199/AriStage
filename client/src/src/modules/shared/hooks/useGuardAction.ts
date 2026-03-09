@@ -1,6 +1,7 @@
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import { emitToast } from "@/modules/shared/lib/toastBus.ts";
 import { useSubscription } from "@/modules/shared/hooks/useSubscription.ts";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 /**
  * Guard helper to check if an action is allowed based on subscription status.
@@ -17,13 +18,14 @@ import { useSubscription } from "@/modules/shared/hooks/useSubscription.ts";
 export function useGuardAction() {
   const { subscriptionBlocked, subscriptionStatus, user } = useAuth();
   const subscription = useSubscription();
+  const { t } = useTranslation();
 
   return function guardAction<T extends (...args: any[]) => any>(
     action: T,
     options?: {
       message?: string;
       onBlocked?: () => void;
-    }
+    },
   ): T {
     return ((...args: Parameters<T>) => {
       // Admin is never blocked
@@ -41,7 +43,8 @@ export function useGuardAction() {
         subscription?.permissions.canCreateSong ?? isStatusAllowed;
 
       if (subscriptionBlocked || !hasSubscriptionPermission) {
-        const message = options?.message || "פעולה זו זמינה רק עם מנוי פעיל";
+        const message =
+          options?.message || t("billing.actionRequiresSubscription");
 
         // Show toast notification
         emitToast(message, "warning");

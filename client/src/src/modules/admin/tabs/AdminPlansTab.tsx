@@ -20,6 +20,7 @@ import ConfirmModal from "@/modules/shared/confirm/ConfirmModal";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
 import { useToast } from "@/modules/shared/components/ToastProvider";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 import api from "@/modules/shared/lib/api.ts";
 import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
 import { Input } from "@/modules/shared/components/FormControls";
@@ -186,6 +187,7 @@ function PlanForm({
   onSubmit,
   canEdit,
 }: PlanFormProps) {
+  const { t } = useTranslation();
   const initial: PlanFormState = useMemo(() => {
     const p = initialPlan;
     return {
@@ -212,7 +214,10 @@ function PlanForm({
     setError(null);
   }, [open, initial]);
 
-  const title = mode === "create" ? "הוספת מסלול" : "עריכת מסלול";
+  const title =
+    mode === "create"
+      ? t("admin.plansTab.form.titleCreate")
+      : t("admin.plansTab.form.titleEdit");
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -224,14 +229,17 @@ function PlanForm({
     const name = form.name.trim();
     const currency = form.currency.trim();
 
-    if (!key) return setError("שדה key הוא חובה");
-    if (!name) return setError("שדה name הוא חובה");
-    if (!currency) return setError("שדה currency הוא חובה");
+    if (!key) return setError(t("admin.plansTab.form.errors.keyRequired"));
+    if (!name) return setError(t("admin.plansTab.form.errors.nameRequired"));
+    if (!currency)
+      return setError(t("admin.plansTab.form.errors.currencyRequired"));
 
     const monthly = Number(form.monthly_price);
     const yearly = Number(form.yearly_price);
-    if (!Number.isFinite(monthly)) return setError("monthly_price לא תקין");
-    if (!Number.isFinite(yearly)) return setError("yearly_price לא תקין");
+    if (!Number.isFinite(monthly))
+      return setError(t("admin.plansTab.form.errors.monthlyInvalid"));
+    if (!Number.isFinite(yearly))
+      return setError(t("admin.plansTab.form.errors.yearlyInvalid"));
 
     const payload: PlanUpsertInput = {
       key,
@@ -248,7 +256,7 @@ function PlanForm({
       await onSubmit(payload);
       onClose();
     } catch (err: any) {
-      setError(err?.message || "שגיאה בשמירה");
+      setError(err?.message || t("admin.plansTab.form.errors.saveFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -264,7 +272,7 @@ function PlanForm({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-2">
             <Input
-              label="key"
+              label={t("admin.plansTab.form.labels.key")}
               value={form.key}
               onChange={(e) => setForm((p) => ({ ...p, key: e.target.value }))}
               disabled={!canEdit || submitting || mode === "edit"}
@@ -275,7 +283,7 @@ function PlanForm({
 
           <div className="flex flex-col gap-2">
             <Input
-              label="name"
+              label={t("admin.plansTab.form.labels.name")}
               value={form.name}
               onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
               disabled={!canEdit || submitting}
@@ -287,13 +295,13 @@ function PlanForm({
 
         <div className="flex flex-col gap-2">
           <Input
-            label="description"
+            label={t("admin.plansTab.form.labels.description")}
             value={form.description}
             onChange={(e) =>
               setForm((p) => ({ ...p, description: e.target.value }))
             }
             disabled={!canEdit || submitting}
-            placeholder="אופציונלי"
+            placeholder={t("common.optional")}
             className="mb-0"
           />
         </div>
@@ -301,7 +309,7 @@ function PlanForm({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="flex flex-col gap-2">
             <Input
-              label="currency"
+              label={t("admin.plansTab.form.labels.currency")}
               value={form.currency}
               onChange={(e) =>
                 setForm((p) => ({ ...p, currency: e.target.value }))
@@ -314,7 +322,7 @@ function PlanForm({
 
           <div className="flex flex-col gap-2">
             <Input
-              label="monthly_price"
+              label={t("admin.plansTab.form.labels.monthlyPrice")}
               type="number"
               value={form.monthly_price}
               onChange={(e) =>
@@ -327,7 +335,7 @@ function PlanForm({
 
           <div className="flex flex-col gap-2">
             <Input
-              label="yearly_price"
+              label={t("admin.plansTab.form.labels.yearlyPrice")}
               type="number"
               value={form.yearly_price}
               onChange={(e) =>
@@ -349,11 +357,13 @@ function PlanForm({
             className="accent-brand-primary"
             disabled={!canEdit || submitting}
           />
-          <span className="text-sm text-neutral-200">enabled</span>
+          <span className="text-sm text-neutral-200">
+            {t("admin.plansTab.form.labels.enabled")}
+          </span>
         </label>
 
         <DesignActionButton type="submit" disabled={!canEdit || submitting}>
-          {submitting ? "שומר..." : "שמור"}
+          {submitting ? t("common.saving") : t("common.save")}
         </DesignActionButton>
       </form>
     </BaseModal>
@@ -368,6 +378,7 @@ export default function AdminPlansTab({
   const { user } = useAuth();
   const canEdit = user?.role === "admin";
   const { showToast } = useToast();
+  const { t } = useTranslation();
 
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(false);
@@ -396,15 +407,15 @@ export default function AdminPlansTab({
       setPlans(Array.isArray(data) ? data : []);
     } catch (err: any) {
       if (err?.response?.status === 403) {
-        setError("אין הרשאה לצפייה במסלולים");
+        setError(t("admin.plansTab.messages.noPermissionViewPlans"));
       } else {
-        setError("שגיאה בטעינת מסלולים");
+        setError(t("admin.plansTab.messages.loadPlansFailed"));
       }
       setPlans([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchPlans();
@@ -445,7 +456,7 @@ export default function AdminPlansTab({
       } catch (err: any) {
         if (!isMounted) return;
         console.error("Admin loadPayments failed", err);
-        setPaymentsError("שגיאה בטעינת תשלומים");
+        setPaymentsError(t("admin.plansTab.messages.loadPaymentsFailed"));
         setPayments([]);
       } finally {
         if (isMounted) setPaymentsLoading(false);
@@ -477,7 +488,7 @@ export default function AdminPlansTab({
     if (modalMode === "create") {
       await createPlan(payload);
       await fetchPlans();
-      showToast("מסלול נוסף", "success");
+      showToast(t("admin.plansTab.messages.planAdded"), "success");
       return;
     }
 
@@ -486,7 +497,7 @@ export default function AdminPlansTab({
 
     await updatePlan(id, payload);
     await fetchPlans();
-    showToast("מסלול עודכן", "success");
+    showToast(t("admin.plansTab.messages.planUpdated"), "success");
   };
 
   const toggleEnabled = async (plan: Plan) => {
@@ -496,9 +507,9 @@ export default function AdminPlansTab({
     try {
       await setPlanEnabled(plan.id, !plan.enabled);
       await fetchPlans();
-      showToast("עודכן", "success");
+      showToast(t("admin.plansTab.messages.updated"), "success");
     } catch {
-      showToast("שגיאה בעדכון enabled", "error");
+      showToast(t("admin.plansTab.messages.updateEnabledFailed"), "error");
     } finally {
       setTogglingId(null);
     }
@@ -512,9 +523,9 @@ export default function AdminPlansTab({
     try {
       await setPlanEnabled(plan.id, false);
       await fetchPlans();
-      showToast("המסלול הושבת", "success");
+      showToast(t("admin.plansTab.messages.planDisabled"), "success");
     } catch {
-      showToast("שגיאה בהשבתת מסלול", "error");
+      showToast(t("admin.plansTab.messages.disablePlanFailed"), "error");
     } finally {
       setTogglingId(null);
     }
@@ -532,9 +543,9 @@ export default function AdminPlansTab({
     try {
       await deletePlan(planToDelete.id);
       await fetchPlans();
-      showToast("המסלול נמחק בהצלחה", "success");
+      showToast(t("admin.plansTab.messages.planDeleted"), "success");
     } catch {
-      showToast("שגיאה במחיקת מסלול", "error");
+      showToast(t("admin.plansTab.messages.deletePlanFailed"), "error");
     } finally {
       setTogglingId(null);
       setPlanToDelete(null);
@@ -563,22 +574,22 @@ export default function AdminPlansTab({
       {
         icon: <Layers size={32} />,
         value: dashboard.totalPlans,
-        label: "מסלולים",
+        label: t("admin.plansTab.dashboard.totalPlans"),
       },
       {
         icon: <ToggleRight size={32} />,
         value: dashboard.enabledPlans,
-        label: "Enabled",
+        label: t("admin.plansTab.dashboard.enabledPlans"),
       },
       {
         icon: <CreditCard size={32} />,
         value: dashboard.totalPayments,
-        label: "תשלומים",
+        label: t("admin.plansTab.dashboard.totalPayments"),
       },
       {
         icon: <BadgeCheck size={32} />,
         value: dashboard.successPayments,
-        label: "תשלומים מוצלחים",
+        label: t("admin.plansTab.dashboard.successPayments"),
       },
     ]);
   }, [
@@ -587,6 +598,7 @@ export default function AdminPlansTab({
     dashboard.successPayments,
     dashboard.totalPayments,
     dashboard.totalPlans,
+    t,
   ]);
 
   const saveTrialDays = async () => {
@@ -594,7 +606,7 @@ export default function AdminPlansTab({
 
     const parsed = Number(trialDaysInput);
     if (!Number.isFinite(parsed)) {
-      showToast("ימי ניסיון לא תקינים", "error");
+      showToast(t("admin.plansTab.messages.invalidTrialDays"), "error");
       return;
     }
 
@@ -604,12 +616,15 @@ export default function AdminPlansTab({
     try {
       await updateSubscriptionSettings({ trial_days: value });
       setTrialDaysInput(String(value));
-      showToast("ימי ניסיון עודכנו", "success");
+      showToast(t("admin.plansTab.messages.trialDaysUpdated"), "success");
     } catch (err: any) {
       if (err?.response?.status === 403) {
-        showToast("אין הרשאה לעדכן ימי ניסיון", "error");
+        showToast(
+          t("admin.plansTab.messages.noPermissionUpdateTrialDays"),
+          "error",
+        );
       } else {
-        showToast("שגיאה בעדכון ימי ניסיון", "error");
+        showToast(t("admin.plansTab.messages.updateTrialDaysFailed"), "error");
       }
     } finally {
       setTrialDaysSaving(false);
@@ -620,18 +635,20 @@ export default function AdminPlansTab({
     <div className="space-y-6">
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="text-lg font-bold text-neutral-100">הגדרות מנוי</h3>
+          <h3 className="text-lg font-bold text-neutral-100">
+            {t("admin.plansTab.sections.subscriptionSettings")}
+          </h3>
         </div>
 
         <div className="bg-neutral-800 rounded-2xl p-4">
           <div className="flex flex-col gap-3">
             <p className="text-sm text-neutral-300">
-              קובע כמה ימים יש למשתמש במצב ניסיון (trial) לפני שפג תוקף.
+              {t("admin.plansTab.subscriptionSettings.trialDaysDescription")}
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-end">
               <Input
-                label="ימי ניסיון"
+                label={t("admin.plansTab.subscriptionSettings.trialDaysLabel")}
                 type="number"
                 value={trialDaysInput}
                 onChange={(e) => setTrialDaysInput(e.target.value)}
@@ -645,15 +662,19 @@ export default function AdminPlansTab({
                   onClick={saveTrialDays}
                   disabled={trialDaysLoading || trialDaysSaving}
                 >
-                  {trialDaysSaving ? "שומר..." : "שמור"}
+                  {trialDaysSaving ? t("common.saving") : t("common.save")}
                 </DesignActionButton>
               ) : (
-                <div className="text-xs text-neutral-500">Read-only</div>
+                <div className="text-xs text-neutral-500">
+                  {t("admin.plansTab.readOnly")}
+                </div>
               )}
             </div>
 
             {trialDaysLoading ? (
-              <div className="text-xs text-neutral-500">טוען...</div>
+              <div className="text-xs text-neutral-500">
+                {t("common.loading")}
+              </div>
             ) : null}
           </div>
         </div>
@@ -661,12 +682,14 @@ export default function AdminPlansTab({
 
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="text-lg font-bold text-neutral-100">ניהול מסלולים</h3>
+          <h3 className="text-lg font-bold text-neutral-100">
+            {t("admin.plansTab.sections.planManagement")}
+          </h3>
           {canEdit ? (
             <DesignActionButton onClick={openCreate} type="button">
               <span className="inline-flex items-center gap-2">
                 <Plus size={16} />
-                הוסף מסלול
+                {t("admin.plansTab.actions.addPlan")}
               </span>
             </DesignActionButton>
           ) : null}
@@ -674,7 +697,7 @@ export default function AdminPlansTab({
 
         {loading ? (
           <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-6 text-center text-neutral-400">
-            טוען מסלולים...
+            {t("admin.plansTab.loading.plans")}
           </div>
         ) : error ? (
           <div className="bg-neutral-800 rounded-2xl p-6 text-center">
@@ -682,20 +705,36 @@ export default function AdminPlansTab({
           </div>
         ) : plans.length === 0 ? (
           <div className="bg-neutral-800 rounded-2xl p-6 text-center">
-            <p className="text-neutral-400 text-sm">אין מסלולים להצגה</p>
+            <p className="text-neutral-400 text-sm">
+              {t("admin.plansTab.empty.plans")}
+            </p>
           </div>
         ) : (
           <div className="bg-neutral-800 rounded-2xl p-4 overflow-x-auto">
             <table className="min-w-full text-sm text-start">
               <thead>
                 <tr className="border-b border-neutral-700 text-neutral-300">
-                  <th className="px-3 py-2 font-semibold">key</th>
-                  <th className="px-3 py-2 font-semibold">name</th>
-                  <th className="px-3 py-2 font-semibold">currency</th>
-                  <th className="px-3 py-2 font-semibold">monthly</th>
-                  <th className="px-3 py-2 font-semibold">yearly</th>
-                  <th className="px-3 py-2 font-semibold">enabled</th>
-                  <th className="px-3 py-2 font-semibold">פעולות</th>
+                  <th className="px-3 py-2 font-semibold">
+                    {t("admin.plansTab.form.labels.key")}
+                  </th>
+                  <th className="px-3 py-2 font-semibold">
+                    {t("admin.plansTab.form.labels.name")}
+                  </th>
+                  <th className="px-3 py-2 font-semibold">
+                    {t("admin.plansTab.form.labels.currency")}
+                  </th>
+                  <th className="px-3 py-2 font-semibold">
+                    {t("admin.plansTab.form.labels.monthlyPrice")}
+                  </th>
+                  <th className="px-3 py-2 font-semibold">
+                    {t("admin.plansTab.form.labels.yearlyPrice")}
+                  </th>
+                  <th className="px-3 py-2 font-semibold">
+                    {t("admin.plansTab.form.labels.enabled")}
+                  </th>
+                  <th className="px-3 py-2 font-semibold">
+                    {t("common.actions")}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -729,7 +768,7 @@ export default function AdminPlansTab({
                               : "text-neutral-400"
                           }
                         >
-                          {p.enabled ? "כן" : "לא"}
+                          {p.enabled ? t("common.yes") : t("common.no")}
                         </span>
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap">
@@ -738,7 +777,7 @@ export default function AdminPlansTab({
                             <button
                               onClick={() => openEdit(p)}
                               className="w-7 h-7 text-neutral-100 hover:text-brand-primary"
-                              title="עריכה"
+                              title={t("common.edit")}
                               type="button"
                             >
                               <Pencil size={18} />
@@ -749,7 +788,7 @@ export default function AdminPlansTab({
                             <button
                               onClick={() => handleDelete(p)}
                               className="w-7 h-7 text-neutral-100 hover:text-red-500"
-                              title="מחיקה"
+                              title={t("common.delete")}
                               type="button"
                               disabled={isToggling}
                             >
@@ -761,18 +800,18 @@ export default function AdminPlansTab({
                             <button
                               onClick={() => disablePlan(p)}
                               className="text-neutral-100"
-                              title="השבת מסלול"
+                              title={t("admin.plansTab.actions.disablePlan")}
                               type="button"
                               disabled={isToggling || !p.enabled}
                             >
-                              השבת
+                              {t("admin.plansTab.actions.disable")}
                             </button>
                           ) : null}
 
                           {canEdit ? (
                             <button
                               onClick={() => toggleEnabled(p)}
-                              title="הפעלה / כיבוי"
+                              title={t("admin.plansTab.actions.toggleEnabled")}
                               type="button"
                               disabled={isToggling}
                             >
@@ -792,7 +831,7 @@ export default function AdminPlansTab({
 
                           {!canEdit ? (
                             <span className="text-xs text-neutral-500">
-                              Read-only
+                              {t("admin.plansTab.readOnly")}
                             </span>
                           ) : null}
                         </div>
@@ -807,11 +846,13 @@ export default function AdminPlansTab({
       </div>
 
       <div className="space-y-3">
-        <h3 className="text-lg font-bold text-neutral-100">תשלומים</h3>
+        <h3 className="text-lg font-bold text-neutral-100">
+          {t("admin.plansTab.sections.payments")}
+        </h3>
 
         {paymentsLoading ? (
           <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-6 text-center text-neutral-400">
-            טוען תשלומים...
+            {t("admin.plansTab.loading.payments")}
           </div>
         ) : paymentsError ? (
           <div className="bg-neutral-800 rounded-2xl p-6 text-center">
@@ -819,19 +860,33 @@ export default function AdminPlansTab({
           </div>
         ) : !payments.length ? (
           <div className="bg-neutral-800 rounded-2xl p-6 text-center">
-            <p className="text-neutral-400 text-sm">אין תשלומים להצגה</p>
+            <p className="text-neutral-400 text-sm">
+              {t("admin.plansTab.empty.payments")}
+            </p>
           </div>
         ) : (
           <div className="bg-neutral-800 rounded-2xl p-4 overflow-x-auto">
             <table className="min-w-full text-sm text-start">
               <thead>
                 <tr className="border-b border-neutral-700 text-neutral-300">
-                  <th className="px-3 py-2 font-semibold">משתמש</th>
-                  <th className="px-3 py-2 font-semibold">אימייל</th>
-                  <th className="px-3 py-2 font-semibold">סכום (ILS)</th>
-                  <th className="px-3 py-2 font-semibold">מסלול</th>
-                  <th className="px-3 py-2 font-semibold">סטטוס</th>
-                  <th className="px-3 py-2 font-semibold">תאריך</th>
+                  <th className="px-3 py-2 font-semibold">
+                    {t("admin.plansTab.payments.headers.user")}
+                  </th>
+                  <th className="px-3 py-2 font-semibold">
+                    {t("admin.plansTab.payments.headers.email")}
+                  </th>
+                  <th className="px-3 py-2 font-semibold">
+                    {t("admin.plansTab.payments.headers.amount")}
+                  </th>
+                  <th className="px-3 py-2 font-semibold">
+                    {t("admin.plansTab.payments.headers.plan")}
+                  </th>
+                  <th className="px-3 py-2 font-semibold">
+                    {t("admin.plansTab.payments.headers.status")}
+                  </th>
+                  <th className="px-3 py-2 font-semibold">
+                    {t("admin.plansTab.payments.headers.date")}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -883,10 +938,12 @@ export default function AdminPlansTab({
 
       <ConfirmModal
         open={!!planToDelete}
-        title="מחיקת מסלול"
-        message={`האם אתה בטוח שברצונך למחוק את המסלול "${planToDelete?.name}"? הפעולה אינה הפיכה.`}
-        confirmLabel="מחק"
-        cancelLabel="ביטול"
+        title={t("admin.plansTab.deleteConfirm.title")}
+        message={t("admin.plansTab.deleteConfirm.message", {
+          name: planToDelete?.name ?? "",
+        })}
+        confirmLabel={t("common.delete")}
+        cancelLabel={t("common.cancel")}
         variant="danger"
         onConfirm={confirmDelete}
         onCancel={() => setPlanToDelete(null)}

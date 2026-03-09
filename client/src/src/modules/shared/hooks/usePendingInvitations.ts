@@ -13,6 +13,9 @@ export function usePendingInvitations(userId?: number | null) {
     if (!userId) return;
 
     if (!socketInstance) {
+      // Get token from localStorage for socket authentication
+      const token = localStorage.getItem("ari_token");
+
       socketInstance = io(API_ORIGIN, {
         transports: ["websocket"],
         withCredentials: true,
@@ -20,6 +23,8 @@ export function usePendingInvitations(userId?: number | null) {
         reconnectionAttempts: Infinity,
         reconnectionDelay: 1000,
         timeout: 20000,
+        // Add authentication token if available
+        auth: token ? { token } : undefined,
       });
     }
 
@@ -77,7 +82,7 @@ export function usePendingInvitations(userId?: number | null) {
       socket.off("user:invitation-rejected", loadPendingInvitations);
       window.removeEventListener(
         "pending-invitations-updated",
-        handlePendingUpdate
+        handlePendingUpdate,
       );
       clearInterval(interval);
     };

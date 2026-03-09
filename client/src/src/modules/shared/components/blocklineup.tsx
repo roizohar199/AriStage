@@ -1,5 +1,6 @@
 import React from "react";
 import { CalendarDays, Clock, MapPin, Trash2, Pencil } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 interface BlockLineupProps {
   lineup: any;
@@ -16,16 +17,18 @@ const BlockLineup: React.FC<BlockLineupProps> = ({
   onDelete,
   index,
 }) => {
+  const { t, locale } = useTranslation();
+
   const normalizeTime = (t: any) => {
     if (!t) return "";
     return t.toString().slice(0, 5);
   };
 
   const formatForDisplay = (d: any) => {
-    if (!d) return "לא צוין תאריך";
+    if (!d) return t("lineups.unspecifiedDate");
     const obj = new Date(d);
-    if (isNaN(obj.getTime())) return "לא צוין תאריך";
-    return obj.toLocaleDateString("he-IL");
+    if (isNaN(obj.getTime())) return t("lineups.unspecifiedDate");
+    return obj.toLocaleDateString(locale);
   };
 
   return (
@@ -60,7 +63,7 @@ const BlockLineup: React.FC<BlockLineupProps> = ({
           <div className="flex items-center justify-left gap-2 mt-2 text-sm w-full">
             <span className="flex items-center gap-1 px-2 py-1 bg-neutral-950 rounded-2xl text-neutral-100 flex-row-reverse w-full justify-center shadow-surface">
               <Clock size={14} />
-              {normalizeTime(lineup?.time) || "לא צוין שעה"}
+              {normalizeTime(lineup?.time) || t("lineups.unspecifiedTime")}
             </span>
           </div>
 
@@ -68,7 +71,7 @@ const BlockLineup: React.FC<BlockLineupProps> = ({
           <div className="flex items-center justify-left gap-2 mt-2 text-sm w-full">
             <span className="flex items-center gap-1 px-2 py-1 bg-brand-primary rounded-2xl text-black flex-row-reverse w-full justify-center shadow-surface">
               <MapPin size={14} />
-              {lineup?.location || "לא צוין מיקום"}
+              {lineup?.location || t("lineups.unspecifiedLocation")}
             </span>
           </div>
         </div>

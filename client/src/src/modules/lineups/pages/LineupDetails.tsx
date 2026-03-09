@@ -39,6 +39,7 @@ import CardSong from "../../shared/components/cardsong";
 import Charts, { ChartViewerModal } from "../../shared/components/Charts";
 import DesignActionButton from "../../shared/components/DesignActionButton";
 import Tab, { type TabItem } from "@/modules/shared/components/Tab";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 // --- Helper functions ---
 const parseDuration = (d: string | number | undefined) => {
@@ -198,22 +199,23 @@ const AddSongModal = memo(function AddSongModal({
   selectedArtistId,
   setSelectedArtistId,
 }: any) {
+  const { t } = useTranslation();
   const tabs: Array<TabItem<"my" | "artists">> = [
-    { key: "my", label: "השירים שלי" },
-    { key: "artists", label: "שירים של אמנים" },
+    { key: "my", label: t("songs.mySongs") },
+    { key: "artists", label: t("lineups.artistSongsTab") },
   ];
 
   return (
     <BaseModal
       open={showModal}
       onClose={onClose}
-      title="הוסף שיר לליינאפ"
+      title={t("lineups.addSongsToLineup")}
       maxWidth="max-w-2xl"
       containerClassName="bg-neutral-950"
     >
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold text-neutral-100">
-          הוסף שיר לליינאפ
+          {t("lineups.addSongsToLineup")}
         </h2>
       </div>
 
@@ -232,7 +234,7 @@ const AddSongModal = memo(function AddSongModal({
       {modalActiveTab === "artists" && connectedArtists.length > 0 && (
         <div className="mb-4">
           <p className="text-sm text-neutral-400 mb-2">
-            בחר אמן להצגת שירים שלו
+            {t("lineups.selectArtistPrompt")}
           </p>
           <div className="flex gap-2 overflow-x-auto pb-2">
             {connectedArtists.map((artist) => (
@@ -308,7 +310,7 @@ const AddSongModal = memo(function AddSongModal({
         ))}
         {filteredModalSongs.length === 0 && (
           <p className="text-center text-neutral-400 py-6">
-            לא נמצאו תוצאות...
+            {t("common.noResults")}
           </p>
         )}
       </div>
@@ -320,6 +322,7 @@ const AddSongModal = memo(function AddSongModal({
 export default function LineupDetails() {
   const confirm = useConfirm();
   const { showToast } = useToast();
+  const { t } = useTranslation();
   const { lineupId } = useParams<{ lineupId: string }>();
   const navigate = useNavigate();
   const { isEnabled } = useFeatureFlags();
@@ -337,16 +340,18 @@ export default function LineupDetails() {
     return (
       <div className="text-neutral-100 relative">
         <div className="bg-neutral-800 rounded-2xl p-6 text-center">
-          <p className="text-neutral-200 font-bold">מודול ליינאפים כבוי</p>
+          <p className="text-neutral-200 font-bold">
+            {t("lineups.moduleDisabledTitle")}
+          </p>
           <p className="text-neutral-400 text-sm mt-2">
-            ניתן להפעיל אותו מחדש בטאב “מודלים” באדמין.
+            {t("lineups.moduleDisabledHint")}
           </p>
           <button
             type="button"
             onClick={() => navigate("/my")}
             className="mt-4 px-4 py-2 rounded-2xl bg-neutral-900 border border-neutral-700 hover:bg-neutral-800 text-sm"
           >
-            חזרה
+            {t("common.back")}
           </button>
         </div>
       </div>
@@ -380,6 +385,9 @@ export default function LineupDetails() {
   const socketRef = useRef<any>(null);
   useEffect(() => {
     if (!socketRef.current) {
+      // Get token from localStorage for socket authentication
+      const token = localStorage.getItem("ari_token");
+
       socketRef.current = io(API_ORIGIN, {
         transports: ["websocket", "polling"],
         withCredentials: true,
@@ -387,6 +395,8 @@ export default function LineupDetails() {
         reconnectionAttempts: Infinity,
         reconnectionDelay: 1000,
         timeout: 20000,
+        // Add authentication token if available
+        auth: token ? { token } : undefined,
       });
     }
     return () => {
@@ -632,10 +642,10 @@ export default function LineupDetails() {
         setSearchModal("");
         await fetchSongs();
       } catch (err) {
-        showToast("שגיאה בהוספת שיר", "error");
+        showToast(t("lineups.messages.addSongError"), "error");
       }
     },
-    [lineupId, showToast, fetchSongs],
+    [lineupId, showToast, fetchSongs, t],
   );
 
   const removeSong = useCallback(
@@ -644,15 +654,15 @@ export default function LineupDetails() {
         await api.delete(`/lineup-songs/${lineupId}/${songId}`);
         await fetchSongs();
       } catch (err) {
-        showToast("שגיאה במחיקת שיר", "error");
+        showToast(t("lineups.messages.removeSongError"), "error");
       }
     },
-    [lineupId, showToast, fetchSongs],
+    [lineupId, showToast, fetchSongs, t],
   );
 
   const handleDownloadAllCharts = useCallback(async () => {
     try {
-      showToast("בטעינת צ'ארטים...", "info");
+      showToast(t("lineups.messages.downloadChartsPreparing"), "info");
 
       // אסוף את כל הצ'ארטים לכל שיר בסדר הלינאפ
       const chartsToMerge = [];
@@ -717,7 +727,7 @@ export default function LineupDetails() {
       }
 
       if (chartsToMerge.length === 0) {
-        showToast("אין צ'ארטים להורדה בליינאפ זה", "warning");
+        showToast(t("lineups.messages.noChartsToDownload"), "warning");
         return;
       }
 
@@ -738,19 +748,20 @@ export default function LineupDetails() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      showToast("הצ'ארטים הורדו בהצלחה", "success");
+      showToast(t("lineups.messages.downloadChartsSuccess"), "success");
     } catch (err) {
       console.error("שגיאה בהורדת הצ'ארטים:", err);
       showToast(
-        err?.response?.data?.message || "שגיאה בהורדת הצ'ארטים",
+        err?.response?.data?.message ||
+          t("lineups.messages.downloadChartsError"),
         "error",
       );
     }
-  }, [songs, lineupId, lineup, showToast]);
+  }, [songs, lineupId, lineup, showToast, t]);
 
   const handleDownloadAllLyrics = useCallback(async () => {
     try {
-      showToast("מכין קובץ מילים...", "info");
+      showToast(t("lineups.messages.downloadLyricsPreparing"), "info");
 
       const { data: pdf } = await api.post(
         `/lineups/${lineupId}/download-lyrics`,
@@ -767,12 +778,16 @@ export default function LineupDetails() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      showToast("המילים הורדו בהצלחה", "success");
+      showToast(t("lineups.messages.downloadLyricsSuccess"), "success");
     } catch (err: any) {
       console.error("שגיאה בהורדת מילים:", err);
-      showToast(err?.response?.data?.message || "שגיאה בהורדת מילים", "error");
+      showToast(
+        err?.response?.data?.message ||
+          t("lineups.messages.downloadLyricsError"),
+        "error",
+      );
     }
-  }, [lineupId, lineup, showToast]);
+  }, [lineupId, lineup, showToast, t]);
 
   const handleDragEnd = useCallback(
     async (result: any) => {
@@ -789,29 +804,29 @@ export default function LineupDetails() {
         });
         await fetchSongs();
       } catch {
-        showToast("שגיאה בסידור שירים", "error");
+        showToast(t("lineups.messages.reorderError"), "error");
       }
     },
-    [lineup, songs, lineupId, showToast, fetchSongs],
+    [lineup, songs, lineupId, showToast, fetchSongs, t],
   );
 
   const generateShareLink = useCallback(async () => {
     const ok = await confirm({
-      title: "שיתוף ליינאפ",
-      message: "האם ליצור קישור?",
+      title: t("lineups.shareLineup"),
+      message: t("lineups.messages.confirmCreateShareLink"),
     });
     if (!ok) return;
     try {
       setLoadingShare(true);
       const { data } = await api.post(`/lineups/${lineupId}/share`);
       setShareUrl(data.url);
-      showToast("קישור השיתוף נוצר!", "success");
+      showToast(t("lineups.messages.shareLinkCreated"), "success");
     } catch {
-      showToast("שגיאה ביצירת קישור", "error");
+      showToast(t("lineups.messages.shareLinkCreateError"), "error");
     } finally {
       setLoadingShare(false);
     }
-  }, [lineupId, confirm, showToast]);
+  }, [lineupId, confirm, showToast, t]);
 
   const revokeShareLink = useCallback(async () => {
     const ok = await confirm({
@@ -837,12 +852,12 @@ export default function LineupDetails() {
       textarea.select();
       document.execCommand("copy");
       document.body.removeChild(textarea);
-      showToast("הקישור הועתק 💛", "success");
+      showToast(t("lineups.linkCopied"), "success");
       return;
     }
     navigator.clipboard
       .writeText(shareUrl)
-      .then(() => showToast("הקישור הועתק 💛", "success"))
+      .then(() => showToast(t("lineups.linkCopied"), "success"))
       .catch(() => {
         const textarea = document.createElement("textarea");
         textarea.value = shareUrl;
@@ -850,16 +865,16 @@ export default function LineupDetails() {
         textarea.select();
         document.execCommand("copy");
         textarea.remove();
-        showToast("הקישור הועתק 💛", "success");
+        showToast(t("lineups.linkCopied"), "success");
       });
-  }, [shareUrl, showToast]);
+  }, [shareUrl, showToast, t]);
 
   // --- UI ---
   if (loading) {
     return (
       <div className="flex items-center justify-center text-neutral-100">
         <div className="text-center">
-          <div className="text-xl mb-4">טוען...</div>
+          <div className="text-xl mb-4">{t("common.loading")}</div>
         </div>
       </div>
     );
@@ -869,13 +884,13 @@ export default function LineupDetails() {
       <div className="flex items-center justify-center text-neutral-100">
         <div className="text-center">
           <div className="text-xl mb-4 text-red-400">
-            {error || "ליינאפ לא נמצא"}
+            {error || t("errors.notFound")}
           </div>
           <button
             onClick={() => navigate("/my")}
             className="bg-neutral-900 hover:bg-neutral-800 px-4 py-2 rounded-xl"
           >
-            חזרה
+            {t("common.back")}
           </button>
         </div>
       </div>

@@ -4,15 +4,17 @@ import { Clock, Music4Icon, MoreHorizontal, Printer } from "lucide-react";
 import CardSong from "../../shared/components/cardsong";
 import api from "@/modules/shared/lib/api.ts";
 import { API_ORIGIN } from "@/config/apiConfig";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 // ⭐ Socket.IO
 import { io } from "socket.io-client";
 
 // ⭐ פונקציות עזר לתאריך ושעה
-function formatDate(dateStr?: string | null): string {
+function formatDate(dateStr?: string | null, locale?: string | null): string {
   if (!dateStr) return "";
   const d = new Date(dateStr);
-  return d.toLocaleDateString("he-IL");
+  const localeTag = (locale || "").startsWith("he") ? "he-IL" : "en-US";
+  return d.toLocaleDateString(localeTag);
 }
 
 function formatTime(timeStr?: string | null): string {
@@ -111,6 +113,7 @@ const normalizeNotes = (
 
 export default function ShareLineup() {
   const { id } = useParams<{ id: string }>();
+  const { t, locale } = useTranslation();
 
   const [lineup, setLineup] = useState<ShareLineupResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -119,6 +122,14 @@ export default function ShareLineup() {
 
   // ⭐ כאן מדביקים!
   const socket = useMemo(() => {
+    // Get token from localStorage for socket authentication
+    const token = localStorage.getItem("ari_token");
+
+    // If no token, don't connect to WebSocket (this is a public share page)
+    if (!token) {
+      return null;
+    }
+
     return io(API_ORIGIN, {
       transports: ["websocket", "polling"],
       withCredentials: true,
@@ -126,6 +137,8 @@ export default function ShareLineup() {
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
       timeout: 20000,
+      // Add authentication token
+      auth: { token },
     });
   }, []);
 
@@ -136,7 +149,7 @@ export default function ShareLineup() {
 
   const load = async () => {
     if (!id) {
-      setError("הליינאפ לא נמצא או שהקישור לא תקין");
+      setError(t("lineups.publicNotFound"));
       setLoading(false);
       return;
     }
@@ -148,7 +161,7 @@ export default function ShareLineup() {
       setLineup(data as ShareLineupResponse);
     } catch (err) {
       console.error(err);
-      setError("הליינאפ לא נמצא או שהקישור לא תקין");
+      setError(t("lineups.publicNotFound"));
     } finally {
       setLoading(false);
     }
@@ -188,7 +201,9 @@ export default function ShareLineup() {
 
   if (loading)
     return (
-      <div className="text-center pt-20 text-gray-400 text-lg">טוען...</div>
+      <div className="text-center pt-20 text-gray-400 text-lg">
+        {t("common.loading")}
+      </div>
     );
 
   if (error)
@@ -209,21 +224,22 @@ export default function ShareLineup() {
         <div className="text-start text-gray-300 mb-6 leading-relaxed">
           {lineup.date && (
             <p>
-              <span className="font-semibold">תאריך:</span>{" "}
-              {formatDate(lineup.date)}
+              <span className="font-semibold">{t("lineups.date")}:</span>{" "}
+              {formatDate(lineup.date, locale)}
             </p>
           )}
 
           {lineup.time && (
             <p>
-              <span className="font-semibold">שעה:</span>{" "}
+              <span className="font-semibold">{t("lineups.time")}:</span>{" "}
               {formatTime(lineup.time)}
             </p>
           )}
 
           {lineup.location && (
             <p>
-              <span className="font-semibold">מקום:</span> {lineup.location}
+              <span className="font-semibold">{t("lineups.location")}:</span>{" "}
+              {lineup.location}
             </p>
           )}
 
@@ -236,7 +252,8 @@ export default function ShareLineup() {
         <div className="flex justify-between items-center w-full gap-4 mb-4">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1 px-2 py-1 bg-neutral-800 rounded-2xl text-brand-primary font-bold text-sm">
-              <Music4Icon size={14} /> {lineup.songs.length} שירים
+              <Music4Icon size={14} />
+              {t("lineups.songsCount", { count: lineup.songs.length })}
             </div>
             <div className="flex items-center gap-1 px-2 py-1 bg-neutral-800 rounded-2xl text-brand-primary font-bold text-sm">
               <Clock size={14} />
@@ -271,7 +288,7 @@ export default function ShareLineup() {
                     }}
                     className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-700/50 rounded-2xl"
                   >
-                    <Printer size={16} /> הדפס
+                    <Printer size={16} /> {t("common.print")}
                   </button>
                 </div>
               )}

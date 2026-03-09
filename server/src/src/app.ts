@@ -10,6 +10,8 @@ import { env } from "./config/env";
 import { notFoundHandler } from "./middleware/not-found";
 import { errorHandler } from "./middleware/error-handler";
 import { getUploadsRoot } from "./utils/uploadsRoot";
+import { globalLimiter } from "./middleware/rateLimiter";
+import { sanitizeRequest } from "./middleware/validate";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -51,6 +53,12 @@ export function createApp(): Application {
   );
 
   app.use(cors(createCorsOptions()));
+
+  // Apply global rate limiting (after CORS, before routes)
+  app.use(globalLimiter);
+
+  // Sanitize request data to prevent prototype pollution
+  app.use(sanitizeRequest);
 
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ extended: true, limit: "10mb" }));

@@ -5,6 +5,7 @@ import api from "@/modules/shared/lib/api.ts";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "@/modules/shared/components/ToastProvider";
 import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 type SmallBadgeVariant = "neutral" | "brand" | "success" | "danger";
 
@@ -39,6 +40,7 @@ export default function AdminErrorsTab({
 }: Props) {
   const confirm = useConfirm();
   const { showToast } = useToast();
+  const { t } = useTranslation();
 
   const [errors, setErrors] = useState<ErrorRow[]>([]);
   const [errorsLoading, setErrorsLoading] = useState(true);
@@ -91,19 +93,23 @@ export default function AdminErrorsTab({
       {
         icon: <AlertCircle size={32} />,
         value: dashboard.total,
-        label: 'סה"כ תקלות',
+        label: t("admin.errorsTab.dashboard.total"),
       },
       {
         icon: <AlertCircle size={32} />,
         value: dashboard.open,
-        label: "פתוחות",
+        label: t("admin.errorsTab.dashboard.open"),
       },
       {
         icon: <BadgeCheck size={32} />,
         value: dashboard.resolved,
-        label: "Resolved",
+        label: t("admin.errorsTab.dashboard.resolved"),
       },
-      { icon: <Users size={32} />, value: dashboard.shown, label: "מוצגות" },
+      {
+        icon: <Users size={32} />,
+        value: dashboard.shown,
+        label: t("admin.errorsTab.dashboard.shown"),
+      },
     ]);
   }, [
     setDashboardCards,
@@ -111,12 +117,13 @@ export default function AdminErrorsTab({
     dashboard.resolved,
     dashboard.shown,
     dashboard.total,
+    t,
   ]);
 
   const resolveError = async (errorId: number) => {
     const ok = await confirm({
-      title: "סגירת תקלה",
-      message: "לסמן תקלה כ-resolved?",
+      title: t("admin.errorsTab.confirm.resolveTitle"),
+      message: t("admin.errorsTab.confirm.resolveMessage"),
     });
     if (!ok) return;
 
@@ -125,7 +132,9 @@ export default function AdminErrorsTab({
       await loadErrors();
     } catch (err: any) {
       if (err?.response?.status === 404) return;
-      const msg = err?.response?.data?.message || "שגיאה בסגירת התקלה";
+      const msg =
+        err?.response?.data?.message ||
+        t("admin.errorsTab.messages.resolveError");
       showToast(msg, "error");
     }
   };
@@ -134,27 +143,29 @@ export default function AdminErrorsTab({
     <div className="space-y-3">
       {errorsLoading ? (
         <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-6 text-center text-neutral-400">
-          טוען תקלות...
+          {t("admin.errorsTab.loading")}
         </div>
       ) : errorsUnsupported ? (
         <div className="bg-neutral-800 rounded-2xl p-6 text-center">
           <AlertCircle size={32} className="mx-auto mb-3 text-neutral-600" />
           <p className="text-neutral-400 text-sm">
-            TODO: backend endpoint required
+            {t("admin.errorsTab.unsupported")}
           </p>
           <p className="text-neutral-500 text-xs mt-1">GET /errors</p>
         </div>
       ) : filteredErrors.length === 0 ? (
         <div className="bg-neutral-800 rounded-2xl p-6 text-center">
           <AlertCircle size={32} className="mx-auto mb-3 text-neutral-600" />
-          <p className="text-neutral-400 text-sm">אין תקלות להצגה</p>
+          <p className="text-neutral-400 text-sm">
+            {t("admin.errorsTab.empty")}
+          </p>
           {searchValue.trim() ? (
             <button
               type="button"
               onClick={() => setSearchValue("")}
               className="text-xs text-neutral-400 hover:text-neutral-200 mt-2"
             >
-              נקה חיפוש
+              {t("admin.errorsTab.clearSearch")}
             </button>
           ) : null}
         </div>
@@ -166,7 +177,9 @@ export default function AdminErrorsTab({
             e.resolved === "1" ||
             e.resolved === "true";
 
-          const stateLabel = isResolved ? "resolved" : "open";
+          const stateLabel = isResolved
+            ? t("admin.errorsTab.states.resolved")
+            : t("admin.errorsTab.states.open");
           const httpStatusLabel =
             e.status != null && String(e.status).trim()
               ? `HTTP ${String(e.status).trim()}`
@@ -176,7 +189,7 @@ export default function AdminErrorsTab({
             <CardContainer key={e.id}>
               <div className="flex-1 min-w-0 text-start">
                 <h3 className="text-lg font-bold text-neutral-100 mb-1">
-                  {e.message || "תקלה"}
+                  {e.message || t("admin.errorsTab.issueFallback")}
                 </h3>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {e.route && <SmallBadge>{e.route}</SmallBadge>}
@@ -204,7 +217,7 @@ export default function AdminErrorsTab({
                       ? "text-brand-primary hover:text-neutral-100"
                       : "text-neutral-500"
                   }`}
-                  title="resolve"
+                  title={t("admin.errorsTab.actions.resolve")}
                   type="button"
                 >
                   <BadgeCheck size={20} />

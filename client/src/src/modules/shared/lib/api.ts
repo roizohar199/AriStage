@@ -2,10 +2,31 @@ import axios from "axios";
 import { API_BASE_URL } from "@/config/apiConfig";
 import { emitToast } from "./toastBus.ts";
 import { isEffectiveOffline } from "@/modules/shared/lib/offlineMode";
+import { getTranslation, type Locale } from "@/locales/index.js";
+import { getDocumentLocale } from "@/modules/shared/lib/locale";
 import {
   authLogoutEvent,
   subscriptionBlockedEvent,
 } from "@/modules/shared/contexts/AuthContext.tsx";
+
+function resolveUiLocale(): Locale {
+  try {
+    const raw = getDocumentLocale();
+    return raw && String(raw).toLowerCase().startsWith("en")
+      ? "en-US"
+      : "he-IL";
+  } catch {
+    return "he-IL";
+  }
+}
+
+function t(
+  path: string,
+  params?: Record<string, string | number>,
+  fallback?: string,
+): string {
+  return getTranslation(resolveUiLocale(), path, params, fallback);
+}
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -31,7 +52,7 @@ api.interceptors.request.use((config) => {
 
       // ✅ Allow read-only requests so Workbox can respond from cache when available.
       if (!isReadOnly) {
-        emitToast("אתה במצב Offline — אי אפשר לבצע פעולה זו", "error");
+        emitToast(t("offline.actionBlocked"), "error");
         return Promise.reject(
           Object.assign(new Error("OFFLINE_MODE"), { code: "OFFLINE_MODE" }),
         );
@@ -77,8 +98,8 @@ function handleSuccessToast(response: any): void {
   const msg =
     data?.message ||
     data?.msg ||
-    (data?.success ? "בוצע בהצלחה!" : null) ||
-    "בוצע בהצלחה!";
+    (data?.success ? t("success.completed") : null) ||
+    t("success.completed");
 
   emitToast(msg, "success");
 }
@@ -117,7 +138,7 @@ api.interceptors.response.use(
 
     // 🔹 שגיאות מהשרת
     if (err.response) {
-      const { status, data } = err.response;
+      const { status } = err.response;
 
       // =============================
       // 🔥 תיקון הקריטי — 401 כזה לא מוחק ייצוג !
@@ -126,12 +147,20 @@ api.interceptors.response.use(
       if (status === 401) {
         // אם יש טוקן מקורי → אנחנו בייצוג → לא מוחקים כלום
         if (localStorage.getItem("ari_original_token")) {
-          emitToast("הטוקן של המשתמש שאתה מייצג פג תוקף", "error");
+          emitToast(t("auth.impersonationTokenExpired"), "error");
+          return Promise.reject(err);
+        }
+
+        // Dev relaxed mode: do not force logout/redirect on 401.
+        // This lowers security but prevents disruptive disconnect loops locally.
+        const isDev = Boolean((import.meta as any)?.env?.DEV);
+        if (isDev) {
+          emitToast(t("auth.sessionExpiredReLogin"), "error");
           return Promise.reject(err);
         }
 
         // התחברות רגילה — מוחקים
-        emitToast("פג תוקף ההתחברות – התחבר מחדש", "error");
+        emitToast(t("auth.sessionExpiredReLogin"), "error");
 
         localStorage.removeItem("ari_token");
         localStorage.removeItem("ari_user");
@@ -146,21 +175,21 @@ api.interceptors.response.use(
         return;
       }
 
-      if (status === 403) emitToast("אין לך הרשאה לבצע פעולה זו", "error");
+      if (status === 403) emitToast(t("errors.forbiddenAction"), "error");
 
-      if (status === 404) emitToast("לא נמצא", "error");
+      if (status === 404) emitToast(t("errors.notFound"), "error");
 
-      if (status >= 500) emitToast("שגיאת שרת — נסה שוב מאוחר יותר", "error");
+      if (status >= 500) emitToast(t("errors.serverTryLater"), "error");
     }
 
     // Timeout
     else if (err.code === "ECONNABORTED") {
-      emitToast("⏰ Timeout — השרת לא הגיב בזמן", "error");
+      emitToast(t("errors.timeout"), "error");
     }
 
     // בעיית רשת
     else {
-      emitToast("❌ שגיאת רשת — בדוק חיבור", "error");
+      emitToast(t("errors.networkCheck"), "error");
     }
 
     return Promise.reject(err);

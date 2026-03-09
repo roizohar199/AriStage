@@ -17,7 +17,10 @@ import AdminLogsTab from "../tabs/AdminLogsTab";
 import AdminErrorsTab from "../tabs/AdminErrorsTab";
 import AdminMonitoringTab from "../tabs/AdminMonitoringTab";
 import AdminModelsTab from "../tabs/AdminModelsTab";
+import AdminSecurityTab from "../tabs/AdminSecurityTab";
+import AdminSystemSettingsTab from "../tabs/AdminSystemSettingsTab";
 import Tab from "@/modules/shared/components/Tab";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 type AdminTab =
   | "users"
@@ -27,17 +30,21 @@ type AdminTab =
   | "logs"
   | "errors"
   | "monitoring"
-  | "models";
+  | "models"
+  | "security"
+  | "system-settings";
 
-const TABS: Array<{ key: AdminTab; label: string }> = [
-  { key: "users", label: "משתמשים" },
-  { key: "subscriptions", label: "מנויים" },
-  { key: "plans", label: "מסלולים" },
-  { key: "files", label: "קבצים" },
-  { key: "logs", label: "לוגים" },
-  { key: "errors", label: "תקלות" },
-  { key: "monitoring", label: "ניטור מערכת" },
-  { key: "models", label: "מודלים" },
+const TAB_KEYS: AdminTab[] = [
+  "users",
+  "subscriptions",
+  "plans",
+  "files",
+  "logs",
+  "errors",
+  "monitoring",
+  "models",
+  "security",
+  "system-settings",
 ];
 
 function getTabFromLocationSearch(search: string): AdminTab {
@@ -47,7 +54,7 @@ function getTabFromLocationSearch(search: string): AdminTab {
   // Backward compatibility: old tab name
   if (raw === "featureFlags") return "models";
 
-  const allowed = new Set<AdminTab>(TABS.map((t) => t.key));
+  const allowed = new Set<AdminTab>(TAB_KEYS);
   const tab = raw as AdminTab;
   return allowed.has(tab) ? tab : "users";
 }
@@ -160,6 +167,7 @@ function toDateTimeLocalInput(raw?: string | null): string {
 
 export default function AdminReal() {
   const { showToast } = useToast();
+  const { t } = useTranslation();
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -169,6 +177,25 @@ export default function AdminReal() {
     [location.search],
   );
   console.log("ADMIN RENDERED");
+
+  const tabs = useMemo<Array<{ key: AdminTab; label: string }>>(
+    () => [
+      { key: "users", label: t("admin.users") },
+      { key: "subscriptions", label: t("admin.subscriptions") },
+      { key: "plans", label: t("admin.plans") },
+      { key: "files", label: t("admin.files") },
+      { key: "logs", label: t("admin.logs") },
+      { key: "errors", label: t("admin.errors") },
+      { key: "monitoring", label: t("admin.monitoring") },
+      { key: "models", label: t("admin.models") },
+      { key: "security", label: t("admin.security") },
+      {
+        key: "system-settings",
+        label: t("admin.systemSettings"),
+      },
+    ],
+    [t],
+  );
 
   const [tabDashboardCards, setTabDashboardCards] = useState<DashboardCard[]>(
     [],
@@ -195,6 +222,8 @@ export default function AdminReal() {
     errors: "",
     monitoring: "",
     models: "",
+    security: "",
+    "system-settings": "",
   });
 
   const searchValue = searchByTab[selectedTab];
@@ -285,15 +314,16 @@ export default function AdminReal() {
       setUserModalOpen(false);
       await reload();
     } catch (err: any) {
-      const msg = err?.response?.data?.message || "שגיאה בשמירת המשתמש";
+      const msg =
+        err?.response?.data?.message || t("admin.messages.saveUserError");
       showToast(msg, "error");
     }
   };
 
   const deleteUser = async (userId: number) => {
     const ok = await confirm({
-      title: "מחיקה",
-      message: "בטוח למחוק משתמש זה?",
+      title: t("users.deleteConfirmTitle"),
+      message: t("users.deleteConfirmMessage"),
     });
     if (!ok) return;
 
@@ -301,15 +331,16 @@ export default function AdminReal() {
       await api.delete(`/users/${userId}`);
       await reload();
     } catch (err: any) {
-      const msg = err?.response?.data?.message || "שגיאה במחיקת המשתמש";
+      const msg =
+        err?.response?.data?.message || t("admin.messages.deleteUserError");
       showToast(msg, "error");
     }
   };
 
   const impersonateUser = async (userId: number) => {
     const ok = await confirm({
-      title: "ייצוג משתמש",
-      message: "להיכנס לחשבון שלו?",
+      title: t("users.impersonateConfirmTitle"),
+      message: t("users.impersonateConfirmMessage"),
     });
     if (!ok) return;
 
@@ -335,7 +366,9 @@ export default function AdminReal() {
       }, 150);
     } catch (err: any) {
       localStorage.removeItem("ari_auth_lock");
-      const msg = err?.response?.data?.message || "שגיאה בייצוג משתמש";
+      const msg =
+        err?.response?.data?.message ||
+        t("admin.messages.impersonateUserError");
       showToast(msg, "error");
     }
   };
@@ -390,25 +423,25 @@ export default function AdminReal() {
       {
         icon: <Users size={32} />,
         value: stats.users,
-        label: "משתמשים",
+        label: t("admin.users"),
       },
       {
         icon: <BadgeCheck size={32} />,
         value: stats.activeSubscriptions,
-        label: "מנויים פעילים",
+        label: t("admin.activeSubscriptions"),
       },
       {
         icon: <Files size={32} />,
         value: stats.files,
-        label: "קבצים",
+        label: t("admin.files"),
       },
       {
         icon: <AlertCircle size={32} />,
         value: stats.openIssues,
-        label: "תקלות פתוחות",
+        label: t("admin.openIssues"),
       },
     ];
-  }, [stats]);
+  }, [stats, t]);
 
   const headerCards = tabDashboardCards.length
     ? tabDashboardCards
@@ -426,12 +459,12 @@ export default function AdminReal() {
   return (
     <div className="min-h-screen text-neutral-100 p-6">
       <header className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">אדמין</h1>
+        <h1 className="text-3xl font-bold">{t("nav.admin")}</h1>
       </header>
 
       <DashboardCards cards={headerCards} />
 
-      <Tab tabs={TABS} selectedKey={selectedTab} onSelect={setTab} />
+      <Tab tabs={tabs} selectedKey={selectedTab} onSelect={setTab} />
 
       <div className="flex items-center gap-3 mb-3">
         <Search
@@ -514,6 +547,17 @@ export default function AdminReal() {
           setSearchValue={setSearchValue}
           CardContainer={CardContainer}
           SmallBadge={SmallBadge}
+          setDashboardCards={setTabDashboardCards}
+        />
+      ) : selectedTab === "security" ? (
+        <AdminSecurityTab
+          CardContainer={CardContainer}
+          SmallBadge={SmallBadge}
+          setDashboardCards={setTabDashboardCards}
+        />
+      ) : selectedTab === "system-settings" ? (
+        <AdminSystemSettingsTab
+          CardContainer={CardContainer}
           setDashboardCards={setTabDashboardCards}
         />
       ) : (

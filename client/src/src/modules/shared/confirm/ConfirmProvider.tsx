@@ -1,21 +1,26 @@
 import React, { createContext, useCallback, useMemo, useState } from "react";
 import ConfirmModal from "./ConfirmModal";
 import { ConfirmContextValue, ConfirmOptions, ConfirmState } from "./types";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 export const ConfirmContext = createContext<ConfirmContextValue | undefined>(
-  undefined
+  undefined,
 );
 
-function normalizeOptions(options: ConfirmOptions): ConfirmOptions {
+function normalizeOptions(
+  options: ConfirmOptions,
+  t: (path: string, fallback?: string) => string,
+): ConfirmOptions {
   return {
     ...options,
-    confirmLabel: options.confirmLabel || "אישור",
-    cancelLabel: options.cancelLabel || "ביטול",
+    confirmLabel: options.confirmLabel || t("common.ok"),
+    cancelLabel: options.cancelLabel || t("common.cancel"),
     variant: options.variant || "default",
   };
 }
 
 export function ConfirmProvider({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const [state, setState] = useState<ConfirmState>({
     isOpen: false,
     options: null,
@@ -27,11 +32,11 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
       new Promise<boolean>((resolve) => {
         setState({
           isOpen: true,
-          options: normalizeOptions(options),
+          options: normalizeOptions(options, t),
           resolver: resolve,
         });
       }),
-    []
+    [t],
   );
 
   const resolveAndClose = useCallback((result: boolean) => {
@@ -50,16 +55,16 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
 
   const handleCancel = useCallback(
     () => resolveAndClose(false),
-    [resolveAndClose]
+    [resolveAndClose],
   );
   const handleConfirm = useCallback(
     () => resolveAndClose(true),
-    [resolveAndClose]
+    [resolveAndClose],
   );
 
   const contextValue = useMemo<ConfirmContextValue>(
     () => ({ confirm }),
-    [confirm]
+    [confirm],
   );
 
   return (

@@ -9,6 +9,9 @@ import {
   resolveEffectiveLocaleFromUser,
   resolveScrollbarContainerDirFromLocale,
 } from "@/modules/shared/lib/locale";
+import SkipLink from "@/modules/shared/components/a11y/SkipLink";
+import RouteAnnouncer from "@/modules/shared/components/a11y/RouteAnnouncer";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 declare global {
   interface Window {
@@ -37,6 +40,7 @@ export default function AppLayout({
   onExitImpersonation,
   children,
 }: AppLayoutProps) {
+  const { t } = useTranslation();
   const scrollAreaRef = useRef<HTMLElement | null>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { user } = useCurrentUser();
@@ -84,6 +88,12 @@ export default function AppLayout({
 
   return (
     <div className="h-screen bg-neutral-950 text-neutral-100 flex flex-col">
+      {/* Accessibility: Skip to main content link (first focusable element) */}
+      <SkipLink />
+
+      {/* Accessibility: Route announcer for screen readers */}
+      <RouteAnnouncer />
+
       {/* 🟧 Impersonation banner */}
       {isImpersonating && (
         <div
@@ -92,8 +102,11 @@ export default function AppLayout({
           shadow-lg sticky top-0 z-50 lg:order-1"
         >
           <span>
-            אתה כרגע מייצג את:{" "}
-            <strong>{currentUser.full_name || "משתמש לא מזוהה"}</strong>
+            {t("appLayout.impersonation.bannerPrefix")}{" "}
+            <strong>
+              {currentUser.full_name ||
+                t("appLayout.impersonation.unknownUser")}
+            </strong>
           </span>
 
           <button
@@ -101,7 +114,7 @@ export default function AppLayout({
             className="bg-neutral-800/50 transition px-3 py-1 rounded-2xl
             text-neutral-100 font-bold text-sm 0 shadow-sm"
           >
-            חזרה לחשבון המקורי
+            {t("appLayout.impersonation.backToOriginalButton")}
           </button>
         </div>
       )}
@@ -109,11 +122,18 @@ export default function AppLayout({
       {/* Sidebar removed per request */}
 
       {/* Header - Fixed top */}
-      {isAuthenticated && <Header />}
+      {isAuthenticated && (
+        <header role="banner">
+          <Header />
+        </header>
+      )}
 
       {/* Main content - Blur applied only when modal is open */}
       <main
+        id="main-content"
         ref={scrollAreaRef}
+        role="main"
+        aria-label={t("appLayout.mainContentAriaLabel")}
         dir={resolveScrollbarContainerDirFromLocale(effectiveLocale)}
         className={`flex-1 overflow-y-auto overflow-x-hidden relative app-scroll bg-neutral-950 ${window.innerWidth >= 768 ? "pt-16 pb-0" : "pt-0 pb-20"}`}
       >

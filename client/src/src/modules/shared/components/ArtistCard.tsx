@@ -2,6 +2,7 @@ import React from "react";
 import { User, Music, Trash2 } from "lucide-react";
 import Avatar from "@/modules/shared/components/Avatar";
 import { getAvatarInitial } from "@/modules/shared/lib/avatar";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 interface ArtistCardProps {
   artist: {
@@ -20,6 +21,8 @@ export default function ArtistCard({
   onUninvite,
   disableActions = false,
 }: ArtistCardProps): JSX.Element {
+  const { t } = useTranslation();
+
   return (
     <div
       key={artist.id}
@@ -32,7 +35,7 @@ export default function ArtistCard({
           src={artist.avatar}
           name={artist.full_name}
           email={artist.email}
-          alt={artist.full_name || "Artist"}
+          alt={artist.full_name || t("artists.artistAlt")}
           className="w-full h-full"
           imgClassName="w-full h-full object-cover"
           fallbackClassName="w-full h-full flex items-center justify-center bg-neutral-700 text-neutral-100 text-5xl font-bold"
@@ -43,7 +46,7 @@ export default function ArtistCard({
       <div className="w-full text-center sm:text-start">
         <div className="flex-1 min-w-0 text-center sm:text-start">
           <h3 className="h-page text-neutral-100 mb-1">
-            {artist.full_name || "אמן ללא שם"}
+            {artist.full_name || t("artists.unnamedArtist")}
           </h3>
           {artist.artist_role && (
             <div className="mb-2">
@@ -67,7 +70,7 @@ export default function ArtistCard({
             disabled={disableActions}
             // Semantic animation: buttons use `animation-press`
             className="outline-none bg-red-600 text-white rounded-full p-2 hover:bg-red-500 transition"
-            title="בטל שיתוף מאגר"
+            title={t("artists.uninviteTooltip")}
           >
             <Trash2 size={20} />
           </button>

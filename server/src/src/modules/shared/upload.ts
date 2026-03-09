@@ -1,6 +1,7 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { v4 as uuidv4 } from "uuid";
 import { joinUploadsPath } from "../../utils/uploadsRoot";
 
 // פונקציה לבניית נתיב מוחלט לתיקיית uploads בשורש הפרויקט
@@ -21,11 +22,29 @@ export const uploadTempAvatar = multer({
       cb(null, dir);
     },
     filename: (req, file, cb) => {
-      const ext = path.extname(file.originalname);
-      const filename = Date.now() + "-" + Math.round(Math.random() * 1e9) + ext;
+      const ext = path.extname(file.originalname).toLowerCase();
+      // Use UUID for secure, unique filenames
+      const filename = `avatar-${uuidv4()}${ext}`;
       cb(null, filename);
     },
   }),
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("רק קבצי תמונה מותרים (JPG, PNG, GIF, WebP)"), false);
+    }
+  },
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit for avatars
+  },
 });
 
 // ⭐ העלאת תמונה ע"י משתמש קיים
@@ -35,7 +54,13 @@ export const uploadUserAvatar = multer({
       const userId = req.user?.id;
       if (!userId) return cb(new Error("User ID not found"), "");
 
-      const dir = uploadsRoot("users", String(userId));
+      // Validate userId is a positive integer to prevent path traversal
+      const numericUserId = Number(userId);
+      if (!Number.isInteger(numericUserId) || numericUserId <= 0) {
+        return cb(new Error("Invalid user ID"), "");
+      }
+
+      const dir = uploadsRoot("users", String(numericUserId));
 
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -45,10 +70,29 @@ export const uploadUserAvatar = multer({
     },
 
     filename: (req, file, cb) => {
-      const ext = path.extname(file.originalname);
-      cb(null, "avatar" + ext);
+      const ext = path.extname(file.originalname).toLowerCase();
+      // Use UUID for secure filenames
+      const filename = `avatar-${uuidv4()}${ext}`;
+      cb(null, filename);
     },
   }),
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("רק קבצי תמונה מותרים (JPG, PNG, GIF, WebP)"), false);
+    }
+  },
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
 });
 
 // ⭐ העלאת קובץ PDF צ'ארט לשיר בליינאפ
@@ -58,7 +102,13 @@ export const uploadChartPdf = multer({
       const userId = req.user?.id;
       if (!userId) return cb(new Error("User ID not found"), "");
 
-      const dir = uploadsRoot("charts", String(userId));
+      // Validate userId to prevent path traversal
+      const numericUserId = Number(userId);
+      if (!Number.isInteger(numericUserId) || numericUserId <= 0) {
+        return cb(new Error("Invalid user ID"), "");
+      }
+
+      const dir = uploadsRoot("charts", String(numericUserId));
 
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -68,9 +118,9 @@ export const uploadChartPdf = multer({
     },
 
     filename: (req, file, cb) => {
-      const ext = path.extname(file.originalname);
-      const lineupSongId = req.params.lineupSongId || Date.now();
-      const filename = `chart-${lineupSongId}-${Date.now()}${ext}`;
+      const ext = path.extname(file.originalname).toLowerCase();
+      // Use UUID instead of lineupSongId for security
+      const filename = `chart-${uuidv4()}${ext}`;
       cb(null, filename);
     },
   }),
@@ -95,7 +145,13 @@ export const uploadSongChartPdf = multer({
       const userId = req.user?.id;
       if (!userId) return cb(new Error("User ID not found"), "");
 
-      const dir = uploadsRoot("charts", String(userId));
+      // Validate userId to prevent path traversal
+      const numericUserId = Number(userId);
+      if (!Number.isInteger(numericUserId) || numericUserId <= 0) {
+        return cb(new Error("Invalid user ID"), "");
+      }
+
+      const dir = uploadsRoot("charts", String(numericUserId));
 
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -105,9 +161,9 @@ export const uploadSongChartPdf = multer({
     },
 
     filename: (req, file, cb) => {
-      const ext = path.extname(file.originalname);
-      const songId = req.params.id || req.params.songId || Date.now();
-      const filename = `song-chart-${songId}-${Date.now()}${ext}`;
+      const ext = path.extname(file.originalname).toLowerCase();
+      // Use UUID for secure filenames
+      const filename = `song-chart-${uuidv4()}${ext}`;
       cb(null, filename);
     },
   }),

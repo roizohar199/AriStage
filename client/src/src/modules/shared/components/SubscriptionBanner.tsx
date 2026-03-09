@@ -2,6 +2,7 @@ import { AlertCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import api from "@/modules/shared/lib/api.js";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 type SubscriptionPlan = {
   tier: string;
@@ -12,6 +13,7 @@ type SubscriptionPlan = {
 
 export default function SubscriptionBanner() {
   const { subscriptionBlocked, user } = useAuth();
+  const { t } = useTranslation();
   const [price, setPrice] = useState<number | null>(null);
   const [priceLoading, setPriceLoading] = useState(false);
 
@@ -63,13 +65,13 @@ export default function SubscriptionBanner() {
           <div>
             <h3 className="font-semibold text-lg">תקופת הניסיון הסתיימה</h3>
             <p className="text-sm text-neutral-100/90">
-              כדי להמשיך להשתמש במערכת יש לשדרג מנוי • מחיר:{" "}
+              {t("billing.trialUpgradePrompt")}{" "}
               <strong dir="ltr">
                 {priceLoading
-                  ? "טוען..."
+                  ? t("common.loading")
                   : price !== null
-                    ? `${price} ₪ לחודש`
-                    : "לא זמין"}
+                    ? t("billing.pricePerMonth", { price })
+                    : t("common.notAvailable")}
               </strong>
             </p>
           </div>
@@ -78,7 +80,7 @@ export default function SubscriptionBanner() {
           onClick={handleUpgrade}
           className="bg-neutral-950 text-neutral-100 font-semibold px-6 py-2 rounded-lg hover:bg-primary-50 transition-colors whitespace-nowrap "
         >
-          שדרג עכשיו
+          {t("billing.upgradeNow")}
         </button>
       </div>
     </div>

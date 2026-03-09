@@ -16,7 +16,9 @@ const fallbackOrigins = [
 ];
 // Dev-only: allow local-network client access alongside localhost
 const devNetworkOrigins =
-  process.env.NODE_ENV === "development" ? ["http://10.100.102.99:5173"] : [];
+  process.env.NODE_ENV === "development"
+    ? ["http://10.100.102.99:5173", "http://10.100.102.99:5174"]
+    : [];
 const extraOrigins = (process.env.CORS_EXTRA_ORIGINS || "")
   .split(",")
   .map((origin) => origin.trim())

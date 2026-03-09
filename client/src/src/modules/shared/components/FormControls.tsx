@@ -9,6 +9,7 @@ import React, {
   ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 // Utility for merging class names (if no global util exists)
 function cx(...args: (string | undefined | false | null)[]) {
@@ -24,19 +25,45 @@ export interface FieldProps {
   children: ReactNode;
 }
 export function Field({ label, hint, error, required, children }: FieldProps) {
+  const id = useId();
+  const hintId = hint ? `${id}-hint` : undefined;
+  const errorId = error ? `${id}-error` : undefined;
+  const describedBy = [hintId, errorId].filter(Boolean).join(" ");
+
+  // Clone children to add accessibility attributes
+  const enhancedChild = React.isValidElement(children)
+    ? React.cloneElement(children as React.ReactElement<any>, {
+        id,
+        "aria-invalid": error ? "true" : undefined,
+        "aria-describedby": describedBy || undefined,
+      })
+    : children;
+
   return (
     <div className="mb-2">
       {label && (
-        <label className="block text-sm mb-1 font-medium text-neutral-100">
+        <label
+          htmlFor={id}
+          className="block text-sm mb-1 font-medium text-neutral-100"
+        >
           {label}
-          {required && <span className="text-red-500"> *</span>}
+          {required && (
+            <span className="text-red-500" aria-label="required">
+              {" "}
+              *
+            </span>
+          )}
         </label>
       )}
-      {children}
+      {enhancedChild}
       {error ? (
-        <div className="text-red-400 text-xs mt-1">{error}</div>
+        <div id={errorId} className="text-red-400 text-xs mt-1" role="alert">
+          {error}
+        </div>
       ) : hint ? (
-        <div className="text-neutral-400 text-xs mt-1">{hint}</div>
+        <div id={hintId} className="text-neutral-400 text-xs mt-1">
+          {hint}
+        </div>
       ) : null}
     </div>
   );
@@ -106,6 +133,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, InputProps>(
     { label, hint, error, required, leftIcon, rightIcon, className, ...props },
     ref,
   ) => {
+    const { t } = useTranslation();
     const [show, setShow] = useState(false);
     return (
       <Input
@@ -122,7 +150,9 @@ export const PasswordInput = forwardRef<HTMLInputElement, InputProps>(
             tabIndex={-1}
             className="text-neutral-400 hover:text-neutral-200 focus:outline-none"
             onClick={() => setShow((v) => !v)}
-            aria-label={show ? "הסתר סיסמה" : "הצג סיסמה"}
+            aria-label={
+              show ? t("common.hidePassword") : t("common.showPassword")
+            }
           >
             {/* עיצוב האייקון כמו בפרויקט, אפשר להחליף ל-eye/eye-off אם יש */}
             {show ? (

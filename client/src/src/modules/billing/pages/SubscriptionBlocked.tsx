@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import api from "@/modules/shared/lib/api.ts";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 type AvailablePlan = {
   id: number;
@@ -16,6 +17,7 @@ type AvailablePlan = {
 
 export default function SubscriptionBlocked() {
   const { user } = useAuth();
+  const { t, locale } = useTranslation();
   const [plans, setPlans] = useState<AvailablePlan[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,7 +41,7 @@ export default function SubscriptionBlocked() {
       .catch(() => {
         if (!mounted) return;
         setPlans([]);
-        setError("שגיאה בטעינת מסלולים");
+        setError(t("billing.loadPlansError"));
       })
       .finally(() => {
         if (mounted) setLoading(false);
@@ -65,10 +67,9 @@ export default function SubscriptionBlocked() {
         const d = new Date(normalized);
         const ms = d.getTime();
         if (!Number.isNaN(ms)) {
-          const day = String(d.getDate()).padStart(2, "0");
-          const month = String(d.getMonth() + 1).padStart(2, "0");
-          const year = d.getFullYear();
-          expiredLine = `תוקף המנוי הסתיים בתאריך ${day}/${month}/${year}`;
+          const localeTag = (locale || "").startsWith("he") ? "he-IL" : "en-US";
+          const date = d.toLocaleDateString(localeTag);
+          expiredLine = t("billing.subscriptionExpiredOn", { date });
         }
       }
     } catch {
@@ -79,11 +80,13 @@ export default function SubscriptionBlocked() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
       <div className="bg-neutral-800 rounded-2xl p-6 border border-neutral-700">
-        <h1 className="text-2xl font-bold text-neutral-100">נדרש מנוי פעיל</h1>
+        <h1 className="text-2xl font-bold text-neutral-100">
+          {t("billing.subscriptionRequiredTitle")}
+        </h1>
         <p className="text-neutral-300 mt-2 leading-relaxed">
-          הגישה לחשבון שלך חסומה כרגע כי אין מנוי פעיל.
+          {t("billing.subscriptionRequiredMessage1")}
           <br />
-          ניתן לעבור לתשלום כדי להמשיך להשתמש במערכת.
+          {t("billing.subscriptionRequiredMessage2")}
         </p>
 
         {expiredLine && (
@@ -92,9 +95,11 @@ export default function SubscriptionBlocked() {
 
         <div className="mt-6 bg-neutral-900 rounded-2xl p-4 border border-neutral-800">
           <div className="flex items-center justify-between">
-            <span className="text-neutral-300">מסלולים זמינים</span>
+            <span className="text-neutral-300">
+              {t("billing.availablePlans")}
+            </span>
             <span className="text-neutral-100 font-bold">
-              {loading ? "טוען..." : ""}
+              {loading ? t("common.loading") : ""}
             </span>
           </div>
 
@@ -104,7 +109,7 @@ export default function SubscriptionBlocked() {
 
           {!loading && !error && !hasPlans ? (
             <p className="text-neutral-500 text-sm mt-2">
-              אין מסלולים זמינים כרגע
+              {t("billing.noPlansAvailable")}
             </p>
           ) : null}
 
@@ -131,7 +136,7 @@ export default function SubscriptionBlocked() {
               window.openUpgradeModal?.();
             }}
           >
-            לתשלום
+            {t("billing.goToPayment")}
           </DesignActionButton>
         </div>
       </div>

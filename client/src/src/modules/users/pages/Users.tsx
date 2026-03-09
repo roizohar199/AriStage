@@ -5,6 +5,7 @@ import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { Mail, User, Star } from "lucide-react";
 import BaseModal from "@/modules/shared/components/BaseModal.tsx";
 import { normalizeSubscriptionType } from "@/modules/shared/hooks/useSubscription.ts";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 import {
   EmailInput,
   Input,
@@ -14,6 +15,7 @@ import {
 
 export default function Users() {
   const confirm = useConfirm();
+  const { t } = useTranslation();
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,7 +42,7 @@ export default function Users() {
       setUsers(data);
     } catch (err) {
       console.error("❌ שגיאה בשליפת משתמשים:", err);
-      setError("שגיאה טעינת משתמשים");
+      setError(t("users.loadError"));
     } finally {
       setLoading(false);
     }
@@ -104,14 +106,14 @@ export default function Users() {
       load();
     } catch (err) {
       console.error("❌ שגיאה בשמירת משתמש:", err);
-      setError("שגיאה בשמירת הנתונים");
+      setError(t("users.saveError"));
     }
   };
 
   const removeUser = async (id) => {
     const ok = await confirm({
-      title: "מחיקה",
-      message: "בטוח למחוק משתמש זה?",
+      title: t("users.deleteConfirmTitle"),
+      message: t("users.deleteConfirmMessage"),
     });
     if (!ok) return;
 
@@ -125,8 +127,8 @@ export default function Users() {
 
   const impersonateUser = async (id) => {
     const ok = await confirm({
-      title: "ייצוג משתמש",
-      message: "להיכנס לחשבון שלו?",
+      title: t("users.impersonateConfirmTitle"),
+      message: t("users.impersonateConfirmMessage"),
     });
     if (!ok) return;
 
@@ -168,8 +170,8 @@ export default function Users() {
 
   const inviteArtist = async (artistId, artistName) => {
     const ok = await confirm({
-      title: "הזמנת אמן",
-      message: `להזמין את ${artistName} למאגר שלך? האמן יוכל לצפות בליינאפים והשירים שלך (קריאה בלבד).`,
+      title: t("users.inviteArtistConfirmTitle"),
+      message: t("users.inviteArtistConfirmMessage", { artistName }),
     });
     if (!ok) return;
 
@@ -178,7 +180,8 @@ export default function Users() {
       loadConnectedArtists(); // רענון רשימת האמנים המחוברים
     } catch (err) {
       console.error("❌ שגיאה בהזמנת אמן:", err);
-      const errorMsg = err?.response?.data?.message || "שגיאה בהזמנת האמן";
+      const errorMsg =
+        err?.response?.data?.message || t("users.inviteArtistError");
       alert(errorMsg);
     }
   };
@@ -197,14 +200,16 @@ export default function Users() {
 
   if (loading)
     return (
-      <div className="text-center text-neutral-400 p-6">טוען משתמשים...</div>
+      <div className="text-center text-neutral-400 p-6">
+        {t("users.loadingUsers")}
+      </div>
     );
 
   return (
     <div className="min-h-screen text-neutral-100 p-6">
       {/* HEADER */}
       <header className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">ניהול משתמשים</h1>
+        <h1 className="text-3xl font-bold">{t("users.title")}</h1>
 
         <button
           onClick={openCreate}
@@ -219,7 +224,7 @@ export default function Users() {
       <div className="mb-6">
         <Input
           type="text"
-          placeholder="חפש לפי שם, אימייל או תפקיד..."
+          placeholder={t("users.searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           rightIcon={<Search size={18} />}
@@ -262,7 +267,7 @@ export default function Users() {
                 {/* אינדיקציה אם האמן כבר מוזמן */}
                 {isArtistInvited(u.id) && (
                   <span className="flex flex-row-reverse items-center gap-1 px-2 py-1 bg-green-600 rounded-lg text-neutral-100 font-semibold">
-                    <UserCheck size={14} /> מוזמן
+                    <UserCheck size={14} /> {t("users.invited")}
                   </span>
                 )}
               </div>
@@ -296,7 +301,7 @@ export default function Users() {
                 <button
                   onClick={() => inviteArtist(u.id, u.full_name)}
                   className="bg-green-500 hover:bg-green-600 p-2 rounded-full"
-                  title="הזמן אמן למאגר שלך"
+                  title={t("users.inviteArtistTooltip")}
                 >
                   <UserPlus size={16} />
                 </button>
@@ -306,7 +311,9 @@ export default function Users() {
         ))}
 
         {filteredUsers.length === 0 && (
-          <p className="text-neutral-500 text-center mt-10">אין משתמשים 😴</p>
+          <p className="text-neutral-500 text-center mt-10">
+            {t("users.noUsers")}
+          </p>
         )}
       </div>
 
@@ -317,17 +324,17 @@ export default function Users() {
           setShowModal(false);
           setEditingId(null);
         }}
-        title={editingId ? "עריכת משתמש" : "משתמש חדש"}
+        title={editingId ? t("users.editUser") : t("users.newUser")}
         maxWidth="max-w-md"
       >
         <h2 className="text-xl font-bold mb-4">
-          {editingId ? "עריכת משתמש" : "משתמש חדש"}
+          {editingId ? t("users.editUser") : t("users.newUser")}
         </h2>
 
         <form onSubmit={submit} className="space-y-3">
           <Input
             type="text"
-            placeholder="שם מלא *"
+            placeholder={t("users.fullNamePlaceholder")}
             value={form.full_name}
             onChange={(e) => setForm({ ...form, full_name: e.target.value })}
             className="mb-0"
@@ -335,7 +342,7 @@ export default function Users() {
           />
 
           <EmailInput
-            placeholder="אימייל *"
+            placeholder={t("users.emailPlaceholder")}
             dir="ltr"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -346,7 +353,7 @@ export default function Users() {
 
           {!editingId && (
             <PasswordInput
-              placeholder="סיסמה *"
+              placeholder={t("users.passwordPlaceholder")}
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               className="mb-0"
@@ -380,7 +387,7 @@ export default function Users() {
             // Semantic animation: buttons use `animation-press`
             className="w-full bg-brand-primary hover:bg-brand-primaryLight text-neutral-100 font-semibold py-2 rounded-lg mt-2 animation-press"
           >
-            {editingId ? "עדכון" : "שמור"}
+            {editingId ? t("common.update") : t("common.save")}
           </button>
         </form>
       </BaseModal>

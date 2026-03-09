@@ -50,6 +50,7 @@ import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "../../shared/components/ToastProvider";
 import ArtistCard from "../../shared/components/ArtistCard";
 import Bord from "@/modules/shared/components/bord";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 import { io } from "socket.io-client";
 
@@ -60,15 +61,20 @@ function PersonalStats({
   stats: any;
   connectedArtistsCount: number;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <Bord Icon={Music} value={stats?.songs ?? 0} label="שירים שלי" />
+      <Bord Icon={Music} value={stats?.songs ?? 0} label={t("songs.mySongs")} />
       <Bord
         Icon={CalendarCheck}
         value={stats?.lineups ?? 0}
-        label="ליינאפים שלי"
+        label={t("lineups.myLineups")}
       />
-      <Bord Icon={Users} value={connectedArtistsCount} label="אמנים שלי" />
+      <Bord
+        Icon={Users}
+        value={connectedArtistsCount}
+        label={t("artists.myArtists")}
+      />
     </div>
   );
 }
@@ -91,6 +97,7 @@ function MyContent(): JSX.Element {
   const { subscriptionBlocked, subscriptionStatus, user } = useAuth();
   const navigate = useNavigate();
   const { isEnabled: isFeatureEnabled } = useFeatureFlags();
+  const { t, locale } = useTranslation();
 
   type MyTabKey = "songs" | "lineups" | "shared";
 
@@ -116,14 +123,14 @@ function MyContent(): JSX.Element {
 
   const tabs = useMemo<Array<TabItem<MyTabKey>>>(() => {
     const base: Array<TabItem<MyTabKey>> = [
-      { key: "songs", label: "שירים" },
-      { key: "shared", label: "אמנים שלי" },
+      { key: "songs", label: t("songs.title") },
+      { key: "shared", label: t("artists.myArtists") },
     ];
     if (lineupsEnabled) {
-      base.splice(1, 0, { key: "lineups", label: "ליינאפים" });
+      base.splice(1, 0, { key: "lineups", label: t("lineups.title") });
     }
     return base;
-  }, [lineupsEnabled]);
+  }, [lineupsEnabled, t]);
 
   const handleSelectTab = useCallback(
     (tab: MyTabKey) => {
@@ -197,7 +204,7 @@ function MyContent(): JSX.Element {
     e.preventDefault();
 
     if (!inviteEmail || !inviteEmail.includes("@")) {
-      showToast("נא להזין כתובת אימייל תקינה", "error");
+      showToast(t("errors.invalidEmail"), "error");
       return;
     }
 
@@ -209,12 +216,13 @@ function MyContent(): JSX.Element {
 
       setInviteEmail("");
       setShowInviteModal(false);
-      showToast(data.message || "הזמנה נשלחה בהצלחה!", "success");
+      showToast(data.message || t("artists.invitationSent"), "success");
       loadMyInvitedArtists();
       loadConnectedArtists();
     } catch (err) {
       console.error("❌ שגיאה בשליחת הזמנה:", err);
-      const errorMsg = err?.response?.data?.message || "שגיאה בשליחת ההזמנה";
+      const errorMsg =
+        err?.response?.data?.message || t("errors.serverTryLater");
       setShowInviteModal(false);
       showToast(errorMsg, "error");
     } finally {
@@ -287,11 +295,11 @@ function MyContent(): JSX.Element {
       });
       setStats(data?.stats || null);
     } catch (err) {
-      setError("לא ניתן לטעון נתונים");
+      setError(t("errors.serverTryLater"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
   const loadConnectedArtists = useCallback(async () => {
     try {
       const { data } = await api.get("/users/connected-to-me", {
@@ -309,7 +317,15 @@ function MyContent(): JSX.Element {
   }, [loadStats, loadConnectedArtists, loadMyInvitedArtists]);
 
   // --- לוגיקת שירים (הועתקה מ-Songs) ---
-  const notesList = ["שמח", "קצבי", "שקט", "מרגש", "קליל"];
+  const notesList = useMemo(() => {
+    return [
+      t("songs.notesPresets.happy"),
+      t("songs.notesPresets.upbeat"),
+      t("songs.notesPresets.calm"),
+      t("songs.notesPresets.emotional"),
+      t("songs.notesPresets.light"),
+    ];
+  }, [t]);
   const notesKeys = [
     "C",
     "C#",
@@ -361,13 +377,31 @@ function MyContent(): JSX.Element {
     }
   }, [songs]);
   const socket = useMemo(() => {
+    // Get token from localStorage for socket authentication
+    // Keep parity with api.ts (supports either ari_token or ari_user.token)
+    let token = localStorage.getItem("ari_token");
+    if (!token) {
+      try {
+        const raw = localStorage.getItem("ari_user");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.token) token = parsed.token;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     return io(API_ORIGIN, {
       transports: ["websocket", "polling"],
       withCredentials: true,
+      autoConnect: Boolean(token),
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
       timeout: 20000,
+      // Add authentication token if available
+      auth: token ? { token } : undefined,
     });
   }, []);
   useEffect(() => {
@@ -545,12 +579,12 @@ function MyContent(): JSX.Element {
   };
   const remove = async (songId: number) => {
     if (!addSongsEnabled) {
-      showToast("מודול הוספת שירים כבוי", "warning");
+      showToast(t("songs.addSongsModuleDisabled"), "warning");
       return;
     }
     const ok = await confirm({
-      title: "מחיקת שיר",
-      message: "בטוח שאתה רוצה למחוק את השיר?",
+      title: t("songs.deleteSong"),
+      message: t("songs.confirmDelete"),
     });
     if (!ok) return;
     await api.delete(`/songs/${songId}`);
@@ -563,7 +597,7 @@ function MyContent(): JSX.Element {
   };
   const edit = (song: Song) => {
     if (!addSongsEnabled) {
-      showToast("מודול הוספת שירים כבוי", "warning");
+      showToast(t("songs.addSongsModuleDisabled"), "warning");
       return;
     }
     setForm({
@@ -600,10 +634,10 @@ function MyContent(): JSX.Element {
   };
 
   const formatForDisplay = (d: any) => {
-    if (!d) return "לא צוין תאריך";
+    if (!d) return t("lineups.unspecifiedDate");
     const obj = new Date(d);
-    if (isNaN(obj as unknown as number)) return "לא צוין תאריך";
-    return obj.toLocaleDateString("he-IL");
+    if (isNaN(obj as unknown as number)) return t("lineups.unspecifiedDate");
+    return obj.toLocaleDateString(locale || "he-IL");
   };
 
   const loadLineups = useCallback(async () => {
@@ -757,8 +791,8 @@ function MyContent(): JSX.Element {
 
   const removeLineup = async (id: number) => {
     const ok = await confirm({
-      title: "מחיקה",
-      message: "בטוח למחוק את הליינאפ?",
+      title: t("lineups.deleteLineup"),
+      message: t("lineups.confirmDeleteLineup"),
     });
     if (!ok) return;
 
@@ -782,12 +816,12 @@ function MyContent(): JSX.Element {
   return (
     <div className="min-h-screen text-neutral-100 p-6">
       <header className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">אישי</h1>
+        <h1 className="text-3xl font-bold">{t("nav.personal")}</h1>
       </header>
 
       {loading && (
         <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-6 text-center text-neutral-400">
-          טוען נתונים...
+          {t("common.loading")}
         </div>
       )}
       {error && (
@@ -839,7 +873,7 @@ function MyContent(): JSX.Element {
                 }}
               >
                 <Plus size={18} />
-                הוסף שיר
+                {t("songs.addSong")}
               </DesignActionButton>
             ) : null}
           </div>
@@ -894,7 +928,7 @@ function MyContent(): JSX.Element {
               try {
                 if (editId) {
                   if (!addSongsEnabled) {
-                    showToast("מודול הוספת שירים כבוי", "warning");
+                    showToast(t("songs.addSongsModuleDisabled"), "warning");
                     return;
                   }
                   await api.put(`/songs/${editId}`, cleanForm);
@@ -966,7 +1000,7 @@ function MyContent(): JSX.Element {
                 }}
               >
                 <Plus size={18} />
-                צור לינאפ חדש
+                {t("lineups.addLineup")}
               </DesignActionButton>
             ) : null}
           </div>
@@ -996,7 +1030,7 @@ function MyContent(): JSX.Element {
 
           {filteredLineups.length === 0 && (
             <p className="text-neutral-500 text-center mt-10">
-              אין ליינאפים עדיין 😴
+              {t("lineups.noLineups")}
             </p>
           )}
 
@@ -1069,26 +1103,26 @@ function MyContent(): JSX.Element {
               {/* הזמן אמן */}
               <DesignActionButton
                 onClick={() => setShowInviteModal(true)}
-                title="הזמן אמן למאגר שלך"
+                title={t("users.inviteArtistTooltip")}
                 style={{ minWidth: 0 }}
               >
                 <UserPlus size={18} />
-                הזמן אמן
+                {t("artists.inviteArtist")}
               </DesignActionButton>
             </div>
             <div>
               {myInvitedArtistsLoading ? (
                 <div className="text-neutral-400 text-center py-4">
-                  טוען אמנים...
+                  {t("common.loading")}
                 </div>
               ) : myInvitedArtists.length === 0 ? (
                 <div className="bg-neutral-850 rounded-2xl p-6 text-center">
                   <User size={32} className="mx-auto mb-3 text-neutral-600" />
                   <p className="text-neutral-400 text-sm">
-                    אין אמנים במאגר שלך כרגע
+                    {t("artists.noArtistsInPool")}
                   </p>
                   <p className="text-neutral-500 text-xs mt-1">
-                    הזמן אמנים למאגר שלך באמצעות הכפתור למעלה
+                    {t("artists.inviteToPoolHint")}
                   </p>
                 </div>
               ) : (
@@ -1112,11 +1146,13 @@ function MyContent(): JSX.Element {
                         artist={artist}
                         disableActions={inviteLoading}
                         onUninvite={async () => {
+                          const artistName =
+                            artist.full_name || t("artists.unnamedArtist");
                           const ok = await confirm({
-                            title: "ביטול שיתוף",
-                            message: `בטוח שאתה רוצה לבטל את השיתוף עם ${
-                              artist.full_name || "האמן"
-                            }? האמן לא יוכל עוד לצפות בליינאפים והשירים שלך.`,
+                            title: t("artists.uninviteConfirmTitle"),
+                            message: t("artists.uninviteConfirmMessage", {
+                              artistName,
+                            }),
                           });
                           if (!ok) return;
 
@@ -1125,12 +1161,12 @@ function MyContent(): JSX.Element {
                             await api.post("/users/uninvite-artist", {
                               artist_id: artist.id,
                             });
-                            showToast("השיתוף בוטל בהצלחה", "success");
+                            showToast(t("artists.uninviteSuccess"), "success");
                             loadMyInvitedArtists();
                           } catch (err) {
                             const errorMsg =
                               err?.response?.data?.message ||
-                              "שגיאה בביטול השיתוף";
+                              t("artists.uninviteError");
                             showToast(errorMsg, "error");
                           } finally {
                             setInviteLoading(false);
@@ -1152,16 +1188,15 @@ function MyContent(): JSX.Element {
           setShowInviteModal(false);
           setInviteEmail("");
         }}
-        title="הזמן אמן למאגר שלך"
+        title={t("artists.inviteToPoolTitle")}
         maxWidth="max-w-md"
       >
         <h2 className="text-xl font-bold mb-4 text-start">
-          הזמן אמן למאגר שלך
+          {t("artists.inviteToPoolTitle")}
         </h2>
 
         <p className="text-neutral-400 text-sm mb-4 text-start">
-          הזן את כתובת האימייל של האמן. הוא יקבל מייל עם קישור להצטרפות למאגר
-          שלך.
+          {t("artists.inviteToPoolDescription")}
         </p>
 
         <form onSubmit={sendInvitation} className="space-y-4">
@@ -1181,10 +1216,10 @@ function MyContent(): JSX.Element {
             {inviteLoading ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                שולח...
+                {t("artists.sendingInvite")}
               </>
             ) : (
-              <>שלח הזמנה</>
+              <>{t("artists.sendInvite")}</>
             )}
           </DesignActionButtonBig>
         </form>

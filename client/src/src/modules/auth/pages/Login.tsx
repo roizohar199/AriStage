@@ -3,6 +3,7 @@ import type { ChangeEvent, FormEvent } from "react";
 import api from "@/modules/shared/lib/api.js";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 import DesignActionButtonBig from "@/modules/shared/components/DesignActionButtonBig";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
 import {
@@ -13,6 +14,7 @@ import {
 import { X } from "lucide-react";
 
 export default function Login() {
+  const { t } = useTranslation();
   const [search] = useSearchParams();
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -76,7 +78,7 @@ export default function Login() {
       // Navigate to home - let the app routing decide the destination
       navigate("/");
     } catch (err: any) {
-      setError(err?.response?.data?.message || "שגיאה בהתחברות");
+      setError(err?.response?.data?.message || t("auth.loginError"));
     } finally {
       setLoading(false);
     }
@@ -100,15 +102,15 @@ export default function Login() {
 
     if (!full_name.trim()) {
       console.log("❌ [REGISTER] שם מלא חסר");
-      return setError("נא להזין שם מלא");
+      return setError(t("auth.fullNameRequired"));
     }
     if (password !== confirm) {
       console.log("❌ [REGISTER] הסיסמאות לא תואמות");
-      return setError("הסיסמאות אינן תואמות");
+      return setError(t("auth.passwordMismatch"));
     }
     if (!agreed) {
       console.log("❌ [REGISTER] לא אישר את התקנון");
-      return setError("יש לאשר שקראת את התקנון");
+      return setError(t("auth.termsRequired"));
     }
 
     try {
@@ -142,7 +144,7 @@ export default function Login() {
 
       console.log("✅ [REGISTER] הצלחה!", response.data);
 
-      setMessage("נרשמת בהצלחה! אפשר להתחבר כעת.");
+      setMessage(t("auth.registerSuccess"));
       setTab("login");
 
       setFullName("");
@@ -161,7 +163,9 @@ export default function Login() {
         status: err?.response?.status,
         message: err?.response?.data?.message || err?.message,
       });
-      setError(err?.response?.data?.message || err?.message || "שגיאה בהרשמה");
+      setError(
+        err?.response?.data?.message || err?.message || t("auth.registerError"),
+      );
     } finally {
       setLoading(false);
       console.log("🟢 [REGISTER] סיימתי");
@@ -176,9 +180,9 @@ export default function Login() {
     try {
       setLoading(true);
       const { data } = await api.post("/auth/reset-request", { email });
-      setMessage(data.message || "נשלח מייל לאיפוס אם המשתמש קיים");
+      setMessage(data.message || t("auth.resetEmailSent"));
     } catch (err: any) {
-      setError(err?.response?.data?.message || "שגיאה בעת שליחת האיפוס");
+      setError(err?.response?.data?.message || t("auth.resetError"));
     } finally {
       setLoading(false);
     }
@@ -206,7 +210,7 @@ export default function Login() {
               required
             />
             <DesignActionButtonBig type="submit" disabled={loading}>
-              {loading ? "מתחבר..." : "התחבר"}
+              {loading ? t("auth.loggingIn") : t("auth.login")}
             </DesignActionButtonBig>
 
             {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
@@ -230,7 +234,7 @@ export default function Login() {
                   />
                 ) : (
                   <div className="flex items-center justify-center w-full h-full text-gray-500 text-xs">
-                    ללא תמונה
+                    {t("auth.noAvatar")}
                   </div>
                 )}
               </div>
@@ -239,7 +243,7 @@ export default function Login() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
               >
-                העלאת תמונה
+                {t("auth.uploadAvatar")}
               </DesignActionButton>
 
               <input
@@ -261,7 +265,7 @@ export default function Login() {
             </div>
             <Input
               type="text"
-              placeholder="שם מלא"
+              placeholder={t("auth.fullName")}
               value={full_name}
               onChange={(e) => setFullName(e.target.value)}
               className="mb-0"
@@ -271,7 +275,7 @@ export default function Login() {
             {/* ROLE */}
             <Input
               type="text"
-              placeholder="תפקיד (זמר, גיטריסט, מתופף...)"
+              placeholder={t("auth.role")}
               value={role}
               onChange={(e) => setRole(e.target.value)}
               className="mb-0"
@@ -288,7 +292,7 @@ export default function Login() {
             />
 
             <PasswordInput
-              placeholder="בחר סיסמה"
+              placeholder={t("auth.choosePassword")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="mb-0"
@@ -296,7 +300,7 @@ export default function Login() {
             />
 
             <PasswordInput
-              placeholder="אימות סיסמה"
+              placeholder={t("auth.confirmPassword")}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               className="mb-0"
@@ -312,7 +316,7 @@ export default function Login() {
                 required
               />
               <span>
-                קראתי את{" "}
+                {t("auth.iReadThe")}{" "}
                 <button
                   type="button"
                   className="underline underline-offset-2 text-brand-primary hover:text-brand-primaryLight"
@@ -322,13 +326,13 @@ export default function Login() {
                     setIsTermsOpen(true);
                   }}
                 >
-                  התקנון
+                  {t("auth.terms")}
                 </button>
               </span>
             </label>
 
             <DesignActionButtonBig type="submit" disabled={loading}>
-              {loading ? "נרשם..." : "הרשמה"}
+              {loading ? t("auth.registering") : t("auth.register")}
             </DesignActionButtonBig>
 
             {error && <p className="text-red-400 text-sm mt-2">{error}</p>}

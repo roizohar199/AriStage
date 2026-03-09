@@ -14,11 +14,13 @@ import { logsRouter } from "./logs/logs.routes";
 import { errorsRouter } from "./errors/errors.routes";
 import { featureFlagsRouter } from "./featureFlags/featureFlags.routes";
 import { plansRouter } from "./plans/plans.routes";
+import systemSettingsPublicRouter from "./systemSettings/systemSettings.public.routes";
 
 import adminRouter from "../../routes/admin";
 
 export function registerModules(app) {
   app.use("/api/health", healthRouter);
+  app.use("/api/system-settings", systemSettingsPublicRouter);
   app.use("/api/auth", authRouter);
   app.use("/api/plans", plansRouter);
   app.use("/api/subscriptions", subscriptionsRouter);

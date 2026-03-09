@@ -14,6 +14,7 @@ import { useFeatureFlags } from "@/modules/shared/contexts/FeatureFlagsContext.t
 import { ConfirmOptions } from "../confirm/types";
 import DesignActionButton from "./DesignActionButton";
 import { Textarea } from "./FormControls";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 type SongLyricsProps = {
   songId: number;
@@ -33,6 +34,7 @@ export default function SongLyrics({
   onChanged,
 }: SongLyricsProps): JSX.Element {
   const { showToast } = useToast();
+  const { t } = useTranslation();
   const { isEnabled } = useFeatureFlags();
   const lyricsEnabled = isEnabled("module.lyrics", true);
   const [open, setOpen] = useState(false);
@@ -55,37 +57,40 @@ export default function SongLyrics({
     try {
       setSaving(true);
       await api.put(`/songs/${songId}/lyrics`, { lyrics_text: draft });
-      showToast("המילים נשמרו", "success");
+      showToast(t("lyrics.lyricsUpdated"), "success");
       setOpen(false);
       await onChanged();
     } catch (err: any) {
-      showToast(err?.response?.data?.message || "שגיאה בשמירת מילים", "error");
+      showToast(err?.response?.data?.message || t("lyrics.saveError"), "error");
     } finally {
       setSaving(false);
     }
-  }, [canEdit, draft, onChanged, showToast, songId]);
+  }, [canEdit, draft, onChanged, showToast, songId, t]);
 
   const handleDelete = useCallback(async () => {
     if (!canEdit) return;
 
     const ok = await onConfirm({
-      title: "מחיקת מילים",
-      message: "בטוח שאתה רוצה למחוק את המילים לשיר הזה?",
+      title: t("lyrics.deleteLyrics"),
+      message: t("lyrics.confirmDeleteMessage"),
     });
     if (!ok) return;
 
     try {
       setSaving(true);
       await api.delete(`/songs/${songId}/lyrics`);
-      showToast("המילים נמחקו", "success");
+      showToast(t("lyrics.lyricsDeleted"), "success");
       setOpen(false);
       await onChanged();
     } catch (err: any) {
-      showToast(err?.response?.data?.message || "שגיאה במחיקת מילים", "error");
+      showToast(
+        err?.response?.data?.message || t("lyrics.deleteError"),
+        "error",
+      );
     } finally {
       setSaving(false);
     }
-  }, [canEdit, onChanged, onConfirm, showToast, songId]);
+  }, [canEdit, onChanged, onConfirm, showToast, songId, t]);
 
   if (!lyricsEnabled) {
     return (
@@ -93,7 +98,7 @@ export default function SongLyrics({
         <div className="flex items-center gap-2 mb-2">
           <FileText size={16} className="text-neutral-500" />
           <span className="text-xs font-semibold text-neutral-400">
-            מודול מילים כבוי
+            {t("lyrics.moduleDisabled")}
           </span>
         </div>
       </div>
@@ -106,7 +111,8 @@ export default function SongLyrics({
         <div className="flex items-center gap-2 mb-2">
           <PenLineIcon size={16} className="text-brand-primary" />
           <span className="text-xs font-semibold text-neutral-100">
-            מילים {hasLyrics ? "(קיים)" : "(אין)"}
+            {t("lyrics.title")}{" "}
+            {hasLyrics ? t("lyrics.statusHas") : t("lyrics.statusNone")}
           </span>
         </div>
 
@@ -114,11 +120,11 @@ export default function SongLyrics({
           <button
             onClick={openModal}
             className="w-full bg-neutral-800 p-2 rounded-2xl flex flex-row-reverse items-center justify-center gap-2 text-neutral-100 hover:bg-neutral-750 shadow-surface transition"
-            title="צפייה במילים"
+            title={t("lyrics.viewLyrics")}
           >
             <Eye size={16} />
             <span className="flex-1 text-xs text-neutral-100 font-bold ">
-              צפייה במילים
+              {t("lyrics.viewLyrics")}
             </span>
           </button>
         </div>
@@ -127,7 +133,9 @@ export default function SongLyrics({
       <BaseModal
         open={open}
         onClose={() => setOpen(false)}
-        title={`מילים - ${songTitle || "שיר"}`}
+        title={t("lyrics.modalTitle", {
+          songTitle: songTitle || t("common.song"),
+        })}
         maxWidth="max-w-3xl"
       >
         <div className="space-y-3 p-4">
@@ -135,7 +143,9 @@ export default function SongLyrics({
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             readOnly={!canEdit}
-            placeholder={canEdit ? "הדבק/כתוב כאן את המילים..." : "אין מילים"}
+            placeholder={
+              canEdit ? t("lyrics.placeholderEdit") : t("lyrics.noLyrics")
+            }
             className="min-h-[320px] mb-0"
           />
 
@@ -147,18 +157,18 @@ export default function SongLyrics({
                 variant="danger"
               >
                 <Trash2 size={16} />
-                מחיקה
+                {t("common.delete")}
               </DesignActionButton>
               <DesignActionButton onClick={handleSave} disabled={saving}>
                 <Save size={16} />
-                שמירה
+                {t("common.save")}
               </DesignActionButton>
             </div>
           )}
 
           {!canEdit && (
             <div className="text-xs text-neutral-400">
-              למוזמנים יש הרשאת צפייה בלבד.
+              {t("lyrics.readOnlyHint")}
             </div>
           )}
         </div>

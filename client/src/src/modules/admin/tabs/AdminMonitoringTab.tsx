@@ -3,6 +3,7 @@ import { Activity, Users } from "lucide-react";
 
 import api from "@/modules/shared/lib/api.ts";
 import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 type MonitoringCard = {
   label: string;
@@ -15,6 +16,7 @@ export default function AdminMonitoringTab({
 }: {
   setDashboardCards?: (cards: DashboardCard[]) => void;
 }) {
+  const { t } = useTranslation();
   const [monitoring, setMonitoring] = useState<any>(null);
   const [monitoringLoading, setMonitoringLoading] = useState(true);
 
@@ -45,18 +47,22 @@ export default function AdminMonitoringTab({
 
     return [
       {
-        label: "CPU",
+        label: t("admin.cpuUsage"),
         value: typeof cpu === "number" ? `${cpu}%` : String(cpu),
         icon: <Activity size={32} />,
       },
-      { label: "Memory", value: String(memory), icon: <Activity size={32} /> },
       {
-        label: "Active Users",
+        label: t("admin.memoryUsage"),
+        value: String(memory),
+        icon: <Activity size={32} />,
+      },
+      {
+        label: t("admin.activeUsers"),
         value: String(activeUsers),
         icon: <Users size={32} />,
       },
     ];
-  }, [monitoring]);
+  }, [monitoring, t]);
 
   useEffect(() => {
     const cards: DashboardCard[] = monitoringCards.map((c) => ({
@@ -71,7 +77,7 @@ export default function AdminMonitoringTab({
     <div className="space-y-3">
       {monitoringLoading && (
         <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-6 text-center text-neutral-400">
-          טוען ניטור...
+          {t("admin.monitoringTab.loading")}
         </div>
       )}
 

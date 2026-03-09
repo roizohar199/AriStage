@@ -36,6 +36,8 @@ export default function BaseModal({
   // ✅ Hooks תמיד למעלה, בלי תנאים
 
   const scrollTimeoutRef = useRef<number | null>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const modalRef = useRef<HTMLDivElement | null>(null);
 
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent) => {
@@ -45,6 +47,71 @@ export default function BaseModal({
     },
     [closeOnBackdropClick, onClose],
   );
+
+  // Focus management: store previous focus and focus modal on open
+  useEffect(() => {
+    if (open) {
+      // Store the currently focused element
+      previousFocusRef.current = document.activeElement as HTMLElement;
+
+      // Focus the modal content after a brief delay
+      setTimeout(() => {
+        if (modalRef.current) {
+          const focusableElements = modalRef.current.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+          );
+          const firstFocusable = focusableElements[0] as HTMLElement;
+          if (firstFocusable) {
+            firstFocusable.focus();
+          } else {
+            modalRef.current.focus();
+          }
+        }
+      }, 100);
+    }
+
+    // Return focus when modal closes
+    return () => {
+      if (!open && previousFocusRef.current) {
+        previousFocusRef.current.focus();
+        previousFocusRef.current = null;
+      }
+    };
+  }, [open]);
+
+  // Focus trap: cycle focus within modal
+  useEffect(() => {
+    if (!open || !modalRef.current) return;
+
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== "Tab" || !modalRef.current) return;
+
+      const focusableElements = modalRef.current.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      const firstFocusable = focusableElements[0] as HTMLElement;
+      const lastFocusable = focusableElements[
+        focusableElements.length - 1
+      ] as HTMLElement;
+
+      if (e.shiftKey) {
+        // Shift + Tab: if on first element, go to last
+        if (document.activeElement === firstFocusable) {
+          e.preventDefault();
+          lastFocusable?.focus();
+        }
+      } else {
+        // Tab: if on last element, go to first
+        if (document.activeElement === lastFocusable) {
+          e.preventDefault();
+          firstFocusable?.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleTab);
+    return () => document.removeEventListener("keydown", handleTab);
+  }, [open]);
 
   useEffect(() => {
     if (!open || !closeOnEsc) return;
@@ -102,6 +169,7 @@ export default function BaseModal({
       role="presentation"
     >
       <div
+        ref={modalRef}
         // Semantic animation: modals use `animation-overlay`
         className={`bg-neutral-850 rounded-2xl w-full ${maxWidth} relative shadow-xl ${padding} max-h-[calc(100dvh-2rem)] overflow-y-auto app-scroll animation-overlay ${containerClassName}`}
         onClick={(e) => e.stopPropagation()}
@@ -109,6 +177,7 @@ export default function BaseModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? "modal-title" : undefined}
+        tabIndex={-1}
       >
         {showCloseButton && (
           <button
@@ -123,7 +192,10 @@ export default function BaseModal({
         )}
 
         {title && (
-          <h2 id="modal-title" className="sr-only">
+          <h2
+            id="modal-title"
+            className="text-xl font-bold text-neutral-100 mb-4"
+          >
             {title}
           </h2>
         )}

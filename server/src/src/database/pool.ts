@@ -52,6 +52,12 @@ async function configureConnection(connection: any) {
     await connection.query("SET character_set_connection=utf8mb4");
     await connection.query("SET character_set_client=utf8mb4");
     await connection.query("SET character_set_results=utf8mb4");
+
+    // Dev relaxed mode: disable FK enforcement (session-level).
+    // Set DB_ENFORCE_FK=1 to keep FK checks enabled.
+    if (env.nodeEnv === "development" && process.env.DB_ENFORCE_FK !== "1") {
+      await connection.query("SET FOREIGN_KEY_CHECKS = 0");
+    }
   } catch (err: any) {
     // אם יש שגיאה, רק לוג - לא לשבור את החיבור
     console.warn(

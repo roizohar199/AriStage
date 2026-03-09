@@ -19,6 +19,18 @@ import { logger } from "../../core/logger";
 import { resolveSubscriptionStatus } from "../subscriptions/resolveSubscriptionStatus";
 import { touchUserLastSeen } from "../users/users.repository";
 import { activateTrialForUser } from "../../services/subscriptionService";
+import {
+  recordFailedAttempt,
+  isAccountLocked,
+  clearFailedAttempts,
+} from "../security/accountLockout.service";
+import { validatePassword } from "../security/passwordPolicy";
+import { generateRefreshToken } from "./refreshToken.service";
+import { is2FAEnabled } from "./twoFactor.service";
+import {
+  logAuthEvent,
+  logSecurityIncident,
+} from "../security/auditLogger.service";
 
 export const resetSafeResponse = {
   message: "אם המייל קיים — נשלח אליו קישור לאיפוס",
@@ -36,24 +48,109 @@ function addDaysMysqlDateTime(days: number): string {
 //
 // ======================= LOGIN =======================
 //
-export async function loginUser(email, password) {
+export async function loginUser(
+  email: string,
+  password: string,
+  ipAddress?: string,
+  userAgent?: string,
+) {
   if (!email || !password) {
     throw new AppError(400, "נא להזין אימייל וסיסמה");
   }
 
+  // Check if account is locked due to too many failed attempts
+  const lockStatus = isAccountLocked(email);
+  if (lockStatus.locked) {
+    const minutes = Math.ceil(lockStatus.remainingTime! / 60);
+    throw new AppError(
+      429,
+      `חשבון זה נעול זמנית בשל ניסיונות התחברות רבים. נסה שוב בעוד ${minutes} דקות.`,
+    );
+  }
+
   const user = await findUserByEmail(email);
   if (!user) {
-    throw new AppError(401, "משתמש לא נמצא");
+    // Record failed attempt even if user doesn't exist (prevent enumeration)
+    recordFailedAttempt(email);
+    // Log failed login attempt
+    await logAuthEvent("FAILED_LOGIN", undefined, ipAddress, userAgent, {
+      email,
+    });
+    throw new AppError(401, "אימייל או סיסמה שגויים");
   }
 
   const isMatch = await bcrypt.compare(password, user.password_hash);
   if (!isMatch) {
-    throw new AppError(401, "סיסמה שגויה");
+    // Record failed attempt
+    const shouldLock = recordFailedAttempt(email);
+    // Log failed login
+    await logAuthEvent("FAILED_LOGIN", user.id, ipAddress, userAgent, {
+      email,
+    });
+
+    if (shouldLock) {
+      // Log account lock
+      await logAuthEvent("ACCOUNT_LOCKED", user.id, ipAddress, userAgent, {
+        email,
+        reason: "too_many_failed_attempts",
+      });
+      await logSecurityIncident(
+        "BRUTE_FORCE_DETECTED",
+        user.id,
+        ipAddress,
+        userAgent,
+        { email },
+      );
+      throw new AppError(
+        429,
+        "יותר מדי ניסיונות התחברות כושלים. חשבון זה ננעל זמנית למשך 15 דקות.",
+      );
+    }
+
+    // Show remaining attempts
+    const updatedStatus = isAccountLocked(email);
+    const attemptsLeft = updatedStatus.attemptsRemaining || 0;
+    throw new AppError(
+      401,
+      attemptsLeft > 0
+        ? `סיסמה שגויה. נותרו ${attemptsLeft} ניסיונות.`
+        : "סיסמה שגויה",
+    );
   }
+
+  // Clear failed attempts on successful login
+  clearFailedAttempts(email);
 
   // Best-effort activity stamp (do not block login on DB issues).
   void touchUserLastSeen(user.id).catch(() => undefined);
 
+  // Check if 2FA is enabled
+  const requires2FA = await is2FAEnabled(user.id);
+
+  // If 2FA is enabled, return special response instead of tokens
+  if (requires2FA) {
+    logger.info("2FA required for login", { userId: user.id, email });
+    // Log that 2FA is required (not yet completed)
+    await logAuthEvent("LOGIN", user.id, ipAddress, userAgent, {
+      email,
+      requires2FA: true,
+      step: "awaiting_2fa",
+    });
+
+    let subscription_status = user.subscription_status;
+    if (user.role !== "admin") {
+      subscription_status = resolveSubscriptionStatus(user);
+    }
+
+    return {
+      requires2FA: true,
+      userId: user.id,
+      email: user.email,
+      message: "2FA verification required",
+    };
+  }
+
+  // Generate access token (short-lived)
   const token = signToken({
     id: user.id,
     role: user.role,
@@ -63,11 +160,21 @@ export async function loginUser(email, password) {
     artist_role: user.artist_role || null,
   });
 
+  // Generate refresh token (long-lived)
+  const { token: refreshToken, expiresAt: refreshExpiresAt } =
+    await generateRefreshToken(user.id, ipAddress, userAgent);
+
   let subscription_status = user.subscription_status;
   // Admin is authoritative — do not auto-resolve if set by admin
   if (user.role !== "admin") {
     subscription_status = resolveSubscriptionStatus(user);
   }
+
+  // Log successful login
+  await logAuthEvent("LOGIN", user.id, ipAddress, userAgent, {
+    email,
+    has2FA: false,
+  });
 
   return {
     id: user.id,
@@ -81,6 +188,76 @@ export async function loginUser(email, password) {
     subscription_status,
     subscription_expires_at: user.subscription_expires_at ?? null,
     token,
+    refreshToken,
+    refreshExpiresAt,
+  };
+}
+
+//
+// =============== COMPLETE 2FA LOGIN ==================
+//
+export async function complete2FALogin(
+  userId: number,
+  token: string,
+  ipAddress?: string,
+  userAgent?: string,
+) {
+  // Verify 2FA token (throws if invalid)
+  const { verify2FA } = await import("./twoFactor.service");
+  await verify2FA(userId, token);
+
+  // Get user data
+  const user = await findUserByEmail(
+    (await import("../users/users.repository"))
+      .findUserById(userId)
+      .then((u) => u?.email || ""),
+  );
+
+  if (!user) {
+    throw new AppError(404, "User not found");
+  }
+
+  // Generate tokens
+  const accessToken = signToken({
+    id: user.id,
+    role: user.role,
+    email: user.email,
+    full_name: user.full_name || "",
+    avatar: user.avatar || null,
+    artist_role: user.artist_role || null,
+  });
+
+  const { token: refreshToken, expiresAt: refreshExpiresAt } =
+    await generateRefreshToken(user.id, ipAddress, userAgent);
+
+  let subscription_status = user.subscription_status;
+  if (user.role !== "admin") {
+    subscription_status = resolveSubscriptionStatus(user);
+  }
+
+  logger.info("2FA login completed", { userId, email: user.email });
+
+  // Log successful 2FA login
+  await logAuthEvent("LOGIN", user.id, ipAddress, userAgent, {
+    email: user.email,
+    has2FA: true,
+    step: "completed",
+  });
+
+  return {
+    id: user.id,
+    full_name: user.full_name || "",
+    email: user.email,
+    role: user.role,
+    artist_role: user.artist_role || null,
+    avatar: user.avatar || null,
+    preferred_locale: user.preferred_locale || "he-IL",
+    subscription_type: user.subscription_type ?? null,
+    subscription_status,
+    subscription_expires_at: user.subscription_expires_at ?? null,
+    token: accessToken,
+    refreshToken,
+    refreshExpiresAt,
   };
 }
 
@@ -123,6 +300,16 @@ export async function registerUser(payload) {
   if (existing) {
     logger.error("❌ [REGISTER] האימייל כבר קיים", { email });
     throw new AppError(409, "האימייל כבר קיים במערכת");
+  }
+
+  // Validate password against policy
+  logger.info("🟡 [REGISTER] בודק מדיניות סיסמה...");
+  const passwordValidation = validatePassword(password, {
+    email,
+    fullName: full_name,
+  });
+  if (!passwordValidation.valid) {
+    throw new AppError(400, passwordValidation.errors.join(". "));
   }
 
   logger.info("🟡 [REGISTER] יוצר hash לסיסמה...");
@@ -176,6 +363,13 @@ export async function registerUser(payload) {
   }
 
   logger.info("✅ [REGISTER] registerUser הושלם בהצלחה", { userId, email });
+
+  // Log successful registration
+  await logAuthEvent("REGISTER", userId, undefined, undefined, {
+    email,
+    full_name,
+  });
+
   return {
     id: userId,
     full_name,
@@ -209,6 +403,15 @@ export async function requestPasswordReset(email) {
   await saveResetToken(user.id, token, expires);
 
   const link = `${env.clientUrl}/reset/${token}`;
+
+  // Log password reset request
+  await logAuthEvent(
+    "PASSWORD_RESET_REQUESTED",
+    user.id,
+    undefined,
+    undefined,
+    { email },
+  );
 
   //
   // ⭐ עיצוב המייל שלך נשאר 1:1 כמו המקור
@@ -313,6 +516,23 @@ export async function resetPasswordWithToken(token, password) {
     throw new AppError(400, "הקישור לא תקף או שפג תוקפו");
   }
 
+  // Validate new password against policy
+  const passwordValidation = validatePassword(password, {
+    email: user.email,
+    fullName: user.full_name,
+  });
+  if (!passwordValidation.valid) {
+    throw new AppError(400, passwordValidation.errors.join(". "));
+  }
+
   const hashed = await bcrypt.hash(password, 10);
   await updatePassword(user.id, hashed);
+
+  // Clear any failed login attempts after successful password reset
+  clearFailedAttempts(user.email);
+
+  // Log successful password reset
+  await logAuthEvent("PASSWORD_RESET", user.id, undefined, undefined, {
+    email: user.email,
+  });
 }

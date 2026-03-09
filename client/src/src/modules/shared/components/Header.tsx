@@ -2,25 +2,14 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   Check,
-  CheckCircle2,
-  CheckIcon,
   HardDrive,
   LogOut,
-  Mic,
-  MinusIcon,
-  Music,
-  Music2,
   Music2Icon,
-  MusicIcon,
-  PlayCircle,
-  PlayIcon,
   Settings,
   Trash2,
-  Upload,
   User,
   Wifi,
   WifiOff,
-  X,
 } from "lucide-react";
 import { getNavItems } from "@/modules/shared/components/navConfig.tsx";
 import BaseModal from "@/modules/shared/components/BaseModal.tsx";
@@ -29,10 +18,10 @@ import { usePendingInvitations } from "@/modules/shared/hooks/usePendingInvitati
 import { useCurrentUser } from "@/modules/shared/hooks/useCurrentUser.ts";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import { useFeatureFlags } from "@/modules/shared/contexts/FeatureFlagsContext.tsx";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 import Avatar from "@/modules/shared/components/Avatar";
 import { getAvatarInitial } from "@/modules/shared/lib/avatar";
 import api from "@/modules/shared/lib/api.js";
-import AcceptInvitation from "../../auth/pages/AcceptInvitation";
 import { useOfflineStatus } from "@/modules/shared/hooks/useOfflineStatus";
 
 interface HeaderProps {
@@ -47,7 +36,10 @@ interface PendingInvitation {
 }
 
 // Pure presentational header: title/logo on the left, optional actions on the right.
-export default function Header({ rightActions }: HeaderProps): JSX.Element {
+export default function Header({
+  rightActions,
+}: HeaderProps): React.ReactElement {
+  const { t } = useTranslation();
   const { user } = useCurrentUser();
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -79,7 +71,7 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
 
   const role = user?.role || "user";
   const pendingCount = usePendingInvitations(user?.id);
-  const nav = getNavItems(role, pendingCount);
+  const nav = getNavItems(role, pendingCount, t);
 
   const initials = getAvatarInitial(user?.full_name || user?.email, "A");
 
@@ -93,7 +85,7 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
     try {
       const { data } = await api.get("/users/pending-invitation", {
         skipErrorToast: true,
-      });
+      } as any);
       setPendingInvitations(Array.isArray(data) ? data : []);
     } catch (error) {
       setPendingInvitations([]);
@@ -156,10 +148,11 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
     try {
       setProcessingId(hostId);
       await api.post("/users/accept-invitation", { hostId });
-      showToast("הזמנה אושרה", "success");
+      showToast(t("invitations.acceptedToast"), "success");
       handleInvitationHandled(hostId);
     } catch (error: any) {
-      const message = error?.response?.data?.message || "שגיאה באישור ההזמנה";
+      const message =
+        error?.response?.data?.message || t("invitations.acceptError");
       showToast(message, "error");
     } finally {
       setProcessingId(null);
@@ -170,10 +163,11 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
     try {
       setProcessingId(hostId);
       await api.post("/users/reject-invitation", { hostId });
-      showToast("הזמנה נדחתה", "success");
+      showToast(t("invitations.rejectedToast"), "success");
       handleInvitationHandled(hostId);
     } catch (error: any) {
-      const message = error?.response?.data?.message || "שגיאה בדחיית ההזמנה";
+      const message =
+        error?.response?.data?.message || t("invitations.rejectError");
       showToast(message, "error");
     } finally {
       setProcessingId(null);
@@ -269,7 +263,7 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                 toggleForcedOffline();
                 const next = !isForcedOffline;
                 showToast(
-                  next ? "עברת למצב Offline (ללא רשת)" : "חזרת למצב Online",
+                  next ? t("offline.workingOffline") : t("offline.online"),
                   "info",
                 );
               }}
@@ -281,10 +275,10 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                 }`}
               title={
                 isForcedOffline
-                  ? "מצב Offline כפוי פעיל"
+                  ? t("offline.forcedOfflineTitle")
                   : isEffectiveOffline
-                    ? "אין חיבור אינטרנט"
-                    : "Online"
+                    ? t("offline.noInternetTitle")
+                    : t("offline.onlineTitle")
               }
             >
               <span className="text-xl md:text-base">
@@ -295,7 +289,9 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                 )}
               </span>
               <span className="text-[11px] mt-1 md:mt-0 md:text-sm">
-                {isEffectiveOffline ? "Offline" : "Online"}
+                {isEffectiveOffline
+                  ? t("offline.statusOfflineLabel")
+                  : t("offline.statusOnlineLabel")}
               </span>
             </button>
           ) : null}
@@ -341,7 +337,7 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                     className="w-full flex items-center gap-2 px-4 py-2 text-label text-neutral-100 rounded-2xl hover:bg-neutral-900 transition"
                   >
                     <HardDrive size={16} />
-                    תוכן Offline
+                    {t("offline.title")}
                   </button>
                 ) : null}
                 <button
@@ -353,7 +349,7 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                   className="w-full flex items-center gap-2 px-4 py-2 text-label text-neutral-100 rounded-2xl hover:bg-neutral-900 transition"
                 >
                   <User size={16} />
-                  הזמנות ממתינות
+                  {t("nav.pendingInvitations")}
                 </button>
                 <button
                   onClick={handleSettings}
@@ -361,7 +357,7 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                   className="w-full flex items-center gap-2 px-4 py-2 text-label text-neutral-100 rounded-2xl hover:bg-neutral-900 transition"
                 >
                   <Settings size={16} />
-                  הגדרות מערכת
+                  {t("nav.settings")}
                 </button>
                 <button
                   onClick={handleLogout}
@@ -369,7 +365,7 @@ export default function Header({ rightActions }: HeaderProps): JSX.Element {
                   className="w-full flex items-center gap-2 px-4 py-2 text-label text-neutral-100 rounded-2xl hover:bg-neutral-900 transition"
                 >
                   <LogOut size={16} />
-                  התנתק
+                  {t("nav.logout")}
                 </button>
               </div>
             )}

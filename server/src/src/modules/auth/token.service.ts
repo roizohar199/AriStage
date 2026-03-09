@@ -1,7 +1,16 @@
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import { env } from "../../config/env";
 
-export function signToken(payload) {
+export interface TokenPayload {
+  id: number;
+  email: string;
+  role: string;
+  full_name: string;
+  artist_role?: string | null;
+  avatar?: string | null;
+}
+
+export function signToken(payload: TokenPayload) {
   if (!payload?.id) {
     throw new Error("Missing payload for JWT sign");
   }
@@ -16,10 +25,11 @@ export function signToken(payload) {
       avatar: payload.avatar || null,
     },
     env.jwtSecret,
-    { expiresIn: "7d" },
+    { expiresIn: "15m" }, // Shortened from 7d to 15 minutes for security
   );
 }
 
-export function verifyToken(token) {
-  return jwt.verify(token, env.jwtSecret);
+export function verifyToken(token: string): TokenPayload {
+  const decoded = jwt.verify(token, env.jwtSecret) as TokenPayload;
+  return decoded;
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { reloadAuth } from "@/modules/shared/lib/authReload.js";
 import { emitToast } from "@/modules/shared/lib/toastBus.js";
@@ -11,6 +11,7 @@ import { useOfflineStatus } from "@/modules/shared/hooks/useOfflineStatus";
 import { applyThemeFromUser } from "@/modules/shared/lib/theme";
 import { applyLocaleFromUser } from "@/modules/shared/lib/locale";
 import { registerSW } from "virtual:pwa-register";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 import ProtectedRoute from "@/modules/shared/components/ProtectedRoute.tsx";
 import Splash from "@/modules/shared/components/Splash.tsx";
@@ -35,32 +36,25 @@ interface User {
   preferred_locale?: string | null;
 }
 
-/* -------------------------------------------------------
-   🟧 יציאה מייצוג — גרסה מתוקנת סופית (moved from App.tsx)
--------------------------------------------------------- */
-function exitImpersonation(): void {
+function exitImpersonationLocalized(
+  t: (path: string, params?: any, fallback?: string) => string,
+): void {
   const origUser = localStorage.getItem("ari_original_user");
   const origToken = localStorage.getItem("ari_original_token");
 
   if (!origUser || !origToken) {
-    emitToast("⚠️ לא נמצא חשבון מקורי לחזרה", "error");
+    emitToast(t("auth.impersonationNoOriginalAccount"), "error");
     return;
   }
 
-  // ✔️ שחזור נתוני המשתמש המקורי
   localStorage.setItem("ari_user", origUser);
   localStorage.setItem("ari_token", origToken);
-
-  // ✔️ ניקוי נתוני הייצוג
   localStorage.removeItem("ari_original_user");
   localStorage.removeItem("ari_original_token");
 
   reloadAuth();
+  emitToast(t("auth.impersonationBackToOriginal"), "success");
 
-  emitToast("✅ חזרת לחשבון המקורי", "success");
-
-  // ❗ בעבר היה "/" → גרם לזריקה החוצה
-  // ✔️ עכשיו מחזיר לדף המאובטח היחיד: /home
   setTimeout(() => {
     window.location.replace("/home");
   }, 250);
@@ -68,9 +62,12 @@ function exitImpersonation(): void {
 
 export default function AppBootstrap(): JSX.Element {
   const location = useLocation();
+  const { t } = useTranslation();
   const { user: ctxUser, loading: authLoading, subscriptionStatus } = useAuth();
   const { isEnabled } = useFeatureFlags();
   const { isEffectiveOffline } = useOfflineStatus();
+
+  const prevSocketRef = useRef<ReturnType<typeof io> | null>(null);
 
   const offlineOnlineEnabled = isEnabled("module.offlineOnline", true);
   const effectiveOffline = offlineOnlineEnabled ? isEffectiveOffline : false;
@@ -109,25 +106,73 @@ export default function AppBootstrap(): JSX.Element {
   /* -----------------------------------------
      🔥 Socket גלובלי אחד לכל האפליקציה (moved from App.tsx)
   ----------------------------------------- */
+  const socketToken = useMemo(() => {
+    // Keep parity with api.ts (supports either ari_token or ari_user.token)
+    try {
+      let token = localStorage.getItem("ari_token");
+      if (token) return token;
+      const raw = localStorage.getItem("ari_user");
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return parsed?.token ? String(parsed.token) : null;
+    } catch {
+      return null;
+    }
+    // Re-evaluate on auth state changes so token updates after login/logout.
+  }, [ctxUser?.id]);
+
   const socket = useMemo(() => {
-    return io(API_ORIGIN, {
+    const s = io(API_ORIGIN, {
       transports: ["websocket", "polling"],
       withCredentials: true,
+      autoConnect: Boolean(socketToken),
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
       timeout: 20000,
+      auth: socketToken ? { token: socketToken } : undefined,
     });
-  }, []);
+    return s;
+  }, [socketToken]);
+
+  // Ensure we disconnect the previous socket instance when token changes
+  useEffect(() => {
+    const prev = prevSocketRef.current;
+    if (prev && prev !== socket) {
+      try {
+        prev.removeAllListeners();
+        prev.disconnect();
+      } catch {
+        // ignore
+      }
+    }
+    prevSocketRef.current = socket;
+
+    return () => {
+      // On unmount: cleanup current socket
+      try {
+        socket.removeAllListeners();
+        socket.disconnect();
+      } catch {
+        // ignore
+      }
+    };
+  }, [socket]);
 
   useEffect(() => {
     if (!socket) return;
     if (effectiveOffline) {
       socket.disconnect();
-    } else if (!socket.connected) {
-      socket.connect();
+      return;
     }
-  }, [effectiveOffline, socket]);
+
+    // Connect only when authenticated; prevents pre-login connection attempts.
+    if (socketToken) {
+      if (!socket.connected) socket.connect();
+    } else {
+      if (socket.connected) socket.disconnect();
+    }
+  }, [effectiveOffline, socket, socketToken]);
 
   useEffect(() => {
     // Gate PWA offline behavior (service worker) behind feature flag.
@@ -145,10 +190,10 @@ export default function AppBootstrap(): JSX.Element {
     registerSW({
       immediate: true,
       onOfflineReady() {
-        emitToast("✅ האפליקציה מוכנה לשימוש Offline", "success");
+        emitToast(t("offline.ready"), "success");
       },
     });
-  }, [offlineOnlineEnabled]);
+  }, [offlineOnlineEnabled, t]);
 
   useEffect(() => {
     if (!socket || !currentUser?.id) {
@@ -232,7 +277,7 @@ export default function AppBootstrap(): JSX.Element {
     <AppLayout
       isImpersonating={isImpersonating}
       currentUser={currentUser}
-      onExitImpersonation={exitImpersonation}
+      onExitImpersonation={() => exitImpersonationLocalized(t)}
       hideNav={hideNav}
     >
       <Routes>

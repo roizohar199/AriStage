@@ -3,9 +3,11 @@ import { useParams } from "react-router-dom";
 import api from "@/modules/shared/lib/api.js";
 import { emitToast } from "@/modules/shared/lib/toastBus.js";
 import { PasswordInput } from "@/modules/shared/components/FormControls";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 export default function ResetPassword() {
   const { token } = useParams();
+  const { t } = useTranslation();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
@@ -16,7 +18,7 @@ export default function ResetPassword() {
     setError("");
 
     if (password !== confirm) {
-      return setError("הסיסמאות אינן תואמות");
+      return setError(t("auth.passwordsDontMatch"));
     }
 
     try {
@@ -28,9 +30,9 @@ export default function ResetPassword() {
       });
 
       // 🔥 במקום הודעה ירוקה — Toast למעלה
-      emitToast(data.message || "הסיסמה עודכנה בהצלחה!", "success");
+      emitToast(data.message || t("auth.passwordUpdated"), "success");
     } catch (err) {
-      setError(err?.response?.data?.message || "שגיאה");
+      setError(err?.response?.data?.message || t("common.error"));
     } finally {
       setLoading(false);
     }
@@ -40,7 +42,7 @@ export default function ResetPassword() {
     <div className="flex justify-center items-center min-h-screen bg-neutral-900 text-neutral-100 px-4">
       <div className="w-full max-w-sm bg-neutral-800 border border-neutral-700 p-6 rounded-2xl">
         <h2 className="text-2xl font-bold text-brand-primary text-center mb-4">
-          איפוס סיסמה
+          {t("auth.resetPassword")}
         </h2>
 
         {/* ❌ רק שגיאות מוצגות בדף */}
@@ -48,13 +50,13 @@ export default function ResetPassword() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <PasswordInput
-            placeholder="סיסמה חדשה"
+            placeholder={t("auth.newPassword")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
 
           <PasswordInput
-            placeholder="אימות סיסמה"
+            placeholder={t("auth.confirmPassword")}
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
           />
@@ -63,7 +65,7 @@ export default function ResetPassword() {
             disabled={loading}
             className="w-full bg-brand-primary text-neutral-100 font-bold py-2 rounded-xl"
           >
-            {loading ? "מעדכן..." : "עדכן סיסמה"}
+            {loading ? t("common.saving") : t("auth.updatePassword")}
           </button>
         </form>
 

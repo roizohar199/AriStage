@@ -6,6 +6,7 @@ import DesignActionButton from "@/modules/shared/components/DesignActionButton";
 import { useToast } from "@/modules/shared/components/ToastProvider";
 import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
 import { Input } from "@/modules/shared/components/FormControls";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 type SmallBadgeVariant = "neutral" | "brand" | "success" | "danger";
 
@@ -25,59 +26,63 @@ type ModuleRow = {
 
 const DEFAULT_MODULES: Array<{
   key: string;
-  label: string;
-  description: string;
+  labelKey: string;
+  descriptionKey: string;
 }> = [
   {
     key: "module.offlineOnline",
-    label: "Offline / Online",
-    description: "מצב Offline/Online, קאש (PWA), וזיהוי חיבור רשת",
+    labelKey: "admin.modelsTab.modules.offlineOnline.label",
+    descriptionKey: "admin.modelsTab.modules.offlineOnline.description",
   },
   {
     key: "module.charts",
-    label: "צ'ארטים",
-    description: "ניהול צ'ארטים וקבצי תווים",
+    labelKey: "admin.modelsTab.modules.charts.label",
+    descriptionKey: "admin.modelsTab.modules.charts.description",
   },
-  { key: "module.lyrics", label: "מילים", description: "ניהול מילים לשירים" },
+  {
+    key: "module.lyrics",
+    labelKey: "admin.modelsTab.modules.lyrics.label",
+    descriptionKey: "admin.modelsTab.modules.lyrics.description",
+  },
   {
     key: "module.addSongs",
-    label: "הוספת שירים",
-    description: "יצירה/עריכה/מחיקה של שירים",
+    labelKey: "admin.modelsTab.modules.addSongs.label",
+    descriptionKey: "admin.modelsTab.modules.addSongs.description",
   },
   {
     key: "module.lineups",
-    label: "ליינאפים",
-    description: "ניהול ליינאפים ושירים בליינאפ",
+    labelKey: "admin.modelsTab.modules.lineups.label",
+    descriptionKey: "admin.modelsTab.modules.lineups.description",
   },
   {
     key: "module.plans",
-    label: "מסלולים",
-    description: "ניהול מסלולים / תוכניות תמחור",
+    labelKey: "admin.modelsTab.modules.plans.label",
+    descriptionKey: "admin.modelsTab.modules.plans.description",
   },
   {
     key: "module.pendingInvitations",
-    label: "הזמנות ממתינות",
-    description: "צפייה והחלטה על הזמנות ממתינות",
+    labelKey: "admin.modelsTab.modules.pendingInvitations.label",
+    descriptionKey: "admin.modelsTab.modules.pendingInvitations.description",
   },
   {
     key: "module.inviteArtist",
-    label: "הזמנת אמן - אישי",
-    description: "שליחת/ביטול הזמנה לאמן",
+    labelKey: "admin.modelsTab.modules.inviteArtist.label",
+    descriptionKey: "admin.modelsTab.modules.inviteArtist.description",
   },
   {
     key: "module.invitedMeArtists",
-    label: "אמנים שהזמינו אותי - משותפים",
-    description: "הצגת המאגר: מי הזמין אותי",
+    labelKey: "admin.modelsTab.modules.invitedMeArtists.label",
+    descriptionKey: "admin.modelsTab.modules.invitedMeArtists.description",
   },
   {
     key: "module.payments",
-    label: "תשלומים",
-    description: "יצירת תשלום ואישור תשלום להפעלת מנוי",
+    labelKey: "admin.modelsTab.modules.payments.label",
+    descriptionKey: "admin.modelsTab.modules.payments.description",
   },
   {
     key: "module.shareLineup",
-    label: "שיתוף ליינאפ",
-    description: "שיתוף וצפייה בליינאפ ציבורי באמצעות קישור",
+    labelKey: "admin.modelsTab.modules.shareLineup.label",
+    descriptionKey: "admin.modelsTab.modules.shareLineup.description",
   },
 ];
 
@@ -107,6 +112,7 @@ export default function AdminModelsTab({
   setDashboardCards,
 }: Props) {
   const { showToast } = useToast();
+  const { t } = useTranslation();
 
   const [rows, setRows] = useState<FeatureFlagRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -151,8 +157,8 @@ export default function AdminModelsTab({
         const dbLabel = (r.description || "").toString().trim();
         return {
           key: String(r.key),
-          label: def?.label || dbLabel || String(r.key),
-          description: def?.description || dbLabel || "",
+          label: def ? t(def.labelKey) : dbLabel || String(r.key),
+          description: def ? t(def.descriptionKey) : dbLabel || "",
           enabled: toBool(r.enabled),
           source: "db" as const,
         };
@@ -162,8 +168,8 @@ export default function AdminModelsTab({
     const missingDefaults = DEFAULT_MODULES.filter((m) => !seen.has(m.key)).map(
       (m) => ({
         key: m.key,
-        label: m.label,
-        description: m.description,
+        label: t(m.labelKey),
+        description: t(m.descriptionKey),
         enabled: true,
         source: "default" as const,
       }),
@@ -172,7 +178,7 @@ export default function AdminModelsTab({
     return [...dbModules, ...missingDefaults].sort((a, b) =>
       a.key.localeCompare(b.key),
     );
-  }, [rows]);
+  }, [rows, t]);
 
   const filteredModules = useMemo(() => {
     const q = searchValue.trim().toLowerCase();
@@ -192,28 +198,29 @@ export default function AdminModelsTab({
         await load();
       } catch (err: any) {
         const msg =
-          err?.response?.data?.message || "שגיאה בעדכון (feature flag)";
+          err?.response?.data?.message ||
+          t("admin.modelsTab.messages.updateError");
         showToast(msg, "error");
       }
     },
-    [load, showToast],
+    [load, showToast, t],
   );
 
   const create = async () => {
     const key = createForm.key.trim();
     if (!key || !key.startsWith("module.")) {
-      showToast('Key חייב להתחיל ב-"module."', "error");
+      showToast(t("admin.modelsTab.messages.keyMustStartWithModule"), "error");
       return;
     }
     if (!/^[a-zA-Z0-9_.-]+$/.test(key)) {
-      showToast("Key לא חוקי (רק אותיות/ספרות/._-)", "error");
+      showToast(t("admin.modelsTab.messages.invalidKey"), "error");
       return;
     }
     const label = createForm.label.trim();
     const desc = createForm.description.trim();
     const effectiveDesc = desc || label;
     if (!effectiveDesc) {
-      showToast("יש למלא לפחות Label או Description", "error");
+      showToast(t("admin.modelsTab.messages.fillLabelOrDescription"), "error");
       return;
     }
 
@@ -226,7 +233,7 @@ export default function AdminModelsTab({
         description: "",
         enabled: true,
       });
-      showToast("מודול נוסף", "success");
+      showToast(t("admin.modelsTab.messages.moduleAdded"), "success");
     } finally {
       setAdding(false);
     }
@@ -245,22 +252,22 @@ export default function AdminModelsTab({
       {
         icon: <ListChecks size={32} />,
         value: dashboard.flagsTotal,
-        label: "Feature Flags",
+        label: t("admin.featureFlags"),
       },
       {
         icon: <Boxes size={32} />,
         value: dashboard.modulesTotal,
-        label: "Modules",
+        label: t("admin.modelsTab.dashboard.modules"),
       },
       {
         icon: <ToggleRight size={32} />,
         value: dashboard.enabledModules,
-        label: "Enabled",
+        label: t("admin.enabledModules"),
       },
       {
         icon: <ToggleLeft size={32} />,
         value: dashboard.disabledModules,
-        label: "Disabled",
+        label: t("admin.disabledModules"),
       },
     ]);
   }, [
@@ -269,6 +276,7 @@ export default function AdminModelsTab({
     dashboard.enabledModules,
     dashboard.flagsTotal,
     dashboard.modulesTotal,
+    t,
   ]);
 
   return (
@@ -276,47 +284,49 @@ export default function AdminModelsTab({
       <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex flex-col">
-            <div className="text-neutral-100 font-bold">מודלים (Modules)</div>
+            <div className="text-neutral-100 font-bold">
+              {t("admin.modelsTab.header.title")}
+            </div>
             <div className="text-xs text-neutral-400">
-              הפעלה/כיבוי מודולים דרך Feature Flags (`module.*`)
+              {t("admin.modelsTab.header.description")}
             </div>
           </div>
           <DesignActionButton type="button" onClick={load}>
-            רענן
+            {t("common.refresh")}
           </DesignActionButton>
         </div>
 
         <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
           <div className="flex flex-col gap-1">
             <Input
-              label="Key"
+              label={t("admin.modelsTab.form.keyLabel")}
               value={createForm.key}
               onChange={(e) =>
                 setCreateForm((p) => ({ ...p, key: e.target.value }))
               }
-              placeholder="module.myFeature"
+              placeholder={t("admin.modelsTab.form.keyPlaceholder")}
               className="mb-0"
             />
           </div>
           <div className="flex flex-col gap-1">
             <Input
-              label="Label"
+              label={t("admin.modelsTab.form.labelLabel")}
               value={createForm.label}
               onChange={(e) =>
                 setCreateForm((p) => ({ ...p, label: e.target.value }))
               }
-              placeholder="לדוגמה: הוספת שירים"
+              placeholder={t("admin.modelsTab.form.labelPlaceholder")}
               className="mb-0"
             />
           </div>
           <div className="flex flex-col gap-1 md:col-span-2">
             <Input
-              label="Description"
+              label={t("admin.modelsTab.form.descriptionLabel")}
               value={createForm.description}
               onChange={(e) =>
                 setCreateForm((p) => ({ ...p, description: e.target.value }))
               }
-              placeholder="תיאור (אופציונלי) — אם ריק נשתמש ב-Label"
+              placeholder={t("admin.modelsTab.form.descriptionPlaceholder")}
               className="mb-0"
             />
           </div>
@@ -331,7 +341,7 @@ export default function AdminModelsTab({
                 }
                 className="accent-brand-primary"
               />
-              enabled
+              {t("admin.modelsTab.form.enabledLabel")}
             </label>
 
             <DesignActionButton
@@ -341,7 +351,9 @@ export default function AdminModelsTab({
             >
               <span className="inline-flex items-center gap-2">
                 <Plus size={16} />
-                {adding ? "מוסיף..." : "הוסף מודול"}
+                {adding
+                  ? t("admin.modelsTab.form.adding")
+                  : t("admin.modelsTab.form.addButton")}
               </span>
             </DesignActionButton>
           </div>
@@ -350,23 +362,29 @@ export default function AdminModelsTab({
 
       {loading ? (
         <div className="bg-neutral-900 rounded-2xl border border-neutral-800 p-6 text-center text-neutral-400">
-          טוען מודלים...
+          {t("admin.modelsTab.loading")}
         </div>
       ) : unsupported ? (
         <div className="bg-neutral-800 rounded-2xl p-6 text-center">
-          <p className="text-neutral-400 text-sm">Endpoint לא זמין</p>
-          <p className="text-neutral-500 text-xs mt-1">GET /feature-flags</p>
+          <p className="text-neutral-400 text-sm">
+            {t("admin.modelsTab.unsupported.title")}
+          </p>
+          <p className="text-neutral-500 text-xs mt-1">
+            {t("admin.modelsTab.unsupported.endpoint")}
+          </p>
         </div>
       ) : filteredModules.length === 0 ? (
         <div className="bg-neutral-800 rounded-2xl p-6 text-center">
-          <p className="text-neutral-400 text-sm">אין מודלים להצגה</p>
+          <p className="text-neutral-400 text-sm">
+            {t("admin.modelsTab.empty")}
+          </p>
           {searchValue.trim() ? (
             <button
               type="button"
               onClick={() => setSearchValue("")}
               className="text-xs text-neutral-400 hover:text-neutral-200 mt-2"
             >
-              נקה חיפוש
+              {t("admin.modelsTab.clearSearch")}
             </button>
           ) : null}
         </div>
@@ -381,9 +399,13 @@ export default function AdminModelsTab({
                 <div className="flex flex-wrap gap-2 mt-2">
                   <SmallBadge variant="neutral">{m.key}</SmallBadge>
                   {m.source === "default" ? (
-                    <SmallBadge variant="brand">default</SmallBadge>
+                    <SmallBadge variant="brand">
+                      {t("admin.modelsTab.badges.default")}
+                    </SmallBadge>
                   ) : (
-                    <SmallBadge variant="success">db</SmallBadge>
+                    <SmallBadge variant="success">
+                      {t("admin.modelsTab.badges.db")}
+                    </SmallBadge>
                   )}
                 </div>
                 {m.description ? (
@@ -397,7 +419,7 @@ export default function AdminModelsTab({
                 <button
                   onClick={() => upsertFlag(m.key, !m.enabled, m.description)}
                   className="w-6 h-6"
-                  title="toggle"
+                  title={t("admin.modelsTab.actions.toggle")}
                   type="button"
                 >
                   {m.enabled ? (

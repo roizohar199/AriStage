@@ -1,10 +1,13 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 
 // Pure presentational footer: small, non-intrusive, dark-theme friendly.
+// Enhanced with accessibility links and cookie settings
 export default function Footer() {
   const [openSection, setOpenSection] = useState<
     "about" | "support" | "terms" | "privacy" | null
   >(null);
+  const [showCookieSettings, setShowCookieSettings] = useState(false);
 
   const sections = useMemo(
     () =>
@@ -123,7 +126,10 @@ export default function Footer() {
   );
 
   return (
-    <footer className="w-full bg-neutral-900 px-4 sm:px-6 lg:px-8">
+    <footer
+      className="w-full bg-neutral-900 px-4 sm:px-6 lg:px-8"
+      role="contentinfo"
+    >
       <div className="mx-auto max-w-5xl py-4">
         <div className="flex flex-col items-center justify-center gap-3">
           <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
@@ -147,6 +153,29 @@ export default function Footer() {
                 </button>
               );
             })}
+          </nav>
+
+          {/* Accessibility and Cookie links */}
+          <nav
+            className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm"
+            aria-label="קישורי נגישות ופרטיות"
+          >
+            <Link
+              to="/accessibility"
+              className="text-neutral-400 hover:text-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20 rounded px-2 py-1"
+            >
+              הצהרת נגישות
+            </Link>
+            <button
+              type="button"
+              onClick={() => {
+                // Trigger cookie settings modal via custom event
+                window.dispatchEvent(new CustomEvent("open-cookie-settings"));
+              }}
+              className="text-neutral-400 hover:text-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20 rounded px-2 py-1"
+            >
+              הגדרות עוגיות
+            </button>
           </nav>
 
           {sections.map((section) => {

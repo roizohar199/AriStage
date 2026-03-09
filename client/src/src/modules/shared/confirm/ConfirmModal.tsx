@@ -1,6 +1,7 @@
 import React from "react";
 import BaseModal from "../components/BaseModal.tsx";
 import { ConfirmVariant } from "./types";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 interface ConfirmModalProps {
   open: boolean;
@@ -17,12 +18,16 @@ export default function ConfirmModal({
   open,
   title,
   message,
-  confirmLabel = "אישור",
-  cancelLabel = "ביטול",
+  confirmLabel,
+  cancelLabel,
   variant = "default",
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
+  const { t } = useTranslation();
+  const effectiveConfirmLabel = confirmLabel ?? t("common.ok");
+  const effectiveCancelLabel = cancelLabel ?? t("common.cancel");
+
   const confirmButtonClassName =
     variant === "confirm"
       ? "bg-brand-primary text-neutral-100"
@@ -50,7 +55,7 @@ export default function ConfirmModal({
             onClick={onCancel}
             type="button"
           >
-            {cancelLabel}
+            {effectiveCancelLabel}
           </button>
 
           <button
@@ -58,7 +63,7 @@ export default function ConfirmModal({
             onClick={onConfirm}
             type="button"
           >
-            {confirmLabel}
+            {effectiveConfirmLabel}
           </button>
         </div>
       </div>

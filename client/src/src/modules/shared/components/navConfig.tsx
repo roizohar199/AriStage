@@ -17,10 +17,16 @@ export type NavItem = {
   badge?: number;
 };
 
-export function getNavItems(role: string, pendingCount: number): NavItem[] {
+type TranslationFunction = (key: string) => string;
+
+export function getNavItems(
+  role: string,
+  pendingCount: number,
+  t: TranslationFunction,
+): NavItem[] {
   let items: NavItem[] = [
-    { to: "/my", label: "אישי", icon: <User size={22} /> },
-    { to: "/MyArtist", label: "משותפים", icon: <Users size={22} /> },
+    { to: "/my", label: t("nav.personal"), icon: <User size={22} /> },
+    { to: "/MyArtist", label: t("nav.shared"), icon: <Users size={22} /> },
   ];
   // הסתרה לאדמין – החלטת UX בצד הלקוח בלבד.
   // בצד השרת admin עדיין יכול לגשת לאותם APIs בדיוק כמו user.
@@ -28,7 +34,11 @@ export function getNavItems(role: string, pendingCount: number): NavItem[] {
     items = items.filter(
       (item) => item.to !== "/my" && item.to !== "/MyArtist",
     );
-    items.push({ to: "/admin", label: "אדמין", icon: <Shield size={22} /> });
+    items.push({
+      to: "/admin",
+      label: t("nav.admin"),
+      icon: <Shield size={22} />,
+    });
   }
   return items;
 }

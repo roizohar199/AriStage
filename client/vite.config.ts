@@ -1,8 +1,54 @@
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig, loadEnv, Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { fileURLToPath, URL } from "node:url";
 import { VitePWA } from "vite-plugin-pwa";
+
+/**
+ * Custom Vite plugin to generate runtime-config.js for Nagish.li
+ * This allows us to inject environment variables into the runtime
+ */
+function generateRuntimeConfig(env: Record<string, string>): Plugin {
+  const getConfig = () => ({
+    NAGISHLI_ENABLED: env.VITE_NAGISHLI_ENABLED === "true",
+    NAGISHLI_LANG: env.VITE_NAGISHLI_LANG || "he",
+    NAGISHLI_POS: env.VITE_NAGISHLI_POS || "br",
+  });
+
+  const generateConfigContent = (isDev = false) => {
+    const config = getConfig();
+    return `/**
+ * Runtime Configuration - ${isDev ? "Development" : "Production"} Mode
+ * DO NOT EDIT MANUALLY - This file is auto-generated
+ */
+window.__RUNTIME__ = ${JSON.stringify(config, null, 2)};
+`;
+  };
+
+  return {
+    name: "generate-runtime-config",
+    configureServer(server) {
+      // For development mode, serve runtime-config.js dynamically
+      server.middlewares.use((req, res, next) => {
+        if (req.url === "/runtime-config.js") {
+          res.setHeader("Content-Type", "application/javascript");
+          res.setHeader("Cache-Control", "no-cache");
+          res.end(generateConfigContent(true));
+          return;
+        }
+        next();
+      });
+    },
+    generateBundle() {
+      // For production build, emit runtime-config.js as a static asset
+      this.emitFile({
+        type: "asset",
+        fileName: "runtime-config.js",
+        source: generateConfigContent(false),
+      });
+    },
+  };
+}
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
@@ -11,6 +57,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
+      generateRuntimeConfig(env), // Add runtime config generator with env variables
       VitePWA({
         registerType: "autoUpdate",
         includeAssets: ["pwa.svg", "screen.png"],

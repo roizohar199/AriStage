@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "@/modules/shared/lib/api.js";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 export default function AcceptInvitation() {
   const { token } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -14,7 +16,7 @@ export default function AcceptInvitation() {
 
   useEffect(() => {
     if (!token) {
-      setError("קישור הזמנה לא תקין");
+      setError(t("invitations.invalidLink"));
       setLoading(false);
       return;
     }
@@ -31,19 +33,19 @@ export default function AcceptInvitation() {
 
       if (data.needsLogin) {
         setNeedsLogin(true);
-        setMessage("הצטרפת בהצלחה למאגר! אנא התחבר כדי להמשיך.");
+        setMessage(t("invitations.joinedPleaseLogin"));
       } else if (data.needsRegistration) {
         setNeedsRegistration(true);
         setInvitationEmail(data.email);
-        setMessage("הצטרף למאגר על ידי יצירת חשבון חדש.");
+        setMessage(t("invitations.createAccountToJoin"));
       } else {
-        setMessage(data.message || "הצטרפת בהצלחה למאגר!");
+        setMessage(data.message || t("invitations.joinedSuccess"));
         setTimeout(() => {
           navigate("/login");
         }, 2000);
       }
     } catch (err) {
-      setError(err?.response?.data?.message || "שגיאה בטיפול בהזמנה");
+      setError(err?.response?.data?.message || t("invitations.handleError"));
     } finally {
       setLoading(false);
     }
@@ -55,43 +57,45 @@ export default function AcceptInvitation() {
         {loading ? (
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-neutral-400">מטפל בהזמנה...</p>
+            <p className="text-neutral-400">{t("invitations.processing")}</p>
           </div>
         ) : error ? (
           <div className="text-center">
             <div className="text-red-400 text-xl mb-4">❌</div>
-            <h2 className="text-2xl font-bold text-neutral-100 mb-2">שגיאה</h2>
+            <h2 className="text-2xl font-bold text-neutral-100 mb-2">
+              {t("common.error")}
+            </h2>
             <p className="text-neutral-400 mb-6">{error}</p>
             <button
               onClick={() => navigate("/login")}
               className="bg-brand-primary hover:bg-brand-primaryLight text-neutral-100 font-semibold px-6 py-3 rounded-lg"
             >
-              חזרה להתחברות
+              {t("auth.backToLogin")}
             </button>
           </div>
         ) : needsLogin ? (
           <div className="text-center">
             <div className="text-green-400 text-xl mb-4">✅</div>
             <h2 className="text-2xl font-bold text-neutral-100 mb-2">
-              הצטרפת למאגר!
+              {t("invitations.joinedTitle")}
             </h2>
             <p className="text-neutral-400 mb-6">{message}</p>
             <button
               onClick={() => navigate("/login")}
               className="bg-brand-primary hover:bg-brand-primaryLight text-neutral-100 font-semibold px-6 py-3 rounded-lg"
             >
-              התחבר עכשיו
+              {t("auth.loginNow")}
             </button>
           </div>
         ) : needsRegistration ? (
           <div className="text-center">
             <div className="text-brand-primary text-xl mb-4">🎵</div>
             <h2 className="text-2xl font-bold text-neutral-100 mb-2">
-              הצטרף למאגר
+              {t("invitations.joinPoolTitle")}
             </h2>
             <p className="text-neutral-400 mb-6">{message}</p>
             <p className="text-neutral-500 text-sm mb-6">
-              האימייל שלך: <strong>{invitationEmail}</strong>
+              {t("invitations.yourEmail")}: <strong>{invitationEmail}</strong>
             </p>
             <button
               onClick={() =>
@@ -101,15 +105,19 @@ export default function AcceptInvitation() {
               }
               className="bg-brand-primary hover:bg-brand-primaryLight text-neutral-100 font-semibold px-6 py-3 rounded-lg"
             >
-              צור חשבון חדש
+              {t("auth.createAccount")}
             </button>
           </div>
         ) : (
           <div className="text-center">
             <div className="text-green-400 text-xl mb-4">✅</div>
-            <h2 className="text-2xl font-bold text-neutral-100 mb-2">הצלחה!</h2>
+            <h2 className="text-2xl font-bold text-neutral-100 mb-2">
+              {t("common.success")}
+            </h2>
             <p className="text-neutral-400 mb-6">{message}</p>
-            <p className="text-neutral-500 text-sm">מעביר לדף ההתחברות...</p>
+            <p className="text-neutral-500 text-sm">
+              {t("invitations.redirectingToLogin")}
+            </p>
           </div>
         )}
       </div>
