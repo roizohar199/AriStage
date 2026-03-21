@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import api from "@/modules/shared/lib/api.js";
 import { Input, Textarea, Field } from "./FormControls";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 export default function ContactForm({ user }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState({
     subject: "",
     message: "",
@@ -28,11 +30,11 @@ export default function ContactForm({ user }) {
         message: form.message,
       });
 
-      setSuccess("ההודעה נשלחה בהצלחה! נחזור אליך בהקדם.");
+      setSuccess(t("contact.successMessage"));
       setForm({ subject: "", message: "", phone: "" });
     } catch (err) {
       console.error(err);
-      setError("שגיאה בשליחת ההודעה");
+      setError(t("contact.errorMessage"));
     } finally {
       setLoading(false);
     }
@@ -40,33 +42,33 @@ export default function ContactForm({ user }) {
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <Field label="נושא ההודעה" required>
+      <Field label={t("contact.subjectLabel")} required>
         <Input
           type="text"
           value={form.subject}
           onChange={(e) => setForm({ ...form, subject: e.target.value })}
-          placeholder="מה הנושא?"
+          placeholder={t("contact.subjectPlaceholder")}
           required
         />
       </Field>
 
-      <Field label="תוכן ההודעה" required>
+      <Field label={t("contact.messageLabel")} required>
         <Textarea
           value={form.message}
           onChange={(e) => setForm({ ...form, message: e.target.value })}
-          placeholder="איך אפשר לעזור?"
+          placeholder={t("contact.messagePlaceholder")}
           required
           rows={4}
         />
       </Field>
 
-      <Field label="טלפון לחזרה" required>
+      <Field label={t("contact.phoneLabel")} required>
         <Input
           type="tel"
           dir="ltr"
           value={form.phone}
           onChange={(e) => setForm({ ...form, phone: e.target.value })}
-          placeholder="050-0000000"
+          placeholder={t("contact.phonePlaceholder")}
           required
         />
       </Field>
@@ -80,7 +82,7 @@ export default function ContactForm({ user }) {
         disabled={loading}
         className="w-full bg-brand-primary hover:bg-brand-primaryLight text-neutral-100 font-semibold py-2 rounded-lg transition shadow-innerIos hover:shadow-[0_0_12px_rgba(255,136,0,0.4)]"
       >
-        {loading ? "שולח..." : "שלח הודעה"}
+        {loading ? t("contact.sending") : t("contact.sendButton")}
       </button>
     </form>
   );

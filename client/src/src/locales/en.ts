@@ -13,11 +13,14 @@ export const en = {
     filter: "Filter",
     close: "Close",
     back: "Back",
+    backToHome: "Back to home",
     next: "Next",
     previous: "Previous",
     loading: "Loading...",
+    loadingData: "Loading data...",
     saving: "Saving...",
     deleting: "Deleting...",
+    creating: "Creating...",
     confirm: "Confirm",
     yes: "Yes",
     no: "No",
@@ -45,12 +48,14 @@ export const en = {
     selectAll: "Select All",
     unselectAll: "Unselect All",
     noResults: "No results found",
+    notSpecified: "Not specified",
     showPassword: "Show password",
     hidePassword: "Hide password",
     showMore: "Show More",
     showLess: "Show Less",
     all: "All",
     song: "Song",
+    closeModal: "Close modal",
   },
 
   // Navigation
@@ -120,6 +125,7 @@ export const en = {
     noAvatar: "No avatar",
     uploadAvatar: "Upload Avatar",
     choosePassword: "Choose password",
+    subtitle: "Sign in or register to manage your lineup",
     iReadThe: "I read the",
     terms: "Terms",
     passwordUpdated: "Password updated successfully!",
@@ -130,6 +136,83 @@ export const en = {
     twoFactorCode: "Verification Code",
     verify: "Verify",
     verifying: "Verifying...",
+    resetting: "Resetting...",
+
+    termsDialog: {
+      ariaLabel: "Ari Stage terms of use",
+      title: "Terms of Use - Ari Stage",
+      lastUpdated:
+        "Last updated: 23/01/2026. Using the Ari Stage site or app constitutes agreement to the terms below.",
+      confirmButton: "I agree",
+      sections: [
+        {
+          title: "1. What the service is",
+          paragraphs: [
+            'Ari Stage is a system for managing lineups, songs, and related materials (the "Service"). The Service may be used for personal work or team management.',
+          ],
+        },
+        {
+          title: "2. User account",
+          items: [
+            "You must provide accurate, current information and keep your password confidential.",
+            "You are responsible for all activity on your account, including uploaded content.",
+            "We may suspend or close an account in cases of misuse or breach of terms.",
+          ],
+        },
+        {
+          title: "3. Content uploaded by users",
+          items: [
+            "Content such as song names, text, files, images, and PDFs is your responsibility alone.",
+            "You represent that you have the rights to use and upload the content and that it does not infringe copyright, privacy, or trademark rights.",
+            "You may not upload unlawful, harmful, misleading, or security-threatening content.",
+          ],
+        },
+        {
+          title: "4. Permitted and prohibited use",
+          items: [
+            "You may use the Service to manage and share materials related to performances, rehearsals, and production.",
+            "You may not attempt intrusion, vulnerability scanning, permission bypass, or unusually heavy use that strains the system.",
+            "You may not collect information about other users without authorization.",
+          ],
+        },
+        {
+          title: "5. Payments and subscriptions",
+          paragraphs: [
+            "Some features may be paid. Where plans or subscriptions exist, pricing, billing, and related terms will be shown at the point of purchase. Non-payment may limit access to certain features.",
+          ],
+        },
+        {
+          title: "6. Availability and changes",
+          paragraphs: [
+            "We aim for high availability but do not guarantee uninterrupted or error-free service. We may update, change, or discontinue parts of the Service.",
+          ],
+        },
+        {
+          title: "7. Privacy",
+          paragraphs: [
+            "We use information to provide the Service, maintain security, and improve the user experience. We may use cookies or local storage such as localStorage for operational needs. We do not share personal information with third parties unless required by law or necessary to operate the Service.",
+          ],
+        },
+        {
+          title: "8. Responsibility and limitation of liability",
+          paragraphs: [
+            'The Service is provided "as is". To the extent permitted by law, Ari Stage is not liable for indirect or consequential damages, data loss, or lost profits arising from use of the Service.',
+          ],
+        },
+        {
+          title: "9. Contact",
+          paragraphs: [
+            "For questions, problem reports, or requests, you can reach us through the support channels listed on the site.",
+          ],
+        },
+        {
+          title: "10. Acceptance of terms",
+          paragraphs: [
+            "By registering for the Service, you confirm that you have read and understood these terms and agree to act accordingly.",
+          ],
+        },
+      ],
+    },
 
     impersonationTokenExpired:
       "Impersonation token expired. Please sign in again.",
@@ -155,6 +238,117 @@ export const en = {
     rejectedToast: "Invitation rejected",
     acceptError: "Error accepting invitation",
     rejectError: "Error rejecting invitation",
+
+    pendingModal: {
+      title: "Pending invitations",
+      subtitle: "Choose an invitation to accept or reject",
+      loading: "Loading invitations...",
+      empty: "No pending invitations",
+      unknownUser: "User",
+      inviterHint: "Invites you to join their pool",
+    },
+  },
+
+  landing: {
+    heroSubtitle:
+      "The home base for singers, musicians, and producers - manage every song, lineup, and event in one smart, fast, professional place.",
+    loginButton: "Log in",
+    freeTrialButton: "Start free trial",
+    demoButton: "Watch demo",
+    screenshotAlt: "App screenshot",
+    whyTitle: "Why Ari Stage?",
+    features: {
+      smartSongBank: {
+        title: "Smart song library",
+        description:
+          "Keep all your songs in one place with BPM, key, tags, song length, notes, and everything else you need to step on stage with confidence.",
+      },
+      oneClickSharing: {
+        title: "One-click lineup sharing",
+        description:
+          "Send one link to the whole team - singers, players, and production - and keep it updated online until the very last minute. Every change syncs for everyone in seconds.",
+      },
+      smartLineups: {
+        title: "Smart lineups",
+        description:
+          "Drag and drop, fast reordering, automatic set timing, saving, sharing, and export - as many times as you need.",
+      },
+      realtimeUpdates: {
+        title: "Real-time updates",
+        description:
+          "Every change you make - a new song, updated timing, added note - is reflected for everyone instantly. No chaos, no endless message threads.",
+      },
+      eventManagement: {
+        title: "Event management",
+        description:
+          "Get full control over your events: dates, sets, timing, set lists, rehearsals - all in one professional, easy-to-run workspace.",
+      },
+      aiAutomation: {
+        title: "Show automation and AI",
+        description:
+          "Coming soon: AI-built lineups based on BPM, energy, style, and stage flow. A personal assistant for every show.",
+      },
+    },
+  },
+
+  footer: {
+    navAriaLabel: "Accessibility and privacy links",
+    accessibilityLink: "Accessibility statement",
+    cookieSettingsLink: "Cookie settings",
+    closeSection: "Close",
+    copyright: "© {year} Ari Stage. All rights reserved.",
+    about: {
+      title: "About",
+      paragraphs: [
+        "Ari Stage is a platform for managing and coordinating workflows around performances, artists, sharing, and files - all in one place, in a clear and simple way.",
+        "Our goal is to save time in day-to-day work: send fewer messages, find files faster, and stay organized with teams and collaborators.",
+      ],
+      highlight:
+        "Have an idea for improvement? We would be glad to hear it through the Support section.",
+    },
+    support: {
+      title: "Support",
+      intro: "Need help? Here are a few quick steps before reaching out:",
+      quickSteps: [
+        "Try refreshing the page (Ctrl+R).",
+        "If the issue is related to loading data, check your internet connection and sign in again.",
+        "If a file upload failed, try using an English or numeric filename and a smaller file size.",
+      ],
+      fastHelpTitle: "To help us assist faster:",
+      fastHelpItems: [
+        "What exactly were you trying to do?",
+        "What appeared on the screen (error or behavior)?",
+        "Which device or browser are you using?",
+      ],
+      outro:
+        "If you have an internal support channel such as WhatsApp or team email, send a screenshot there with a short description.",
+    },
+    terms: {
+      title: "Terms",
+      summaryTitle: "Terms of use (summary)",
+      intro:
+        "The system is provided as is and is intended to support the management of information, files, and workflows. We make a reasonable effort to keep it available and functioning, but temporary issues may still occur.",
+      items: [
+        "Users are responsible for the content they upload or share and for the permissions they grant.",
+        "Do not upload unlawful, harmful, or copyright-infringing content.",
+        "Features and services may be changed, updated, or removed from time to time.",
+      ],
+      outro:
+        "Need a full legal version of the terms? It is best to adapt them with legal counsel based on your business use.",
+    },
+    privacy: {
+      title: "Privacy",
+      summaryTitle: "Privacy policy (summary)",
+      intro:
+        "We store the information required to operate the service: user details, settings, and data you create in the system such as files or content. We use this information to provide the service, improve it, and maintain security.",
+      items: [
+        "Information sharing is handled according to configured permissions for users and teams.",
+        "System logs may be used for security, monitoring, and troubleshooting.",
+        "You may request deletion or export of data according to organizational policy and applicable law.",
+      ],
+      outro:
+        "If you need a full formal policy, including cookies or tracking, add clauses that reflect the actual tools you use.",
+    },
   },
 
   // Songs
@@ -192,6 +386,7 @@ export const en = {
       defaultFileName: "chart",
     },
     noSongs: "No songs",
+    noSongsAvailable: "No songs available",
     searchSongs: "Search songs",
     mySongs: "My Songs",
     sharedSongs: "Shared Songs",
@@ -228,14 +423,18 @@ export const en = {
     description: "Description",
     songs: "Songs",
     noLineups: "No lineups",
+    noLineupsAvailable: "No lineups available",
     noSongsInLineup: "No songs in lineup",
+    noSongsInThisLineup: "No songs in this lineup",
     searchLineups: "Search lineups",
     myLineups: "My Lineups",
     sharedLineups: "Shared Lineups",
     lineupDetails: "Lineup Details",
     addSongsToLineup: "Add Songs",
+    addSongsHint: "Click the green button above to add songs",
     reorderSongs: "Reorder",
     dragMode: "Drag Mode",
+    dragModeActive: "Drag mode on",
     totalDuration: "Total Duration",
     songCount: "Song Count",
     lineupCreated: "Lineup created successfully",
@@ -243,6 +442,8 @@ export const en = {
     lineupDeleted: "Lineup deleted successfully",
     confirmDeleteLineup: "Delete this lineup?",
     shareLineup: "Share Lineup",
+    shareShort: "Share",
+    creatingShare: "Creating...",
     shareUrl: "Share Link",
     revokeShare: "Revoke Share",
     lineupShared: "Lineup shared successfully",
@@ -253,11 +454,16 @@ export const en = {
     publicNotFound: "Lineup not found or link is invalid",
     downloadAllCharts: "Download All Charts",
     downloadAllLyrics: "Download All Lyrics",
+    downloadCharts: "Download charts",
+    downloadLyrics: "Download lyrics",
     printLineup: "Print Lineup",
     songsCount: "{count} songs",
     unspecifiedDate: "Date not specified",
     unspecifiedTime: "Time not specified",
     unspecifiedLocation: "Location not specified",
+    lineupNamePlaceholder: "Lineup name *",
+    locationPlaceholder: "Location",
+    descriptionOptionalPlaceholder: "Description (optional)",
 
     moduleDisabledTitle: "Lineups module is disabled",
     moduleDisabledHint: 'You can enable it again in the Admin "Models" tab.',
@@ -266,6 +472,7 @@ export const en = {
     selectArtistPrompt: "Select an artist to view their songs",
 
     messages: {
+      loadLineupError: "Error loading lineup",
       addSongError: "Error adding song",
       removeSongError: "Error removing song",
 
@@ -281,6 +488,7 @@ export const en = {
       reorderError: "Error reordering songs",
 
       confirmCreateShareLink: "Create a share link?",
+      confirmRevokeShareLink: "Revoke sharing?",
       shareLinkCreated: "Share link created",
       shareLinkCreateError: "Error creating share link",
     },
@@ -323,6 +531,28 @@ export const en = {
     uninviteSuccess: "Sharing canceled successfully",
     uninviteError: "Error canceling sharing",
     artistAlt: "Artist",
+
+    profileAccessDenied: "You do not have access to this profile",
+    artistNotFound: "Artist not found",
+    loadDataError: "Unable to load data",
+
+    sharedPoolsTitle: "Shared",
+    loadingArtists: "Loading artists...",
+    noInvitedPools: "No pools you were invited to yet",
+    noInvitedPoolsHint:
+      "Artists will appear here when they invite you to their pool",
+    goToArtistPageAria: "Go to {name}'s page",
+
+    leavePoolConfirmTitle: "Leave pool",
+    leavePoolConfirmMessageSingle:
+      "Are you sure you want to leave this pool? You will no longer be able to view the host's lineups and songs.",
+    leavePoolConfirmMessageAll:
+      "Are you sure you want to leave all pools? You will no longer be able to view the hosts' lineups and songs.",
+    leavePoolSuccessSingle: "Left the pool successfully",
+    leavePoolSuccessAll: "Left all pools successfully",
+    leavePoolError: "Error leaving pool",
+
+    unknownArtist: "Unknown artist",
 
     noArtistsInPool: "No artists in your pool yet",
     inviteToPoolHint: "Invite artists to your pool using the button above",
@@ -1095,6 +1325,7 @@ export const en = {
     subscriptionBlocked: "Your subscription is blocked",
     subscriptionBlockedMessage:
       "Your subscription has expired. Please upgrade to continue using the system.",
+    trialEndedTitle: "Your trial has ended",
     upgradeNow: "Upgrade Now",
 
     loadingPlans: "Loading plans...",
@@ -1157,6 +1388,47 @@ export const en = {
     goToPayment: "Proceed to payment",
   },
 
+  contact: {
+    subjectLabel: "Message subject",
+    messageLabel: "Message",
+    phoneLabel: "Callback phone",
+    subjectPlaceholder: "What is this about?",
+    messagePlaceholder: "How can we help?",
+    phonePlaceholder: "050-0000000",
+    sending: "Sending...",
+    sendButton: "Send message",
+    successMessage:
+      "Your message was sent successfully. We will get back to you soon.",
+    errorMessage: "Error sending message",
+  },
+
+  cookies: {
+    consent: {
+      title: "Cookie usage",
+      description:
+        'This site uses cookies to improve your experience, analyze traffic, and provide personalized content. By clicking "Accept" you agree to the use of cookies. You can change your preferences at any time through the "Cookie Settings" link at the bottom of the page.',
+      acceptButton: "Accept",
+      declineButton: "Decline",
+      savedAnnouncement: "Cookie preferences saved",
+    },
+    settings: {
+      title: "Cookie settings",
+      currentPreferencesTitle: "Current preferences",
+      acceptedStatus: "✓ Cookie usage accepted",
+      declinedStatus: "✗ Cookie usage declined",
+      unsetStatus: "No preference selected",
+      explanationTitle: "What does this mean?",
+      explanation:
+        "Cookies are small files stored on your device that allow the site to remember your preferences, analyze usage, and improve your experience. You can choose to accept or decline the use of cookies.",
+      acceptButton: "Accept cookie usage",
+      declineButton: "Decline cookie usage",
+      acceptedAnnouncement:
+        "Cookie preferences updated - cookie usage accepted",
+      declinedAnnouncement:
+        "Cookie preferences updated - cookie usage declined",
+    },
+  },
+
   // Offline/Online Status
   offline: {
     title: "Offline",
@@ -1172,6 +1444,25 @@ export const en = {
     forcedOfflineTitle: "Forced offline mode is active",
     noInternetTitle: "No internet connection",
     onlineTitle: "Online",
+
+    cacheModal: {
+      title: "Content available offline",
+      description:
+        "This lists all files and URLs already stored in your browser cache. Anything you have not visited or loaded yet will not appear here.",
+      loading: "Loading...",
+      empty:
+        "No cached content right now. Load a few pages or data while online and try again.",
+      refresh: "Refresh",
+      fillCacheButton: "How do I fill the cache?",
+      fillCacheToast:
+        "To add more offline content, browse the site once while online.",
+    },
+  },
+
+  shared: {
+    songs: "Shared songs",
+    lineups: "Shared lineups",
+    artists: "Shared artists",
   },
 
   // Time & Dates
@@ -1211,6 +1502,115 @@ export const en = {
     acceptAll: "Accept All",
     rejectAll: "Reject All",
     customizePreferences: "Customize Preferences",
+  },
+
+  accessibility: {
+    title: "Accessibility statement",
+    intro:
+      "Ari Stage is committed to making its digital services accessible to everyone, including people with disabilities.",
+    compliance: {
+      title: "Compliance level",
+      description:
+        "This site meets the requirements of the Israeli Standard SI 5568 for accessible web content at AA level and aligns with WCAG 2.0 level AA guidelines.",
+      lastUpdatedLabel: "Last updated:",
+      lastUpdatedText: "February 2026",
+      lastUpdatedDateTime: "2026-02",
+    },
+    features: {
+      title: "Accessibility features on the site",
+      items: [
+        {
+          icon: "🎹",
+          title: "Full keyboard navigation",
+          description:
+            "All site functionality is available using only a keyboard. Use Tab to move between elements, Enter or Space to activate controls, and Esc to close dialogs.",
+        },
+        {
+          icon: "👁️",
+          title: "Clear focus indicators",
+          description:
+            "All interactive elements are clearly marked when focused so keyboard users always know where they are.",
+        },
+        {
+          icon: "🔊",
+          title: "Screen reader support",
+          description:
+            "The site supports leading screen readers such as NVDA, JAWS, and VoiceOver. Content, actions, and notifications are announced properly.",
+        },
+        {
+          icon: "📝",
+          title: "Accessible labels and forms",
+          description:
+            "All form fields are clearly labeled, validation messages are announced immediately, and guidance is provided before each field.",
+        },
+        {
+          icon: "↔️",
+          title: "RTL and LTR support",
+          description:
+            "The site supports Hebrew (RTL) and English (LTR) with automatic adjustment of layout direction and structure.",
+        },
+        {
+          icon: "⏩",
+          title: "Skip to content",
+          description:
+            "A skip-to-main-content link appears at the start of each page, allowing keyboard users to jump directly to the main content without moving through the menu.",
+        },
+        {
+          icon: "🎨",
+          title: "Color contrast",
+          description:
+            "All site colors meet WCAG 2.0 AA contrast requirements to ensure strong readability.",
+        },
+        {
+          icon: "🍪",
+          title: "Cookie controls",
+          description:
+            "Users can choose whether to accept or decline cookies and update their preference at any time through the cookie settings link in the footer.",
+        },
+      ],
+    },
+    technologies: {
+      title: "Accessibility technologies",
+      intro:
+        "The site is built with modern technologies that support accessibility:",
+      items: [
+        "Semantic HTML5 with defined landmarks",
+        "ARIA attributes to improve screen reader support",
+        "Focus management for dialogs and forms",
+        "Live regions for dynamic announcements",
+        "Keyboard traps in modals",
+      ],
+    },
+    knownIssues: {
+      title: "Known issues and future improvements",
+      description:
+        "We continuously work to improve the site's accessibility. At the moment, there are no known accessibility issues that prevent use of the site. If you encounter a problem, we would like to hear from you.",
+    },
+    testing: {
+      title: "Accessibility testing",
+      intro: "The site has been tested with:",
+      items: [
+        "Screen readers: NVDA, JAWS, VoiceOver",
+        "Automated testing tools: axe DevTools, WAVE",
+        "Full keyboard testing",
+        "Color contrast testing",
+        "Testing with users with disabilities",
+      ],
+    },
+    contact: {
+      title: "Contact",
+      intro:
+        "If you encountered an accessibility issue on the site, or if you have suggestions for improvement, we would be glad to hear from you:",
+      emailLabel: "Email:",
+      phoneLabel: "Phone:",
+      responseCommitment:
+        "We commit to responding to every inquiry within 5 business days and addressing accessibility issues as quickly as possible.",
+    },
+    footer: {
+      lastUpdatedPrefix: "This accessibility statement was last updated in ",
+      lastUpdatedText: "February 2026",
+      lastUpdatedDateTime: "2026-02",
+    },
   },
 };
 

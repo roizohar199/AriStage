@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import BaseModal from "./BaseModal.tsx";
 import DesignActionButtonBig from "./DesignActionButtonBig";
 import { Input, Select } from "./FormControls";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 /* ---------- Types ---------- */
 
@@ -23,8 +24,6 @@ interface AddNewSongProps {
 }
 
 /* ---------- Constants ---------- */
-
-const notesList = ["שמח", "קצבי", "שקט", "מרגש", "קליל"];
 
 const notesKeys = [
   "C",
@@ -119,7 +118,15 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
   },
   editingId,
 }) => {
+  const { t } = useTranslation();
   const [form, setForm] = useState<SongForm>(initialForm);
+  const notesList = [
+    t("songs.notesPresets.happy"),
+    t("songs.notesPresets.upbeat"),
+    t("songs.notesPresets.calm"),
+    t("songs.notesPresets.emotional"),
+    t("songs.notesPresets.light"),
+  ];
 
   useEffect(() => {
     setForm({
@@ -133,11 +140,11 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
     <BaseModal
       open={open}
       onClose={onClose}
-      title={editingId ? "עריכת שיר 🎧" : "הוסף שיר חדש"}
+      title={editingId ? t("songs.editSong") : t("songs.addSong")}
       maxWidth="max-w-md"
     >
       <h2 className="text-xl font-bold mb-4 text-neutral-100">
-        {editingId ? "עריכת שיר" : "הוסף שיר חדש"}
+        {editingId ? t("songs.editSong") : t("songs.addSong")}
       </h2>
 
       <form
@@ -149,7 +156,7 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
       >
         {/* שם השיר */}
         <Input
-          placeholder="שם השיר *"
+          placeholder={`${t("songs.songTitle")} *`}
           value={form.title}
           onChange={(e) => setForm({ ...form, title: e.target.value })}
           className="mb-0"
@@ -158,7 +165,7 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
 
         {/* אמן */}
         <Input
-          placeholder="אמן"
+          placeholder={t("songs.artist")}
           value={form.artist}
           onChange={(e) => setForm({ ...form, artist: e.target.value })}
           className="mb-0"
@@ -166,7 +173,7 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
 
         {/* BPM */}
         <Input
-          placeholder="BPM"
+          placeholder={t("songs.bpm")}
           type="number"
           min={1}
           max={350}
@@ -182,7 +189,7 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
 
         {/* סולם */}
         <div>
-          <p className="text-sm text-neutral-400 mb-1 ">סולם השיר:</p>
+          <p className="text-sm text-neutral-400 mb-1 ">{t("songs.key")}:</p>
 
           <div className="flex gap-2 flex-row-reverse">
             <div className="flex-1 ">
@@ -222,7 +229,9 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
 
         {/* משך זמן */}
         <div>
-          <p className="text-sm text-neutral-400 mb-1">משך זמן:</p>
+          <p className="text-sm text-neutral-400 mb-1">
+            {t("songs.duration")}:
+          </p>
           <div className="w-fit flex justify-between flex-row-reverse gap-2 items-center">
             <Input
               type="number"
@@ -260,7 +269,7 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
 
         {/* תגיות */}
         <div>
-          <p className="text-sm text-neutral-400 mb-1">תגית:</p>
+          <p className="text-sm text-neutral-400 mb-1">{t("songs.notes")}:</p>
           <div className="flex flex-wrap gap-2">
             {notesList.map((tag) => (
               <button
@@ -280,7 +289,7 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
         </div>
 
         <DesignActionButtonBig type="submit">
-          {editingId ? "עדכון" : "שמור"}
+          {editingId ? t("common.update") : t("common.save")}
         </DesignActionButtonBig>
       </form>
     </BaseModal>

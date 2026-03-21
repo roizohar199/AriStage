@@ -14,7 +14,8 @@ import {
 import { X } from "lucide-react";
 
 export default function Login() {
-  const { t } = useTranslation();
+  const { t, translations } = useTranslation();
+  const termsDialog = translations.auth.termsDialog;
   const [search] = useSearchParams();
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -355,7 +356,7 @@ export default function Login() {
               required
             />
             <DesignActionButtonBig type="submit" disabled={loading}>
-              {loading ? "מאפס..." : "איפוס סיסמה"}
+              {loading ? t("auth.resetting") : t("auth.resetPassword")}
             </DesignActionButtonBig>
             {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
             {message && (
@@ -371,29 +372,27 @@ export default function Login() {
       <div className="w-full max-w-sm bg-neutral-850 p-6 text-center rounded-2xl backdrop-blur-xl">
         <div className="mb-5">
           <h1 className="text-3xl font-bold text-brand-primary">Ari Stage</h1>
-          <p className="text-sm text-gray-400 mt-1">
-            התחבר או הירשם כדי לנהל את הליינאפ שלך
-          </p>
+          <p className="text-sm text-gray-400 mt-1">{t("auth.subtitle")}</p>
         </div>
 
         <div className="bg-neutral-800 flex rounded-2xl mb-6 overflow-hidden">
-          {["login", "register", "reset"].map((t) => (
+          {["login", "register", "reset"].map((tabKey) => (
             <button
-              key={t}
+              key={tabKey}
               className={`flex-1 py-2 font-semibold ${
-                tab === t
+                tab === tabKey
                   ? "border-b-2 border-brand-primary overflow-hidden text-brand-primary"
                   : "text-neutral-100 hover:text-brand-primaryLight"
               }`}
               onClick={() => {
                 setError("");
                 setMessage("");
-                setTab(t);
+                setTab(tabKey);
               }}
             >
-              {t === "login" && "התחברות"}
-              {t === "register" && "הרשמה"}
-              {t === "reset" && "איפוס סיסמה"}
+              {tabKey === "login" && t("auth.login")}
+              {tabKey === "register" && t("auth.register")}
+              {tabKey === "reset" && t("auth.resetPassword")}
             </button>
           ))}
         </div>
@@ -406,7 +405,7 @@ export default function Login() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
           role="dialog"
           aria-modal="true"
-          aria-label="תקנון השימוש של Ari Stage"
+          aria-label={termsDialog.ariaLabel}
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) setIsTermsOpen(false);
           }}
@@ -414,12 +413,12 @@ export default function Login() {
           <div className="w-full max-w-2xl rounded-2xl bg-neutral-950 text-start shadow-2xl border border-neutral-800">
             <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-800">
               <h2 className="text-lg font-bold text-brand-primary">
-                תקנון שימוש – Ari Stage
+                {termsDialog.title}
               </h2>
               <button
                 onClick={() => setIsTermsOpen(false)}
                 className="text-neutral-400 hover:text-neutral-100 transition-colors p-1 hover:bg-neutral-800 rounded-md"
-                aria-label="סגור"
+                aria-label={t("common.close")}
                 type="button"
               >
                 <X size={20} />
@@ -427,135 +426,25 @@ export default function Login() {
             </div>
 
             <div className="max-h-[70vh] overflow-auto px-5 py-4 text-sm text-gray-200 space-y-4 leading-6">
-              <p className="text-gray-400">
-                עודכן לאחרונה: 23/01/2026. השימוש באתר/אפליקציה Ari Stage מהווה
-                הסכמה לתנאים המפורטים להלן.
-              </p>
+              <p className="text-gray-400">{termsDialog.lastUpdated}</p>
 
-              <section className="space-y-2">
-                <h3 className="font-semibold text-neutral-100">1. מה השירות</h3>
-                <p>
-                  Ari Stage היא מערכת לניהול ליינאפים, שירים וחומרים נלווים
-                  ("השירות"). ניתן להשתמש בשירות לצורך עבודה אישית או ניהול
-                  צוות.
-                </p>
-              </section>
-
-              <section className="space-y-2">
-                <h3 className="font-semibold text-neutral-100">
-                  2. חשבון משתמש
-                </h3>
-                <ul className="list-disc pr-5 space-y-1">
-                  <li>
-                    עליך לספק פרטים נכונים ועדכניים ולשמור על סודיות הסיסמה.
-                  </li>
-                  <li>
-                    אתה אחראי לכל פעילות שמתבצעת בחשבונך, לרבות העלאת תכנים.
-                  </li>
-                  <li>
-                    אנו רשאים להשעות/לסגור חשבון במקרה של שימוש לרעה או הפרת
-                    תנאים.
-                  </li>
-                </ul>
-              </section>
-
-              <section className="space-y-2">
-                <h3 className="font-semibold text-neutral-100">
-                  3. תכנים שהמשתמש מעלה
-                </h3>
-                <ul className="list-disc pr-5 space-y-1">
-                  <li>
-                    התכנים (למשל שמות שירים, טקסטים, קבצים, תמונות, PDFs) הם
-                    באחריותך בלבד.
-                  </li>
-                  <li>
-                    אתה מצהיר שיש לך זכויות להשתמש ולהעלות את התכנים, ושאינם
-                    מפרים זכויות יוצרים/פרטיות/סימני מסחר.
-                  </li>
-                  <li>
-                    אינך רשאי להעלות תוכן בלתי חוקי, פוגעני, מטעה או כזה שמסכן
-                    את אבטחת השירות.
-                  </li>
-                </ul>
-              </section>
-
-              <section className="space-y-2">
-                <h3 className="font-semibold text-neutral-100">
-                  4. שימוש מותר ואסור
-                </h3>
-                <ul className="list-disc pr-5 space-y-1">
-                  <li>
-                    מותר להשתמש בשירות למטרות ניהול ושיתוף חומרים הקשורים
-                    להופעות/חזרות/הפקה.
-                  </li>
-                  <li>
-                    אסור לבצע ניסיונות חדירה, סריקות חולשות, עקיפת הרשאות, או
-                    שימוש שמעמיס באופן חריג על המערכת.
-                  </li>
-                  <li>אסור לאסוף מידע על משתמשים אחרים ללא הרשאה.</li>
-                </ul>
-              </section>
-
-              <section className="space-y-2">
-                <h3 className="font-semibold text-neutral-100">
-                  5. תשלומים ומנויים
-                </h3>
-                <p>
-                  חלק מהפיצ'רים עשויים להיות בתשלום. אם קיימים מסלולים/מנויים,
-                  התנאים, המחירים והחיובים יוצגו במעמד הרכישה. אי-תשלום עשוי
-                  לגרום להגבלת גישה לפיצ'רים מסוימים.
-                </p>
-              </section>
-
-              <section className="space-y-2">
-                <h3 className="font-semibold text-neutral-100">
-                  6. זמינות ושינויים
-                </h3>
-                <p>
-                  אנו שואפים לזמינות גבוהה אך איננו מתחייבים שהשירות יהיה ללא
-                  תקלות או ללא הפסקות. אנו רשאים לעדכן, לשנות או להפסיק חלקים מן
-                  השירות.
-                </p>
-              </section>
-
-              <section className="space-y-2">
-                <h3 className="font-semibold text-neutral-100">7. פרטיות</h3>
-                <p>
-                  אנו משתמשים במידע לצורך אספקת השירות, אבטחה ושיפור חוויית
-                  המשתמש. ייתכן שנשתמש בעוגיות/אחסון מקומי (כגון localStorage)
-                  לצרכים תפעוליים. לא נמסור מידע אישי לצדדים שלישיים אלא אם נדרש
-                  לפי דין או לצורך תפעול השירות.
-                </p>
-              </section>
-
-              <section className="space-y-2">
-                <h3 className="font-semibold text-neutral-100">
-                  8. אחריות והגבלת אחריות
-                </h3>
-                <p>
-                  השירות מסופק "כמות שהוא". ככל שהדין מאפשר, Ari Stage לא תהיה
-                  אחראית לנזקים עקיפים/תוצאתיים, לאובדן נתונים או לאובדן רווחים
-                  הנובעים משימוש בשירות.
-                </p>
-              </section>
-
-              <section className="space-y-2">
-                <h3 className="font-semibold text-neutral-100">9. יצירת קשר</h3>
-                <p>
-                  לשאלות, דיווח על בעיה או בקשות, ניתן ליצור קשר דרך ערוצי
-                  התמיכה המופיעים באתר.
-                </p>
-              </section>
-
-              <section className="space-y-2">
-                <h3 className="font-semibold text-neutral-100">
-                  10. הסכמה לתנאים
-                </h3>
-                <p>
-                  בהרשמה לשירות, אתה מאשר שקראת והבנת את התקנון ומסכים לפעול
-                  לפיו.
-                </p>
-              </section>
+              {termsDialog.sections.map((section) => (
+                <section key={section.title} className="space-y-2">
+                  <h3 className="font-semibold text-neutral-100">
+                    {section.title}
+                  </h3>
+                  {section.paragraphs?.map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))}
+                  {section.items ? (
+                    <ul className="list-disc pr-5 space-y-1">
+                      {section.items.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </section>
+              ))}
             </div>
 
             <div className="px-5 py-4 border-t border-neutral-800 flex justify-end">
@@ -563,7 +452,7 @@ export default function Login() {
                 type="button"
                 onClick={() => setIsTermsOpen(false)}
               >
-                מאשר
+                {termsDialog.confirmButton}
               </DesignActionButton>
             </div>
           </div>

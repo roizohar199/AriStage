@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import BaseModal from "@/modules/shared/components/BaseModal";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 const STORAGE_KEY = "cookieConsent";
 
@@ -22,6 +23,7 @@ export default function CookieSettings({
   isOpen,
   onClose,
 }: CookieSettingsProps) {
+  const { t } = useTranslation();
   const [currentConsent, setCurrentConsent] = useState<string | null>(null);
 
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function CookieSettings({
     announcement.setAttribute("role", "status");
     announcement.setAttribute("aria-live", "polite");
     announcement.className = "sr-only";
-    announcement.textContent = "העדפות עוגיות עודכנו - שימוש בעוגיות מאושר";
+    announcement.textContent = t("cookies.settings.acceptedAnnouncement");
     document.body.appendChild(announcement);
     setTimeout(() => {
       document.body.removeChild(announcement);
@@ -57,7 +59,7 @@ export default function CookieSettings({
     announcement.setAttribute("role", "status");
     announcement.setAttribute("aria-live", "polite");
     announcement.className = "sr-only";
-    announcement.textContent = "העדפות עוגיות עודכנו - שימוש בעוגיות נדחה";
+    announcement.textContent = t("cookies.settings.declinedAnnouncement");
     document.body.appendChild(announcement);
     setTimeout(() => {
       document.body.removeChild(announcement);
@@ -66,29 +68,33 @@ export default function CookieSettings({
   };
 
   return (
-    <BaseModal open={isOpen} onClose={onClose} title="הגדרות עוגיות">
+    <BaseModal
+      open={isOpen}
+      onClose={onClose}
+      title={t("cookies.settings.title")}
+    >
       <div className="space-y-6 p-6">
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-neutral-100">
-            העדפות נוכחיות
+            {t("cookies.settings.currentPreferencesTitle")}
           </h3>
           <div className="bg-neutral-900 rounded-lg p-4">
             <p className="text-neutral-300">
-              {currentConsent === "accepted" && "✓ שימוש בעוגיות מאושר"}
-              {currentConsent === "declined" && "✗ שימוש בעוגיות נדחה"}
-              {!currentConsent && "לא נקבעה העדפה"}
+              {currentConsent === "accepted" &&
+                t("cookies.settings.acceptedStatus")}
+              {currentConsent === "declined" &&
+                t("cookies.settings.declinedStatus")}
+              {!currentConsent && t("cookies.settings.unsetStatus")}
             </p>
           </div>
         </div>
 
         <div className="space-y-2">
           <h3 className="text-lg font-semibold text-neutral-100">
-            מה זה אומר?
+            {t("cookies.settings.explanationTitle")}
           </h3>
           <p className="text-neutral-300 text-sm leading-relaxed">
-            עוגיות הן קבצים קטנים שנשמרים במחשב שלך ומאפשרים לאתר לזכור את
-            ההעדפות שלך, לנתח את השימוש באתר ולשפר את חוויית המשתמש. אתה יכול
-            לבחור לאשר או לדחות את השימוש בעוגיות.
+            {t("cookies.settings.explanation")}
           </p>
         </div>
 
@@ -98,14 +104,14 @@ export default function CookieSettings({
             variant="primary"
             type="button"
           >
-            אישור שימוש בעוגיות
+            {t("cookies.settings.acceptButton")}
           </DesignActionButton>
           <DesignActionButton
             onClick={handleDecline}
             variant="cancel"
             type="button"
           >
-            דחיית שימוש בעוגיות
+            {t("cookies.settings.declineButton")}
           </DesignActionButton>
         </div>
       </div>

@@ -1,15 +1,16 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { User, LogOut, Music, Trash2 } from "lucide-react";
+import { User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "@/modules/shared/lib/api.js";
 import { useToast } from "@/modules/shared/components/ToastProvider.jsx";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 import SharedArtistsStats from "../components/SharedArtistsStats";
 import ArtistCard from "@/modules/shared/components/ArtistCard";
 
 type Artist = {
-  id: string;
+  id: number;
   avatar?: string;
   full_name?: string;
   artist_role?: string;
@@ -38,10 +39,10 @@ export default function MyArtist() {
   const confirm = useConfirm();
   const navigate = useNavigate();
   const { subscriptionBlocked } = useAuth();
+  const { t } = useTranslation();
   // הזמנות ממתינות הוסרו
   const [artists, setArtists] = useState<Artist[]>([]);
   const [artistsLoading, setArtistsLoading] = useState(true);
-  const [isGuest, setIsGuest] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [songs, setSongs] = useState<Song[]>([]);
   const [lineups, setLineups] = useState<Lineup[]>([]);
@@ -51,7 +52,7 @@ export default function MyArtist() {
       setArtistsLoading(true);
       const { data: myCollection } = await api.get("/users/my-collection", {
         skipErrorToast: true,
-      });
+      } as any);
       const artistsList = Array.isArray(myCollection)
         ? myCollection
         : myCollection
@@ -62,17 +63,6 @@ export default function MyArtist() {
       console.error("שגיאה בטעינת אמנים:", err);
     } finally {
       setArtistsLoading(false);
-    }
-  }, []);
-
-  const checkGuestStatus = useCallback(async () => {
-    try {
-      const { data } = await api.get("/users/check-guest", {
-        skipErrorToast: true,
-      });
-      setIsGuest(data.isGuest);
-    } catch (err) {
-      console.error("שגיאה בבדיקת סטטוס אורח:", err);
     }
   }, []);
 
@@ -106,10 +96,9 @@ export default function MyArtist() {
 
   useEffect(() => {
     loadArtists();
-    checkGuestStatus();
     loadSongs();
     loadLineups();
-  }, [loadArtists, checkGuestStatus, loadSongs, loadLineups]);
+  }, [loadArtists, loadSongs, loadLineups]);
 
   // חישוב סטטיסטיקות אמנים משותפים
   const sharedStats = useMemo(() => {
@@ -163,12 +152,14 @@ export default function MyArtist() {
     };
   }, [songs, lineups]);
 
-  const handleLeaveCollection = async (hostId: string | null = null) => {
+  const handleLeaveCollection = async (
+    hostId: string | number | null = null,
+  ) => {
     const message = hostId
-      ? "בטוח שאתה רוצה לבטל את השתתפותך במאגר הזה? לא תוכל עוד לצפות בליינאפים והשירים של המארח."
-      : "בטוח שאתה רוצה לבטל את כל השתתפויותיך במאגרים? לא תוכל עוד לצפות בליינאפים והשירים של המארחים.";
+      ? t("artists.leavePoolConfirmMessageSingle")
+      : t("artists.leavePoolConfirmMessageAll");
     const ok = await confirm({
-      title: "ביטול השתתפות",
+      title: t("artists.leavePoolConfirmTitle"),
       message,
     });
     if (!ok) return;
@@ -176,7 +167,9 @@ export default function MyArtist() {
       setLeaving(true);
       await api.post("/users/leave-collection", hostId ? { hostId } : {});
       showToast(
-        hostId ? "השתתפותך במאגר בוטלה בהצלחה" : "כל השתתפויותיך בוטלו בהצלחה",
+        hostId
+          ? t("artists.leavePoolSuccessSingle")
+          : t("artists.leavePoolSuccessAll"),
         "success",
       );
       loadArtists();
@@ -187,7 +180,7 @@ export default function MyArtist() {
         "response" in err &&
         err.response?.data?.message
           ? err.response.data.message
-          : "שגיאה בביטול ההשתתפות";
+          : t("artists.leavePoolError");
       showToast(errorMsg, "error");
     } finally {
       setLeaving(false);
@@ -197,7 +190,7 @@ export default function MyArtist() {
   return (
     <div className="min-h-screen text-neutral-100 p-6">
       <header className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">משותפים</h1>
+        <h1 className="text-3xl font-bold">{t("nav.shared")}</h1>
       </header>
 
       {/* דאשבורד סטטיסטיקות */}
@@ -210,16 +203,16 @@ export default function MyArtist() {
         <section>
           {artistsLoading ? (
             <div className="text-neutral-400 text-center py-4">
-              טוען אמנים...
+              {t("artists.loadingArtists")}
             </div>
           ) : artists.length === 0 ? (
             <div className="bg-neutral-800 rounded-2xl p-6 text-center">
               <User size={32} className="mx-auto mb-3 text-neutral-600" />
               <p className="text-neutral-400 text-sm">
-                אין מאגרים שהוזמנת אליהם כרגע
+                {t("artists.noInvitedPools")}
               </p>
               <p className="text-neutral-500 text-xs mt-1">
-                אמנים יופיעו כאן כאשר הם יזמינו אותך למאגר שלהם
+                {t("artists.noInvitedPoolsHint")}
               </p>
             </div>
           ) : (
@@ -229,9 +222,9 @@ export default function MyArtist() {
                   key={artist.id}
                   tabIndex={0}
                   role="button"
-                  aria-label={`מעבר לעמוד של ${
-                    artist.full_name || "אמן ללא שם"
-                  }`}
+                  aria-label={t("artists.goToArtistPageAria", {
+                    name: artist.full_name || t("artists.unnamedArtist"),
+                  })}
                   onClick={() => {
                     if (subscriptionBlocked) {
                       window.openUpgradeModal?.();

@@ -1,18 +1,8 @@
 import SongLyrics from "@/modules/shared/components/SongLyrics";
-import React, {
-  useEffect,
-  useState,
-  useMemo,
-  useRef,
-  useCallback,
-  memo,
-} from "react";
+import { useEffect, useState, useMemo, useRef, useCallback, memo } from "react";
 import {
-  ArrowLeft,
   GripVertical,
   Plus,
-  Trash2,
-  X,
   Clock,
   Share2,
   Copy,
@@ -21,9 +11,6 @@ import {
   Printer,
   FileDown,
   Music4Icon,
-  Upload,
-  Eye,
-  ArrowRight,
 } from "lucide-react";
 import BaseModal from "@/modules/shared/components/BaseModal";
 import SearchInput from "../../shared/components/Search";
@@ -74,7 +61,8 @@ const SongList = memo(function SongList({
   onLyricsChanged,
   dragMode,
 }: any) {
-  const safeKey = (key: string) => key || "N/A";
+  const { t } = useTranslation();
+  const safeKey = (key: string) => key || t("common.notSpecified");
   const safeDuration = (duration: string | number) => {
     if (!duration) return "00:00";
     return String(duration);
@@ -90,11 +78,9 @@ const SongList = memo(function SongList({
         >
           {songs.length === 0 ? (
             <div className="text-center text-neutral-400 py-8">
-              <p className="text-lg mb-2">אין שירים בליינאפ זה</p>
+              <p className="text-lg mb-2">{t("lineups.noSongsInThisLineup")}</p>
               {lineup?.is_owner && (
-                <p className="text-sm">
-                  לחץ על הכפתור הירוק למעלה כדי להוסיף שירים
-                </p>
+                <p className="text-sm">{t("lineups.addSongsHint")}</p>
               )}
             </div>
           ) : (
@@ -237,7 +223,7 @@ const AddSongModal = memo(function AddSongModal({
             {t("lineups.selectArtistPrompt")}
           </p>
           <div className="flex gap-2 overflow-x-auto pb-2">
-            {connectedArtists.map((artist) => (
+            {connectedArtists.map((artist: any) => (
               <button
                 key={artist.id}
                 onClick={() =>
@@ -370,9 +356,6 @@ export default function LineupDetails() {
   const [loadingShare, setLoadingShare] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [dragMode, setDragMode] = useState(false);
-  const [isGuest, setIsGuest] = useState(false);
-  const [hostId, setHostId] = useState<number | null>(null);
-  const [isHost, setIsHost] = useState(false);
   const [modalActiveTab, setModalActiveTab] = useState<"my" | "artists">("my");
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [connectedArtists, setConnectedArtists] = useState<any[]>([]);
@@ -458,26 +441,19 @@ export default function LineupDetails() {
           if (mounted) setShareUrl(data.active ? data.url : null);
         } catch {}
         try {
-          const { data } = await api.get("/users/check-guest", {
-            skipErrorToast: true,
-          });
-          if (mounted) {
-            setIsGuest(data.isGuest);
-            setHostId(data.hostId || null);
-            setIsHost(data.isHost || false);
-          }
+          await api.get("/users/check-guest", { skipErrorToast: true } as any);
         } catch {}
       } catch (err: any) {
         if (!mounted) return;
         setError(
           err?.response?.data?.message ||
             err?.message ||
-            "שגיאה בטעינת הליינאפ",
+            t("lineups.messages.loadLineupError"),
         );
         showToast(
           err?.response?.data?.message ||
             err?.message ||
-            "שגיאה בטעינת הליינאפ",
+            t("lineups.messages.loadLineupError"),
           "error",
         );
       } finally {
@@ -487,7 +463,7 @@ export default function LineupDetails() {
     return () => {
       mounted = false;
     };
-  }, [lineupId, showModal, fetchSongs]);
+  }, [lineupId, showModal, fetchSongs, showToast, t]);
 
   // --- Socket listeners ---
   useEffect(() => {
@@ -501,7 +477,7 @@ export default function LineupDetails() {
       socket.emit("join-user", user.id);
       socket.emit("join-user-updates", user.id);
       api
-        .get("/users/check-guest", { skipErrorToast: true })
+        .get("/users/check-guest", { skipErrorToast: true } as any)
         .then(({ data }) => {
           if (data.isHost) socket.emit("join-host", user.id);
           if (data.hostId) socket.emit("join-host", data.hostId);
@@ -570,13 +546,13 @@ export default function LineupDetails() {
         if (!artistMap.has(song.owner_id)) {
           artistMap.set(song.owner_id, {
             id: song.owner_id,
-            full_name: song.owner_name || "אמן לא ידוע",
+            full_name: song.owner_name || t("artists.unknownArtist"),
           });
         }
       }
     });
     return Array.from(artistMap.values());
-  }, [availableSongs, currentUserId]);
+  }, [availableSongs, currentUserId, t]);
 
   // עדכן את האמנים המחוברים כשהוקצים חדשים
   useEffect(() => {
@@ -749,7 +725,7 @@ export default function LineupDetails() {
       window.URL.revokeObjectURL(url);
 
       showToast(t("lineups.messages.downloadChartsSuccess"), "success");
-    } catch (err) {
+    } catch (err: any) {
       console.error("שגיאה בהורדת הצ'ארטים:", err);
       showToast(
         err?.response?.data?.message ||
@@ -830,15 +806,15 @@ export default function LineupDetails() {
 
   const revokeShareLink = useCallback(async () => {
     const ok = await confirm({
-      title: "ביטול שיתוף",
-      message: "לבטל את השיתוף?",
+      title: t("lineups.revokeShare"),
+      message: t("lineups.messages.confirmRevokeShareLink"),
     });
     if (!ok) return;
     try {
       await api.delete(`/lineups/${lineupId}/share`);
       setShareUrl(null);
     } catch {}
-  }, [lineupId, confirm]);
+  }, [lineupId, confirm, t]);
 
   const copyShareLink = useCallback(() => {
     if (!shareUrl) return;
@@ -922,7 +898,7 @@ export default function LineupDetails() {
             }}
           >
             <Plus size={25} />
-            הוסף שיר
+            {t("songs.addSong")}
           </DesignActionButton>
         )}
       </header>
@@ -967,14 +943,18 @@ export default function LineupDetails() {
                   }`}
                 >
                   <GripVertical size={16} />
-                  {dragMode ? "גרירה פעילה" : "מצב גרירה"}
+                  {dragMode
+                    ? t("lineups.dragModeActive")
+                    : t("lineups.dragMode")}
                 </button>
                 <button
                   onClick={generateShareLink}
                   className="text-neutral-100 font-semibold rounded-2xl flex flex-row-reverse items-center hover:text-brand-primary gap-2"
                 >
                   <Share2 size={16} />
-                  {loadingShare ? "יוצר..." : "שיתוף"}
+                  {loadingShare
+                    ? t("lineups.creatingShare")
+                    : t("lineups.shareShort")}
                 </button>
                 {shareUrl && (
                   <button
@@ -982,7 +962,7 @@ export default function LineupDetails() {
                     className="text-red-500 font-semibold rounded-2xl flex flex-row-reverse items-center hover:text-red-400 gap-2"
                   >
                     <Ban size={16} />
-                    בטל
+                    {t("common.cancel")}
                   </button>
                 )}
               </div>
@@ -1008,7 +988,7 @@ export default function LineupDetails() {
                     className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-800 rounded-2xl"
                   >
                     <Printer size={16} />
-                    הדפס
+                    {t("common.print")}
                   </button>
                   {chartsEnabled ? (
                     <button
@@ -1019,7 +999,7 @@ export default function LineupDetails() {
                       className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-700/50 rounded-2xl"
                     >
                       <FileDown size={16} />
-                      הורד צ'ארטים
+                      {t("lineups.downloadCharts")}
                     </button>
                   ) : null}
                   {lyricsEnabled ? (
@@ -1031,7 +1011,7 @@ export default function LineupDetails() {
                       className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-neutral-700/50 rounded-2xl"
                     >
                       <FileDown size={16} />
-                      הורד מילים
+                      {t("lineups.downloadLyrics")}
                     </button>
                   ) : null}
                 </div>

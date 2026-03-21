@@ -1,6 +1,8 @@
 import React, { useEffect, useCallback, useRef, ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation.ts";
+import { resolveScrollbarContainerDirFromLocale } from "@/modules/shared/lib/locale.js";
 
 export interface BaseModalProps {
   open: boolean;
@@ -33,6 +35,7 @@ export default function BaseModal({
   containerClassName = "",
   backdropContainerClassName = "",
 }: BaseModalProps) {
+  const { t, isRTL, locale } = useTranslation();
   // ✅ Hooks תמיד למעלה, בלי תנאים
 
   const scrollTimeoutRef = useRef<number | null>(null);
@@ -167,11 +170,13 @@ export default function BaseModal({
       className={`fixed inset-0 ${backdropClassName} flex justify-center items-center z-[1000] p-4 ${backdropContainerClassName}`}
       onClick={handleBackdropClick}
       role="presentation"
+      dir={isRTL ? "rtl" : "ltr"}
     >
       <div
         ref={modalRef}
         // Semantic animation: modals use `animation-overlay`
         className={`bg-neutral-850 rounded-2xl w-full ${maxWidth} relative shadow-xl ${padding} max-h-[calc(100dvh-2rem)] overflow-y-auto app-scroll animation-overlay ${containerClassName}`}
+        dir={resolveScrollbarContainerDirFromLocale(locale)}
         onClick={(e) => e.stopPropagation()}
         onScroll={handleScroll}
         role="dialog"
@@ -179,28 +184,30 @@ export default function BaseModal({
         aria-labelledby={title ? "modal-title" : undefined}
         tabIndex={-1}
       >
-        {showCloseButton && (
-          <button
-            onClick={onClose}
-            // Semantic animation: buttons use `animation-press`
-            className="absolute top-3 left-3 text-neutral-100 hover:text-neutral-300 transition-colors p-1 hover:bg-neutral-800 rounded-md z-10 transition"
-            aria-label="Close modal"
-            type="button"
-          >
-            <X size={20} />
-          </button>
-        )}
+        <div dir={isRTL ? "rtl" : "ltr"} className="text-start">
+          {showCloseButton && (
+            <button
+              onClick={onClose}
+              // Semantic animation: buttons use `animation-press`
+              className={`absolute top-3 text-neutral-100 hover:text-neutral-300 transition-colors p-1 hover:bg-neutral-800 rounded-md z-10 transition ${isRTL ? "left-3" : "right-3"}`}
+              aria-label={t("common.closeModal")}
+              type="button"
+            >
+              <X size={20} />
+            </button>
+          )}
 
-        {title && (
-          <h2
-            id="modal-title"
-            className="text-xl font-bold text-neutral-100 mb-4"
-          >
-            {title}
-          </h2>
-        )}
+          {title && (
+            <h2
+              id="modal-title"
+              className="text-xl font-bold text-neutral-100 mb-4"
+            >
+              {title}
+            </h2>
+          )}
 
-        {children}
+          {children}
+        </div>
       </div>
     </div>
   );

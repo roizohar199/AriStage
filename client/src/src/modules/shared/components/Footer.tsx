@@ -1,128 +1,102 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 // Pure presentational footer: small, non-intrusive, dark-theme friendly.
 // Enhanced with accessibility links and cookie settings
 export default function Footer() {
+  const { t, translations } = useTranslation();
   const [openSection, setOpenSection] = useState<
     "about" | "support" | "terms" | "privacy" | null
   >(null);
-  const [showCookieSettings, setShowCookieSettings] = useState(false);
+  const footerTranslations = translations.footer;
 
   const sections = useMemo(
     () =>
       [
         {
           key: "about" as const,
-          title: "אודות",
+          title: footerTranslations.about.title,
           content: (
             <div className="space-y-3 text-sm leading-6 text-neutral-300">
-              <p>
-                Ari Stage היא פלטפורמה לניהול ותיאום תהליכים סביב הופעות, אמנים,
-                שיתופים וקבצים—במקום אחד, בצורה פשוטה וברורה.
-              </p>
-              <p>
-                המטרה שלנו היא לחסוך זמן בהתנהלות היומיומית: להוציא פחות הודעות,
-                לאתר קבצים מהר, ולעבוד מסודר עם צוותים ואנשים שונים.
-              </p>
+              {footerTranslations.about.paragraphs.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
               <p className="text-neutral-400">
-                יש לך רעיון לשיפור? נשמח לשמוע בתפריט “תמיכה”.
+                {footerTranslations.about.highlight}
               </p>
             </div>
           ),
         },
         {
           key: "support" as const,
-          title: "תמיכה",
+          title: footerTranslations.support.title,
           content: (
             <div className="space-y-3 text-sm leading-6 text-neutral-300">
-              <p>צריכים עזרה? הנה כמה צעדים מהירים לפני שפונים:</p>
+              <p>{footerTranslations.support.intro}</p>
               <ul className="list-disc ps-5 space-y-1 text-neutral-300">
-                <li>נסו לרענן את הדף (Ctrl+R).</li>
-                <li>
-                  אם מדובר בבעיה בטעינת נתונים, בדקו חיבור אינטרנט והתחברות
-                  מחדש.
-                </li>
-                <li>
-                  אם העלאת קובץ נכשלה, נסו שם קובץ באנגלית/מספרים וגודל קטן
-                  יותר.
-                </li>
+                {footerTranslations.support.quickSteps.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
               </ul>
               <div className="rounded-lg border border-neutral-800 bg-neutral-950/40 p-3">
                 <p className="text-neutral-200 font-medium">
-                  כדי שנוכל לעזור מהר:
+                  {footerTranslations.support.fastHelpTitle}
                 </p>
                 <ul className="mt-2 list-disc ps-5 space-y-1 text-neutral-300">
-                  <li>מה ניסית לעשות בדיוק?</li>
-                  <li>מה הופיע על המסך (שגיאה/התנהגות)?</li>
-                  <li>באיזה מכשיר/דפדפן?</li>
+                  {footerTranslations.support.fastHelpItems.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
                 </ul>
               </div>
               <p className="text-neutral-400">
-                אם יש לכם ערוץ פנימי (וואטסאפ/מייל צוותי) – שלחו שם צילום מסך
-                ותיאור קצר.
+                {footerTranslations.support.outro}
               </p>
             </div>
           ),
         },
         {
           key: "terms" as const,
-          title: "תנאים",
+          title: footerTranslations.terms.title,
           content: (
             <div className="space-y-3 text-sm leading-6 text-neutral-300">
-              <p className="text-neutral-200 font-medium">תנאי שימוש (תמצית)</p>
-              <p>
-                השימוש במערכת הוא “כמות שהוא” ונועד לסייע בניהול מידע, קבצים
-                ותהליכים. אנחנו עושים מאמץ לשמור על זמינות ותקינות, אבל ייתכנו
-                תקלות זמניות.
+              <p className="text-neutral-200 font-medium">
+                {footerTranslations.terms.summaryTitle}
               </p>
+              <p>{footerTranslations.terms.intro}</p>
               <ul className="list-disc ps-5 space-y-1">
-                <li>
-                  המשתמש אחראי על התכנים שהוא מעלה/משתף ועל הרשאות השיתוף.
-                </li>
-                <li>אין להעלות תוכן לא חוקי, פוגעני, או מפר זכויות יוצרים.</li>
-                <li>ניתן לשנות, לעדכן או להסיר תכונות ושירותים מעת לעת.</li>
+                {footerTranslations.terms.items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
               </ul>
               <p className="text-neutral-400">
-                רוצים שננסח תנאים משפטיים מלאים? מומלץ להתאים זאת לעו״ד בהתאם
-                לשימוש העסקי שלכם.
+                {footerTranslations.terms.outro}
               </p>
             </div>
           ),
         },
         {
           key: "privacy" as const,
-          title: "פרטיות",
+          title: footerTranslations.privacy.title,
           content: (
             <div className="space-y-3 text-sm leading-6 text-neutral-300">
               <p className="text-neutral-200 font-medium">
-                מדיניות פרטיות (תמצית)
+                {footerTranslations.privacy.summaryTitle}
               </p>
-              <p>
-                אנחנו שומרים מידע שנדרש להפעלת השירות: פרטי משתמש, הגדרות,
-                ונתונים שאתם יוצרים במערכת (כמו קבצים/תוכן). אנו משתמשים במידע
-                כדי לספק את השירות, לשפר אותו ולשמור על אבטחה.
-              </p>
+              <p>{footerTranslations.privacy.intro}</p>
               <ul className="list-disc ps-5 space-y-1">
-                <li>
-                  שיתוף מידע מתבצע בהתאם להרשאות שהוגדרו (משתמשים/צוותים).
-                </li>
-                <li>
-                  ייתכן שימוש ביומני מערכת לצורכי אבטחה, ניטור ותחקור תקלות.
-                </li>
-                <li>
-                  ניתן לבקש מחיקה/ייצוא של מידע בהתאם למדיניות הארגון והחוק החל.
-                </li>
+                {footerTranslations.privacy.items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
               </ul>
               <p className="text-neutral-400">
-                אם אתם צריכים ניסוח רשמי מלא (כולל עוגיות/מעקב), כדאי להוסיף
-                סעיפים בהתאם לכלים שבהם אתם משתמשים בפועל.
+                {footerTranslations.privacy.outro}
               </p>
             </div>
           ),
         },
       ] as const,
-    [],
+    [footerTranslations],
   );
 
   return (
@@ -158,13 +132,13 @@ export default function Footer() {
           {/* Accessibility and Cookie links */}
           <nav
             className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm"
-            aria-label="קישורי נגישות ופרטיות"
+            aria-label={t("footer.navAriaLabel")}
           >
             <Link
               to="/accessibility"
               className="text-neutral-400 hover:text-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20 rounded px-2 py-1"
             >
-              הצהרת נגישות
+              {t("footer.accessibilityLink")}
             </Link>
             <button
               type="button"
@@ -174,7 +148,7 @@ export default function Footer() {
               }}
               className="text-neutral-400 hover:text-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/20 rounded px-2 py-1"
             >
-              הגדרות עוגיות
+              {t("footer.cookieSettingsLink")}
             </button>
           </nav>
 
@@ -197,7 +171,7 @@ export default function Footer() {
                     className="text-neutral-400 hover:text-neutral-100 text-sm"
                     onClick={() => setOpenSection(null)}
                   >
-                    סגור
+                    {t("footer.closeSection")}
                   </button>
                 </div>
                 <div className="mt-3">{section.content}</div>
@@ -206,7 +180,7 @@ export default function Footer() {
           })}
 
           <span className="text-neutral-500 text-sm text-center">
-            © {new Date().getFullYear()} Ari Stage. כל הזכויות שמורות.
+            {t("footer.copyright", { year: new Date().getFullYear() })}
           </span>
         </div>
       </div>

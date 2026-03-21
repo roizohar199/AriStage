@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Search as LucideSearch } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 type SearchVariant = "song" | "artist" | "lineup" | "full";
 
@@ -9,13 +10,6 @@ interface SearchProps {
   className?: string;
   variant?: SearchVariant;
 }
-
-const PLACEHOLDERS: Record<SearchVariant, string> = {
-  song: "חפש לפי שם שיר",
-  artist: "חפש לפי שם אמן",
-  lineup: "חפש לפי שם ליינאפ",
-  full: "חפש",
-};
 
 const VARIANT_STYLES: Record<
   SearchVariant,
@@ -62,14 +56,24 @@ const Search: React.FC<SearchProps> = ({
   variant = "full",
   className = "",
 }) => {
+  const { isRTL, t } = useTranslation();
   const [open, setOpen] = useState(false);
   const styles = VARIANT_STYLES[variant];
+  const inputOpenClassName = isRTL
+    ? styles.inputOpenClassName
+    : styles.inputOpenClassName.replace("pr-10 pl-4", "pl-10 pr-4");
+  const placeholderMap: Record<SearchVariant, string> = {
+    song: t("songs.searchSongs"),
+    artist: t("artists.searchArtists"),
+    lineup: t("lineups.searchLineups"),
+    full: t("common.search"),
+  };
 
   return (
     <div className={`flex-1 ${className}`}>
       <div
         className={`
-          relative h-11 ml-auto
+          relative h-11 ${isRTL ? "ml-auto" : "mr-auto"}
           transition-all duration-300
           ${open ? "w-full" : "w-11"}
         `}
@@ -87,7 +91,7 @@ const Search: React.FC<SearchProps> = ({
           onBlur={() => {
             if (!value) setOpen(false);
           }}
-          placeholder={open ? PLACEHOLDERS[variant] : ""}
+          placeholder={open ? placeholderMap[variant] : ""}
           readOnly={!open}
           className={`
             w-full h-full
@@ -95,11 +99,7 @@ const Search: React.FC<SearchProps> = ({
             focus:outline-none
             transition-all duration-300
             outline-none
-            ${
-              open
-                ? styles.inputOpenClassName
-                : styles.inputClosedClassName
-            }
+            ${open ? inputOpenClassName : styles.inputClosedClassName}
           `}
         />
 
@@ -117,10 +117,10 @@ const Search: React.FC<SearchProps> = ({
           <LucideSearch size={18} />
         </div>
 
-        {/* ICON – פתוח (ימין) */}
+        {/* ICON – פתוח */}
         <div
           className={`
-            absolute right-3 top-1/2 -translate-y-1/2
+            absolute ${isRTL ? "right-3" : "left-3"} top-1/2 -translate-y-1/2
             ${styles.iconOpenClassName}
             transition-all duration-200
             ${open ? "opacity-100 scale-100" : "opacity-0 scale-90"}

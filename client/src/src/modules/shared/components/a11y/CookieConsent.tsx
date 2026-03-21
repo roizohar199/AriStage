@@ -14,6 +14,7 @@
 
 import { useEffect, useState } from "react";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 const STORAGE_KEY = "cookieConsent";
 
@@ -24,6 +25,7 @@ export function isAnalyticsAllowed(): boolean {
 }
 
 export default function CookieConsent() {
+  const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -59,7 +61,7 @@ export default function CookieConsent() {
     announcement.setAttribute("role", "status");
     announcement.setAttribute("aria-live", "polite");
     announcement.className = "sr-only";
-    announcement.textContent = "העדפות עוגיות נשמרו";
+    announcement.textContent = t("cookies.consent.savedAnnouncement");
     document.body.appendChild(announcement);
     setTimeout(() => document.body.removeChild(announcement), 1000);
   };
@@ -73,7 +75,7 @@ export default function CookieConsent() {
     announcement.setAttribute("role", "status");
     announcement.setAttribute("aria-live", "polite");
     announcement.className = "sr-only";
-    announcement.textContent = "העדפות עוגיות נשמרו";
+    announcement.textContent = t("cookies.consent.savedAnnouncement");
     document.body.appendChild(announcement);
     setTimeout(() => document.body.removeChild(announcement), 1000);
   };
@@ -102,16 +104,13 @@ export default function CookieConsent() {
               id="cookie-consent-title"
               className="text-xl font-bold text-neutral-100"
             >
-              שימוש בעוגיות
+              {t("cookies.consent.title")}
             </h2>
             <p
               id="cookie-consent-description"
               className="text-neutral-300 leading-relaxed"
             >
-              אתר זה משתמש בעוגיות כדי לשפר את חוויית המשתמש, לנתח תנועה באתר
-              ולספק תכנים מותאמים אישית. על ידי לחיצה על "אישור" אתה מסכים
-              לשימוש בעוגיות. ניתן לשנות את ההעדפות בכל עת דרך קישור "הגדרות
-              עוגיות" בתחתית העמוד.
+              {t("cookies.consent.description")}
             </p>
           </div>
 
@@ -121,14 +120,14 @@ export default function CookieConsent() {
               variant="primary"
               type="button"
             >
-              אישור
+              {t("cookies.consent.acceptButton")}
             </DesignActionButton>
             <DesignActionButton
               onClick={handleDecline}
               variant="cancel"
               type="button"
             >
-              ביטול
+              {t("cookies.consent.declineButton")}
             </DesignActionButton>
           </div>
         </div>

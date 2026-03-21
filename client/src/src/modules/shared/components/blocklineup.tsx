@@ -85,7 +85,7 @@ const BlockLineup: React.FC<BlockLineupProps> = ({
             }}
             // Semantic animation: buttons use `animation-press`
             className="outline-none bg-red-600 text-white rounded-full p-2 hover:bg-red-500 transition"
-            aria-label="delete-lineup"
+            aria-label={t("lineups.deleteLineup")}
           >
             <Trash2 size={20} />
           </button>
@@ -97,7 +97,7 @@ const BlockLineup: React.FC<BlockLineupProps> = ({
             }}
             // Semantic animation: buttons use `animation-press`
             className="outline-none bg-brand-primary text-black rounded-full p-2 hover:bg-brand-primaryLight transition"
-            aria-label="edit-lineup"
+            aria-label={t("lineups.editLineup")}
           >
             <Pencil size={20} />
           </button>

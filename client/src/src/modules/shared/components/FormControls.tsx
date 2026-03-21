@@ -25,6 +25,7 @@ export interface FieldProps {
   children: ReactNode;
 }
 export function Field({ label, hint, error, required, children }: FieldProps) {
+  const { t } = useTranslation();
   const id = useId();
   const hintId = hint ? `${id}-hint` : undefined;
   const errorId = error ? `${id}-error` : undefined;
@@ -48,7 +49,7 @@ export function Field({ label, hint, error, required, children }: FieldProps) {
         >
           {label}
           {required && (
-            <span className="text-red-500" aria-label="required">
+            <span className="text-red-500" aria-label={t("common.required")}>
               {" "}
               *
             </span>

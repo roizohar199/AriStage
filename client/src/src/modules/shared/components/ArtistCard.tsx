@@ -1,5 +1,5 @@
 import React from "react";
-import { User, Music, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import Avatar from "@/modules/shared/components/Avatar";
 import { getAvatarInitial } from "@/modules/shared/lib/avatar";
 import { useTranslation } from "@/hooks/useTranslation.ts";
@@ -12,7 +12,7 @@ interface ArtistCardProps {
     artist_role?: string;
     email?: string;
   };
-  onUninvite?: () => void;
+  onUninvite?: React.MouseEventHandler<HTMLButtonElement>;
   disableActions?: boolean;
 }
 
@@ -20,7 +20,7 @@ export default function ArtistCard({
   artist,
   onUninvite,
   disableActions = false,
-}: ArtistCardProps): JSX.Element {
+}: ArtistCardProps) {
   const { t } = useTranslation();
 
   return (

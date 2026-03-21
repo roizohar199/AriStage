@@ -376,20 +376,21 @@ export default function Header({
       <BaseModal
         open={offlineCacheModalOpen}
         onClose={() => setOfflineCacheModalOpen(false)}
-        title="תוכן זמין במצב Offline"
+        title={t("offline.cacheModal.title")}
         maxWidth="max-w-3xl"
       >
         <div className="w-full">
           <div className="text-sm text-neutral-300 mb-4">
-            מוצגים כאן כל הקבצים/כתובות שכבר נשמרו בקאש בדפדפן. מה שלא ביקרו
-            בו/נטען עדיין — לא יופיע כאן.
+            {t("offline.cacheModal.description")}
           </div>
 
           {offlineCacheLoading ? (
-            <div className="text-neutral-300 text-sm">טוען…</div>
+            <div className="text-neutral-300 text-sm">
+              {t("offline.cacheModal.loading")}
+            </div>
           ) : offlineCacheEntries.length === 0 ? (
             <div className="text-neutral-300 text-sm">
-              אין תוכן מקאש כרגע. טען כמה דפים/נתונים במצב Online ואז נסה שוב.
+              {t("offline.cacheModal.empty")}
             </div>
           ) : (
             <div className="max-h-[60vh] overflow-auto border border-neutral-700 rounded-xl">
@@ -429,19 +430,16 @@ export default function Header({
               onClick={() => loadOfflineCacheEntries()}
               className="px-4 py-2 rounded-xl bg-neutral-700/60 hover:bg-neutral-700 text-neutral-100 text-sm font-semibold"
             >
-              רענן
+              {t("offline.cacheModal.refresh")}
             </button>
             <button
               type="button"
               onClick={() => {
-                showToast(
-                  "כדי להוסיף עוד תוכן ל-Offline: תטייל באתר במצב Online פעם אחת",
-                  "info",
-                );
+                showToast(t("offline.cacheModal.fillCacheToast"), "info");
               }}
               className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700/70 text-neutral-100 text-sm font-semibold"
             >
-              איך למלא קאש?
+              {t("offline.cacheModal.fillCacheButton")}
             </button>
           </div>
         </div>
@@ -450,22 +448,26 @@ export default function Header({
       <BaseModal
         open={pendingModalOpen}
         onClose={() => setPendingModalOpen(false)}
-        title="הזמנות ממתינות"
+        title={t("invitations.pendingModal.title")}
         maxWidth="max-w-2xl"
       >
         <div className="flex flex-col items-center text-center w-full">
           <h2 className="text-xl font-bold text-brand-primary mb-2">
-            הזמנות ממתינות
+            {t("invitations.pendingModal.title")}
           </h2>
           <p className="text-neutral-400 text-sm mb-4">
-            בחר הזמנה לאישור או דחייה
+            {t("invitations.pendingModal.subtitle")}
           </p>
 
           <div className="w-full max-w-xl space-y-3 max-h-[60vh] overflow-y-auto mx-auto">
             {pendingLoading ? (
-              <div className="text-neutral-400 text-sm">טוען הזמנות...</div>
+              <div className="text-neutral-400 text-sm">
+                {t("invitations.pendingModal.loading")}
+              </div>
             ) : pendingInvitations.length === 0 ? (
-              <div className="text-neutral-400 text-sm">אין הזמנות ממתינות</div>
+              <div className="text-neutral-400 text-sm">
+                {t("invitations.pendingModal.empty")}
+              </div>
             ) : (
               pendingInvitations.map((invitation) => (
                 <div
@@ -478,7 +480,7 @@ export default function Header({
                         <Avatar
                           src={invitation.avatar}
                           name={invitation.full_name}
-                          alt={invitation.full_name || "Avatar"}
+                          alt={invitation.full_name || t("artists.artistAlt")}
                           className="h-full w-full"
                           imgClassName="h-full w-full object-cover"
                           fallbackClassName="h-full w-full flex items-center justify-center bg-neutral-700 text-neutral-100 font-semibold"
@@ -487,7 +489,8 @@ export default function Header({
                       </div>
                       <div className="flex flex-col items-start gap-1">
                         <span className="text-sm font-semibold text-neutral-100">
-                          {invitation.full_name || "משתמש"}
+                          {invitation.full_name ||
+                            t("invitations.pendingModal.unknownUser")}
                         </span>
                         {invitation.artist_role && (
                           <span className="inline-flex items-center px-1 bg-brand-primary rounded-lg text-neutral-100 font-semibold text-xs">
@@ -495,7 +498,7 @@ export default function Header({
                           </span>
                         )}
                         <span className="text-xs text-neutral-300">
-                          מזמין אותך להצטרף למאגר שלו
+                          {t("invitations.pendingModal.inviterHint")}
                         </span>
                       </div>
                     </div>

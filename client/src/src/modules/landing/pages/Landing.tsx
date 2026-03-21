@@ -1,8 +1,6 @@
 import React from "react";
 import {
-  ArrowRight,
   Play,
-  Smartphone,
   Music2,
   ListMusic,
   Share2,
@@ -11,9 +9,38 @@ import {
   Wand2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 export default function Landing() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const featureCards = [
+    {
+      key: "smartSongBank",
+      icon: ListMusic,
+    },
+    {
+      key: "oneClickSharing",
+      icon: Share2,
+    },
+    {
+      key: "smartLineups",
+      icon: Music2,
+    },
+    {
+      key: "realtimeUpdates",
+      icon: Cloud,
+    },
+    {
+      key: "eventManagement",
+      icon: Timer,
+    },
+    {
+      key: "aiAutomation",
+      icon: Wand2,
+    },
+  ] as const;
 
   return (
     <div className="min-h-screen text-neutral-100 flex flex-col">
@@ -26,8 +53,7 @@ export default function Landing() {
           </h1>
 
           <p className="text-neutral-300 mt-4 text-lg md:text-xl leading-relaxed">
-            הבית הרשמי לזמרים, נגנים ומפיקים — כל השירים, כל הלינאפים וכל
-            האירועים שלך מנוהלים במקום אחד, בצורה חכמה, מהירה ומקצועית.
+            {t("landing.heroSubtitle")}
           </p>
 
           {/* כפתורים */}
@@ -37,7 +63,7 @@ export default function Landing() {
               onClick={() => navigate("/login")}
               className="bg-brand-primary text-neutral-950 font-bold px-4 py-2 rounded-2xl transition flex items-center justify-center gap-2 shadow-xl text-sm hover:bg-brand-primaryLight"
             >
-              התחברות
+              {t("landing.loginButton")}
             </button>
 
             {/* ניסיון חינם */}
@@ -45,7 +71,7 @@ export default function Landing() {
               onClick={() => navigate("/login?tab=register")}
               className="bg-neutral-800 px-4 py-2 rounded-2xl hover:bg-neutral-700 transition shadow-md text-sm"
             >
-              התחל ניסיון חינם
+              {t("landing.freeTrialButton")}
             </button>
 
             {/* דמו */}
@@ -58,7 +84,7 @@ export default function Landing() {
               hover:bg-brand-primary/50 hover:text-neutral-100 transition flex items-center justify-center gap-2 text-sm"
             >
               <Play size={18} />
-              צפה בדמו
+              {t("landing.demoButton")}
             </button>
           </div>
         </div>
@@ -67,7 +93,7 @@ export default function Landing() {
         <div className="relative w-[280px] md:w-[700px] h-[560px] md:h-[680px] bg-black rounded-[40px] border-4 border-neutral-800 shadow-[0_0_50px_rgba(255,125,0,0.3)] overflow-hidden">
           <img
             src="/screen.png"
-            alt="App Screenshot"
+            alt={t("landing.screenshotAlt")}
             className="w-full h-full object-cover"
           />
           <div className="absolute top-3 left-1/2 -translate-x-1/2 w-24 h-2 rounded-full bg-neutral-700/80"></div>
@@ -77,73 +103,21 @@ export default function Landing() {
       {/* למה אנחנו – גרסה חדשה ומוכרת */}
       <section id="why" className="py-12 px-5 rounded-2xl mt-10">
         <h2 className="text-center text-3xl font-bold mb-12 text-brand-primary">
-          למה דווקא Ari Stage?
+          {t("landing.whyTitle")}
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto">
-          {/* מאגר שירים */}
-          <div className="bg-neutral-800 p-6 rounded-2xl shadow-md">
-            <ListMusic size={38} className="text-brand-primary mb-4" />
-            <h3 className="text-xl font-semibold mb-2">מאגר שירים חכם</h3>
-            <p className="text-neutral-400 text-sm leading-relaxed">
-              כל השירים שלך במקום אחד — כולל BPM, סולם, תגיות, אורך השיר, הערות,
-              וכל מה שצריך כדי לעלות לבמה בביטחון.
-            </p>
-          </div>
-
-          {/* שיתוף לינאפים אונליין */}
-          <div className="bg-neutral-800 p-6 rounded-2xl shadow-md">
-            <Share2 size={38} className="text-brand-primary mb-4" />
-            <h3 className="text-xl font-semibold mb-2">שיתוף לינאפ בלחיצה</h3>
-            <p className="text-neutral-400 text-sm leading-relaxed">
-              שלח לינק לכל הצוות — זמרים, נגנים והפקה — שמתעדכן אונליין עד הרגע
-              האחרון. כל שינוי שאתה עושה מתעדכן לכולם בשנייה. מושלם להופעות.
-            </p>
-          </div>
-
-          {/* ליינאפים חכמים */}
-          <div className="bg-neutral-800 p-6 rounded-2xl shadow-md">
-            <Music2 size={38} className="text-brand-primary mb-4" />
-            <h3 className="text-xl font-semibold mb-2">לינאפים חכמים</h3>
-            <p className="text-neutral-400 text-sm leading-relaxed">
-              גרירה ושחרור, סדר מהיר, חישוב זמני הופעה אוטומטיים, שמירה, שיתוף
-              וייצוא — הכל כמה פעמים שתרצה.
-            </p>
-          </div>
-
-          {/* עדכון בזמן אמת */}
-          <div className="bg-neutral-800 p-6 rounded-2xl shadow-md">
-            <Cloud size={38} className="text-brand-primary mb-4" />
-            <h3 className="text-xl font-semibold mb-2">עדכונים בזמן אמת</h3>
-            <p className="text-neutral-400 text-sm leading-relaxed">
-              כל שינוי שאתה מבצע — שיר שנוסף, זמן שהשתנה, הערה שנוספה — מתעדכן
-              אצל כולם באותו רגע. בלי בלאגן, בלי וואטסאפים.
-            </p>
-          </div>
-
-          {/* ניהול אירועים */}
-          <div className="bg-neutral-800 p-6 rounded-2xl shadow-md">
-            <Timer size={38} className="text-brand-primary mb-4" />
-            <h3 className="text-xl font-semibold mb-2">
-              ניהול הופעות ואירועים
-            </h3>
-            <p className="text-neutral-400 text-sm leading-relaxed">
-              שליטה מלאה בכל האירועים שלך: תאריכים, סטים, זמנים, ליינים, חזרות —
-              הכל במקום אחד מקצועי וקל לתפעול.
-            </p>
-          </div>
-
-          {/* אוטומציה חכמה */}
-          <div className="bg-neutral-800 p-6 rounded-2xl shadow-md">
-            <Wand2 size={38} className="text-brand-primary mb-4" />
-            <h3 className="text-xl font-semibold mb-2">
-              אוטומציה ו-AI בהופעות
-            </h3>
-            <p className="text-neutral-400 text-sm leading-relaxed">
-              בקרוב: בינה שתבנה לך ליינאפים אוטומטיים לפי BPM, אנרגיה, סגנון
-              ושלב האירוע. עוזר אישי לכל הופעה.
-            </p>
-          </div>
+          {featureCards.map(({ key, icon: Icon }) => (
+            <div key={key} className="bg-neutral-800 p-6 rounded-2xl shadow-md">
+              <Icon size={38} className="text-brand-primary mb-4" />
+              <h3 className="text-xl font-semibold mb-2">
+                {t(`landing.features.${key}.title`)}
+              </h3>
+              <p className="text-neutral-400 text-sm leading-relaxed">
+                {t(`landing.features.${key}.description`)}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
     </div>

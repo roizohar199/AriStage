@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import BaseModal from "./BaseModal.tsx";
 import DesignActionButtonBig from "./DesignActionButtonBig";
 import { DateInput, Input, Textarea, TimeInput } from "./FormControls";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 interface CreateLineupForm {
   name: string;
@@ -26,6 +27,7 @@ const CreateLineup: React.FC<CreateLineupProps> = ({
   initialForm,
   editing = false,
 }) => {
+  const { t } = useTranslation();
   const [form, setForm] = useState<CreateLineupForm>({
     name: "",
     description: "",
@@ -67,16 +69,16 @@ const CreateLineup: React.FC<CreateLineupProps> = ({
     <BaseModal
       open={open}
       onClose={onClose}
-      title={editing ? "עריכת ליינאפ" : "צור ליינאפ חדש"}
+      title={editing ? t("lineups.editLineup") : t("lineups.addLineup")}
       maxWidth="max-w-md"
     >
       <h2 className="text-xl font-bold mb-4 text-neutral-100">
-        {editing ? "עריכת ליינאפ" : "צור ליינאפ חדש"}
+        {editing ? t("lineups.editLineup") : t("lineups.addLineup")}
       </h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
-          placeholder="שם הליינאפ *"
+          placeholder={t("lineups.lineupNamePlaceholder")}
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           required
@@ -95,20 +97,20 @@ const CreateLineup: React.FC<CreateLineupProps> = ({
         />
 
         <Input
-          placeholder="מיקום"
+          placeholder={t("lineups.locationPlaceholder")}
           value={form.location}
           onChange={(e) => setForm({ ...form, location: e.target.value })}
         />
 
         <Textarea
-          placeholder="תיאור (אופציונלי)"
+          placeholder={t("lineups.descriptionOptionalPlaceholder")}
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
           rows={3}
         />
 
         <DesignActionButtonBig type="submit">
-          {editing ? "שמור" : "צור ליינאפ"}
+          {editing ? t("common.save") : t("lineups.addLineup")}
         </DesignActionButtonBig>
       </form>
     </BaseModal>

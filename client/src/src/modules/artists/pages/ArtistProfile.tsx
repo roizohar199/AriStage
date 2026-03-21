@@ -1,23 +1,8 @@
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useNavigate, Outlet, useLocation } from "react-router-dom";
-import {
-  User,
-  Music,
-  ListMusic,
-  ArrowLeft,
-  CalendarDays,
-  MapPin,
-  Clock,
-  FileText,
-  Eye,
-  FileDown,
-  Trash2,
-  Upload,
-  ArrowRight,
-} from "lucide-react";
+import { Music, ListMusic } from "lucide-react";
 import api from "@/modules/shared/lib/api.js";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
-import { useToast } from "@/modules/shared/components/ToastProvider.jsx";
 import ArtistCard from "@/modules/shared/components/ArtistCard";
 import Search from "@/modules/shared/components/Search";
 import BlockLineup from "@/modules/shared/components/blocklineup";
@@ -26,19 +11,25 @@ import Charts, { ChartViewerModal } from "@/modules/shared/components/Charts";
 import SongLyrics from "@/modules/shared/components/SongLyrics";
 import Tab, { type TabItem } from "@/modules/shared/components/Tab";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 export default function ArtistProfile() {
   const confirm = useConfirm();
-  const { showToast } = useToast();
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const { subscriptionBlocked } = useAuth();
   const location = useLocation();
   const isLineupRoute = /^\/artist\/\d+\/lineups\/\d+/.test(location.pathname);
-  const [artist, setArtist] = useState(null);
-  const [lineups, setLineups] = useState([]);
+  const [artist, setArtist] = useState<any>(null);
+  interface Lineup {
+    id: number;
+    title?: string;
+    location?: string;
+  }
+  const [lineups, setLineups] = useState<Lineup[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Tabs
   // Remove setActiveTab, use URL to control active tab
@@ -78,14 +69,18 @@ export default function ArtistProfile() {
     () => [
       {
         key: "lineups",
-        label: <span className="flex items-center gap-2">ליינאפים</span>,
+        label: (
+          <span className="flex items-center gap-2">{t("lineups.title")}</span>
+        ),
       },
       {
         key: "songs",
-        label: <span className="flex items-center gap-2">שירים</span>,
+        label: (
+          <span className="flex items-center gap-2">{t("songs.title")}</span>
+        ),
       },
     ],
-    [],
+    [t],
   );
 
   const handleSelectTab = (tab: "lineups" | "songs") => {
@@ -152,14 +147,14 @@ export default function ArtistProfile() {
       }
 
       if (!targetArtistId) {
-        setError("אין לך גישה לפרופיל זה");
+        setError(t("artists.profileAccessDenied"));
         return;
       }
 
       // בדיקת הרשאות - אם המשתמש הוא אורח, ודא שהוא מחובר למארח הזה
       if (guestStatus?.isGuest) {
         if (targetArtistId !== guestStatus.hostId) {
-          setError("אין לך גישה לפרופיל זה");
+          setError(t("artists.profileAccessDenied"));
           return;
         }
         // טעינת פרטי המארח דרך my-collection
@@ -201,7 +196,7 @@ export default function ArtistProfile() {
             myConnections.find((artist) => artist.id === targetArtistId);
 
           if (!invitedArtist) {
-            setError("אין לך גישה לפרופיל זה");
+            setError(t("artists.profileAccessDenied"));
             return;
           }
           targetArtist = invitedArtist;
@@ -209,7 +204,7 @@ export default function ArtistProfile() {
       }
 
       if (!targetArtist) {
-        setError("אמן לא נמצא");
+        setError(t("artists.artistNotFound"));
         return;
       }
 
@@ -226,12 +221,12 @@ export default function ArtistProfile() {
 
       // טעינת שירים
       await loadSongs(targetArtistId);
-    } catch (err) {
+    } catch (err: any) {
       console.error("שגיאה בטעינת נתונים:", err);
       if (err?.response?.status === 403 || err?.response?.status === 404) {
-        setError("אין לך גישה לפרופיל זה");
+        setError(t("artists.profileAccessDenied"));
       } else {
-        setError("לא ניתן לטעון את הנתונים");
+        setError(t("artists.loadDataError"));
       }
     } finally {
       setLoading(false);
@@ -270,52 +265,7 @@ export default function ArtistProfile() {
     }
   }, [songs]);
 
-  // Chart handlers
-  const handleUploadChart = async (songId: number, file: File) => {
-    try {
-      const formData = new FormData();
-      formData.append("pdf", file);
-      await api.post(`/songs/${songId}/private-charts`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      showToast("הקובץ הועלה בהצלחה", "success");
-      const { data: charts } = await api.get(`/songs/${songId}/private-charts`);
-      setPrivateCharts((prev) => ({ ...prev, [songId]: charts.charts || [] }));
-    } catch (err) {
-      showToast(err?.response?.data?.message || "שגיאה בהעלאת הקובץ", "error");
-    }
-  };
-
-  const handleViewChart = (filePath: string) => {
-    setViewingChart(filePath);
-  };
-
-  const handleDownloadChart = (filePath: string, songTitle: string) => {
-    const link = document.createElement("a");
-    link.href = filePath;
-    link.download = `${songTitle}-chart.pdf`;
-    link.click();
-  };
-
-  const handleDeletePrivateChart = async (songId: number, chartId: number) => {
-    const ok = await confirm({
-      title: "מחיקת צ'ארט",
-      message: "בטוח שאתה רוצה למחוק את הצ'ארט?",
-    });
-    if (!ok) return;
-    try {
-      await api.delete(`/songs/${songId}/private-charts/${chartId}`);
-      showToast("הצ'ארט נמחק בהצלחה", "success");
-      setPrivateCharts((prev) => ({
-        ...prev,
-        [songId]: prev[songId].filter((c: Chart) => c.id !== chartId),
-      }));
-    } catch (err) {
-      showToast(err?.response?.data?.message || "שגיאה במחיקת הצ'ארט", "error");
-    }
-  };
-
-  const safeKey = (k?: string) => k || "לא צוין";
+  const safeKey = (k?: string) => k || t("common.notSpecified");
   const safeDuration = (sec?: number | string) => {
     const numSec = typeof sec === "string" ? parseInt(sec, 10) : sec;
     if (!numSec) return "00:00";
@@ -327,29 +277,19 @@ export default function ArtistProfile() {
   // Handlers for edit and remove (not used in artist profile view)
   const handleEditSong = (song: Song) => {
     // User cannot edit other artist's songs
-    console.log("Edit not allowed for other artist's songs");
+    console.log("Edit not allowed for other artist's songs", song?.id);
   };
 
   const handleRemoveSong = async (songId: number) => {
     // User cannot remove other artist's songs
-    console.log("Remove not allowed for other artist's songs");
-  };
-
-  const normalizeTime = (t) => {
-    if (!t) return "";
-    return t.toString().slice(0, 5);
-  };
-
-  const formatDate = (date) => {
-    if (!date) return "לא צוין תאריך";
-    return new Date(date).toLocaleDateString("he-IL");
+    console.log("Remove not allowed for other artist's songs", songId);
   };
 
   return (
     <div className="min-h-screen text-neutral-100 pb-20">
       <div className="min-h-screen text-neutral-100 p-6">
         <header className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold">משותפים</h1>
+          <h1 className="text-3xl font-bold">{t("nav.shared")}</h1>
         </header>
         <div className="mb-6">
           {loading || error || !artist ? (
@@ -358,16 +298,20 @@ export default function ArtistProfile() {
                 <div className="min-h-[200px] flex items-center justify-center text-neutral-100">
                   <div className="text-center">
                     <div className="w-12 h-12 border-4 border-brand-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-neutral-400">טוען נתונים...</p>
+                    <p className="text-neutral-400">
+                      {t("common.loadingData")}
+                    </p>
                   </div>
                 </div>
               )}
               {(error || !artist) && !loading && (
                 <div className="bg-neutral-900 rounded-2xl p-8 border border-neutral-800 text-center max-w-md mx-auto">
                   <div className="text-red-400 text-xl mb-4">❌</div>
-                  <h2 className="text-2xl font-bold mb-2">שגיאה</h2>
+                  <h2 className="text-2xl font-bold mb-2">
+                    {t("common.error")}
+                  </h2>
                   <p className="text-neutral-400 mb-6">
-                    {error || "אמן לא נמצא"}
+                    {error || t("artists.artistNotFound")}
                   </p>
                   <button
                     onClick={() => {
@@ -379,7 +323,7 @@ export default function ArtistProfile() {
                     }}
                     className="bg-brand-primary hover:bg-brand-primaryLight text-neutral-100 font-semibold px-6 py-3 rounded-lg"
                   >
-                    חזרה לדף הבית
+                    {t("common.backToHome")}
                   </button>
                 </div>
               )}
@@ -425,8 +369,8 @@ export default function ArtistProfile() {
                       />
                       <p className="text-neutral-400">
                         {lineups.length === 0
-                          ? "אין ליינאפים זמינים"
-                          : "לא נמצאו תוצאות"}
+                          ? t("lineups.noLineupsAvailable")
+                          : t("common.noResults")}
                       </p>
                     </div>
                   ) : (
@@ -462,7 +406,9 @@ export default function ArtistProfile() {
               <div className="bg-neutral-900 rounded-2xl p-8 text-center border border-neutral-800">
                 <Music size={48} className="mx-auto mb-4 text-neutral-600" />
                 <p className="text-neutral-400">
-                  {songs.length === 0 ? "אין שירים זמינים" : "לא נמצאו תוצאות"}
+                  {songs.length === 0
+                    ? t("songs.noSongsAvailable")
+                    : t("common.noResults")}
                 </p>
               </div>
             ) : (

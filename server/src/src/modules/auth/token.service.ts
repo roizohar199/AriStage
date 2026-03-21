@@ -1,4 +1,4 @@
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt, { type SignOptions } from "jsonwebtoken";
 import { env } from "../../config/env";
 
 export interface TokenPayload {
@@ -15,6 +15,11 @@ export function signToken(payload: TokenPayload) {
     throw new Error("Missing payload for JWT sign");
   }
 
+  // `jsonwebtoken` types expect a stricter time string format than `string`.
+  // We keep env-config as a string and cast here to satisfy the library types.
+  const expiresIn =
+    env.jwtAccessExpiresIn as unknown as SignOptions["expiresIn"];
+
   return jwt.sign(
     {
       id: payload.id,
@@ -25,7 +30,7 @@ export function signToken(payload: TokenPayload) {
       avatar: payload.avatar || null,
     },
     env.jwtSecret,
-    { expiresIn: "15m" }, // Shortened from 7d to 15 minutes for security
+    { expiresIn },
   );
 }
 

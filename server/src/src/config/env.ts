@@ -39,6 +39,7 @@ interface EnvConfig {
   port: number;
   clientUrl: string;
   jwtSecret: string;
+  jwtAccessExpiresIn: string;
   allowedOrigins: string[];
   baseUrl: string; // ⭐ נוסף!
   database: {
@@ -76,6 +77,9 @@ export const env: EnvConfig = {
   port,
   clientUrl: (process.env.CLIENT_URL || "").replace(/\/$/, ""),
   jwtSecret: process.env.JWT_SECRET || "dev",
+  // Access token expiry. Default is intentionally long to prevent disconnects on inactivity.
+  // You can override in .env, e.g. JWT_ACCESS_EXPIRES_IN=30d
+  jwtAccessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || "365d",
   allowedOrigins: Array.from(new Set(allowedOrigins)),
   baseUrl, // ⭐ התוספת החשובה ביותר
   database: {
