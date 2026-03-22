@@ -8,12 +8,9 @@ import Logout from "./auth/pages/Logout.tsx";
 import SubscriptionBlocked from "./billing/pages/SubscriptionBlocked.tsx";
 import AccessibilityStatement from "./landing/pages/AccessibilityStatement.tsx";
 
-import LineupDetails from "./lineups/pages/LineupDetails.tsx";
 import Settings from "./settings/pages/Settings.tsx";
-import Artists from "./artists/pages/Artists.tsx";
 import MyArtist from "./artists/pages/MyArtist.tsx";
 import ArtistProfile from "./artists/pages/ArtistProfile.tsx";
-import ProfileArtist from "./artists/pages/ProfileArtist.tsx";
 import My from "./my/pages/My.tsx";
 import Admin from "./admin/pages/Admin.tsx";
 

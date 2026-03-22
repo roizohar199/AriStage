@@ -12,7 +12,8 @@ export const errorsController = {
 
   update: asyncHandler(async (req, res) => {
     const id = Number(req.params.id);
-    const resolved = Boolean(req.body?.resolved);
+    const resolved =
+      req.body?.resolved === true || req.body?.resolved === "true";
 
     const ok = await resolveSystemError(id, resolved);
     if (!ok) {

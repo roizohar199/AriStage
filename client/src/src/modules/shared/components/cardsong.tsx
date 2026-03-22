@@ -1,4 +1,4 @@
-import React from "react";
+import type { ReactNode } from "react";
 import { Trash2, Edit2 } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation.ts";
 
@@ -6,10 +6,10 @@ interface Song {
   id: number;
   title: string;
   artist: string;
-  bpm: number;
+  bpm: number | string;
   key_sig: string;
-  duration_sec: number;
-  notes?: string;
+  duration_sec: number | string;
+  notes?: string | null;
   is_owner?: boolean;
   owner_id?: number;
   owner_name?: string;
@@ -17,6 +17,7 @@ interface Song {
   owner_avatar?: string;
   owner_role?: string;
   owner_email?: string;
+  lyrics_text?: string | null;
 }
 
 interface CardSongProps {
@@ -25,14 +26,14 @@ interface CardSongProps {
   safeKey: (key: string) => string;
   safeDuration: (duration: string | number) => string;
   onEdit?: (song: Song) => void;
-  onRemove: (songId: number) => void;
-  chartsComponent: React.ReactNode;
-  lyricsComponent?: React.ReactNode;
+  onRemove?: (songId: number) => void;
+  chartsComponent: ReactNode;
+  lyricsComponent?: ReactNode;
   compact?: boolean;
   hideActions?: boolean;
 }
 
-const CardSong: React.FC<CardSongProps> = ({
+const CardSong = ({
   song,
   index,
   safeKey,
@@ -43,9 +44,8 @@ const CardSong: React.FC<CardSongProps> = ({
   lyricsComponent,
   compact = false,
   hideActions = false,
-}) => {
+}: CardSongProps) => {
   const { t } = useTranslation();
-  const durationText = safeDuration(song.duration_sec);
 
   return (
     <div
@@ -74,7 +74,7 @@ const CardSong: React.FC<CardSongProps> = ({
             {song.bpm} {t("songs.bpm")}
           </span>
           <span className="bg-neutral-950 px-2 py-1 rounded-2xl text-neutral-100 shadow-surface">
-            {song.duration_sec}
+            {safeDuration(song.duration_sec)}
           </span>
           {song.notes && (
             <span className="inline-block px-2 py-1 bg-brand-primary rounded-2xl text-black shadow-surface">
@@ -89,13 +89,15 @@ const CardSong: React.FC<CardSongProps> = ({
         <div className="flex m-4 gap-4 flex-row-reverse items-center">
           {song.is_owner && (
             <>
-              <button
-                onClick={() => onRemove(song.id)}
-                // Semantic animation: buttons use `animation-press`
-                className="outline-none bg-red-600 text-white rounded-full p-2 hover:bg-red-500 transition"
-              >
-                <Trash2 size={20} />
-              </button>
+              {onRemove && (
+                <button
+                  onClick={() => onRemove(song.id)}
+                  // Semantic animation: buttons use `animation-press`
+                  className="outline-none bg-red-600 text-white rounded-full p-2 hover:bg-red-500 transition"
+                >
+                  <Trash2 size={20} />
+                </button>
+              )}
 
               {onEdit && (
                 <button

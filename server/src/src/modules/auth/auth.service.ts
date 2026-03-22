@@ -66,9 +66,7 @@ export async function loginUser(
   const user = await findUserByEmail(email);
   if (!user) {
     recordFailedAttempt(email);
-    await logAuthEvent("FAILED_LOGIN", undefined, ipAddress, userAgent, {
-      email,
-    });
+    await logAuthEvent("FAILED_LOGIN", undefined, ipAddress, userAgent, {});
     throw new AppError(401, tServer(locale, "auth.invalidCredentials"));
   }
 
@@ -76,13 +74,10 @@ export async function loginUser(
   if (!isMatch) {
     const shouldLock = recordFailedAttempt(email);
 
-    await logAuthEvent("FAILED_LOGIN", user.id, ipAddress, userAgent, {
-      email,
-    });
+    await logAuthEvent("FAILED_LOGIN", user.id, ipAddress, userAgent, {});
 
     if (shouldLock) {
       await logAuthEvent("ACCOUNT_LOCKED", user.id, ipAddress, userAgent, {
-        email,
         reason: "too_many_failed_attempts",
       });
       await logSecurityIncident(
@@ -90,7 +85,7 @@ export async function loginUser(
         user.id,
         ipAddress,
         userAgent,
-        { email },
+        { userId: user.id },
       );
 
       throw new AppError(
@@ -115,9 +110,8 @@ export async function loginUser(
   const requires2FA = await is2FAEnabled(user.id);
 
   if (requires2FA) {
-    logger.info("2FA required for login", { userId: user.id, email });
+    logger.info("2FA required for login", { userId: user.id });
     await logAuthEvent("LOGIN", user.id, ipAddress, userAgent, {
-      email,
       requires2FA: true,
       step: "awaiting_2fa",
     });
@@ -149,7 +143,6 @@ export async function loginUser(
   }
 
   await logAuthEvent("LOGIN", user.id, ipAddress, userAgent, {
-    email,
     has2FA: false,
   });
 
@@ -208,10 +201,9 @@ export async function complete2FALogin(
     subscription_status = resolveSubscriptionStatus(user);
   }
 
-  logger.info("2FA login completed", { userId, email: user.email });
+  logger.info("2FA login completed", { userId });
 
   await logAuthEvent("LOGIN", user.id, ipAddress, userAgent, {
-    email: user.email,
     has2FA: true,
     step: "completed",
   });
@@ -250,7 +242,6 @@ export async function registerUser(payload: any, locale: ServerLocale) {
 
   logger.info("🟡 [REGISTER] registerUser התחיל", {
     full_name,
-    email,
     hasPassword: !!password,
     artist_role,
     hasTempAvatar: !!tempAvatar,
@@ -259,7 +250,6 @@ export async function registerUser(payload: any, locale: ServerLocale) {
   if (!full_name || !email || !password) {
     logger.error("❌ [REGISTER] שדות חסרים", {
       full_name,
-      email,
       hasPassword: !!password,
     });
     throw new AppError(400, tServer(locale, "auth.registrationMissingFields"));
@@ -268,7 +258,7 @@ export async function registerUser(payload: any, locale: ServerLocale) {
   logger.info("🟡 [REGISTER] בודק אם האימייל קיים...");
   const existing = await findUserByEmail(email);
   if (existing) {
-    logger.error("❌ [REGISTER] האימייל כבר קיים", { email });
+    logger.error("❌ [REGISTER] האימייל כבר קיים");
     throw new AppError(409, tServer(locale, "auth.emailAlreadyExists"));
   }
 
@@ -326,10 +316,9 @@ export async function registerUser(payload: any, locale: ServerLocale) {
     logger.info("✅ [REGISTER] תמונה הועלתה", { finalAvatarPath });
   }
 
-  logger.info("✅ [REGISTER] registerUser הושלם בהצלחה", { userId, email });
+  logger.info("✅ [REGISTER] registerUser הושלם בהצלחה", { userId });
 
   await logAuthEvent("REGISTER", userId, undefined, undefined, {
-    email,
     full_name,
   });
 
@@ -369,9 +358,7 @@ export async function requestPasswordReset(
     user.id,
     undefined,
     undefined,
-    {
-      email,
-    },
+    {},
   );
 
   const mail = buildResetPasswordEmail(locale, link);
@@ -418,7 +405,5 @@ export async function resetPasswordWithToken(
 
   clearFailedAttempts(user.email);
 
-  await logAuthEvent("PASSWORD_RESET", user.id, undefined, undefined, {
-    email: user.email,
-  });
+  await logAuthEvent("PASSWORD_RESET", user.id, undefined, undefined, {});
 }

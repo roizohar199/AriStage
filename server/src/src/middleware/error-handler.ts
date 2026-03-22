@@ -11,9 +11,7 @@ export function errorHandler(err, req, res, next) {
   const statusCode = err instanceof AppError ? err.statusCode : 500;
   const shouldPersist = statusCode >= 500;
   if (shouldPersist) {
-    const userLabel = req?.user
-      ? `${req.user.id || ""} ${req.user.email || ""}`.trim()
-      : null;
+    const userLabel = req?.user?.id ? String(req.user.id) : null;
 
     void recordSystemErrorBestEffort({
       message: String(err?.message || tRequest(req, "errors.internal")),

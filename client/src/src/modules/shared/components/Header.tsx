@@ -21,7 +21,7 @@ import { useFeatureFlags } from "@/modules/shared/contexts/FeatureFlagsContext.t
 import { useTranslation } from "@/hooks/useTranslation.ts";
 import Avatar from "@/modules/shared/components/Avatar";
 import { getAvatarInitial } from "@/modules/shared/lib/avatar";
-import api from "@/modules/shared/lib/api.js";
+import api, { getApiErrorMessage } from "@/modules/shared/lib/api.js";
 import { useOfflineStatus } from "@/modules/shared/hooks/useOfflineStatus";
 
 interface HeaderProps {
@@ -151,8 +151,7 @@ export default function Header({
       showToast(t("invitations.acceptedToast"), "success");
       handleInvitationHandled(hostId);
     } catch (error: any) {
-      const message =
-        error?.response?.data?.message || t("invitations.acceptError");
+      const message = getApiErrorMessage(error, "invitations.acceptError");
       showToast(message, "error");
     } finally {
       setProcessingId(null);
@@ -166,8 +165,7 @@ export default function Header({
       showToast(t("invitations.rejectedToast"), "success");
       handleInvitationHandled(hostId);
     } catch (error: any) {
-      const message =
-        error?.response?.data?.message || t("invitations.rejectError");
+      const message = getApiErrorMessage(error, "invitations.rejectError");
       showToast(message, "error");
     } finally {
       setProcessingId(null);

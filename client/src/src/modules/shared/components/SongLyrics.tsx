@@ -1,13 +1,6 @@
-import React, { useCallback, useMemo, useState } from "react";
-import {
-  Eye,
-  Save,
-  Trash2,
-  FileText,
-  PenIcon,
-  PenLineIcon,
-} from "lucide-react";
-import api from "@/modules/shared/lib/api.js";
+import { useCallback, useMemo, useState } from "react";
+import { Eye, Save, Trash2, FileText, PenLineIcon } from "lucide-react";
+import api, { getApiErrorMessage } from "@/modules/shared/lib/api.js";
 import BaseModal from "./BaseModal.tsx";
 import { useToast } from "./ToastProvider";
 import { useFeatureFlags } from "@/modules/shared/contexts/FeatureFlagsContext.tsx";
@@ -32,7 +25,7 @@ export default function SongLyrics({
   canEdit,
   onConfirm,
   onChanged,
-}: SongLyricsProps): JSX.Element {
+}: SongLyricsProps) {
   const { showToast } = useToast();
   const { t } = useTranslation();
   const { isEnabled } = useFeatureFlags();
@@ -61,7 +54,7 @@ export default function SongLyrics({
       setOpen(false);
       await onChanged();
     } catch (err: any) {
-      showToast(err?.response?.data?.message || t("lyrics.saveError"), "error");
+      showToast(getApiErrorMessage(err, "lyrics.saveError"), "error");
     } finally {
       setSaving(false);
     }
@@ -83,10 +76,7 @@ export default function SongLyrics({
       setOpen(false);
       await onChanged();
     } catch (err: any) {
-      showToast(
-        err?.response?.data?.message || t("lyrics.deleteError"),
-        "error",
-      );
+      showToast(getApiErrorMessage(err, "lyrics.deleteError"), "error");
     } finally {
       setSaving(false);
     }

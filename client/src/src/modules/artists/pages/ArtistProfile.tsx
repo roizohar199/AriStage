@@ -44,12 +44,12 @@ export default function ArtistProfile() {
     id: number;
     title: string;
     artist: string;
-    bpm: number;
+    bpm: number | string;
     key_sig: string;
-    duration_sec: number;
-    notes?: string;
+    duration_sec: number | string;
+    notes?: string | null;
     owner_id?: number;
-    lyrics_text?: string;
+    lyrics_text?: string | null;
     is_owner?: boolean;
   }
   const [songs, setSongs] = useState<Song[]>([]);

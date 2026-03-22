@@ -4,11 +4,15 @@ import { env } from "../config/env";
 import { isKnownRole } from "../types/roles";
 import { touchUserLastSeen } from "../modules/users/users.repository";
 import { tRequest } from "../i18n/serverI18n";
+import { logger } from "../core/logger";
 
 import type { NextFunction, Request, Response } from "express";
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
-  console.log("[TEMP][AUTH] requireAuth", req.method, req.path, req.body);
+  logger.debug("Auth middleware invoked", {
+    method: req.method,
+    path: req.path,
+  });
   try {
     const header = req.headers.authorization || "";
 
@@ -53,16 +57,12 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 
 export function requireRoles(roles: string[] = []) {
   return (req: Request, res: Response, next: NextFunction) => {
-    console.log(
-      "[TEMP][AUTH] requireRoles",
-      req.method,
-      req.path,
-      req.body,
-      "roles:",
-      roles,
-      "user:",
-      req.user,
-    );
+    logger.debug("Role check middleware invoked", {
+      method: req.method,
+      path: req.path,
+      userId: req.user?.id,
+      requiredRoles: roles,
+    });
     if (!roles.length) return next();
 
     if (!req.user || !roles.includes(req.user.role)) {

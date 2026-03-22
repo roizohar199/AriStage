@@ -1,10 +1,16 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+} from "react";
 import Toast from "./Toast.tsx";
-import { onToast } from "@/modules/shared/lib/toastBus.js";
+import { onToast, type ToastType } from "@/modules/shared/lib/toastBus.js";
 
 interface ToastData {
   message: string;
-  type: "success" | "error" | "info" | "warning";
+  type: ToastType;
 }
 
 interface ToastContextType {
@@ -25,17 +31,22 @@ interface ToastProviderProps {
   children: ReactNode;
 }
 
-export default function ToastProvider({ children }: ToastProviderProps): JSX.Element {
+export default function ToastProvider({ children }: ToastProviderProps) {
   const [toast, setToast] = useState<ToastData | null>(null);
 
-  function showToast(message: string, type: ToastData["type"] = "success"): void {
+  function showToast(
+    message: string,
+    type: ToastData["type"] = "success",
+  ): void {
     setToast({ message, type });
     setTimeout(() => setToast(null), 2500);
   }
 
   // מאזין ל-toastBus
   useEffect(() => {
-    onToast((msg: string, type: ToastData["type"]) => showToast(msg, type));
+    return onToast((msg: string, type: ToastData["type"]) =>
+      showToast(msg, type),
+    );
   }, []);
 
   return (

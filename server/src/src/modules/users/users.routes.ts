@@ -3,8 +3,11 @@ import { requireAuth, requireRoles } from "../../middleware/auth";
 import { requireActiveSubscription } from "../../middleware/subscription";
 import { requireFeatureFlagEnabled } from "../../middleware/featureFlags";
 import { emitRefreshOnMutation } from "../../middleware/refresh";
+import { uploadLimiter } from "../../middleware/rateLimiter";
+import { validateBody } from "../../middleware/validate";
 import { usersController } from "./users.controller";
 import { uploadUserAvatar } from "../shared/upload"; // ⭐ שימוש נכון
+import { userPasswordChangeSchema } from "../../validation/schemas/app.schemas";
 
 const router = Router();
 
@@ -39,13 +42,18 @@ router.get(
 // ⭐ מסלול עדכון משתמש עם העלאת תמונה לפי משתמש
 router.put(
   "/settings",
+  uploadLimiter,
   uploadUserAvatar.single("avatar"), // ← תמיכה ב־FormData + שמירה לפי userId
   usersController.updateSettings,
 );
 
 router.delete("/avatar", usersController.deleteAvatar);
 
-router.put("/password", usersController.updatePassword);
+router.put(
+  "/password",
+  validateBody(userPasswordChangeSchema),
+  usersController.updatePassword,
+);
 
 // Everything else in the users module requires an active subscription for write actions
 router.use(requireActiveSubscription);

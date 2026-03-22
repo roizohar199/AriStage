@@ -8,6 +8,7 @@ import {
   removeChartPdfForSong,
 } from "./lineupSongs.service";
 import { tRequest } from "../../i18n/serverI18n";
+import { env } from "../../config/env";
 
 export const lineupSongsController = {
   list: asyncHandler(async (req, res) => {
@@ -47,11 +48,8 @@ export const lineupSongsController = {
     // הוספת URL מלא לקבצי PDF וסימון ownership
     const songsWithMetadata = songs.map((song) => {
       if (song.chart_pdf) {
-        const protocol = req.protocol;
-        const host = req.get("host") ?? "localhost";
-        const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
         const cleanPdf = song.chart_pdf.replace(/^\/uploads\//, "");
-        song.chart_pdf_url = `${baseUrl}/uploads/${cleanPdf}`;
+        song.chart_pdf_url = `${env.baseUrl}/uploads/${cleanPdf}`;
       }
 
       // המשתמש יכול לערוך רק אם הוא הבעלים של הליינאפ (לא אורח)
@@ -104,10 +102,7 @@ export const lineupSongsController = {
       filePath,
     );
 
-    const protocol = req.protocol;
-    const host = req.get("host") ?? "localhost";
-    const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
-    const pdfUrl = `${baseUrl}${filePath}`;
+    const pdfUrl = `${env.baseUrl}${filePath}`;
 
     res.json({
       message: tRequest(req, "lineupSongs.chartUploaded"),

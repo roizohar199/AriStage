@@ -1,4 +1,5 @@
 import { pool } from "../../database/pool";
+import { logger } from "../../core/logger";
 
 export type AdminUserListRow = {
   id: number;
@@ -86,29 +87,14 @@ async function updateUserSubscription(
   params.push(userId);
 
   const sql = `UPDATE users SET ${clauses.join(", ")} WHERE id = ?`;
-  console.log("[ADMIN SUB UPDATE SQL]", sql);
-  console.log("[ADMIN SUB UPDATE PARAMS]", params);
   if (!/\bWHERE\s+id\s*=\s*\?/i.test(sql)) {
     throw new Error("Unsafe subscription update query (missing WHERE id = ?)");
   }
 
   const [result] = await pool.query(sql, params);
-  console.log("[ADMIN SUB UPDATE RESULT]", result);
   if ((result as any).affectedRows === 0) {
-    console.log("[ADMIN SUB UPDATE] affectedRows === 0 for userId:", userId);
+    logger.warn("Admin subscription update affected no rows", { userId });
   }
-  // Immediate SELECT after update
-  const [rows] = await pool.query(
-    `SELECT subscription_type, subscription_status, subscription_started_at, subscription_expires_at FROM users WHERE id = ?`,
-    [userId],
-  );
-  console.log("[ADMIN SUB AFTER SELECT]", rows[0]);
-  // Focused SELECT for subscription_type only
-  const [rows2] = await pool.query(
-    "SELECT subscription_type FROM users WHERE id = ?",
-    [userId],
-  );
-  console.log("[ADMIN SUB AFTER SELECT TYPE ONLY]", rows2[0]);
   return (result as any).affectedRows || 0;
 }
 

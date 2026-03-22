@@ -21,7 +21,7 @@ import DesignActionButton from "@/modules/shared/components/DesignActionButton";
 import { useToast } from "@/modules/shared/components/ToastProvider";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import { useTranslation } from "@/hooks/useTranslation.ts";
-import api from "@/modules/shared/lib/api.ts";
+import api, { getApiErrorMessage } from "@/modules/shared/lib/api.ts";
 import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
 import { Input } from "@/modules/shared/components/FormControls";
 
@@ -256,7 +256,9 @@ function PlanForm({
       await onSubmit(payload);
       onClose();
     } catch (err: any) {
-      setError(err?.message || t("admin.plansTab.form.errors.saveFailed"));
+      setError(
+        getApiErrorMessage(err, "admin.plansTab.form.errors.saveFailed"),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -276,7 +278,7 @@ function PlanForm({
               value={form.key}
               onChange={(e) => setForm((p) => ({ ...p, key: e.target.value }))}
               disabled={!canEdit || submitting || mode === "edit"}
-              placeholder="pro"
+              placeholder={t("admin.plansTab.form.placeholders.key")}
               className="mb-0"
             />
           </div>
@@ -287,7 +289,7 @@ function PlanForm({
               value={form.name}
               onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
               disabled={!canEdit || submitting}
-              placeholder="Pro"
+              placeholder={t("admin.plansTab.form.placeholders.name")}
               className="mb-0"
             />
           </div>
@@ -315,7 +317,7 @@ function PlanForm({
                 setForm((p) => ({ ...p, currency: e.target.value }))
               }
               disabled={!canEdit || submitting}
-              placeholder="ILS"
+              placeholder={t("admin.plansTab.form.placeholders.currency")}
               className="mb-0"
             />
           </div>

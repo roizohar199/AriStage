@@ -826,6 +826,11 @@ export const he = {
           yearlyInvalid: "מחיר שנתי לא תקין",
           saveFailed: "שגיאה בשמירה",
         },
+        placeholders: {
+          key: "לדוגמה: pro",
+          name: "לדוגמה: Pro",
+          currency: "לדוגמה: ILS",
+        },
       },
       messages: {
         noPermissionViewPlans: "אין הרשאה לצפייה במסלולים",
@@ -870,6 +875,7 @@ export const he = {
       },
       loading: "טוען מנויים...",
       empty: "אין נתונים להצגה",
+      endpointLabel: "נתוני המנויים נטענים מתוך רשימת המשתמשים",
       userNoName: "משתמש ללא שם",
       actions: {
         edit: "ערוך מנוי",
@@ -880,6 +886,10 @@ export const he = {
         statusLabel: "סטטוס מנוי",
         startLabel: "התחלה",
         endLabel: "סיום",
+        placeholders: {
+          start: "תאריך התחלה",
+          end: "תאריך סיום",
+        },
         note: "שינוי זה מעדכן רק שדות מנוי של המשתמש (plan/status/start/end) ולא משנה מחירי מסלולים.",
       },
       messages: {
@@ -888,17 +898,18 @@ export const he = {
       },
       status: {
         active: "פעיל",
-        trial: "trial",
+        trial: "ניסיון",
         expired: "פג תוקף",
       },
       planOptions: {
-        trial: "trial",
+        trial: "ניסיון",
         legacySuffix: "(ישן)",
         disabledSuffix: " (מכובה)",
       },
     },
     monitoringTab: {
       loading: "טוען ניטור...",
+      endpointLabel: "נתוני ניטור בסיסיים",
     },
     securityTab: {
       loading: "טוען נתוני אבטחה...",
@@ -1003,6 +1014,7 @@ export const he = {
       },
       loading: "טוען קבצים...",
       unsupported: "נדרש endpoint בצד שרת",
+      endpointLabel: "שירות הקבצים בשרת",
       empty: "אין קבצים להצגה",
       clearSearch: "נקה חיפוש",
     },
@@ -1031,6 +1043,7 @@ export const he = {
       issueFallback: "תקלה",
       loading: "טוען תקלות...",
       unsupported: "נדרש endpoint בצד שרת",
+      endpointLabel: "שירות התקלות בשרת",
       empty: "אין תקלות להצגה",
       clearSearch: "נקה חיפוש",
     },
@@ -1102,6 +1115,7 @@ export const he = {
       },
       loading: "טוען לוגים...",
       unsupported: "Endpoint לא זמין",
+      endpointLabel: "שירות הלוגים בשרת",
       empty: "אין לוגים להצגה",
     },
   },

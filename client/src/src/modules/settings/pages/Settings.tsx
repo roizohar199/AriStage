@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
-import api from "@/modules/shared/lib/api.js";
+import api, { getApiErrorMessage } from "@/modules/shared/lib/api.js";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import { useSystemSettings } from "@/modules/shared/contexts/SystemSettingsContext.tsx";
 import { useSubscription } from "@/modules/shared/hooks/useSubscription.ts";
@@ -23,7 +23,7 @@ type SettingsFormState = {
   email: string;
   newPass: string;
   themeIndex: "0" | "1";
-  preferred_locale: "auto" | "he-IL" | "en-US";
+  preferred_locale: string;
   artist_role: string;
   avatar: File | null;
 };
@@ -98,10 +98,7 @@ export default function Settings() {
           full_name: data.full_name || "",
           email: data.email || "",
           themeIndex: String(resolveThemeIndex(data.theme)) as "0" | "1",
-          preferred_locale: (data.preferred_locale || "auto") as
-            | "auto"
-            | "he-IL"
-            | "en-US",
+          preferred_locale: data.preferred_locale || "auto",
           artist_role: data.artist_role || "",
           avatar: null, // לא לשים פה URL, רק בקובץ preview
         }));
@@ -177,7 +174,7 @@ export default function Settings() {
         return;
       }
 
-      setError(err.response?.data?.error || t("settings.updateError"));
+      setError(getApiErrorMessage(err, "settings.updateError"));
     } finally {
       setSaving(false);
     }
@@ -226,7 +223,7 @@ export default function Settings() {
         return;
       }
 
-      setError(err.response?.data?.error || t("settings.avatarDeleteError"));
+      setError(getApiErrorMessage(err, "settings.avatarDeleteError"));
     } finally {
       setDeletingAvatar(false);
     }
@@ -406,7 +403,7 @@ export default function Settings() {
             {/* אימייל */}
             <div>
               <EmailInput
-                dir="rtl"
+                dir="ltr"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 placeholder={t("auth.email")}

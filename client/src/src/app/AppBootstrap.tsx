@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useEffect, useMemo } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { reloadAuth } from "@/modules/shared/lib/authReload.js";
 import { emitToast } from "@/modules/shared/lib/toastBus.js";
 import { io } from "socket.io-client";
@@ -36,6 +36,54 @@ interface User {
   preferred_locale?: string | null;
 }
 
+let appSocket: ReturnType<typeof io> | null = null;
+let pendingSocketDisconnect: ReturnType<typeof setTimeout> | null = null;
+
+function cancelPendingSocketDisconnect(): void {
+  if (pendingSocketDisconnect) {
+    clearTimeout(pendingSocketDisconnect);
+    pendingSocketDisconnect = null;
+  }
+}
+
+function getOrCreateAppSocket(token: string | null) {
+  cancelPendingSocketDisconnect();
+
+  if (!appSocket) {
+    appSocket = io(API_ORIGIN, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+      autoConnect: false,
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      timeout: 20000,
+      auth: token ? { token } : undefined,
+    });
+  } else {
+    appSocket.auth = token ? { token } : {};
+  }
+
+  return appSocket;
+}
+
+function scheduleSocketDisconnect(): void {
+  cancelPendingSocketDisconnect();
+
+  pendingSocketDisconnect = setTimeout(() => {
+    if (!appSocket) return;
+
+    try {
+      appSocket.removeAllListeners();
+      appSocket.disconnect();
+    } catch {
+      // ignore
+    } finally {
+      pendingSocketDisconnect = null;
+    }
+  }, 150);
+}
+
 function exitImpersonationLocalized(
   t: (path: string, params?: any, fallback?: string) => string,
 ): void {
@@ -60,14 +108,11 @@ function exitImpersonationLocalized(
   }, 250);
 }
 
-export default function AppBootstrap(): JSX.Element {
-  const location = useLocation();
+export default function AppBootstrap() {
   const { t } = useTranslation();
   const { user: ctxUser, loading: authLoading, subscriptionStatus } = useAuth();
   const { isEnabled } = useFeatureFlags();
   const { isEffectiveOffline } = useOfflineStatus();
-
-  const prevSocketRef = useRef<ReturnType<typeof io> | null>(null);
 
   const offlineOnlineEnabled = isEnabled("module.offlineOnline", true);
   const effectiveOffline = offlineOnlineEnabled ? isEffectiveOffline : false;
@@ -79,8 +124,7 @@ export default function AppBootstrap(): JSX.Element {
     localStorage.getItem("ari_user") || "{}",
   );
 
-  const effectiveUser = (ctxUser?.id ? ctxUser : currentUser) as any;
-  const isAdminUser = effectiveUser?.role === "admin";
+  const effectiveUser = ctxUser?.id ? ctxUser : currentUser;
 
   useEffect(() => {
     applyThemeFromUser(effectiveUser);
@@ -122,45 +166,23 @@ export default function AppBootstrap(): JSX.Element {
   }, [ctxUser?.id]);
 
   const socket = useMemo(() => {
-    const s = io(API_ORIGIN, {
-      transports: ["websocket", "polling"],
-      withCredentials: true,
-      autoConnect: Boolean(socketToken),
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-      timeout: 20000,
-      auth: socketToken ? { token: socketToken } : undefined,
-    });
-    return s;
+    return getOrCreateAppSocket(socketToken);
   }, [socketToken]);
 
-  // Ensure we disconnect the previous socket instance when token changes
   useEffect(() => {
-    const prev = prevSocketRef.current;
-    if (prev && prev !== socket) {
-      try {
-        prev.removeAllListeners();
-        prev.disconnect();
-      } catch {
-        // ignore
-      }
-    }
-    prevSocketRef.current = socket;
+    cancelPendingSocketDisconnect();
 
     return () => {
-      // On unmount: cleanup current socket
-      try {
-        socket.removeAllListeners();
-        socket.disconnect();
-      } catch {
-        // ignore
-      }
+      scheduleSocketDisconnect();
     };
-  }, [socket]);
+  }, []);
 
   useEffect(() => {
     if (!socket) return;
+
+    cancelPendingSocketDisconnect();
+    socket.auth = socketToken ? { token: socketToken } : {};
+
     if (effectiveOffline) {
       socket.disconnect();
       return;
@@ -221,7 +243,7 @@ export default function AppBootstrap(): JSX.Element {
       .catch(() => {});
 
     // כל event global:refresh → הופך ל־data-refresh לכל האפליקציה
-    const handleGlobalRefresh = (payload: any) => {
+    const handleGlobalRefresh = (payload?: unknown) => {
       window.dispatchEvent(
         new CustomEvent("data-refresh", {
           detail: payload || { type: "global" },
@@ -230,7 +252,7 @@ export default function AppBootstrap(): JSX.Element {
     };
 
     // האזנה לעדכוני ליינאפים - גם כשלא בדף הליינאפ
-    const handleLineupSongReordered = ({ lineupId }) => {
+    const handleLineupSongReordered = ({ lineupId }: { lineupId?: number }) => {
       window.dispatchEvent(
         new CustomEvent("data-refresh", {
           detail: { type: "lineup-song", action: "reordered", lineupId },
@@ -258,17 +280,6 @@ export default function AppBootstrap(): JSX.Element {
   }
 
   /* -----------------------------------------
-     🟥 הסתרת ניווט תחתון (moved from App.tsx)
-  ----------------------------------------- */
-  const hideNav =
-    location.pathname === "/login" ||
-    location.pathname.startsWith("/reset") ||
-    location.pathname.startsWith("/share") ||
-    location.pathname === "/billing" ||
-    location.pathname === "/" || // דף Landing
-    !currentUser?.id;
-
-  /* -----------------------------------------
      🎭 האם בייצוג? (moved from App.tsx)
   ----------------------------------------- */
   const isImpersonating = !!localStorage.getItem("ari_original_token");
@@ -278,7 +289,6 @@ export default function AppBootstrap(): JSX.Element {
       isImpersonating={isImpersonating}
       currentUser={currentUser}
       onExitImpersonation={() => exitImpersonationLocalized(t)}
-      hideNav={hideNav}
     >
       <Routes>
         {/* All routes available - subscription blocking is UI-only (Banner + action guards) */}

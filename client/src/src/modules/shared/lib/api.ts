@@ -28,6 +28,54 @@ function t(
   return getTranslation(resolveUiLocale(), path, params, fallback);
 }
 
+export function localizeApiMessage(
+  message: unknown,
+  fallbackPath?: string,
+  fallbackText?: string,
+): string {
+  if (typeof message === "string" && message.trim()) {
+    const raw = message.trim();
+    return getTranslation(resolveUiLocale(), raw, undefined, raw);
+  }
+
+  if (fallbackPath) {
+    return getTranslation(
+      resolveUiLocale(),
+      fallbackPath,
+      undefined,
+      fallbackText,
+    );
+  }
+
+  return fallbackText || "";
+}
+
+export function getApiErrorMessage(
+  error: any,
+  fallbackPath?: string,
+  fallbackText?: string,
+): string {
+  return localizeApiMessage(
+    error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      error?.message,
+    fallbackPath,
+    fallbackText,
+  );
+}
+
+export function getApiSuccessMessage(
+  payload: any,
+  fallbackPath?: string,
+  fallbackText?: string,
+): string {
+  return localizeApiMessage(
+    payload?.message || payload?.msg,
+    fallbackPath,
+    fallbackText,
+  );
+}
+
 export const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,

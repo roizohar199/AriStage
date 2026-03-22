@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { Clock, Music4Icon, MoreHorizontal, Printer } from "lucide-react";
 import CardSong from "../../shared/components/cardsong";
@@ -48,7 +48,10 @@ const parseDuration = (d?: string | number | null): number => {
 };
 
 const safeDuration = (duration: unknown): string => {
-  const totalSec = parseDuration(duration);
+  const totalSec =
+    typeof duration === "string" || typeof duration === "number"
+      ? parseDuration(duration)
+      : 0;
   const m = Math.floor(totalSec / 60);
   const s = totalSec % 60;
   return `${m}:${String(s).padStart(2, "0")}`;
@@ -213,6 +216,10 @@ export default function ShareLineup() {
       </div>
     );
 
+  if (!lineup) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen text-neutral-100 p-4 flex flex-col items-center">
       {/* כרטיס ליינאפ */}
@@ -302,12 +309,12 @@ export default function ShareLineup() {
               key={song.lineup_song_id ?? song.song_id ?? idx}
               song={{
                 id: song.song_id ?? song.id ?? song.lineup_song_id ?? idx,
-                title: song.title,
-                artist: song.artist,
-                bpm: song.bpm,
-                key_sig: song.key_sig,
-                duration_sec: song.duration_sec,
-                notes: normalizeNotes(song),
+                title: song.title ?? t("common.untitled"),
+                artist: song.artist ?? t("common.notSpecified"),
+                bpm: song.bpm ?? 0,
+                key_sig: song.key_sig ?? t("common.notSpecified"),
+                duration_sec: song.duration_sec ?? 0,
+                notes: normalizeNotes(song) ?? undefined,
                 is_owner: false,
               }}
               index={idx}

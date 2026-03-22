@@ -1,6 +1,11 @@
 import type { Request, Response } from "express";
 import * as service from "./systemSettings.service.js";
-import { tRequest } from "../../i18n/serverI18n";
+import {
+  hasServerTranslationKey,
+  resolveRequestLocale,
+  tRequest,
+  tServer,
+} from "../../i18n/serverI18n";
 
 /**
  * System Settings Controller
@@ -60,13 +65,10 @@ export async function updateI18nSettings(req: Request, res: Response) {
   } catch (error: any) {
     console.error("Error updating i18n settings:", error);
 
-    // Return validation errors with 400 status
-    if (
-      error.message.includes("Invalid") ||
-      error.message.includes("must be") ||
-      error.message.includes("Cannot")
-    ) {
-      return res.status(400).json({ error: error.message });
+    if (hasServerTranslationKey(error?.message || "")) {
+      return res.status(400).json({
+        error: tServer(resolveRequestLocale(req), error.message),
+      });
     }
 
     res

@@ -41,9 +41,13 @@ export default function AdminMonitoringTab({
 
   const monitoringCards: MonitoringCard[] = useMemo(() => {
     const activeUsers =
-      monitoring?.activeUsers ?? monitoring?.active_users ?? "TODO";
-    const cpu = monitoring?.cpu ?? monitoring?.cpu_percent ?? "TODO";
-    const memory = monitoring?.memory ?? monitoring?.memory_used ?? "TODO";
+      monitoring?.activeUsers ??
+      monitoring?.active_users ??
+      t("common.notAvailable");
+    const cpu =
+      monitoring?.cpu ?? monitoring?.cpu_percent ?? t("common.notAvailable");
+    const memory =
+      monitoring?.memory ?? monitoring?.memory_used ?? t("common.notAvailable");
 
     return [
       {
@@ -82,7 +86,9 @@ export default function AdminMonitoringTab({
       )}
 
       <div className="bg-neutral-800 rounded-2xl p-6 text-center">
-        <p className="text-neutral-500 text-xs">GET /dashboard-stats (light)</p>
+        <p className="text-neutral-500 text-xs">
+          {t("admin.monitoringTab.endpointLabel")}
+        </p>
       </div>
     </div>
   );

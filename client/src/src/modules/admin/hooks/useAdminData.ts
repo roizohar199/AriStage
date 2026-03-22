@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@/hooks/useTranslation.ts";
+import { getApiErrorMessage } from "@/modules/shared/lib/api.ts";
 
 interface UseAdminDataResult<T> {
   data: T | null;
@@ -38,9 +39,7 @@ export function useAdminData<T = any>(
         if (err?.response?.status === 401 || err?.response?.status === 403) {
           setError(t("admin.messages.noPermission"));
         } else {
-          setError(
-            err?.response?.data?.message || err.message || t("common.error"),
-          );
+          setError(getApiErrorMessage(err, "common.error"));
         }
       })
       .finally(() => {

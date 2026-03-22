@@ -1,24 +1,37 @@
 import { transporter } from "../../integrations/mail/transporter";
+import {
+  buildSupportContactEmail,
+  type ServerLocale,
+} from "../../i18n/serverI18n";
 
-export async function sendContactMessage({
-  full_name,
-  email,
-  phone,
-  subject,
-  message,
-}) {
+export async function sendContactMessage(
+  {
+    full_name,
+    email,
+    phone,
+    subject,
+    message,
+  }: {
+    full_name?: string;
+    email?: string;
+    phone?: string;
+    subject?: string;
+    message?: string;
+  },
+  locale: ServerLocale = "he-IL",
+) {
+  const mail = buildSupportContactEmail(locale, {
+    full_name,
+    email,
+    phone,
+    subject,
+    message,
+  });
+
   await transporter.sendMail({
     from: email,
     to: "support@ari-stage.com",
-    subject: `פנייה חדשה: ${subject}`,
-    html: `
-        <h2>פנייה חדשה ממערכת Ari-Stage</h2>
-        <p><b>שם:</b> ${full_name}</p>
-        <p><b>אימייל:</b> ${email}</p>
-        <p><b>טלפון:</b> ${phone}</p>
-        <p><b>נושא:</b> ${subject}</p>
-        <p><b>תוכן:</b></p>
-        <p>${message}</p>
-      `,
+    subject: mail.subject,
+    html: mail.html,
   });
 }

@@ -183,10 +183,6 @@ export async function getShareStatus(req, lineupId) {
 
 /* ⭐ גרסה מתוקנת — מקבלת req ליצירת URL אמיתי מהדפדפן */
 export async function createShareLink(req, lineupId) {
-  console.log("ORIGIN:", req.headers.origin);
-  console.log("REFERER:", req.headers.referer);
-  console.log("HOST:", req.headers.host);
-  console.log("PROTO:", req.protocol);
   let share = await findActiveShare(lineupId);
 
   if (!share) {

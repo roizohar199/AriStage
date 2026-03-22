@@ -1,4 +1,12 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type MutableRefObject,
+  type SetStateAction,
+} from "react";
 import { Trash2, Upload, FileDown, Eye, FileText } from "lucide-react";
 import api from "@/modules/shared/lib/api.js";
 import { useFeatureFlags } from "@/modules/shared/contexts/FeatureFlagsContext.tsx";
@@ -16,10 +24,10 @@ interface Song {
   id: number;
   title: string;
   artist: string;
-  bpm: number;
+  bpm: number | string;
   key_sig: string;
-  duration_sec: number;
-  notes?: string;
+  duration_sec: number | string;
+  notes?: string | null;
   is_owner?: boolean;
   owner_id?: number;
   owner_name?: string;
@@ -27,18 +35,15 @@ interface Song {
   owner_avatar?: string;
   owner_role?: string;
   owner_email?: string;
+  lyrics_text?: string | null;
 }
 
 interface ChartsProps {
   song: Song;
   privateCharts: Chart[];
-  setPrivateCharts: React.Dispatch<
-    React.SetStateAction<Record<number, Chart[]>>
-  >;
-  fileInputRefs: React.MutableRefObject<
-    Record<number, HTMLInputElement | null>
-  >;
-  setViewingChart: React.Dispatch<React.SetStateAction<string | null>>;
+  setPrivateCharts: Dispatch<SetStateAction<Record<number, Chart[]>>>;
+  fileInputRefs: MutableRefObject<Record<number, HTMLInputElement | null>>;
+  setViewingChart: Dispatch<SetStateAction<string | null>>;
   onConfirm: (options: ConfirmOptions) => Promise<boolean>;
 }
 

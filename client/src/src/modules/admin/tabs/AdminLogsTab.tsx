@@ -3,7 +3,7 @@ import { AlertCircle, ClipboardList, Filter, List } from "lucide-react";
 
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
 import { Input, Select } from "@/modules/shared/components/FormControls";
-import api from "@/modules/shared/lib/api.ts";
+import api, { getApiErrorMessage } from "@/modules/shared/lib/api.ts";
 import { useToast } from "@/modules/shared/components/ToastProvider";
 import { useTranslation } from "@/hooks/useTranslation.ts";
 
@@ -206,10 +206,10 @@ export default function AdminLogsTab({
       setLogsOffset(0);
       await loadLogs();
     } catch (err: any) {
-      const msg =
-        err?.response?.data?.error ||
-        err?.response?.data?.message ||
-        t("admin.logsTab.messages.cleanupError");
+      const msg = getApiErrorMessage(
+        err,
+        "admin.logsTab.messages.cleanupError",
+      );
       showToast(msg, "error");
     } finally {
       setCleanupLoading(false);
@@ -456,7 +456,9 @@ export default function AdminLogsTab({
           <p className="text-neutral-400 text-sm">
             {t("admin.logsTab.unsupported")}
           </p>
-          <p className="text-neutral-500 text-xs mt-1">GET /api/logs</p>
+          <p className="text-neutral-500 text-xs mt-1">
+            {t("admin.logsTab.endpointLabel")}
+          </p>
         </div>
       ) : logs.length === 0 ? (
         <div className="bg-neutral-800 rounded-2xl p-6 text-center">

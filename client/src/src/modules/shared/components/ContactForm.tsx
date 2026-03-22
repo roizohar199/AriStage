@@ -1,9 +1,18 @@
-import React, { useState } from "react";
+import { useState, type FormEvent } from "react";
 import api from "@/modules/shared/lib/api.js";
 import { Input, Textarea, Field } from "./FormControls";
 import { useTranslation } from "@/hooks/useTranslation.ts";
 
-export default function ContactForm({ user }) {
+type ContactUser = {
+  full_name?: string | null;
+  email?: string | null;
+};
+
+interface ContactFormProps {
+  user: ContactUser;
+}
+
+export default function ContactForm({ user }: ContactFormProps) {
   const { t } = useTranslation();
   const [form, setForm] = useState({
     subject: "",
@@ -12,10 +21,10 @@ export default function ContactForm({ user }) {
   });
 
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(null);
-  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const submit = async (e) => {
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -32,7 +41,7 @@ export default function ContactForm({ user }) {
 
       setSuccess(t("contact.successMessage"));
       setForm({ subject: "", message: "", phone: "" });
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
       setError(t("contact.errorMessage"));
     } finally {

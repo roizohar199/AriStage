@@ -1,6 +1,7 @@
 import { AppError } from "../core/errors";
 import { env } from "../config/env";
 import { tRequest } from "../i18n/serverI18n";
+import { logger } from "../core/logger";
 import {
   getSubscriptionSettings,
   getUserSubscriptionState,
@@ -27,14 +28,11 @@ export async function requireActiveSubscription(req: any, res: any, next: any) {
     return next();
   }
 
-  console.log(
-    "[TEMP][SUBSCRIPTION] requireActiveSubscription",
-    req.method,
-    req.path,
-    req.body,
-    "user:",
-    req.user,
-  );
+  logger.debug("Subscription gate invoked", {
+    method: req.method,
+    path: req.path,
+    userId: req.user?.id,
+  });
   try {
     const settings = await getSubscriptionSettings();
 

@@ -59,8 +59,8 @@ const host = process.env.HOST || "0.0.0.0";
 const port = Number(process.env.PORT || 5000);
 
 // ⭐ יצירת baseUrl נכון לשימוש בתמונות
-// אם מוגדר SERVER_URL בקובץ .env — משתמשים בו
-let baseUrl = process.env.SERVER_URL;
+// אם מוגדר API_URL או SERVER_URL בקובץ .env — משתמשים בו
+let baseUrl = process.env.API_URL || process.env.SERVER_URL;
 
 if (!baseUrl) {
   // אם השרת מאזין לכל הכתובות (0.0.0.0) → השתמש ב-localhost

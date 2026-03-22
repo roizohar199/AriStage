@@ -1,10 +1,14 @@
-import React from "react";
+import type { ReactNode } from "react";
 import Bord from "@/modules/shared/components/bord";
 
 export type DashboardCard = {
-  icon: React.ReactNode;
-  value: React.ReactNode;
+  id?: string;
+  icon: ReactNode;
+  value: ReactNode;
   label: string;
+  title?: string;
+  description?: string;
+  variant?: "neutral" | "brand" | "success" | "danger";
 };
 
 export default function DashboardCards({
@@ -20,10 +24,10 @@ export default function DashboardCards({
     >
       {cards.map((c, idx) => (
         <Bord
-          key={`${c.label}-${idx}`}
+          key={c.id ?? `${c.label}-${idx}`}
           icon={c.icon}
           value={c.value}
-          label={c.label}
+          label={c.title ?? c.label}
         />
       ))}
     </div>

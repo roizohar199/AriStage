@@ -292,9 +292,9 @@ export const unlockAccount = async (
 
     clearFailedAttempts(email);
 
-    logger.info("Account unlocked by admin", { email });
+    logger.info("Account unlocked by admin");
   } catch (error: any) {
-    logger.error("Failed to unlock account", { email, error: error.message });
+    logger.error("Failed to unlock account", { error: error.message });
     throw new AppError(500, tServer(locale, "security.unlockAccountFailed"));
   }
 };

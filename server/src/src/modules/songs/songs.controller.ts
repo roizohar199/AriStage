@@ -15,6 +15,7 @@ import {
 import { getSongById } from "./songs.repository";
 import { emitToUserAndHost, emitToUserUpdates } from "../../core/socket";
 import { tRequest } from "../../i18n/serverI18n";
+import { env } from "../../config/env";
 
 export const songsController = {
   deletePrivateChart: asyncHandler(async (req, res) => {
@@ -35,10 +36,6 @@ export const songsController = {
     const charts = await getPrivateChartsForSong(songId, user);
 
     // הוספת URL מלא לכל צ'ארט
-    const protocol = req.protocol;
-    const host = req.get("host") ?? "localhost";
-    const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
-
     const chartsWithUrl = charts.map((chart) => {
       // נקה את הנתיב - הסר נתיב מלא אם קיים ותשאיר רק את החלק היחסי
       let cleanPath = chart.file_path;
@@ -58,7 +55,7 @@ export const songsController = {
         ...chart,
         file_path: chart.file_path.startsWith("http")
           ? chart.file_path
-          : `${baseUrl}/${cleanPath}`,
+          : `${env.baseUrl}/${cleanPath}`,
       };
     });
 
@@ -97,11 +94,8 @@ export const songsController = {
     const songsWithMetadata = songs.map((song) => {
       // הוספת URL ל-PDF
       if (song.chart_pdf) {
-        const protocol = req.protocol;
-        const host = req.get("host") ?? "localhost";
-        const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
         const cleanPdf = song.chart_pdf.replace(/^\/uploads\//, "");
-        song.chart_pdf_url = `${baseUrl}/uploads/${cleanPdf}`;
+        song.chart_pdf_url = `${env.baseUrl}/uploads/${cleanPdf}`;
       }
 
       // סימון אם המשתמש הוא הבעלים של השיר
@@ -109,11 +103,8 @@ export const songsController = {
 
       // הוספת URL מלא לאווטאר של הבעלים אם צריך
       if (song.owner_avatar && !/^https?:\/\//.test(song.owner_avatar)) {
-        const protocol = req.protocol;
-        const host = req.get("host") ?? "localhost";
-        const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
         const cleanAvatar = song.owner_avatar.replace(/^\/uploads\//, "");
-        song.owner_avatar = `${baseUrl}/uploads/${cleanAvatar}`;
+        song.owner_avatar = `${env.baseUrl}/uploads/${cleanAvatar}`;
       }
 
       return song;
@@ -129,11 +120,8 @@ export const songsController = {
 
     // הוספת URL מלא ל-PDF אם קיים
     if (fullSong && fullSong.chart_pdf) {
-      const protocol = req.protocol;
-      const host = req.get("host") ?? "localhost";
-      const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
       const cleanPdf = fullSong.chart_pdf.replace(/^\/uploads\//, "");
-      fullSong.chart_pdf_url = `${baseUrl}/uploads/${cleanPdf}`;
+      fullSong.chart_pdf_url = `${env.baseUrl}/uploads/${cleanPdf}`;
     }
 
     // הוספת סימון ownership
@@ -147,11 +135,8 @@ export const songsController = {
       fullSong.owner_avatar &&
       !/^https?:\/\//.test(fullSong.owner_avatar)
     ) {
-      const protocol = req.protocol;
-      const host = req.get("host") ?? "localhost";
-      const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
       const cleanAvatar = fullSong.owner_avatar.replace(/^\/uploads\//, "");
-      fullSong.owner_avatar = `${baseUrl}/uploads/${cleanAvatar}`;
+      fullSong.owner_avatar = `${env.baseUrl}/uploads/${cleanAvatar}`;
     }
 
     // שליחת עדכון בזמן אמת עם הנתונים המלאים
@@ -184,11 +169,8 @@ export const songsController = {
 
     // הוספת URL מלא ל-PDF אם קיים
     if (fullSong && fullSong.chart_pdf) {
-      const protocol = req.protocol;
-      const host = req.get("host") ?? "localhost";
-      const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
       const cleanPdf = fullSong.chart_pdf.replace(/^\/uploads\//, "");
-      fullSong.chart_pdf_url = `${baseUrl}/uploads/${cleanPdf}`;
+      fullSong.chart_pdf_url = `${env.baseUrl}/uploads/${cleanPdf}`;
     }
 
     // הוספת סימון ownership
@@ -202,11 +184,8 @@ export const songsController = {
       fullSong.owner_avatar &&
       !/^https?:\/\//.test(fullSong.owner_avatar)
     ) {
-      const protocol = req.protocol;
-      const host = req.get("host") ?? "localhost";
-      const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
       const cleanAvatar = fullSong.owner_avatar.replace(/^\/uploads\//, "");
-      fullSong.owner_avatar = `${baseUrl}/uploads/${cleanAvatar}`;
+      fullSong.owner_avatar = `${env.baseUrl}/uploads/${cleanAvatar}`;
     }
 
     // שליחת עדכון בזמן אמת עם הנתונים המלאים
@@ -259,10 +238,7 @@ export const songsController = {
 
       await uploadChartPdfForSong(songId, req.user, filePath);
 
-      const protocol = req.protocol;
-      const host = req.get("host") ?? "localhost";
-      const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
-      const pdfUrl = `${baseUrl}${filePath}`;
+      const pdfUrl = `${env.baseUrl}${filePath}`;
 
       // שליחת עדכון בזמן אמת
       if (global.io) {

@@ -3,7 +3,8 @@
  * Copy these patterns to protect actions in your app
  */
 
-import React, { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { useGuardAction } from "@/modules/shared/hooks/useGuardAction";
 import { Input } from "@/modules/shared/components/FormControls";
@@ -162,7 +163,7 @@ function BulkDeleteButton({ selectedIds }: { selectedIds: number[] }) {
 // ============================================
 // Example 7: Inline Function in JSX
 // ============================================
-function SongCard({ song }: { song: any }) {
+function SongCard({ song }: { song: { id: number; title: string } }) {
   const guardAction = useGuardAction();
 
   return (
@@ -182,7 +183,11 @@ function SongCard({ song }: { song: any }) {
 // ============================================
 // Example 8: Conditional Action
 // ============================================
-function TogglePublicButton({ lineup }: { lineup: any }) {
+function TogglePublicButton({
+  lineup,
+}: {
+  lineup: { id: number; is_public: boolean };
+}) {
   const guardAction = useGuardAction();
 
   const handleToggle = guardAction(async () => {
@@ -202,14 +207,20 @@ function TogglePublicButton({ lineup }: { lineup: any }) {
 // ============================================
 // DON'T use for read operations (already handled by 402 response):
 function SongList() {
+  const [songs, setSongs] = useState<Array<{ id: number; title: string }>>([]);
+
   // ❌ Wrong - reading is always allowed
   // const guardAction = useGuardAction();
   // const loadSongs = guardAction(() => api.get("/songs"));
 
   // ✅ Correct - just fetch normally
   useEffect(() => {
-    api.get("/songs").then(({ data }) => setSongs(data));
+    api
+      .get("/songs")
+      .then(({ data }) => setSongs(Array.isArray(data) ? data : []));
   }, []);
+
+  return <div>{songs.length}</div>;
 }
 
 // DON'T use for navigation:
@@ -232,4 +243,6 @@ export {
   BulkDeleteButton,
   SongCard,
   TogglePublicButton,
+  SongList,
+  NavigateButton,
 };

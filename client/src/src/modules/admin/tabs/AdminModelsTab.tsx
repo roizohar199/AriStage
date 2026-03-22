@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Boxes, ListChecks, Plus, ToggleLeft, ToggleRight } from "lucide-react";
 
-import api from "@/modules/shared/lib/api.ts";
+import api, { getApiErrorMessage } from "@/modules/shared/lib/api.ts";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
 import { useToast } from "@/modules/shared/components/ToastProvider";
 import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
@@ -197,9 +197,10 @@ export default function AdminModelsTab({
         });
         await load();
       } catch (err: any) {
-        const msg =
-          err?.response?.data?.message ||
-          t("admin.modelsTab.messages.updateError");
+        const msg = getApiErrorMessage(
+          err,
+          "admin.modelsTab.messages.updateError",
+        );
         showToast(msg, "error");
       }
     },

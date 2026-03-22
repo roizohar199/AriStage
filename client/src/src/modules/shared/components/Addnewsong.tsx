@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import BaseModal from "./BaseModal.tsx";
 import DesignActionButtonBig from "./DesignActionButtonBig";
 import { Input, Select } from "./FormControls";
@@ -104,7 +104,7 @@ const getSeconds = (d: string) => safeDuration(d).split(":")[1];
 
 /* ---------- Component ---------- */
 
-export const AddNewSong: React.FC<AddNewSongProps> = ({
+export const AddNewSong = ({
   open,
   onClose,
   onSubmit,
@@ -117,18 +117,18 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
     notes: "",
   },
   editingId,
-}) => {
+}: AddNewSongProps) => {
   const { t } = useTranslation();
   const scaleModeLabels: Record<string, string> = {
-    "Major": t("songs.scaleMode.major"),
-    "Minor": t("songs.scaleMode.minor"),
+    Major: t("songs.scaleMode.major"),
+    Minor: t("songs.scaleMode.minor"),
     "Harmonic Minor": t("songs.scaleMode.harmonicMinor"),
     "Melodic Minor": t("songs.scaleMode.melodicMinor"),
-    "Dorian": t("songs.scaleMode.dorian"),
-    "Phrygian": t("songs.scaleMode.phrygian"),
-    "Lydian": t("songs.scaleMode.lydian"),
-    "Mixolydian": t("songs.scaleMode.mixolydian"),
-    "Aeolian": t("songs.scaleMode.aeolian"),
+    Dorian: t("songs.scaleMode.dorian"),
+    Phrygian: t("songs.scaleMode.phrygian"),
+    Lydian: t("songs.scaleMode.lydian"),
+    Mixolydian: t("songs.scaleMode.mixolydian"),
+    Aeolian: t("songs.scaleMode.aeolian"),
   };
   const [form, setForm] = useState<SongForm>(initialForm);
   const notesList = [

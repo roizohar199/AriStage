@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, AlertCircle, BadgeCheck, Files, Users } from "lucide-react";
+import { AlertCircle, BadgeCheck, Files, Users } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Search from "@/modules/shared/components/Search";
-import api from "@/modules/shared/lib/api.ts";
+import api, { getApiErrorMessage } from "@/modules/shared/lib/api.ts";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "@/modules/shared/components/ToastProvider";
 import { normalizeSubscriptionType } from "@/modules/shared/hooks/useSubscription.ts";
@@ -176,7 +176,6 @@ export default function AdminReal() {
     () => getTabFromLocationSearch(location.search),
     [location.search],
   );
-  console.log("ADMIN RENDERED");
 
   const tabs = useMemo<Array<{ key: AdminTab; label: string }>>(
     () => [
@@ -314,8 +313,7 @@ export default function AdminReal() {
       setUserModalOpen(false);
       await reload();
     } catch (err: any) {
-      const msg =
-        err?.response?.data?.message || t("admin.messages.saveUserError");
+      const msg = getApiErrorMessage(err, "admin.messages.saveUserError");
       showToast(msg, "error");
     }
   };
@@ -331,8 +329,7 @@ export default function AdminReal() {
       await api.delete(`/users/${userId}`);
       await reload();
     } catch (err: any) {
-      const msg =
-        err?.response?.data?.message || t("admin.messages.deleteUserError");
+      const msg = getApiErrorMessage(err, "admin.messages.deleteUserError");
       showToast(msg, "error");
     }
   };
@@ -366,9 +363,10 @@ export default function AdminReal() {
       }, 150);
     } catch (err: any) {
       localStorage.removeItem("ari_auth_lock");
-      const msg =
-        err?.response?.data?.message ||
-        t("admin.messages.impersonateUserError");
+      const msg = getApiErrorMessage(
+        err,
+        "admin.messages.impersonateUserError",
+      );
       showToast(msg, "error");
     }
   };

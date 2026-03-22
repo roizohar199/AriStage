@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { emitToUserAndHost } from "../core/socket";
+import { logger } from "../core/logger";
 
 /**
  * כל בקשת POST/PUT/PATCH/DELETE שנסגרת ב־2xx/3xx
@@ -10,14 +11,11 @@ export function emitRefreshOnMutation(
   res: Response,
   next: NextFunction,
 ) {
-  console.log(
-    "[TEMP][REFRESH] emitRefreshOnMutation",
-    req.method,
-    req.path,
-    req.body,
-    "user:",
-    req.user,
-  );
+  logger.debug("Refresh-on-mutation middleware invoked", {
+    method: req.method,
+    path: req.path,
+    userId: req.user?.id,
+  });
   const methodsToWatch = ["POST", "PUT", "PATCH", "DELETE"];
 
   // רק פעולות כתיבה

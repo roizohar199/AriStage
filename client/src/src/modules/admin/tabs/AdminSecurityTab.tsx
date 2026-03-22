@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Shield,
   Activity,
   Lock,
   AlertTriangle,
-  Users,
   TrendingUp,
   Clock,
   Monitor,
@@ -119,6 +118,7 @@ export default function AdminSecurityTab({
           {
             id: "total-events",
             title: t("admin.securityTab.dashboard.totalEvents.title"),
+            label: t("admin.securityTab.dashboard.totalEvents.title"),
             value: stats.totalEvents.toString(),
             icon: <Activity />,
             variant: "brand",
@@ -129,6 +129,7 @@ export default function AdminSecurityTab({
           {
             id: "failed-logins",
             title: t("admin.securityTab.dashboard.failedLogins.title"),
+            label: t("admin.securityTab.dashboard.failedLogins.title"),
             value: stats.failedLogins.toString(),
             icon: <XCircle />,
             variant: stats.failedLogins > 10 ? "danger" : "neutral",
@@ -139,6 +140,7 @@ export default function AdminSecurityTab({
           {
             id: "2fa-users",
             title: t("admin.securityTab.dashboard.twoFAUsers.title"),
+            label: t("admin.securityTab.dashboard.twoFAUsers.title"),
             value: stats.active2FAUsers.toString(),
             icon: <Shield />,
             variant: "success",
@@ -149,6 +151,7 @@ export default function AdminSecurityTab({
           {
             id: "risk-score",
             title: t("admin.securityTab.dashboard.riskIndicators.title"),
+            label: t("admin.securityTab.dashboard.riskIndicators.title"),
             value: totalRisk.toString(),
             icon: <AlertTriangle />,
             variant:

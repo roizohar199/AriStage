@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import type { ChangeEvent, FormEvent } from "react";
-import api from "@/modules/shared/lib/api.js";
+import api, {
+  getApiErrorMessage,
+  getApiSuccessMessage,
+} from "@/modules/shared/lib/api.js";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import { useTranslation } from "@/hooks/useTranslation.ts";
@@ -79,7 +82,7 @@ export default function Login() {
       // Navigate to home - let the app routing decide the destination
       navigate("/");
     } catch (err: any) {
-      setError(err?.response?.data?.message || t("auth.loginError"));
+      setError(getApiErrorMessage(err, "auth.loginError"));
     } finally {
       setLoading(false);
     }
@@ -164,9 +167,7 @@ export default function Login() {
         status: err?.response?.status,
         message: err?.response?.data?.message || err?.message,
       });
-      setError(
-        err?.response?.data?.message || err?.message || t("auth.registerError"),
-      );
+      setError(getApiErrorMessage(err, "auth.registerError"));
     } finally {
       setLoading(false);
       console.log("🟢 [REGISTER] סיימתי");
@@ -181,9 +182,9 @@ export default function Login() {
     try {
       setLoading(true);
       const { data } = await api.post("/auth/reset-request", { email });
-      setMessage(data.message || t("auth.resetEmailSent"));
+      setMessage(getApiSuccessMessage(data, "auth.resetEmailSent"));
     } catch (err: any) {
-      setError(err?.response?.data?.message || t("auth.resetError"));
+      setError(getApiErrorMessage(err, "auth.resetError"));
     } finally {
       setLoading(false);
     }

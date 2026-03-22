@@ -1,6 +1,9 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import api from "@/modules/shared/lib/api.js";
+import api, {
+  getApiErrorMessage,
+  getApiSuccessMessage,
+} from "@/modules/shared/lib/api.js";
 import { useTranslation } from "@/hooks/useTranslation.ts";
 
 export default function AcceptInvitation() {
@@ -39,13 +42,13 @@ export default function AcceptInvitation() {
         setInvitationEmail(data.email);
         setMessage(t("invitations.createAccountToJoin"));
       } else {
-        setMessage(data.message || t("invitations.joinedSuccess"));
+        setMessage(getApiSuccessMessage(data, "invitations.joinedSuccess"));
         setTimeout(() => {
           navigate("/login");
         }, 2000);
       }
     } catch (err) {
-      setError(err?.response?.data?.message || t("invitations.handleError"));
+      setError(getApiErrorMessage(err, "invitations.handleError"));
     } finally {
       setLoading(false);
     }

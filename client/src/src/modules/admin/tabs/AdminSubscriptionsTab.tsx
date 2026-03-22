@@ -2,6 +2,7 @@ import React from "react";
 import { Mail, BadgeCheck, Users, Clock } from "lucide-react";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
 import { Input, Select } from "@/modules/shared/components/FormControls";
+import { getApiErrorMessage } from "@/modules/shared/lib/api.ts";
 import type { AdminUser } from "../pages/Admin";
 import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
 import { useTranslation } from "@/hooks/useTranslation.ts";
@@ -220,7 +221,9 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
           <p className="text-neutral-400 text-sm">
             {t("admin.subscriptionsTab.empty")}
           </p>
-          <p className="text-neutral-500 text-xs mt-1">GET /admin/users</p>
+          <p className="text-neutral-500 text-xs mt-1">
+            {t("admin.subscriptionsTab.endpointLabel")}
+          </p>
         </div>
       ) : (
         users
@@ -357,7 +360,9 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                         <Input
                           label={t("admin.subscriptionsTab.form.startLabel")}
                           type="datetime-local"
-                          placeholder="subscription_started_at"
+                          placeholder={t(
+                            "admin.subscriptionsTab.form.placeholders.start",
+                          )}
                           value={toDateTimeLocalInput(
                             subForm.subscription_started_at || "",
                           )}
@@ -380,7 +385,9 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                         <Input
                           label={t("admin.subscriptionsTab.form.endLabel")}
                           type="datetime-local"
-                          placeholder="subscription_expires_at"
+                          placeholder={t(
+                            "admin.subscriptionsTab.form.placeholders.end",
+                          )}
                           value={toDateTimeLocalInput(
                             subForm.subscription_expires_at || "",
                           )}
@@ -431,11 +438,10 @@ const AdminSubscriptionsTab: React.FC<AdminSubscriptionsTabProps> = ({
                               setEditingSubscriptionUserId(null);
                               await reload();
                             } catch (err: any) {
-                              const msg =
-                                err?.response?.data?.message ||
-                                t(
-                                  "admin.subscriptionsTab.messages.updateFailed",
-                                );
+                              const msg = getApiErrorMessage(
+                                err,
+                                "admin.subscriptionsTab.messages.updateFailed",
+                              );
                               showToast(msg, "error");
                             }
                           }}

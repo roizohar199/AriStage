@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 
 interface ToastProps {
@@ -11,8 +11,8 @@ export default function Toast({
   message,
   type = "success",
   duration = 2300,
-}: ToastProps): JSX.Element {
-  const [visible, setVisible] = useState<boolean>(false);
+}: ToastProps) {
+  const [visible, setVisible] = useState(false);
   const isError = type === "error";
 
   useEffect(() => {

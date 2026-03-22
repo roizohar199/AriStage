@@ -1,25 +1,18 @@
-import React, {
+import {
   useCallback,
   useEffect,
   useState,
   useRef,
   useMemo,
+  type FormEvent,
 } from "react";
 import {
   Plus,
-  Trash2,
-  Edit2,
   User,
   Music,
-  FileText,
   CalendarCheck,
   Users,
   UserPlus,
-  MapPin,
-  CalendarDays,
-  Clock,
-  Pencil,
-  Search as SearchIcon,
 } from "lucide-react";
 import {
   useNavigate,
@@ -30,7 +23,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import BaseModal from "@/modules/shared/components/BaseModal.tsx";
-import { AddNewSong, SongForm } from "../../shared/components/Addnewsong";
+import { AddNewSong } from "../../shared/components/Addnewsong";
 import CreateLineup from "../../shared/components/Createlineup";
 import Search from "../../shared/components/Search";
 import Tab, { type TabItem } from "@/modules/shared/components/Tab";
@@ -39,7 +32,10 @@ import CardSong from "../../shared/components/cardsong";
 import SongLyrics from "../../shared/components/SongLyrics";
 import BlockLineup from "../../shared/components/blocklineup";
 import LineupDetails from "../../lineups/pages/LineupDetails.tsx";
-import api from "@/modules/shared/lib/api.js";
+import api, {
+  getApiErrorMessage,
+  getApiSuccessMessage,
+} from "@/modules/shared/lib/api.js";
 import { API_ORIGIN } from "@/config/apiConfig";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import { useFeatureFlags } from "@/modules/shared/contexts/FeatureFlagsContext.tsx";
@@ -79,7 +75,7 @@ function PersonalStats({
   );
 }
 
-export default function My(): JSX.Element {
+export default function My() {
   return (
     <Routes>
       <Route path="/" element={<MyContent />}>
@@ -91,13 +87,13 @@ export default function My(): JSX.Element {
   );
 }
 
-function MyContent(): JSX.Element {
+function MyContent() {
   const location = useLocation();
   const isLineupRoute = /^\/my\/lineups\/\d+/.test(location.pathname);
   const { subscriptionBlocked, subscriptionStatus, user } = useAuth();
   const navigate = useNavigate();
   const { isEnabled: isFeatureEnabled } = useFeatureFlags();
-  const { t, locale } = useTranslation();
+  const { t } = useTranslation();
 
   type MyTabKey = "songs" | "lineups" | "shared";
 
@@ -200,7 +196,7 @@ function MyContent(): JSX.Element {
   }, []);
 
   // --- שליחת הזמנה לאמן ---
-  const sendInvitation = async (e) => {
+  const sendInvitation = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!inviteEmail || !inviteEmail.includes("@")) {
@@ -216,13 +212,15 @@ function MyContent(): JSX.Element {
 
       setInviteEmail("");
       setShowInviteModal(false);
-      showToast(data.message || t("artists.invitationSent"), "success");
+      showToast(
+        getApiSuccessMessage(data, "artists.invitationSent"),
+        "success",
+      );
       loadMyInvitedArtists();
       loadConnectedArtists();
     } catch (err) {
       console.error("❌ שגיאה בשליחת הזמנה:", err);
-      const errorMsg =
-        err?.response?.data?.message || t("errors.serverTryLater");
+      const errorMsg = getApiErrorMessage(err, "errors.serverTryLater");
       setShowInviteModal(false);
       showToast(errorMsg, "error");
     } finally {
@@ -239,10 +237,10 @@ function MyContent(): JSX.Element {
     id: number;
     title: string;
     artist: string;
-    bpm: number;
+    bpm: number | string;
     key_sig: string;
-    duration_sec: number;
-    notes?: string;
+    duration_sec: number | string;
+    notes?: string | null;
     is_owner?: boolean;
     owner_id?: number;
     owner_name?: string;
@@ -250,6 +248,7 @@ function MyContent(): JSX.Element {
     owner_avatar?: string;
     owner_role?: string;
     owner_email?: string;
+    lyrics_text?: string | null;
   }
   const [privateCharts, setPrivateCharts] = useState<Record<number, Chart[]>>(
     {},
@@ -268,9 +267,6 @@ function MyContent(): JSX.Element {
   });
   const fileInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
   const [viewingChart, setViewingChart] = useState<string | null>(null);
-  const [isGuest, setIsGuest] = useState(false);
-  const [hostId, setHostId] = useState<number | null>(null);
-  const [isHost, setIsHost] = useState(false);
 
   // --- סטייטים של טאב הלינאפים (הועתק מ-Lineup) ---
   const [lineups, setLineups] = useState<any[]>([]);
@@ -317,15 +313,6 @@ function MyContent(): JSX.Element {
   }, [loadStats, loadConnectedArtists, loadMyInvitedArtists]);
 
   // --- לוגיקת שירים (הועתקה מ-Songs) ---
-  const notesList = useMemo(() => {
-    return [
-      t("songs.notesPresets.happy"),
-      t("songs.notesPresets.upbeat"),
-      t("songs.notesPresets.calm"),
-      t("songs.notesPresets.emotional"),
-      t("songs.notesPresets.light"),
-    ];
-  }, [t]);
   const notesKeys = [
     "C",
     "C#",
@@ -412,9 +399,6 @@ function MyContent(): JSX.Element {
         const { data } = await api.get("/users/check-guest", {
           skipErrorToast: true,
         });
-        setIsGuest(data.isGuest);
-        setHostId(data.hostId || null);
-        setIsHost(data.isHost || false);
         const user = JSON.parse(localStorage.getItem("ari_user") || "{}");
         if (user?.id && socket) {
           socket.emit("join-user", user.id);
@@ -482,15 +466,16 @@ function MyContent(): JSX.Element {
         )
         .catch(() => console.error("שגיאה בטעינת צ'ארטים"));
     });
-    const handleDataRefresh = (
-      event: CustomEvent<{ type: string; action: string }>,
-    ) => {
-      const { type } = event.detail || {};
+    const handleDataRefresh = (event: Event) => {
+      const { type } = ((event as CustomEvent<{ type?: string }>).detail ||
+        {}) as {
+        type?: string;
+      };
       if (type === "song") {
         load();
       }
     };
-    window.addEventListener("data-refresh", handleDataRefresh);
+    window.addEventListener("data-refresh", handleDataRefresh as EventListener);
     return () => {
       if (socket) {
         socket.off("song:created");
@@ -500,7 +485,10 @@ function MyContent(): JSX.Element {
         socket.off("song:chart-deleted");
         socket.disconnect();
       }
-      window.removeEventListener("data-refresh", handleDataRefresh);
+      window.removeEventListener(
+        "data-refresh",
+        handleDataRefresh as EventListener,
+      );
     };
   }, [socket]);
   const safeKey = (key: string) => {
@@ -535,47 +523,6 @@ function MyContent(): JSX.Element {
     if (!s) s = "00";
     if (s.length === 1) s = s.padStart(2, "0");
     return `${m}:${s}`;
-  };
-  const getNote = () => safeKey(form.key_sig).split(" ")[0];
-  const getType = () => safeKey(form.key_sig).split(" ")[1];
-  const getMinutes = () => safeDuration(form.duration_sec).split(":")[0];
-  const getSeconds = () => safeDuration(form.duration_sec).split(":")[1];
-  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const cleanForm = {
-      ...form,
-      key_sig: safeKey(form.key_sig),
-      duration_sec: safeDuration(form.duration_sec),
-    };
-    try {
-      if (editingId) {
-        await api.put(`/songs/${editingId}`, cleanForm);
-      } else {
-        if (!canCreateOrMutate) {
-          window.openUpgradeModal?.();
-          return;
-        }
-        await api.post("/songs", cleanForm);
-      }
-      setForm({
-        title: "",
-        artist: "",
-        bpm: "",
-        key_sig: "C Major",
-        duration_sec: "00:00",
-        notes: "",
-      });
-      setEditingId(null);
-      setShowModal(false);
-      load();
-      window.dispatchEvent(
-        new CustomEvent("data-refresh", {
-          detail: { type: "song", action: editingId ? "updated" : "created" },
-        }),
-      );
-    } catch (err) {
-      console.error("שגיאה בשמירה:", err);
-    }
   };
   const remove = async (songId: number) => {
     if (!addSongsEnabled) {
@@ -631,13 +578,6 @@ function MyContent(): JSX.Element {
   const normalizeTime = (t: any) => {
     if (!t) return "";
     return t.toString().slice(0, 5);
-  };
-
-  const formatForDisplay = (d: any) => {
-    if (!d) return t("lineups.unspecifiedDate");
-    const obj = new Date(d);
-    if (isNaN(obj as unknown as number)) return t("lineups.unspecifiedDate");
-    return obj.toLocaleDateString(locale || "he-IL");
   };
 
   const loadLineups = useCallback(async () => {
@@ -736,19 +676,6 @@ function MyContent(): JSX.Element {
     };
   }, [socket, loadLineups]);
 
-  const openCreateLineupModal = () => {
-    setLineupForm({
-      title: "",
-      date: "",
-      time: "",
-      location: "",
-      description: "",
-    });
-    setIsEditingLineup(false);
-    setEditLineupId(null);
-    setShowLineupModal(true);
-  };
-
   const openEditLineupModal = (lineup: any) => {
     setLineupForm({
       title: lineup.title || "",
@@ -761,32 +688,6 @@ function MyContent(): JSX.Element {
     setEditLineupId(lineup.id);
     setIsEditingLineup(true);
     setShowLineupModal(true);
-  };
-
-  const submitLineup = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!lineupForm.title.trim()) return;
-
-    try {
-      if (isEditingLineup && editLineupId) {
-        await api.put(`/lineups/${editLineupId}`, lineupForm);
-      } else {
-        if (!canMutateLineups) {
-          window.openUpgradeModal?.();
-          return;
-        }
-        await api.post("/lineups", lineupForm);
-      }
-
-      // ריענון מיידי כדי לראות את הליינאפ החדש בלי להמתין לסוקט
-      loadLineups();
-
-      setShowLineupModal(false);
-      setIsEditingLineup(false);
-      setEditLineupId(null);
-    } catch (err) {
-      console.error("❌ שגיאה בשמירת ליינאפ:", err);
-    }
   };
 
   const removeLineup = async (id: number) => {
@@ -964,9 +865,6 @@ function MyContent(): JSX.Element {
             }}
             initialForm={form}
             editingId={editingId}
-            notesList={notesList}
-            notesKeys={notesKeys}
-            keysType={keysType}
           />
           <ChartViewerModal
             viewingChart={viewingChart}
@@ -1164,9 +1062,10 @@ function MyContent(): JSX.Element {
                             showToast(t("artists.uninviteSuccess"), "success");
                             loadMyInvitedArtists();
                           } catch (err) {
-                            const errorMsg =
-                              err?.response?.data?.message ||
-                              t("artists.uninviteError");
+                            const errorMsg = getApiErrorMessage(
+                              err,
+                              "artists.uninviteError",
+                            );
                             showToast(errorMsg, "error");
                           } finally {
                             setInviteLoading(false);

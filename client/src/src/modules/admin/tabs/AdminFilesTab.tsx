@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ExternalLink, Files, Trash2, Users } from "lucide-react";
 
-import api from "@/modules/shared/lib/api.ts";
+import api, { getApiErrorMessage } from "@/modules/shared/lib/api.ts";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "@/modules/shared/components/ToastProvider";
-import Search from "@/modules/shared/components/Search";
 import { Select } from "@/modules/shared/components/FormControls";
 import type { AdminUser } from "../pages/Admin";
 import { API_ORIGIN } from "@/config/apiConfig";
@@ -223,9 +222,10 @@ export default function AdminFilesTab({
         showToast(t("admin.filesTab.messages.deleteEndpointRequired"), "info");
         return;
       }
-      const msg =
-        err?.response?.data?.message ||
-        t("admin.filesTab.messages.deleteFileError");
+      const msg = getApiErrorMessage(
+        err,
+        "admin.filesTab.messages.deleteFileError",
+      );
       showToast(msg, "error");
     }
   };
@@ -305,7 +305,9 @@ export default function AdminFilesTab({
           <p className="text-neutral-400 text-sm">
             {t("admin.filesTab.unsupported")}
           </p>
-          <p className="text-neutral-500 text-xs mt-1">GET /admin/files</p>
+          <p className="text-neutral-500 text-xs mt-1">
+            {t("admin.filesTab.endpointLabel")}
+          </p>
         </div>
       ) : filteredFiles.length === 0 ? (
         <div className="bg-neutral-800 rounded-2xl p-6 text-center">

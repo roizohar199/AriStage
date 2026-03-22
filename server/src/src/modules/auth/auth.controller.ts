@@ -11,6 +11,7 @@ import { logger } from "../../core/logger";
 import { Request, Response } from "express";
 import { logSystemEvent } from "../../utils/systemLogger";
 import {
+  generateRefreshToken,
   verifyRefreshToken,
   revokeRefreshToken,
   revokeAllUserTokens,
@@ -39,7 +40,7 @@ export const authController = {
         "info",
         "ADMIN_LOGIN",
         "Admin login success",
-        { email: payload.email },
+        { userId: payload.id },
         payload.id,
       );
     }
@@ -71,7 +72,7 @@ export const authController = {
         "info",
         "ADMIN_LOGIN_2FA",
         "Admin login with 2FA success",
-        { email: payload.email },
+        { userId: payload.id },
         payload.id,
       );
     }
@@ -82,7 +83,7 @@ export const authController = {
   register: asyncHandler(async (req: Request, res: Response) => {
     const locale = resolveRequestLocale(req);
     logger.info("🔵 [REGISTER] התחלת הרשמה", {
-      body: req.body,
+      hasEmail: typeof req.body?.email === "string",
       hasFile: !!req.file,
       filePath: req.file?.path,
     });
@@ -101,14 +102,13 @@ export const authController = {
 
       logger.info("✅ [REGISTER] הרשמה הצליחה", {
         userId: newUser.id,
-        email: newUser.email,
       });
       res.json({ message: tServer(locale, "auth.registered"), user: newUser });
     } catch (error: any) {
       logger.error("❌ [REGISTER] שגיאה בהרשמה", {
         error: error.message,
         stack: error.stack,
-        body: req.body,
+        hasFile: !!req.file,
       });
       throw error;
     }
@@ -135,12 +135,14 @@ export const authController = {
   refresh: asyncHandler(async (req: Request, res: Response) => {
     const locale = resolveRequestLocale(req);
     const { refreshToken } = req.body;
+    const ipAddress = req.ip || req.socket.remoteAddress;
+    const userAgent = req.get("user-agent");
 
     if (!refreshToken) {
       throw new AppError(401, tServer(locale, "auth.refreshTokenRequired"));
     }
 
-    // Verify the refresh token and get user ID
+    // Verify and consume the current refresh token, then rotate it.
     const userId = await verifyRefreshToken(refreshToken, locale);
 
     // Get user data
@@ -160,10 +162,15 @@ export const authController = {
       preferred_locale: user.preferred_locale || "he-IL",
     });
 
+    const { token: nextRefreshToken, expiresAt: refreshExpiresAt } =
+      await generateRefreshToken(user.id, ipAddress, userAgent, locale);
+
     logger.debug("Access token refreshed", { userId });
 
     res.json({
       token: newAccessToken,
+      refreshToken: nextRefreshToken,
+      refreshExpiresAt,
       user: {
         id: user.id,
         email: user.email,

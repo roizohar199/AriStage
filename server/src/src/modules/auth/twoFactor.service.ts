@@ -92,7 +92,7 @@ export const setup2FA = async (
       userId,
     ]);
 
-    logger.info("2FA setup initiated", { userId, email });
+    logger.info("2FA setup initiated", { userId });
 
     return {
       secret: secret.base32,

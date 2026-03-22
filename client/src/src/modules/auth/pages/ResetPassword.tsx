@@ -1,6 +1,9 @@
-import React, { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useParams } from "react-router-dom";
-import api from "@/modules/shared/lib/api.js";
+import api, {
+  getApiErrorMessage,
+  getApiSuccessMessage,
+} from "@/modules/shared/lib/api.js";
 import { emitToast } from "@/modules/shared/lib/toastBus.js";
 import { PasswordInput } from "@/modules/shared/components/FormControls";
 import { useTranslation } from "@/hooks/useTranslation.ts";
@@ -13,7 +16,7 @@ export default function ResetPassword() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
 
@@ -30,9 +33,9 @@ export default function ResetPassword() {
       });
 
       // 🔥 במקום הודעה ירוקה — Toast למעלה
-      emitToast(data.message || t("auth.passwordUpdated"), "success");
-    } catch (err) {
-      setError(err?.response?.data?.message || t("common.error"));
+      emitToast(getApiSuccessMessage(data, "auth.passwordUpdated"), "success");
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, "common.error"));
     } finally {
       setLoading(false);
     }

@@ -6,6 +6,7 @@ import {
   authLimiter,
   passwordResetLimiter,
   sensitiveOperationLimiter,
+  uploadLimiter,
 } from "../../middleware/rateLimiter";
 import { validateBody } from "../../middleware/validate";
 import {
@@ -36,6 +37,7 @@ router.post("/login/2fa", authLimiter, authController.complete2FA);
 router.post(
   "/register",
   authLimiter,
+  uploadLimiter,
   uploadTempAvatar.single("avatar"),
   validateBody(registerSchema),
   authController.register,

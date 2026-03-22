@@ -7,6 +7,7 @@ import {
   type AdminUserSubscriptionRow,
 } from "./adminUsers.repository";
 import { resolveRequestLocale, tServer } from "../../i18n/serverI18n";
+import { logger } from "../../core/logger";
 
 import type { Request, Response } from "express";
 
@@ -173,8 +174,6 @@ export const adminUsersController = {
     const locale = resolveRequestLocale(req);
     const params = req.params as unknown as AdminUserIdParams;
     const body = (req.body || {}) as UpdateSubscriptionBody;
-    console.log("[ADMIN SUB UPDATE] params:", params);
-    console.log("[ADMIN SUB UPDATE] body:", body);
 
     const targetUserId = parseUserIdParam(params.id, locale);
 
@@ -248,7 +247,10 @@ export const adminUsersController = {
         ? { subscription_expires_at: incomingExpires }
         : {}),
     };
-    console.log("[ADMIN SUB PASS TO REPO]", payload);
+    logger.info("Admin subscription update requested", {
+      adminUserId,
+      targetUserId,
+    });
     const affected = await adminUsersRepository.updateUserSubscription(
       targetUserId,
       payload,

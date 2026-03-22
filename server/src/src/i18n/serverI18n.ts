@@ -534,6 +534,10 @@ const MESSAGES = {
     "he-IL": "קובץ ה־PDF הועלה בהצלחה",
     "en-US": "PDF uploaded successfully",
   },
+  "songs.chartUploadFailed": {
+    "he-IL": "שגיאה בהעלאת הקובץ",
+    "en-US": "File upload error",
+  },
   "songs.chartPdfMigrationMissing": {
     "he-IL": "השדה chart_pdf לא קיים בטבלה. יש להריץ את מיגרציית ה־SQL.",
     "en-US":
@@ -960,6 +964,30 @@ const MESSAGES = {
     "he-IL": "עדכון הגדרות השפה נכשל",
     "en-US": "Failed to update i18n settings",
   },
+  "systemSettings.invalidLocale": {
+    "he-IL": "השפה שנבחרה אינה נתמכת",
+    "en-US": "The selected locale is not supported",
+  },
+  "systemSettings.localeNotEnabled": {
+    "he-IL": "לא ניתן לבחור שפת ברירת מחדל שאינה מופעלת",
+    "en-US": "Cannot use a disabled locale as the default locale",
+  },
+  "systemSettings.emptyEnabledLocales": {
+    "he-IL": "חובה להפעיל לפחות שפה אחת",
+    "en-US": "At least one locale must be enabled",
+  },
+  "systemSettings.invalidDefaultLocaleMode": {
+    "he-IL": "מצב ברירת המחדל של השפה אינו תקין",
+    "en-US": "Invalid default locale mode",
+  },
+  "systemSettings.invalidEnabledLocale": {
+    "he-IL": "אחת השפות ברשימת השפות המופעלות אינה נתמכת",
+    "en-US": "One of the enabled locales is not supported",
+  },
+  "systemSettings.defaultLocaleMustBeEnabled": {
+    "he-IL": "שפת ברירת המחדל חייבת להיות כלולה ברשימת השפות המופעלות",
+    "en-US": "Default locale must be included in enabled locales",
+  },
   "email.reset.subject": {
     "he-IL": "איפוס סיסמה - Ari Stage",
     "en-US": "Password Reset - Ari Stage",
@@ -967,6 +995,10 @@ const MESSAGES = {
   "email.invitation.subject": {
     "he-IL": "הזמנה למאגר Ari Stage",
     "en-US": "Invitation to Ari Stage",
+  },
+  "email.support.subject": {
+    "he-IL": "פנייה חדשה: {subject}",
+    "en-US": "New contact request: {subject}",
   },
 } as const;
 
@@ -1254,5 +1286,53 @@ export function buildArtistInvitationEmail(
     </p>
   </div>
 </div>`,
+  };
+}
+
+export function buildSupportContactEmail(
+  locale: ServerLocale,
+  payload: {
+    full_name?: string;
+    email?: string;
+    phone?: string;
+    subject?: string;
+    message?: string;
+  },
+): { subject: string; html: string } {
+  const copy =
+    locale === "he-IL"
+      ? {
+          title: "פנייה חדשה ממערכת Ari-Stage",
+          name: "שם",
+          email: "אימייל",
+          phone: "טלפון",
+          subject: "נושא",
+          message: "תוכן",
+        }
+      : {
+          title: "New contact request from Ari-Stage",
+          name: "Name",
+          email: "Email",
+          phone: "Phone",
+          subject: "Subject",
+          message: "Message",
+        };
+
+  const safeSubject = String(payload.subject || "").trim() || "Ari Stage";
+  const safePhone = String(payload.phone || "").trim() || "-";
+
+  return {
+    subject: tServer(locale, "email.support.subject", {
+      subject: safeSubject,
+    }),
+    html: `
+        <h2>${copy.title}</h2>
+        <p><b>${copy.name}:</b> ${payload.full_name || ""}</p>
+        <p><b>${copy.email}:</b> ${payload.email || ""}</p>
+        <p><b>${copy.phone}:</b> ${safePhone}</p>
+        <p><b>${copy.subject}:</b> ${safeSubject}</p>
+        <p><b>${copy.message}:</b></p>
+        <p>${payload.message || ""}</p>
+      `,
   };
 }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Globe, Languages, Settings } from "lucide-react";
-import api from "@/modules/shared/lib/api.ts";
+import api, { getApiErrorMessage } from "@/modules/shared/lib/api.ts";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
 import { useToast } from "@/modules/shared/components/ToastProvider";
 import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
@@ -115,8 +115,7 @@ export default function AdminSystemSettingsTab({
       window.dispatchEvent(new CustomEvent("system-settings-updated"));
     } catch (err: any) {
       console.error("Failed to save system settings:", err);
-      const errorMsg =
-        err.response?.data?.error || t("systemSettings.saveFailed");
+      const errorMsg = getApiErrorMessage(err, "systemSettings.saveFailed");
       showToast(errorMsg, "error");
     } finally {
       setSaving(false);

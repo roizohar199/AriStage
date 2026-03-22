@@ -32,12 +32,8 @@ import { resolveRequestLocale, tServer } from "../../i18n/serverI18n";
 function fixAvatar(req, avatar) {
   if (!avatar) return null;
 
-  const protocol = req.protocol;
-  const host = req.get("host");
-  const baseUrl = `${protocol}://${host.replace(/:\d+$/, "")}:5000`;
-
   const clean = avatar.replace(/^\/?uploads\//, "");
-  return `${baseUrl}/uploads/${clean}`;
+  return `${env.baseUrl}/uploads/${clean}`;
 }
 
 export const usersController = {

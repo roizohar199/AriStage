@@ -831,6 +831,11 @@ export const en = {
           yearlyInvalid: "Invalid yearly price",
           saveFailed: "Error saving",
         },
+        placeholders: {
+          key: "Example: pro",
+          name: "Example: Pro",
+          currency: "Example: ILS",
+        },
       },
       messages: {
         noPermissionViewPlans: "No permission to view plans",
@@ -875,6 +880,7 @@ export const en = {
       },
       loading: "Loading subscriptions...",
       empty: "No data to display",
+      endpointLabel: "Subscription data is loaded from the users list",
       userNoName: "User without name",
       actions: {
         edit: "Edit subscription",
@@ -885,6 +891,10 @@ export const en = {
         statusLabel: "Subscription status",
         startLabel: "Start",
         endLabel: "End",
+        placeholders: {
+          start: "Start date",
+          end: "End date",
+        },
         note: "This change updates only the user's subscription fields (plan/status/start/end) and does not change plan prices.",
       },
       messages: {
@@ -897,7 +907,7 @@ export const en = {
         expired: "Expired",
       },
       planOptions: {
-        trial: "trial",
+        trial: "Trial",
         legacySuffix: "(legacy)",
         disabledSuffix: " (disabled)",
       },
@@ -978,6 +988,7 @@ export const en = {
 
     monitoringTab: {
       loading: "Loading monitoring...",
+      endpointLabel: "Basic monitoring data",
     },
 
     filesTab: {
@@ -1011,6 +1022,7 @@ export const en = {
       },
       loading: "Loading files...",
       unsupported: "Backend endpoint required",
+      endpointLabel: "Server files service",
       empty: "No files to display",
       clearSearch: "Clear search",
     },
@@ -1039,6 +1051,7 @@ export const en = {
       issueFallback: "Issue",
       loading: "Loading issues...",
       unsupported: "Backend endpoint required",
+      endpointLabel: "Server issues service",
       empty: "No issues to display",
       clearSearch: "Clear search",
     },
@@ -1112,6 +1125,7 @@ export const en = {
       },
       loading: "Loading logs...",
       unsupported: "Endpoint unavailable",
+      endpointLabel: "Server logs service",
       empty: "No logs to display",
     },
   },

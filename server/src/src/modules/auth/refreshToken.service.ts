@@ -17,11 +17,23 @@ interface RefreshToken {
   expires_at: Date;
   created_at: Date;
   revoked_at: Date | null;
+  last_used_at: Date | null;
   ip_address: string | null;
   user_agent: string | null;
 }
 
 const REFRESH_TOKEN_EXPIRY_DAYS = 30;
+
+function parseRefreshTokenUserId(token: string): number | null {
+  const [rawUserId] = String(token).split(".", 1);
+  const userId = Number(rawUserId);
+
+  if (!Number.isInteger(userId) || userId <= 0) {
+    return null;
+  }
+
+  return userId;
+}
 
 /**
  * Generate a new refresh token
@@ -36,8 +48,8 @@ export const generateRefreshToken = async (
   userAgent?: string,
   locale: ServerLocale = "he-IL",
 ): Promise<{ token: string; expiresAt: Date }> => {
-  // Generate a secure random token
-  const token = crypto.randomBytes(64).toString("hex");
+  // Prefix the opaque token with userId so verification can query only that user's tokens.
+  const token = `${userId}.${crypto.randomBytes(64).toString("hex")}`;
 
   // Hash the token before storing (never store plaintext tokens)
   const tokenHash = await bcrypt.hash(token, 10);
@@ -80,28 +92,47 @@ export const verifyRefreshToken = async (
   }
 
   try {
-    // Get all non-revoked, non-expired tokens
+    const userId = parseRefreshTokenUserId(token);
+    if (!userId) {
+      throw new AppError(401, tServer(locale, "refresh.invalidOrExpired"));
+    }
+
+    // Query only active tokens for the token's user.
     const [rows] = (await pool.query(
       `SELECT * FROM refresh_tokens 
-       WHERE revoked_at IS NULL 
+       WHERE user_id = ?
+       AND revoked_at IS NULL 
        AND expires_at > NOW()
        ORDER BY created_at DESC`,
+      [userId],
     )) as any[];
 
     if (!Array.isArray(rows) || rows.length === 0) {
       throw new AppError(401, tServer(locale, "refresh.invalidOrExpired"));
     }
 
-    // Check each token hash (bcrypt compare is slow, but secure)
-    for (const row of rows) {
+    for (const row of rows as RefreshToken[]) {
       const isMatch = await bcrypt.compare(token, row.token_hash);
-      if (isMatch) {
-        logger.debug("Refresh token verified", {
-          userId: row.user_id,
-          tokenId: row.id,
-        });
-        return row.user_id;
+      if (!isMatch) {
+        continue;
       }
+
+      const [result] = await pool.query(
+        `UPDATE refresh_tokens
+         SET last_used_at = NOW(), revoked_at = NOW()
+         WHERE id = ? AND revoked_at IS NULL`,
+        [row.id],
+      );
+
+      if ((result as any).affectedRows === 0) {
+        throw new AppError(401, tServer(locale, "refresh.invalidOrExpired"));
+      }
+
+      logger.debug("Refresh token consumed", {
+        userId: row.user_id,
+        tokenId: row.id,
+      });
+      return row.user_id;
     }
 
     throw new AppError(401, tServer(locale, "refresh.invalidOrExpired"));
@@ -124,17 +155,22 @@ export const revokeRefreshToken = async (token: string): Promise<void> => {
   }
 
   try {
-    // Get all non-revoked tokens
+    const userId = parseRefreshTokenUserId(token);
+    if (!userId) {
+      return;
+    }
+
     const [rows] = (await pool.query(
-      `SELECT * FROM refresh_tokens WHERE revoked_at IS NULL`,
+      `SELECT * FROM refresh_tokens
+       WHERE user_id = ? AND revoked_at IS NULL`,
+      [userId],
     )) as any[];
 
     if (!Array.isArray(rows) || rows.length === 0) {
       return;
     }
 
-    // Find matching token
-    for (const row of rows) {
+    for (const row of rows as RefreshToken[]) {
       const isMatch = await bcrypt.compare(token, row.token_hash);
       if (isMatch) {
         await pool.query(

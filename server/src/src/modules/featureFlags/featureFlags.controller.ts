@@ -24,7 +24,7 @@ export const featureFlagsController = {
     if (!key)
       throw new AppError(400, tRequest(req, "featureFlags.keyRequired"));
 
-    const enabled = Boolean(req.body?.enabled);
+    const enabled = req.body?.enabled === true || req.body?.enabled === "true";
     const description =
       req.body?.description === undefined ? undefined : req.body?.description;
 

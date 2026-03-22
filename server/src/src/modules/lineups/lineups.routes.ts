@@ -3,7 +3,12 @@ import { requireAuth } from "../../middleware/auth";
 import { requireActiveSubscription } from "../../middleware/subscription";
 import { requireFeatureFlagEnabled } from "../../middleware/featureFlags";
 import { emitRefreshOnMutation } from "../../middleware/refresh";
+import { validateBody } from "../../middleware/validate";
 import { lineupsController } from "./lineups.controller";
+import {
+  lineupDownloadChartsSchema,
+  lineupMutationSchema,
+} from "../../validation/schemas/app.schemas";
 
 const router = Router();
 
@@ -25,8 +30,12 @@ router.get("/", lineupsController.list);
 router.get("/shared-with-me", lineupsController.sharedWithMe);
 router.get("/by-user/:userId", lineupsController.listByUserId);
 router.get("/:id", lineupsController.get);
-router.post("/", lineupsController.create);
-router.put("/:id", lineupsController.update);
+router.post("/", validateBody(lineupMutationSchema), lineupsController.create);
+router.put(
+  "/:id",
+  validateBody(lineupMutationSchema),
+  lineupsController.update,
+);
 router.delete("/:id", lineupsController.remove);
 
 router.get(
@@ -48,6 +57,7 @@ router.delete(
 router.post(
   "/:id/download-charts",
   requireFeatureFlagEnabled("module.charts"),
+  validateBody(lineupDownloadChartsSchema),
   lineupsController.downloadCharts,
 );
 router.post(

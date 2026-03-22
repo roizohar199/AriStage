@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import api from "@/modules/shared/lib/api.js";
+import api, { getApiErrorMessage } from "@/modules/shared/lib/api.js";
 import { useToast } from "@/modules/shared/components/ToastProvider.jsx";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
@@ -174,13 +174,7 @@ export default function MyArtist() {
       );
       loadArtists();
     } catch (err: any) {
-      const errorMsg =
-        err &&
-        typeof err === "object" &&
-        "response" in err &&
-        err.response?.data?.message
-          ? err.response.data.message
-          : t("artists.leavePoolError");
+      const errorMsg = getApiErrorMessage(err, "artists.leavePoolError");
       showToast(errorMsg, "error");
     } finally {
       setLeaving(false);

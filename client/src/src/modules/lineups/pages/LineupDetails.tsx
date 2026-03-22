@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import BaseModal from "@/modules/shared/components/BaseModal";
 import SearchInput from "../../shared/components/Search";
-import api from "@/modules/shared/lib/api.js";
+import api, { getApiErrorMessage } from "@/modules/shared/lib/api.js";
 import { useParams, useNavigate } from "react-router-dom";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
@@ -445,17 +445,12 @@ export default function LineupDetails() {
         } catch {}
       } catch (err: any) {
         if (!mounted) return;
-        setError(
-          err?.response?.data?.message ||
-            err?.message ||
-            t("lineups.messages.loadLineupError"),
+        const errorMessage = getApiErrorMessage(
+          err,
+          "lineups.messages.loadLineupError",
         );
-        showToast(
-          err?.response?.data?.message ||
-            err?.message ||
-            t("lineups.messages.loadLineupError"),
-          "error",
-        );
+        setError(errorMessage);
+        showToast(errorMessage, "error");
       } finally {
         if (mounted) setLoading(false);
       }
@@ -728,8 +723,7 @@ export default function LineupDetails() {
     } catch (err: any) {
       console.error("שגיאה בהורדת הצ'ארטים:", err);
       showToast(
-        err?.response?.data?.message ||
-          t("lineups.messages.downloadChartsError"),
+        getApiErrorMessage(err, "lineups.messages.downloadChartsError"),
         "error",
       );
     }
@@ -758,8 +752,7 @@ export default function LineupDetails() {
     } catch (err: any) {
       console.error("שגיאה בהורדת מילים:", err);
       showToast(
-        err?.response?.data?.message ||
-          t("lineups.messages.downloadLyricsError"),
+        getApiErrorMessage(err, "lineups.messages.downloadLyricsError"),
         "error",
       );
     }

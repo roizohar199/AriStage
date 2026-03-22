@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Plus, Trash2, Edit2, Search, UserCheck, UserPlus } from "lucide-react";
-import api from "@/modules/shared/lib/api.js";
+import api, { getApiErrorMessage } from "@/modules/shared/lib/api.js";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { Mail, User, Star } from "lucide-react";
 import BaseModal from "@/modules/shared/components/BaseModal.tsx";
@@ -13,18 +13,40 @@ import {
   Select,
 } from "@/modules/shared/components/FormControls";
 
+type UserRole = "admin" | "manager" | "user";
+type SubscriptionType = "trial" | "pro";
+
+type UserRecord = {
+  id: number;
+  full_name: string;
+  email: string;
+  role: UserRole;
+  subscription_type: string | null;
+};
+
+type ConnectedArtist = {
+  id: number;
+};
+
+type UserForm = {
+  full_name: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  subscription_type: SubscriptionType;
+};
+
 export default function Users() {
   const confirm = useConfirm();
   const { t } = useTranslation();
 
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState<UserRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   const [showModal, setShowModal] = useState(false);
-  const [editingId, setEditingId] = useState(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<UserForm>({
     full_name: "",
     email: "",
     password: "",
@@ -33,16 +55,17 @@ export default function Users() {
   });
 
   const [search, setSearch] = useState("");
-  const [connectedArtists, setConnectedArtists] = useState([]);
+  const [connectedArtists, setConnectedArtists] = useState<ConnectedArtist[]>(
+    [],
+  );
 
   const load = async () => {
     try {
       setLoading(true);
       const { data } = await api.get("/users");
-      setUsers(data);
+      setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("❌ שגיאה בשליפת משתמשים:", err);
-      setError(t("users.loadError"));
     } finally {
       setLoading(false);
     }
@@ -53,7 +76,7 @@ export default function Users() {
       const { data } = await api.get("/users/connected-to-me", {
         skipErrorToast: true,
       });
-      setConnectedArtists(data || []);
+      setConnectedArtists(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("שגיאה בטעינת אמנים מחוברים:", err);
     }
@@ -76,19 +99,22 @@ export default function Users() {
     setShowModal(true);
   };
 
-  const openEdit = (u) => {
+  const openEdit = (u: UserRecord) => {
     setEditingId(u.id);
     setForm({
       full_name: u.full_name || "",
       email: u.email,
       password: "",
       role: u.role,
-      subscription_type: normalizeSubscriptionType(u.subscription_type),
+      subscription_type:
+        normalizeSubscriptionType(u.subscription_type) === "pro"
+          ? "pro"
+          : "trial",
     });
     setShowModal(true);
   };
 
-  const submit = async (e) => {
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     try {
@@ -106,11 +132,11 @@ export default function Users() {
       load();
     } catch (err) {
       console.error("❌ שגיאה בשמירת משתמש:", err);
-      setError(t("users.saveError"));
+      alert(t("users.saveError"));
     }
   };
 
-  const removeUser = async (id) => {
+  const removeUser = async (id: number) => {
     const ok = await confirm({
       title: t("users.deleteConfirmTitle"),
       message: t("users.deleteConfirmMessage"),
@@ -125,7 +151,7 @@ export default function Users() {
     }
   };
 
-  const impersonateUser = async (id) => {
+  const impersonateUser = async (id: number) => {
     const ok = await confirm({
       title: t("users.impersonateConfirmTitle"),
       message: t("users.impersonateConfirmMessage"),
@@ -143,7 +169,7 @@ export default function Users() {
       const rawToken = localStorage.getItem("ari_token");
 
       // 🟪 שומרים אותם פעם אחת בלבד (חשוב!)
-      if (!localStorage.getItem("ari_original_user")) {
+      if (!localStorage.getItem("ari_original_user") && rawUser && rawToken) {
         localStorage.setItem("ari_original_user", rawUser);
         localStorage.setItem("ari_original_token", rawToken);
       }
@@ -168,7 +194,7 @@ export default function Users() {
     }
   };
 
-  const inviteArtist = async (artistId, artistName) => {
+  const inviteArtist = async (artistId: number, artistName: string) => {
     const ok = await confirm({
       title: t("users.inviteArtistConfirmTitle"),
       message: t("users.inviteArtistConfirmMessage", { artistName }),
@@ -180,8 +206,7 @@ export default function Users() {
       loadConnectedArtists(); // רענון רשימת האמנים המחוברים
     } catch (err) {
       console.error("❌ שגיאה בהזמנת אמן:", err);
-      const errorMsg =
-        err?.response?.data?.message || t("users.inviteArtistError");
+      const errorMsg = getApiErrorMessage(err, "users.inviteArtistError");
       alert(errorMsg);
     }
   };
@@ -194,7 +219,7 @@ export default function Users() {
   );
 
   // בדיקה אם משתמש כבר מוזמן למאגר שלי
-  const isArtistInvited = (userId) => {
+  const isArtistInvited = (userId: number) => {
     return connectedArtists.some((artist) => artist.id === userId);
   };
 

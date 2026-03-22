@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Home, ListMusic, Music, Shield, Users, User } from "lucide-react";
+import { Shield, Users, User } from "lucide-react";
 
 export function getStoredUser() {
   try {
@@ -21,7 +21,7 @@ type TranslationFunction = (key: string) => string;
 
 export function getNavItems(
   role: string,
-  pendingCount: number,
+  _pendingCount: number,
   t: TranslationFunction,
 ): NavItem[] {
   let items: NavItem[] = [

@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import api from "@/modules/shared/lib/api.ts";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 
@@ -12,8 +12,7 @@ export default function ProtectedRoute({
   children,
   roles = [],
 }: ProtectedRouteProps): ReactNode {
-  const location = useLocation();
-  const { user, loading, subscriptionBlocked } = useAuth();
+  const { user, loading } = useAuth();
 
   let token: string | null = null;
   try {

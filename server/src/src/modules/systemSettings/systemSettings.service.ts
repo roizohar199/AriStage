@@ -81,17 +81,13 @@ function isValidLocaleMode(mode: unknown): mode is LocaleMode {
 export async function setDefaultLocale(locale: string) {
   // Validate locale format
   if (!isValidLocale(locale)) {
-    throw new Error(
-      `Invalid locale: ${locale}. Must be one of: ${SUPPORTED_LOCALES.join(", ")}`,
-    );
+    throw new Error("systemSettings.invalidLocale");
   }
 
   // Ensure locale is enabled
   const { enabled_locales } = await getI18nSettings();
   if (!enabled_locales.includes(locale)) {
-    throw new Error(
-      `Cannot set default locale to ${locale}: locale is not enabled`,
-    );
+    throw new Error("systemSettings.localeNotEnabled");
   }
 
   await repository.setSetting(
@@ -108,15 +104,13 @@ export async function setDefaultLocale(locale: string) {
 export async function setEnabledLocales(locales: string[]) {
   // Validate array
   if (!Array.isArray(locales) || locales.length === 0) {
-    throw new Error("enabled_locales must be a non-empty array");
+    throw new Error("systemSettings.emptyEnabledLocales");
   }
 
   // Validate each locale
   for (const locale of locales) {
     if (!isValidLocale(locale)) {
-      throw new Error(
-        `Invalid locale: ${locale}. Must be one of: ${SUPPORTED_LOCALES.join(", ")}`,
-      );
+      throw new Error("systemSettings.invalidEnabledLocale");
     }
   }
 
@@ -126,9 +120,7 @@ export async function setEnabledLocales(locales: string[]) {
   // Ensure default locale is enabled
   const { default_locale } = await getI18nSettings();
   if (!uniqueLocales.includes(default_locale)) {
-    throw new Error(
-      `Cannot disable ${default_locale}: it is the default locale. Change default first.`,
-    );
+    throw new Error("systemSettings.defaultLocaleMustBeEnabled");
   }
 
   await repository.setSetting(
@@ -157,30 +149,22 @@ export async function updateI18nSettings(data: {
     "browser";
 
   if (!isValidLocaleMode(newDefaultLocaleMode)) {
-    throw new Error(
-      `Invalid default_locale_mode: ${String(
-        newDefaultLocaleMode,
-      )}. Must be one of: ${SUPPORTED_LOCALE_MODES.join(", ")}`,
-    );
+    throw new Error("systemSettings.invalidDefaultLocaleMode");
   }
 
   // Validate default locale
   if (!isValidLocale(newDefaultLocale)) {
-    throw new Error(
-      `Invalid default_locale: ${newDefaultLocale}. Must be one of: ${SUPPORTED_LOCALES.join(", ")}`,
-    );
+    throw new Error("systemSettings.invalidLocale");
   }
 
   // Validate enabled locales
   if (!Array.isArray(newEnabledLocales) || newEnabledLocales.length === 0) {
-    throw new Error("enabled_locales must be a non-empty array");
+    throw new Error("systemSettings.emptyEnabledLocales");
   }
 
   for (const locale of newEnabledLocales) {
     if (!isValidLocale(locale)) {
-      throw new Error(
-        `Invalid locale in enabled_locales: ${locale}. Must be one of: ${SUPPORTED_LOCALES.join(", ")}`,
-      );
+      throw new Error("systemSettings.invalidEnabledLocale");
     }
   }
 
@@ -189,9 +173,7 @@ export async function updateI18nSettings(data: {
 
   // Ensure default is enabled
   if (!uniqueEnabledLocales.includes(newDefaultLocale)) {
-    throw new Error(
-      `default_locale (${newDefaultLocale}) must be in enabled_locales`,
-    );
+    throw new Error("systemSettings.defaultLocaleMustBeEnabled");
   }
 
   // Update both settings

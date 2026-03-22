@@ -7,6 +7,7 @@ import { logger } from "./core/logger";
 import { verifyToken } from "./modules/auth/token.service";
 import { createWebSocketRateLimiter } from "./middleware/rateLimiter";
 import { tServer } from "./i18n/serverI18n";
+import { pool } from "./database/pool";
 
 declare global {
   // מאפשר שימוש ב־global.io בקבצים אחרים
@@ -132,7 +133,6 @@ io.use((socket, next) => {
     logger.debug(`✅ WebSocket authenticated`, {
       socketId: socket.id,
       userId: decoded.id,
-      email: decoded.email,
     });
 
     next();
@@ -171,6 +171,69 @@ function untrackSocket(socketId: string) {
   else global.activeUserSocketCounts.set(userId, prevCount - 1);
 }
 
+async function hasAcceptedHostAccess(
+  userId: number,
+  hostId: number,
+): Promise<boolean> {
+  const [rows] = (await pool.query(
+    `SELECT 1
+     FROM user_hosts
+     WHERE guest_id = ? AND host_id = ? AND invitation_status = 'accepted'
+     LIMIT 1`,
+    [userId, hostId],
+  )) as any[];
+
+  return Array.isArray(rows) && rows.length > 0;
+}
+
+async function canAccessHostRoom(
+  userId: number,
+  hostId: number,
+  role?: string,
+): Promise<boolean> {
+  const [rows] = (await pool.query(
+    "SELECT id AS owner_id FROM users WHERE id = ? LIMIT 1",
+    [hostId],
+  )) as any[];
+
+  const host = rows?.[0];
+  if (!host) {
+    return false;
+  }
+
+  if (role === "admin") {
+    return true;
+  }
+
+  return (
+    host.owner_id === userId || hasAcceptedHostAccess(userId, host.owner_id)
+  );
+}
+
+async function canAccessLineupRoom(
+  userId: number,
+  lineupId: number,
+  role?: string,
+): Promise<boolean> {
+  const [rows] = (await pool.query(
+    "SELECT id, created_by AS owner_id FROM lineups WHERE id = ? LIMIT 1",
+    [lineupId],
+  )) as any[];
+
+  const lineup = rows?.[0];
+  if (!lineup) {
+    return false;
+  }
+
+  if (role === "admin") {
+    return true;
+  }
+
+  return (
+    lineup.owner_id === userId || hasAcceptedHostAccess(userId, lineup.owner_id)
+  );
+}
+
 // -------------------------
 //   SOCKET EVENTS
 // -------------------------
@@ -180,7 +243,6 @@ io.on("connection", (socket) => {
     env.nodeEnv !== "development" || process.env.WS_STRICT_ROOMS === "1";
   logger.info(`🟢 Client connected: ${socket.id}`, {
     userId: authenticatedUser?.id,
-    email: authenticatedUser?.email,
   });
 
   // הצטרפות לחדר של משתמש ספציפי - with permission check
@@ -220,43 +282,91 @@ io.on("connection", (socket) => {
   });
 
   // הצטרפות לחדר של מארח (כולל אמנים שלו) - with permission check
-  socket.on("join-host", (hostId: number) => {
-    // TODO: Add database check to verify user has access to this host
-    // For now, allow if user is the host or admin
-    if (strictRoomSecurity) {
-      if (!authenticatedUser?.id) {
-        logger.warn(`🚫 Unauthorized attempt to join host room (no auth)`, {
-          socketId: socket.id,
-          requestedHostId: hostId,
-        });
-        socket.emit("error", { message: websocketUnauthorized });
-        return;
-      }
+  socket.on("join-host", async (hostId: number) => {
+    const socketUser = socket.data.user;
+    const numericHostId = Number(hostId);
 
-      if (
-        authenticatedUser.role !== "admin" &&
-        authenticatedUser.id !== hostId
-      ) {
-        logger.warn(`🚫 Unauthorized attempt to join host room`, {
-          socketId: socket.id,
-          requestedHostId: hostId,
-          actualUserId: authenticatedUser.id,
-        });
-        socket.emit("error", { message: websocketUnauthorized });
-        return;
-      }
+    if (
+      !socketUser?.id ||
+      !Number.isInteger(numericHostId) ||
+      numericHostId <= 0
+    ) {
+      return socket.emit("error", "Unauthorized");
     }
 
-    socket.join(`host_${hostId}`);
-    logger.info(`🔗 Client ${socket.id} joined host_${hostId}`);
+    try {
+      const authorized = await canAccessHostRoom(
+        socketUser.id,
+        numericHostId,
+        socketUser.role,
+      );
+
+      if (!authorized) {
+        logger.warn(`🚫 Unauthorized attempt to join host room`, {
+          socketId: socket.id,
+          requestedHostId: numericHostId,
+          actualUserId: socketUser.id,
+        });
+        return socket.emit("error", "Unauthorized");
+      }
+
+      socket.join(`host_${numericHostId}`);
+      logger.info(`🔗 Client ${socket.id} joined host_${numericHostId}`, {
+        userId: socketUser.id,
+      });
+    } catch (error: any) {
+      logger.error(`❌ Failed to authorize host room join`, {
+        socketId: socket.id,
+        userId: socketUser.id,
+        requestedHostId: numericHostId,
+        error: error.message,
+      });
+      return socket.emit("error", "Unauthorized");
+    }
   });
 
   // הצטרפות לחדר של ליינאפ ספציפי - with permission check
-  socket.on("join-lineup", (lineupId) => {
-    // TODO: Add database check to verify user owns or has access to this lineup
-    // For now, allow authenticated users (will be improved in Phase 2)
-    socket.join(`lineup_${lineupId}`);
-    logger.info(`🔗 Client ${socket.id} joined lineup_${lineupId}`);
+  socket.on("join-lineup", async (lineupId) => {
+    const socketUser = socket.data.user;
+    const numericLineupId = Number(lineupId);
+
+    if (
+      !socketUser?.id ||
+      !Number.isInteger(numericLineupId) ||
+      numericLineupId <= 0
+    ) {
+      return socket.emit("error", "Unauthorized");
+    }
+
+    try {
+      const authorized = await canAccessLineupRoom(
+        socketUser.id,
+        numericLineupId,
+        socketUser.role,
+      );
+
+      if (!authorized) {
+        logger.warn(`🚫 Unauthorized attempt to join lineup room`, {
+          socketId: socket.id,
+          requestedLineupId: numericLineupId,
+          actualUserId: socketUser.id,
+        });
+        return socket.emit("error", "Unauthorized");
+      }
+
+      socket.join(`lineup_${numericLineupId}`);
+      logger.info(`🔗 Client ${socket.id} joined lineup_${numericLineupId}`, {
+        userId: socketUser.id,
+      });
+    } catch (error: any) {
+      logger.error(`❌ Failed to authorize lineup room join`, {
+        socketId: socket.id,
+        userId: socketUser.id,
+        requestedLineupId: numericLineupId,
+        error: error.message,
+      });
+      return socket.emit("error", "Unauthorized");
+    }
   });
 
   // הצטרפות לעדכוני שירים - with permission check
@@ -356,13 +466,48 @@ io.on("connection", (socket) => {
   });
 
   // עדכון ליינאפ ושליחת שידור (legacy - נשאר לתאימות)
-  socket.on("lineup-updated", (lineupId) => {
-    // TODO: Verify user owns this lineup before allowing broadcast
-    logger.info("📣 Broadcasting update", {
-      lineupId,
-      userId: authenticatedUser.id,
-    });
-    io.to(`lineup_${lineupId}`).emit("lineup-updated");
+  socket.on("lineup-updated", async (lineupId) => {
+    const socketUser = socket.data.user;
+    const numericLineupId = Number(lineupId);
+
+    if (
+      !socketUser?.id ||
+      !Number.isInteger(numericLineupId) ||
+      numericLineupId <= 0
+    ) {
+      return socket.emit("error", "Unauthorized");
+    }
+
+    try {
+      const authorized = await canAccessLineupRoom(
+        socketUser.id,
+        numericLineupId,
+        socketUser.role,
+      );
+
+      if (!authorized) {
+        logger.warn("🚫 Unauthorized attempt to broadcast lineup update", {
+          socketId: socket.id,
+          lineupId: numericLineupId,
+          userId: socketUser.id,
+        });
+        return socket.emit("error", "Unauthorized");
+      }
+
+      logger.info("📣 Broadcasting update", {
+        lineupId: numericLineupId,
+        userId: socketUser.id,
+      });
+      io.to(`lineup_${numericLineupId}`).emit("lineup-updated");
+    } catch (error: any) {
+      logger.error("❌ Failed to authorize lineup broadcast", {
+        socketId: socket.id,
+        lineupId: numericLineupId,
+        userId: socketUser?.id,
+        error: error.message,
+      });
+      return socket.emit("error", "Unauthorized");
+    }
   });
 
   // התנתקות

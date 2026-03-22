@@ -6,7 +6,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import api from "@/modules/shared/lib/api.ts";
+import api, { getApiErrorMessage } from "@/modules/shared/lib/api.ts";
 import {
   applyDocumentLocale,
   getBrowserLocaleFiltered,
@@ -117,8 +117,8 @@ export function SystemSettingsProvider({
     } catch (err: any) {
       // If API not available, use defaults
       setI18nSettings(DEFAULT_I18N_SETTINGS);
-      const msg = err?.response?.data?.error || err?.message || null;
-      setError(msg);
+      const msg = getApiErrorMessage(err);
+      setError(msg || null);
     } finally {
       setLoading(false);
     }

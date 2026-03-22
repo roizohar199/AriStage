@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, BadgeCheck, Users } from "lucide-react";
 
-import api from "@/modules/shared/lib/api.ts";
+import api, { getApiErrorMessage } from "@/modules/shared/lib/api.ts";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "@/modules/shared/components/ToastProvider";
 import type { DashboardCard } from "@/modules/admin/components/DashboardCards";
@@ -132,9 +132,10 @@ export default function AdminErrorsTab({
       await loadErrors();
     } catch (err: any) {
       if (err?.response?.status === 404) return;
-      const msg =
-        err?.response?.data?.message ||
-        t("admin.errorsTab.messages.resolveError");
+      const msg = getApiErrorMessage(
+        err,
+        "admin.errorsTab.messages.resolveError",
+      );
       showToast(msg, "error");
     }
   };
@@ -151,7 +152,9 @@ export default function AdminErrorsTab({
           <p className="text-neutral-400 text-sm">
             {t("admin.errorsTab.unsupported")}
           </p>
-          <p className="text-neutral-500 text-xs mt-1">GET /errors</p>
+          <p className="text-neutral-500 text-xs mt-1">
+            {t("admin.errorsTab.endpointLabel")}
+          </p>
         </div>
       ) : filteredErrors.length === 0 ? (
         <div className="bg-neutral-800 rounded-2xl p-6 text-center">

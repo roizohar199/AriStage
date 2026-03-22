@@ -18,6 +18,17 @@ const __dirname = path.dirname(__filename);
 
 export function createApp(): Application {
   const app = express();
+  const websocketBaseUrl = env.baseUrl.replace(/^http/i, "ws");
+  const devApiOrigins = Array.from(
+    new Set([
+      env.baseUrl,
+      `http://localhost:${env.port}`,
+      `http://10.100.102.99:${env.port}`,
+      websocketBaseUrl,
+      `ws://localhost:${env.port}`,
+      `ws://10.100.102.99:${env.port}`,
+    ]),
+  );
 
   app.use(
     helmet({
@@ -40,10 +51,7 @@ export function createApp(): Application {
                   ...(helmet.contentSecurityPolicy.getDefaultDirectives()[
                     "connect-src"
                   ] || ["'self'"]),
-                  "http://localhost:5000",
-                  "http://10.100.102.99:5000",
-                  "ws://localhost:5000",
-                  "ws://10.100.102.99:5000",
+                  ...devApiOrigins,
                 ],
               }
             : {}),

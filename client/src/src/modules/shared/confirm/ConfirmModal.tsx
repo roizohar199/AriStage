@@ -1,4 +1,3 @@
-import React from "react";
 import BaseModal from "../components/BaseModal.tsx";
 import { ConfirmVariant } from "./types";
 import { useTranslation } from "@/hooks/useTranslation.ts";
@@ -29,7 +28,7 @@ export default function ConfirmModal({
   const effectiveCancelLabel = cancelLabel ?? t("common.cancel");
 
   const confirmButtonClassName =
-    variant === "confirm"
+    variant === "default"
       ? "bg-brand-primary text-neutral-100"
       : "bg-red-600 hover:bg-red-500 text-white";
 

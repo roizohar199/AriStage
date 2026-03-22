@@ -5,7 +5,6 @@ import React, {
   useState,
   InputHTMLAttributes,
   TextareaHTMLAttributes,
-  SelectHTMLAttributes,
   ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
