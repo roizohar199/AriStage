@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo } from "react";
+import { Suspense, lazy, useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useNavigate, Outlet, useLocation } from "react-router-dom";
 import { Music, ListMusic } from "lucide-react";
 import api from "@/modules/shared/lib/api.js";
@@ -7,11 +7,16 @@ import ArtistCard from "@/modules/shared/components/ArtistCard";
 import Search from "@/modules/shared/components/Search";
 import BlockLineup from "@/modules/shared/components/blocklineup";
 import CardSong from "@/modules/shared/components/cardsong";
-import Charts, { ChartViewerModal } from "@/modules/shared/components/Charts";
-import SongLyrics from "@/modules/shared/components/SongLyrics";
 import Tab, { type TabItem } from "@/modules/shared/components/Tab";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import { useTranslation } from "@/hooks/useTranslation.ts";
+
+const Charts = lazy(() => import("@/modules/shared/components/Charts"));
+const ChartViewerModal = lazy(async () => {
+  const module = await import("@/modules/shared/components/Charts");
+  return { default: module.ChartViewerModal };
+});
+const SongLyrics = lazy(() => import("@/modules/shared/components/SongLyrics"));
 
 export default function ArtistProfile() {
   const confirm = useConfirm();
@@ -340,10 +345,14 @@ export default function ArtistProfile() {
           variant="user"
         />
 
-        <ChartViewerModal
-          viewingChart={viewingChart}
-          onClose={() => setViewingChart(null)}
-        />
+        <Suspense fallback={null}>
+          {viewingChart ? (
+            <ChartViewerModal
+              viewingChart={viewingChart}
+              onClose={() => setViewingChart(null)}
+            />
+          ) : null}
+        </Suspense>
 
         {/* ליינאפים */}
         {activeTab === "lineups" && (
@@ -423,24 +432,28 @@ export default function ArtistProfile() {
                     onEdit={handleEditSong}
                     onRemove={handleRemoveSong}
                     chartsComponent={
-                      <Charts
-                        song={s}
-                        privateCharts={privateCharts[s.id] || []}
-                        setPrivateCharts={setPrivateCharts}
-                        fileInputRefs={fileInputRefs}
-                        setViewingChart={setViewingChart}
-                        onConfirm={confirm}
-                      />
+                      <Suspense fallback={null}>
+                        <Charts
+                          song={s}
+                          privateCharts={privateCharts[s.id] || []}
+                          setPrivateCharts={setPrivateCharts}
+                          fileInputRefs={fileInputRefs}
+                          setViewingChart={setViewingChart}
+                          onConfirm={confirm}
+                        />
+                      </Suspense>
                     }
                     lyricsComponent={
-                      <SongLyrics
-                        songId={s.id}
-                        songTitle={s.title}
-                        lyricsText={s.lyrics_text}
-                        canEdit={!!s.is_owner}
-                        onConfirm={confirm}
-                        onChanged={() => {}}
-                      />
+                      <Suspense fallback={null}>
+                        <SongLyrics
+                          songId={s.id}
+                          songTitle={s.title}
+                          lyricsText={s.lyrics_text}
+                          canEdit={!!s.is_owner}
+                          onConfirm={confirm}
+                          onChanged={() => {}}
+                        />
+                      </Suspense>
                     }
                   />
                 ))}

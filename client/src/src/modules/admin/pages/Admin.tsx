@@ -1,4 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { AlertCircle, BadgeCheck, Files, Users } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Search from "@/modules/shared/components/Search";
@@ -9,18 +16,23 @@ import { normalizeSubscriptionType } from "@/modules/shared/hooks/useSubscriptio
 import DashboardCards, {
   type DashboardCard,
 } from "@/modules/admin/components/DashboardCards";
-import AdminSubscriptionsTab from "../tabs/AdminSubscriptionsTab";
-import AdminUsersTab from "../tabs/AdminUsersTab";
-import AdminPlansTab from "../tabs/AdminPlansTab";
-import AdminFilesTab from "../tabs/AdminFilesTab";
-import AdminLogsTab from "../tabs/AdminLogsTab";
-import AdminErrorsTab from "../tabs/AdminErrorsTab";
-import AdminMonitoringTab from "../tabs/AdminMonitoringTab";
-import AdminModelsTab from "../tabs/AdminModelsTab";
-import AdminSecurityTab from "../tabs/AdminSecurityTab";
-import AdminSystemSettingsTab from "../tabs/AdminSystemSettingsTab";
 import Tab from "@/modules/shared/components/Tab";
 import { useTranslation } from "@/hooks/useTranslation.ts";
+
+const AdminSubscriptionsTab = lazy(
+  () => import("../tabs/AdminSubscriptionsTab"),
+);
+const AdminUsersTab = lazy(() => import("../tabs/AdminUsersTab"));
+const AdminPlansTab = lazy(() => import("../tabs/AdminPlansTab"));
+const AdminFilesTab = lazy(() => import("../tabs/AdminFilesTab"));
+const AdminLogsTab = lazy(() => import("../tabs/AdminLogsTab"));
+const AdminErrorsTab = lazy(() => import("../tabs/AdminErrorsTab"));
+const AdminMonitoringTab = lazy(() => import("../tabs/AdminMonitoringTab"));
+const AdminModelsTab = lazy(() => import("../tabs/AdminModelsTab"));
+const AdminSecurityTab = lazy(() => import("../tabs/AdminSecurityTab"));
+const AdminSystemSettingsTab = lazy(
+  () => import("../tabs/AdminSystemSettingsTab"),
+);
 
 type AdminTab =
   | "users"
@@ -474,93 +486,95 @@ export default function AdminReal() {
         />
       </div>
 
-      {selectedTab === "users" ? (
-        <AdminUsersTab
-          usersLoading={usersLoading}
-          usersUnsupported={usersUnsupported}
-          filteredUsers={filteredUsers}
-          openEditUser={openEditUser}
-          impersonateUser={impersonateUser}
-          deleteUser={deleteUser}
-          userModalOpen={userModalOpen}
-          setUserModalOpen={setUserModalOpen}
-          userForm={userForm}
-          setUserForm={setUserForm}
-          saveUser={saveUser}
-          CardContainer={CardContainer}
-          SmallBadge={SmallBadge}
-          setDashboardCards={setTabDashboardCards}
-        />
-      ) : selectedTab === "subscriptions" ? (
-        <AdminSubscriptionsTab
-          users={users}
-          usersLoading={usersLoading}
-          usersUnsupported={usersUnsupported}
-          searchValue={searchByTab.subscriptions}
-          subscriptionEdits={subscriptionEdits}
-          setSubscriptionEdits={setSubscriptionEdits}
-          editingSubscriptionUserId={editingSubscriptionUserId}
-          setEditingSubscriptionUserId={setEditingSubscriptionUserId}
-          reload={reload}
-          CardContainer={CardContainer}
-          SmallBadge={SmallBadge}
-          formatSubscriptionDate={formatSubscriptionDate}
-          toDateTimeLocalInput={toDateTimeLocalInput}
-          normalizeSubscriptionType={normalizeSubscriptionType}
-          showToast={showToast}
-          api={api}
-          setDashboardCards={setTabDashboardCards}
-        />
-      ) : selectedTab === "plans" ? (
-        <AdminPlansTab setDashboardCards={setTabDashboardCards} />
-      ) : selectedTab === "files" ? (
-        <AdminFilesTab
-          searchValue={searchValue}
-          setSearchValue={setSearchValue}
-          users={users}
-          CardContainer={CardContainer}
-          SmallBadge={SmallBadge}
-          setDashboardCards={setTabDashboardCards}
-        />
-      ) : selectedTab === "logs" ? (
-        <AdminLogsTab
-          users={users}
-          searchValue={searchValue}
-          setSearchValue={setSearchValue}
-          CardContainer={CardContainer}
-          SmallBadge={SmallBadge}
-          setDashboardCards={setTabDashboardCards}
-        />
-      ) : selectedTab === "errors" ? (
-        <AdminErrorsTab
-          searchValue={searchValue}
-          setSearchValue={setSearchValue}
-          CardContainer={CardContainer}
-          SmallBadge={SmallBadge}
-          setDashboardCards={setTabDashboardCards}
-        />
-      ) : selectedTab === "models" ? (
-        <AdminModelsTab
-          searchValue={searchValue}
-          setSearchValue={setSearchValue}
-          CardContainer={CardContainer}
-          SmallBadge={SmallBadge}
-          setDashboardCards={setTabDashboardCards}
-        />
-      ) : selectedTab === "security" ? (
-        <AdminSecurityTab
-          CardContainer={CardContainer}
-          SmallBadge={SmallBadge}
-          setDashboardCards={setTabDashboardCards}
-        />
-      ) : selectedTab === "system-settings" ? (
-        <AdminSystemSettingsTab
-          CardContainer={CardContainer}
-          setDashboardCards={setTabDashboardCards}
-        />
-      ) : (
-        <AdminMonitoringTab setDashboardCards={setTabDashboardCards} />
-      )}
+      <Suspense fallback={null}>
+        {selectedTab === "users" ? (
+          <AdminUsersTab
+            usersLoading={usersLoading}
+            usersUnsupported={usersUnsupported}
+            filteredUsers={filteredUsers}
+            openEditUser={openEditUser}
+            impersonateUser={impersonateUser}
+            deleteUser={deleteUser}
+            userModalOpen={userModalOpen}
+            setUserModalOpen={setUserModalOpen}
+            userForm={userForm}
+            setUserForm={setUserForm}
+            saveUser={saveUser}
+            CardContainer={CardContainer}
+            SmallBadge={SmallBadge}
+            setDashboardCards={setTabDashboardCards}
+          />
+        ) : selectedTab === "subscriptions" ? (
+          <AdminSubscriptionsTab
+            users={users}
+            usersLoading={usersLoading}
+            usersUnsupported={usersUnsupported}
+            searchValue={searchByTab.subscriptions}
+            subscriptionEdits={subscriptionEdits}
+            setSubscriptionEdits={setSubscriptionEdits}
+            editingSubscriptionUserId={editingSubscriptionUserId}
+            setEditingSubscriptionUserId={setEditingSubscriptionUserId}
+            reload={reload}
+            CardContainer={CardContainer}
+            SmallBadge={SmallBadge}
+            formatSubscriptionDate={formatSubscriptionDate}
+            toDateTimeLocalInput={toDateTimeLocalInput}
+            normalizeSubscriptionType={normalizeSubscriptionType}
+            showToast={showToast}
+            api={api}
+            setDashboardCards={setTabDashboardCards}
+          />
+        ) : selectedTab === "plans" ? (
+          <AdminPlansTab setDashboardCards={setTabDashboardCards} />
+        ) : selectedTab === "files" ? (
+          <AdminFilesTab
+            searchValue={searchValue}
+            setSearchValue={setSearchValue}
+            users={users}
+            CardContainer={CardContainer}
+            SmallBadge={SmallBadge}
+            setDashboardCards={setTabDashboardCards}
+          />
+        ) : selectedTab === "logs" ? (
+          <AdminLogsTab
+            users={users}
+            searchValue={searchValue}
+            setSearchValue={setSearchValue}
+            CardContainer={CardContainer}
+            SmallBadge={SmallBadge}
+            setDashboardCards={setTabDashboardCards}
+          />
+        ) : selectedTab === "errors" ? (
+          <AdminErrorsTab
+            searchValue={searchValue}
+            setSearchValue={setSearchValue}
+            CardContainer={CardContainer}
+            SmallBadge={SmallBadge}
+            setDashboardCards={setTabDashboardCards}
+          />
+        ) : selectedTab === "models" ? (
+          <AdminModelsTab
+            searchValue={searchValue}
+            setSearchValue={setSearchValue}
+            CardContainer={CardContainer}
+            SmallBadge={SmallBadge}
+            setDashboardCards={setTabDashboardCards}
+          />
+        ) : selectedTab === "security" ? (
+          <AdminSecurityTab
+            CardContainer={CardContainer}
+            SmallBadge={SmallBadge}
+            setDashboardCards={setTabDashboardCards}
+          />
+        ) : selectedTab === "system-settings" ? (
+          <AdminSystemSettingsTab
+            CardContainer={CardContainer}
+            setDashboardCards={setTabDashboardCards}
+          />
+        ) : (
+          <AdminMonitoringTab setDashboardCards={setTabDashboardCards} />
+        )}
+      </Suspense>
     </div>
   );
 }

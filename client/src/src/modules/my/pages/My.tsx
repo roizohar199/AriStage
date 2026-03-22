@@ -1,4 +1,6 @@
 import {
+  Suspense,
+  lazy,
   useCallback,
   useEffect,
   useState,
@@ -23,13 +25,9 @@ import {
   useLocation,
 } from "react-router-dom";
 import BaseModal from "@/modules/shared/components/BaseModal.tsx";
-import { AddNewSong } from "../../shared/components/Addnewsong";
-import CreateLineup from "../../shared/components/Createlineup";
 import Search from "../../shared/components/Search";
 import Tab, { type TabItem } from "@/modules/shared/components/Tab";
-import Charts, { ChartViewerModal } from "../../shared/components/Charts";
 import CardSong from "../../shared/components/cardsong";
-import SongLyrics from "../../shared/components/SongLyrics";
 import BlockLineup from "../../shared/components/blocklineup";
 import LineupDetails from "../../lineups/pages/LineupDetails.tsx";
 import api, {
@@ -48,7 +46,29 @@ import ArtistCard from "../../shared/components/ArtistCard";
 import Bord from "@/modules/shared/components/bord";
 import { useTranslation } from "@/hooks/useTranslation.ts";
 
-import { io } from "socket.io-client";
+import type { Socket } from "socket.io-client";
+
+let socketModulePromise: Promise<typeof import("socket.io-client")> | null =
+  null;
+
+function loadSocketClient() {
+  if (!socketModulePromise) {
+    socketModulePromise = import("socket.io-client");
+  }
+  return socketModulePromise;
+}
+
+const AddNewSong = lazy(async () => {
+  const module = await import("../../shared/components/Addnewsong");
+  return { default: module.AddNewSong };
+});
+const CreateLineup = lazy(() => import("../../shared/components/Createlineup"));
+const Charts = lazy(() => import("../../shared/components/Charts"));
+const ChartViewerModal = lazy(async () => {
+  const module = await import("../../shared/components/Charts");
+  return { default: module.ChartViewerModal };
+});
+const SongLyrics = lazy(() => import("../../shared/components/SongLyrics"));
 
 function PersonalStats({
   stats,
@@ -114,6 +134,7 @@ function MyContent() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [connectedArtistsCount, setConnectedArtistsCount] = useState(0);
   const [selectedTab, setSelectedTab] = useState<MyTabKey>("songs");
 
@@ -363,9 +384,10 @@ function MyContent() {
       loadCharts();
     }
   }, [songs]);
-  const socket = useMemo(() => {
-    // Get token from localStorage for socket authentication
-    // Keep parity with api.ts (supports either ari_token or ari_user.token)
+  useEffect(() => {
+    let disposed = false;
+    let nextSocket: Socket | null = null;
+
     let token = localStorage.getItem("ari_token");
     if (!token) {
       try {
@@ -379,17 +401,42 @@ function MyContent() {
       }
     }
 
-    return io(API_ORIGIN, {
-      transports: ["websocket", "polling"],
-      withCredentials: true,
-      autoConnect: Boolean(token),
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-      timeout: 20000,
-      // Add authentication token if available
-      auth: token ? { token } : undefined,
-    });
+    if (!token) {
+      setSocket(null);
+      return () => {
+        disposed = true;
+      };
+    }
+
+    void loadSocketClient()
+      .then(({ io }) => {
+        if (disposed) return;
+
+        nextSocket = io(API_ORIGIN, {
+          transports: ["websocket", "polling"],
+          withCredentials: true,
+          autoConnect: true,
+          reconnection: true,
+          reconnectionAttempts: Infinity,
+          reconnectionDelay: 1000,
+          timeout: 20000,
+          auth: token ? { token } : undefined,
+        });
+
+        setSocket(nextSocket);
+      })
+      .catch(() => {
+        if (!disposed) {
+          setSocket(null);
+        }
+      });
+
+    return () => {
+      disposed = true;
+      if (nextSocket) {
+        nextSocket.disconnect();
+      }
+    };
   }, []);
   useEffect(() => {
     load();
@@ -791,86 +838,96 @@ function MyContent() {
                 onEdit={addSongsEnabled ? edit : undefined}
                 onRemove={addSongsEnabled ? remove : undefined}
                 chartsComponent={
-                  <Charts
-                    song={s}
-                    privateCharts={privateCharts[s.id] || []}
-                    setPrivateCharts={setPrivateCharts}
-                    fileInputRefs={fileInputRefs}
-                    setViewingChart={setViewingChart}
-                    onConfirm={confirm}
-                  />
+                  <Suspense fallback={null}>
+                    <Charts
+                      song={s}
+                      privateCharts={privateCharts[s.id] || []}
+                      setPrivateCharts={setPrivateCharts}
+                      fileInputRefs={fileInputRefs}
+                      setViewingChart={setViewingChart}
+                      onConfirm={confirm}
+                    />
+                  </Suspense>
                 }
                 lyricsComponent={
-                  <SongLyrics
-                    songId={s.id}
-                    songTitle={s.title}
-                    lyricsText={s.lyrics_text}
-                    canEdit={!!s.is_owner}
-                    onConfirm={confirm}
-                    onChanged={load}
-                  />
+                  <Suspense fallback={null}>
+                    <SongLyrics
+                      songId={s.id}
+                      songTitle={s.title}
+                      lyricsText={s.lyrics_text}
+                      canEdit={!!s.is_owner}
+                      onConfirm={confirm}
+                      onChanged={load}
+                    />
+                  </Suspense>
                 }
               />
             ))}
           </div>
           {/* מודאל הוספה/עריכה */}
-          <AddNewSong
-            open={showModal}
-            onClose={() => {
-              setShowModal(false);
-              setEditingId(null);
-            }}
-            onSubmit={async (formData, editId) => {
-              const cleanForm = {
-                ...formData,
-                key_sig: safeKey(formData.key_sig),
-                duration_sec: safeDuration(formData.duration_sec),
-              };
-              try {
-                if (editId) {
-                  if (!addSongsEnabled) {
-                    showToast(t("songs.addSongsModuleDisabled"), "warning");
-                    return;
+          <Suspense fallback={null}>
+            {showModal ? (
+              <AddNewSong
+                open={showModal}
+                onClose={() => {
+                  setShowModal(false);
+                  setEditingId(null);
+                }}
+                onSubmit={async (formData, editId) => {
+                  const cleanForm = {
+                    ...formData,
+                    key_sig: safeKey(formData.key_sig),
+                    duration_sec: safeDuration(formData.duration_sec),
+                  };
+                  try {
+                    if (editId) {
+                      if (!addSongsEnabled) {
+                        showToast(t("songs.addSongsModuleDisabled"), "warning");
+                        return;
+                      }
+                      await api.put(`/songs/${editId}`, cleanForm);
+                    } else {
+                      if (!canCreateOrMutate) {
+                        window.openUpgradeModal?.();
+                        return;
+                      }
+                      await api.post("/songs", cleanForm);
+                    }
+                    setForm({
+                      title: "",
+                      artist: "",
+                      bpm: "",
+                      key_sig: "C Major",
+                      duration_sec: "00:00",
+                      notes: "",
+                    });
+                    setEditingId(null);
+                    setShowModal(false);
+                    load();
+                    window.dispatchEvent(
+                      new CustomEvent("data-refresh", {
+                        detail: {
+                          type: "song",
+                          action: editId ? "updated" : "created",
+                        },
+                      }),
+                    );
+                  } catch (err) {
+                    console.error("שגיאה בשמירה:", err);
                   }
-                  await api.put(`/songs/${editId}`, cleanForm);
-                } else {
-                  if (!canCreateOrMutate) {
-                    window.openUpgradeModal?.();
-                    return;
-                  }
-                  await api.post("/songs", cleanForm);
-                }
-                setForm({
-                  title: "",
-                  artist: "",
-                  bpm: "",
-                  key_sig: "C Major",
-                  duration_sec: "00:00",
-                  notes: "",
-                });
-                setEditingId(null);
-                setShowModal(false);
-                load();
-                window.dispatchEvent(
-                  new CustomEvent("data-refresh", {
-                    detail: {
-                      type: "song",
-                      action: editId ? "updated" : "created",
-                    },
-                  }),
-                );
-              } catch (err) {
-                console.error("שגיאה בשמירה:", err);
-              }
-            }}
-            initialForm={form}
-            editingId={editingId}
-          />
-          <ChartViewerModal
-            viewingChart={viewingChart}
-            onClose={() => setViewingChart(null)}
-            maxWidth="max-w-6xl"
-          />
+                }}
+                initialForm={form}
+                editingId={editingId}
+              />
+            ) : null}
+            {viewingChart ? (
+              <ChartViewerModal
+                viewingChart={viewingChart}
+                onClose={() => setViewingChart(null)}
+                maxWidth="max-w-6xl"
+              />
+            ) : null}
+          </Suspense>
         </>
       ) : selectedTab === "lineups" ? (
         <>
@@ -933,57 +990,67 @@ function MyContent() {
           )}
 
           {/* Create/Edit Lineup modal (new component) */}
-          <CreateLineup
-            open={showLineupModal}
-            onClose={() => {
-              setShowLineupModal(false);
-              setIsEditingLineup(false);
-              setEditLineupId(null);
-            }}
-            onSubmit={async ({ name, description, date, time, location }) => {
-              try {
-                if (isEditingLineup && editLineupId) {
-                  await api.put(`/lineups/${editLineupId}`, {
-                    title: name,
-                    description,
-                    date,
-                    time,
-                    location,
-                  });
-                } else {
-                  if (!canMutateLineups) {
-                    window.openUpgradeModal?.();
-                    return;
+          <Suspense fallback={null}>
+            {showLineupModal ? (
+              <CreateLineup
+                open={showLineupModal}
+                onClose={() => {
+                  setShowLineupModal(false);
+                  setIsEditingLineup(false);
+                  setEditLineupId(null);
+                }}
+                onSubmit={async ({
+                  name,
+                  description,
+                  date,
+                  time,
+                  location,
+                }) => {
+                  try {
+                    if (isEditingLineup && editLineupId) {
+                      await api.put(`/lineups/${editLineupId}`, {
+                        title: name,
+                        description,
+                        date,
+                        time,
+                        location,
+                      });
+                    } else {
+                      if (!canMutateLineups) {
+                        window.openUpgradeModal?.();
+                        return;
+                      }
+                      await api.post("/lineups", {
+                        title: name,
+                        description,
+                        date,
+                        time,
+                        location,
+                      });
+                    }
+                    loadLineups();
+                    setShowLineupModal(false);
+                    setIsEditingLineup(false);
+                    setEditLineupId(null);
+                  } catch (err) {
+                    console.error("❌ שגיאה בשמירת ליינאפ:", err);
                   }
-                  await api.post("/lineups", {
-                    title: name,
-                    description,
-                    date,
-                    time,
-                    location,
-                  });
+                }}
+                initialForm={
+                  isEditingLineup
+                    ? {
+                        name: lineupForm.title,
+                        description: lineupForm.description,
+                        date: lineupForm.date,
+                        time: lineupForm.time,
+                        location: lineupForm.location,
+                      }
+                    : undefined
                 }
-                loadLineups();
-                setShowLineupModal(false);
-                setIsEditingLineup(false);
-                setEditLineupId(null);
-              } catch (err) {
-                console.error("❌ שגיאה בשמירת ליינאפ:", err);
-              }
-            }}
-            initialForm={
-              isEditingLineup
-                ? {
-                    name: lineupForm.title,
-                    description: lineupForm.description,
-                    date: lineupForm.date,
-                    time: lineupForm.time,
-                    location: lineupForm.location,
-                  }
-                : undefined
-            }
-            editing={isEditingLineup}
-          />
+                editing={isEditingLineup}
+              />
+            ) : null}
+          </Suspense>
         </>
       ) : selectedTab === "shared" ? (
         <div className="space-y-3">

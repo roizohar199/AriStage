@@ -1,27 +1,34 @@
-import { ComponentType } from "react";
+import { lazy, type ComponentType, type LazyExoticComponent } from "react";
 import Landing from "./landing/pages/Landing.tsx";
 import Login from "./auth/pages/Login.tsx";
 import ResetPassword from "./auth/pages/ResetPassword.tsx";
 import AcceptInvitation from "./auth/pages/AcceptInvitation.tsx";
-import ShareLineup from "./share/pages/ShareLineup.tsx";
 import Logout from "./auth/pages/Logout.tsx";
-import SubscriptionBlocked from "./billing/pages/SubscriptionBlocked.tsx";
 import AccessibilityStatement from "./landing/pages/AccessibilityStatement.tsx";
 
-import Settings from "./settings/pages/Settings.tsx";
-import MyArtist from "./artists/pages/MyArtist.tsx";
-import ArtistProfile from "./artists/pages/ArtistProfile.tsx";
 import My from "./my/pages/My.tsx";
-import Admin from "./admin/pages/Admin.tsx";
+
+const ShareLineup = lazy(() => import("./share/pages/ShareLineup.tsx"));
+const SubscriptionBlocked = lazy(
+  () => import("./billing/pages/SubscriptionBlocked.tsx"),
+);
+const Settings = lazy(() => import("./settings/pages/Settings.tsx"));
+const MyArtist = lazy(() => import("./artists/pages/MyArtist.tsx"));
+const ArtistProfile = lazy(() => import("./artists/pages/ArtistProfile.tsx"));
+const Admin = lazy(() => import("./admin/pages/Admin.tsx"));
+
+type RouteComponent =
+  | ComponentType<any>
+  | LazyExoticComponent<ComponentType<any>>;
 
 interface PublicRoute {
   path: string;
-  component: ComponentType;
+  component: RouteComponent;
 }
 
 interface ProtectedRoute {
   path: string;
-  component: ComponentType;
+  component: RouteComponent;
   roles?: string[];
 }
 

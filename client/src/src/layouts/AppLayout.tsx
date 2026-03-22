@@ -1,7 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
 import Footer from "@/modules/shared/components/Footer.tsx";
 import Header from "@/modules/shared/components/Header.tsx";
-import UpgradeModal from "@/modules/shared/components/UpgradeModal.tsx";
 import SubscriptionBanner from "@/modules/shared/components/SubscriptionBanner.tsx";
 import { useCurrentUser } from "@/modules/shared/hooks/useCurrentUser.ts";
 import {
@@ -12,6 +11,10 @@ import {
 import SkipLink from "@/modules/shared/components/a11y/SkipLink";
 import RouteAnnouncer from "@/modules/shared/components/a11y/RouteAnnouncer";
 import { useTranslation } from "@/hooks/useTranslation.ts";
+
+const UpgradeModal = lazy(
+  () => import("@/modules/shared/components/UpgradeModal.tsx"),
+);
 
 declare global {
   interface Window {
@@ -149,11 +152,15 @@ export default function AppLayout({
       </main>
 
       {/* Subscription Upgrade Modal */}
-      <UpgradeModal
-        open={isUpgradeModalOpen}
-        onClose={() => setIsUpgradeModalOpen(false)}
-        initialBillingPeriod={preferredUpgradeBillingPeriod ?? undefined}
-      />
+      <Suspense fallback={null}>
+        {isUpgradeModalOpen ? (
+          <UpgradeModal
+            open={isUpgradeModalOpen}
+            onClose={() => setIsUpgradeModalOpen(false)}
+            initialBillingPeriod={preferredUpgradeBillingPeriod ?? undefined}
+          />
+        ) : null}
+      </Suspense>
     </div>
   );
 }

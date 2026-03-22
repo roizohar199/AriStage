@@ -5,9 +5,17 @@ import CardSong from "../../shared/components/cardsong";
 import api from "@/modules/shared/lib/api.ts";
 import { API_ORIGIN } from "@/config/apiConfig";
 import { useTranslation } from "@/hooks/useTranslation.ts";
+import type { Socket } from "socket.io-client";
 
-// ⭐ Socket.IO
-import { io } from "socket.io-client";
+let socketModulePromise: Promise<typeof import("socket.io-client")> | null =
+  null;
+
+function loadSocketClient() {
+  if (!socketModulePromise) {
+    socketModulePromise = import("socket.io-client");
+  }
+  return socketModulePromise;
+}
 
 // ⭐ פונקציות עזר לתאריך ושעה
 function formatDate(dateStr?: string | null, locale?: string | null): string {
@@ -122,27 +130,47 @@ export default function ShareLineup() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
-  // ⭐ כאן מדביקים!
-  const socket = useMemo(() => {
-    // Get token from localStorage for socket authentication
+  useEffect(() => {
+    let disposed = false;
+    let nextSocket: Socket | null = null;
     const token = localStorage.getItem("ari_token");
 
-    // If no token, don't connect to WebSocket (this is a public share page)
     if (!token) {
-      return null;
+      setSocket(null);
+      return () => {
+        disposed = true;
+      };
     }
 
-    return io(API_ORIGIN, {
-      transports: ["websocket", "polling"],
-      withCredentials: true,
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-      timeout: 20000,
-      // Add authentication token
-      auth: { token },
-    });
+    void loadSocketClient()
+      .then(({ io }) => {
+        if (disposed) return;
+        nextSocket = io(API_ORIGIN, {
+          transports: ["websocket", "polling"],
+          withCredentials: true,
+          reconnection: true,
+          reconnectionAttempts: Infinity,
+          reconnectionDelay: 1000,
+          timeout: 20000,
+          auth: { token },
+        });
+        setSocket(nextSocket);
+      })
+      .catch(() => {
+        if (!disposed) {
+          setSocket(null);
+        }
+      });
+
+    return () => {
+      disposed = true;
+      if (nextSocket) {
+        nextSocket.off("lineup-updated");
+        nextSocket.disconnect();
+      }
+    };
   }, []);
 
   // ⭐ טוען ליינאפ

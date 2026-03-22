@@ -1,8 +1,8 @@
-import { useEffect, useMemo } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { reloadAuth } from "@/modules/shared/lib/authReload.js";
 import { emitToast } from "@/modules/shared/lib/toastBus.js";
-import { io } from "socket.io-client";
+import type { Socket } from "socket.io-client";
 import { API_ORIGIN } from "@/config/apiConfig";
 import api from "@/modules/shared/lib/api.js";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
@@ -36,8 +36,17 @@ interface User {
   preferred_locale?: string | null;
 }
 
-let appSocket: ReturnType<typeof io> | null = null;
 let pendingSocketDisconnect: ReturnType<typeof setTimeout> | null = null;
+let appSocket: Socket | null = null;
+let socketModulePromise: Promise<typeof import("socket.io-client")> | null =
+  null;
+
+function loadSocketClient() {
+  if (!socketModulePromise) {
+    socketModulePromise = import("socket.io-client");
+  }
+  return socketModulePromise;
+}
 
 function cancelPendingSocketDisconnect(): void {
   if (pendingSocketDisconnect) {
@@ -46,10 +55,11 @@ function cancelPendingSocketDisconnect(): void {
   }
 }
 
-function getOrCreateAppSocket(token: string | null) {
+async function getOrCreateAppSocket(token: string | null) {
   cancelPendingSocketDisconnect();
 
   if (!appSocket) {
+    const { io } = await loadSocketClient();
     appSocket = io(API_ORIGIN, {
       transports: ["websocket", "polling"],
       withCredentials: true,
@@ -113,6 +123,7 @@ export default function AppBootstrap() {
   const { user: ctxUser, loading: authLoading, subscriptionStatus } = useAuth();
   const { isEnabled } = useFeatureFlags();
   const { isEffectiveOffline } = useOfflineStatus();
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   const offlineOnlineEnabled = isEnabled("module.offlineOnline", true);
   const effectiveOffline = offlineOnlineEnabled ? isEffectiveOffline : false;
@@ -165,8 +176,34 @@ export default function AppBootstrap() {
     // Re-evaluate on auth state changes so token updates after login/logout.
   }, [ctxUser?.id]);
 
-  const socket = useMemo(() => {
-    return getOrCreateAppSocket(socketToken);
+  useEffect(() => {
+    let disposed = false;
+
+    if (!socketToken) {
+      setSocket(null);
+      if (appSocket?.connected) {
+        appSocket.disconnect();
+      }
+      return () => {
+        disposed = true;
+      };
+    }
+
+    void getOrCreateAppSocket(socketToken)
+      .then((nextSocket) => {
+        if (!disposed) {
+          setSocket(nextSocket);
+        }
+      })
+      .catch(() => {
+        if (!disposed) {
+          setSocket(null);
+        }
+      });
+
+    return () => {
+      disposed = true;
+    };
   }, [socketToken]);
 
   useEffect(() => {
@@ -301,7 +338,9 @@ export default function AppBootstrap() {
                 path="/"
                 element={
                   <GuestOnlyRoute redirectTo="/my">
-                    <LandingComponent />
+                    <Suspense fallback={<Splash />}>
+                      <LandingComponent />
+                    </Suspense>
                   </GuestOnlyRoute>
                 }
               />
@@ -314,7 +353,9 @@ export default function AppBootstrap() {
                 path="/login"
                 element={
                   <GuestOnlyRoute redirectTo="/my">
-                    <LoginComponent />
+                    <Suspense fallback={<Splash />}>
+                      <LoginComponent />
+                    </Suspense>
                   </GuestOnlyRoute>
                 }
               />
@@ -322,7 +363,15 @@ export default function AppBootstrap() {
           })()}
           {/* שאר דפי public */}
           {publicRoutes.slice(2).map(({ path, component: Component }) => (
-            <Route key={path} path={path} element={<Component />} />
+            <Route
+              key={path}
+              path={path}
+              element={
+                <Suspense fallback={<Splash />}>
+                  <Component />
+                </Suspense>
+              }
+            />
           ))}
 
           {/* RoleRoute: חוסם דפי My ו-MyArtist לאדמין.
@@ -336,7 +385,9 @@ export default function AppBootstrap() {
                 element={
                   <RoleRoute denyRoles={["admin"]} redirectTo="/admin">
                     <ProtectedRoute>
-                      <MyComponent />
+                      <Suspense fallback={<Splash />}>
+                        <MyComponent />
+                      </Suspense>
                     </ProtectedRoute>
                   </RoleRoute>
                 }
@@ -351,7 +402,9 @@ export default function AppBootstrap() {
                 element={
                   <RoleRoute denyRoles={["admin"]} redirectTo="/admin">
                     <ProtectedRoute>
-                      <MyArtistComponent />
+                      <Suspense fallback={<Splash />}>
+                        <MyArtistComponent />
+                      </Suspense>
                     </ProtectedRoute>
                   </RoleRoute>
                 }
@@ -370,7 +423,9 @@ export default function AppBootstrap() {
                     path={path}
                     element={
                       <ProtectedRoute roles={roles}>
-                        <Component />
+                        <Suspense fallback={<Splash />}>
+                          <Component />
+                        </Suspense>
                       </ProtectedRoute>
                     }
                   >
@@ -389,7 +444,9 @@ export default function AppBootstrap() {
                     element={
                       <ProtectedRoute>
                         <AdminGuard>
-                          <Component />
+                          <Suspense fallback={<Splash />}>
+                            <Component />
+                          </Suspense>
                         </AdminGuard>
                       </ProtectedRoute>
                     }
@@ -402,7 +459,9 @@ export default function AppBootstrap() {
                   path={path}
                   element={
                     <ProtectedRoute roles={roles}>
-                      <Component />
+                      <Suspense fallback={<Splash />}>
+                        <Component />
+                      </Suspense>
                     </ProtectedRoute>
                   }
                 />

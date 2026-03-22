@@ -1,9 +1,37 @@
 import { useEffect, useRef, useState } from "react";
 import api from "@/modules/shared/lib/api.js";
 import { API_ORIGIN } from "@/config/apiConfig";
-import { io, Socket } from "socket.io-client";
+import type { Socket } from "socket.io-client";
 
 let socketInstance: Socket | null = null;
+let socketModulePromise: Promise<typeof import("socket.io-client")> | null =
+  null;
+
+function loadSocketClient() {
+  if (!socketModulePromise) {
+    socketModulePromise = import("socket.io-client");
+  }
+  return socketModulePromise;
+}
+
+async function getSocketInstance(token: string | null) {
+  if (!socketInstance) {
+    const { io } = await loadSocketClient();
+    socketInstance = io(API_ORIGIN, {
+      transports: ["websocket"],
+      withCredentials: true,
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      timeout: 20000,
+      auth: token ? { token } : undefined,
+    });
+  } else {
+    socketInstance.auth = token ? { token } : {};
+  }
+
+  return socketInstance;
+}
 
 export function usePendingInvitations(userId?: number | null) {
   const [pendingCount, setPendingCount] = useState(0);
@@ -12,79 +40,76 @@ export function usePendingInvitations(userId?: number | null) {
   useEffect(() => {
     if (!userId) return;
 
-    if (!socketInstance) {
-      // Get token from localStorage for socket authentication
-      const token = localStorage.getItem("ari_token");
+    let disposed = false;
+    let cleanup: (() => void) | undefined;
 
-      socketInstance = io(API_ORIGIN, {
-        transports: ["websocket"],
-        withCredentials: true,
-        reconnection: true,
-        reconnectionAttempts: Infinity,
-        reconnectionDelay: 1000,
-        timeout: 20000,
-        // Add authentication token if available
-        auth: token ? { token } : undefined,
-      });
-    }
+    const token = localStorage.getItem("ari_token");
 
-    const socket = socketInstance;
-    socketRef.current = socket;
+    void getSocketInstance(token).then((socket) => {
+      if (disposed) return;
 
-    const handleConnect = () => {
-      socket.emit("join-user", userId);
-    };
+      socketRef.current = socket;
 
-    const handleDisconnect = () => {
-      // log to help diagnose intermittent drops
-      console.info("Socket disconnected from pending invitations feed");
-    };
+      const handleConnect = () => {
+        socket.emit("join-user", userId);
+      };
 
-    socket.on("connect", handleConnect);
-    socket.on("disconnect", handleDisconnect);
-    socket.on("connect_error", () => {
-      // silent; reconnection handles recoveries
-    });
+      const handleDisconnect = () => {
+        console.info("Socket disconnected from pending invitations feed");
+      };
 
-    const loadPendingInvitations = async () => {
-      try {
-        const { data } = await api.get("/users/pending-invitation", {
-          skipErrorToast: true,
-        });
-        const count = Array.isArray(data) ? data.length : 0;
-        setPendingCount(count);
-      } catch {
-        setPendingCount(0);
+      socket.on("connect", handleConnect);
+      socket.on("disconnect", handleDisconnect);
+      socket.on("connect_error", () => {});
+
+      const loadPendingInvitations = async () => {
+        try {
+          const { data } = await api.get("/users/pending-invitation", {
+            skipErrorToast: true,
+          });
+          const count = Array.isArray(data) ? data.length : 0;
+          setPendingCount(count);
+        } catch {
+          setPendingCount(0);
+        }
+      };
+
+      void loadPendingInvitations();
+      if (socket.connected) {
+        handleConnect();
       }
-    };
 
-    loadPendingInvitations();
-    if (socket.connected) {
-      handleConnect();
-    }
+      socket.on("invitation:pending", loadPendingInvitations);
+      socket.on("user:invitation-accepted", loadPendingInvitations);
+      socket.on("user:invitation-rejected", loadPendingInvitations);
 
-    socket.on("invitation:pending", loadPendingInvitations);
-    socket.on("user:invitation-accepted", loadPendingInvitations);
-    socket.on("user:invitation-rejected", loadPendingInvitations);
-
-    const handlePendingUpdate = () => {
-      loadPendingInvitations();
-    };
-    window.addEventListener("pending-invitations-updated", handlePendingUpdate);
-
-    const interval = setInterval(loadPendingInvitations, 30000);
-
-    return () => {
-      socket.off("connect", handleConnect);
-      socket.off("disconnect", handleDisconnect);
-      socket.off("invitation:pending", loadPendingInvitations);
-      socket.off("user:invitation-accepted", loadPendingInvitations);
-      socket.off("user:invitation-rejected", loadPendingInvitations);
-      window.removeEventListener(
+      const handlePendingUpdate = () => {
+        void loadPendingInvitations();
+      };
+      window.addEventListener(
         "pending-invitations-updated",
         handlePendingUpdate,
       );
-      clearInterval(interval);
+
+      const interval = setInterval(loadPendingInvitations, 30000);
+
+      cleanup = () => {
+        socket.off("connect", handleConnect);
+        socket.off("disconnect", handleDisconnect);
+        socket.off("invitation:pending", loadPendingInvitations);
+        socket.off("user:invitation-accepted", loadPendingInvitations);
+        socket.off("user:invitation-rejected", loadPendingInvitations);
+        window.removeEventListener(
+          "pending-invitations-updated",
+          handlePendingUpdate,
+        );
+        clearInterval(interval);
+      };
+    });
+
+    return () => {
+      disposed = true;
+      cleanup?.();
     };
   }, [userId]);
 

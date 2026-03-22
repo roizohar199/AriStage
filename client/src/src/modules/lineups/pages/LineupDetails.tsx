@@ -1,5 +1,13 @@
-import SongLyrics from "@/modules/shared/components/SongLyrics";
-import { useEffect, useState, useMemo, useRef, useCallback, memo } from "react";
+import {
+  Suspense,
+  lazy,
+  useEffect,
+  useState,
+  useMemo,
+  useRef,
+  useCallback,
+  memo,
+} from "react";
 import {
   GripVertical,
   Plus,
@@ -21,12 +29,28 @@ import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "@/modules/shared/components/ToastProvider.jsx";
 import { useFeatureFlags } from "@/modules/shared/contexts/FeatureFlagsContext.tsx";
 import { API_ORIGIN } from "@/config/apiConfig";
-import { io } from "socket.io-client";
+import type { Socket } from "socket.io-client";
 import CardSong from "../../shared/components/cardsong";
-import Charts, { ChartViewerModal } from "../../shared/components/Charts";
 import DesignActionButton from "../../shared/components/DesignActionButton";
 import Tab, { type TabItem } from "@/modules/shared/components/Tab";
 import { useTranslation } from "@/hooks/useTranslation.ts";
+
+let socketModulePromise: Promise<typeof import("socket.io-client")> | null =
+  null;
+
+function loadSocketClient() {
+  if (!socketModulePromise) {
+    socketModulePromise = import("socket.io-client");
+  }
+  return socketModulePromise;
+}
+
+const Charts = lazy(() => import("../../shared/components/Charts"));
+const ChartViewerModal = lazy(async () => {
+  const module = await import("../../shared/components/Charts");
+  return { default: module.ChartViewerModal };
+});
+const SongLyrics = lazy(() => import("@/modules/shared/components/SongLyrics"));
 
 // --- Helper functions ---
 const parseDuration = (d: string | number | undefined) => {
@@ -128,35 +152,39 @@ const SongList = memo(function SongList({
                       hideActions={!!dragMode}
                       chartsComponent={
                         dragMode ? null : (
-                          <Charts
-                            song={{
-                              id: s.song_id,
-                              title: s.title,
-                              artist: s.artist,
-                              bpm: s.bpm,
-                              key_sig: s.key_sig,
-                              duration_sec: s.duration_sec,
-                              notes: s.notes,
-                              is_owner: true,
-                            }}
-                            privateCharts={privateCharts[s.song_id] || []}
-                            setPrivateCharts={setPrivateCharts}
-                            fileInputRefs={fileInputRefs}
-                            setViewingChart={setViewingChart}
-                            onConfirm={onConfirm}
-                          />
+                          <Suspense fallback={null}>
+                            <Charts
+                              song={{
+                                id: s.song_id,
+                                title: s.title,
+                                artist: s.artist,
+                                bpm: s.bpm,
+                                key_sig: s.key_sig,
+                                duration_sec: s.duration_sec,
+                                notes: s.notes,
+                                is_owner: true,
+                              }}
+                              privateCharts={privateCharts[s.song_id] || []}
+                              setPrivateCharts={setPrivateCharts}
+                              fileInputRefs={fileInputRefs}
+                              setViewingChart={setViewingChart}
+                              onConfirm={onConfirm}
+                            />
+                          </Suspense>
                         )
                       }
                       lyricsComponent={
                         dragMode ? null : (
-                          <SongLyrics
-                            songId={s.song_id}
-                            songTitle={s.title}
-                            lyricsText={s.lyrics_text}
-                            canEdit={!!s.can_edit}
-                            onConfirm={onConfirm}
-                            onChanged={onLyricsChanged}
-                          />
+                          <Suspense fallback={null}>
+                            <SongLyrics
+                              songId={s.song_id}
+                              songTitle={s.title}
+                              lyricsText={s.lyrics_text}
+                              canEdit={!!s.can_edit}
+                              onConfirm={onConfirm}
+                              onChanged={onLyricsChanged}
+                            />
+                          </Suspense>
                         )
                       }
                     />
@@ -358,32 +386,52 @@ export default function LineupDetails() {
   const [dragMode, setDragMode] = useState(false);
   const [modalActiveTab, setModalActiveTab] = useState<"my" | "artists">("my");
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [connectedArtists, setConnectedArtists] = useState<any[]>([]);
   const [selectedArtistId, setSelectedArtistId] = useState<number | null>(null);
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const [privateCharts, setPrivateCharts] = useState<Record<number, any[]>>({});
   const [viewingChart, setViewingChart] = useState<string | null>(null);
 
-  // --- Stable socket singleton ---
-  const socketRef = useRef<any>(null);
   useEffect(() => {
-    if (!socketRef.current) {
-      // Get token from localStorage for socket authentication
-      const token = localStorage.getItem("ari_token");
+    let disposed = false;
+    let nextSocket: Socket | null = null;
 
-      socketRef.current = io(API_ORIGIN, {
-        transports: ["websocket", "polling"],
-        withCredentials: true,
-        reconnection: true,
-        reconnectionAttempts: Infinity,
-        reconnectionDelay: 1000,
-        timeout: 20000,
-        // Add authentication token if available
-        auth: token ? { token } : undefined,
-      });
+    const token = localStorage.getItem("ari_token");
+    if (!token) {
+      setSocket(null);
+      return () => {
+        disposed = true;
+      };
     }
+
+    void loadSocketClient()
+      .then(({ io }) => {
+        if (disposed) return;
+
+        nextSocket = io(API_ORIGIN, {
+          transports: ["websocket", "polling"],
+          withCredentials: true,
+          reconnection: true,
+          reconnectionAttempts: Infinity,
+          reconnectionDelay: 1000,
+          timeout: 20000,
+          auth: { token },
+        });
+
+        setSocket(nextSocket);
+      })
+      .catch(() => {
+        if (!disposed) {
+          setSocket(null);
+        }
+      });
+
     return () => {
-      // Don't disconnect socket, keep singleton
+      disposed = true;
+      if (nextSocket) {
+        nextSocket.disconnect();
+      }
     };
   }, []);
 
@@ -462,7 +510,6 @@ export default function LineupDetails() {
 
   // --- Socket listeners ---
   useEffect(() => {
-    const socket = socketRef.current;
     if (!socket || !lineupId) return;
 
     socket.emit("join-lineup", lineupId);
@@ -521,7 +568,7 @@ export default function LineupDetails() {
       socket.off("lineup-updated");
       socket.off("lineup:updated");
     };
-  }, [lineupId, fetchSongs]);
+  }, [lineupId, fetchSongs, socket]);
 
   // --- Memoized values ---
   const lineupIds = useMemo(
@@ -1059,10 +1106,14 @@ export default function LineupDetails() {
         setSelectedArtistId={setSelectedArtistId}
       />
 
-      <ChartViewerModal
-        viewingChart={viewingChart}
-        onClose={() => setViewingChart(null)}
-      />
+      <Suspense fallback={null}>
+        {viewingChart ? (
+          <ChartViewerModal
+            viewingChart={viewingChart}
+            onClose={() => setViewingChart(null)}
+          />
+        ) : null}
+      </Suspense>
     </div>
   );
 }
