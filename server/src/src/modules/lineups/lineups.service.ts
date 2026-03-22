@@ -16,6 +16,11 @@ import {
   updateLineupRecord,
 } from "./lineups.repository";
 import { checkIfGuest } from "../users/users.service";
+import { ServerLocale, normalizeLocale, tServer } from "../../i18n/serverI18n";
+
+function getUserLocale(user): "he-IL" | "en-US" {
+  return normalizeLocale(user?.preferred_locale, "he-IL") ?? "he-IL";
+}
 
 const emitLineupEvent = async (lineupId, event, payload) => {
   if (!global.io) return;
@@ -58,8 +63,8 @@ function resolveBaseUrl(req) {
   return `${req.protocol}://${req.headers.host}`;
 }
 
-export function getPublicLineup(token) {
-  return getSharedLineup(token);
+export function getPublicLineup(token, locale?: ServerLocale) {
+  return getSharedLineup(token, locale);
 }
 
 export async function getLineups(user) {
@@ -79,9 +84,10 @@ export async function getLineupsByUserId(targetUserId) {
 
 // פונקציה לקבלת ליינאפ בודד לפי ID (עם בדיקת הרשאות)
 export async function getLineupById(lineupId, user) {
+  const locale = getUserLocale(user);
   const lineup = await findLineupById(lineupId);
   if (!lineup) {
-    throw new AppError(404, "ליינאפ לא נמצא");
+    throw new AppError(404, tServer(locale, "lineups.notFound"));
   }
 
   // בדיקת הרשאות: האם המשתמש הוא הבעלים או אורח של המארח
@@ -110,12 +116,13 @@ export async function getLineupById(lineupId, user) {
     }
   }
 
-  throw new AppError(403, "אין לך גישה לליינאפ הזה");
+  throw new AppError(403, tServer(locale, "lineups.accessForbidden"));
 }
 
 export async function createLineup(user, payload) {
+  const locale = getUserLocale(user);
   if (!payload.title?.trim()) {
-    throw new AppError(400, "חובה להזין שם לליינאפ");
+    throw new AppError(400, tServer(locale, "lineups.titleRequired"));
   }
 
   // כל המשתמשים יכולים ליצור ליינאפים (כולל אורחים)
@@ -132,15 +139,16 @@ export async function createLineup(user, payload) {
 }
 
 export async function updateLineup(user, id, payload) {
+  const locale = getUserLocale(user);
   if (!payload.title?.trim()) {
-    throw new AppError(400, "חובה להזין שם לליינאפ");
+    throw new AppError(400, tServer(locale, "lineups.titleRequired"));
   }
 
   // כל המשתמשים יכולים לערוך את הליינאפים שלהם (כולל אורחים)
   if (user.role !== "admin") {
     const ownsLineup = await lineupBelongsToUser(id, user.id);
     if (!ownsLineup) {
-      throw new AppError(403, "אין לך הרשאה לערוך את הליינאפ הזה");
+      throw new AppError(403, tServer(locale, "lineups.updateForbidden"));
     }
   }
 
@@ -200,9 +208,14 @@ export async function disableShareLink(lineupId) {
   await emitLineupEvent(lineupId, "share:update", { id: lineupId, url: null });
 }
 
-export async function deleteLineup(userId, lineupId) {
+export async function deleteLineup(
+  userId,
+  lineupId,
+  locale: ServerLocale = "he-IL",
+) {
   const allowed = await lineupBelongsToUser(lineupId, userId);
-  if (!allowed) throw new AppError(403, "Not allowed");
+  if (!allowed)
+    throw new AppError(403, tServer(locale, "lineups.deleteForbidden"));
 
   await deleteLineupRecord(lineupId);
 

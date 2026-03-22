@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { listPaymentsWithUsers } from "../payments/payments.repository.js";
+import { tRequest } from "../../i18n/serverI18n";
 
 const router = Router();
 
 // Read-only admin payments listing: GET /api/admin/payments
-router.get("/", async (_req, res) => {
+router.get("/", async (req, res) => {
   try {
     const rows = await listPaymentsWithUsers();
 
@@ -24,7 +25,7 @@ router.get("/", async (_req, res) => {
   } catch (err) {
     // Minimal error handling to avoid affecting other routes
     console.error("[admin] /payments failed", err);
-    res.status(500).json({ error: "Failed to load payments" });
+    res.status(500).json({ error: tRequest(req, "adminPayments.loadFailed") });
   }
 });
 

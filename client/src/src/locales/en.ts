@@ -2,6 +2,7 @@
 export const en = {
   // Common UI
   common: {
+    appName: "Ari Stage",
     save: "Save",
     cancel: "Cancel",
     delete: "Delete",
@@ -137,6 +138,7 @@ export const en = {
     verify: "Verify",
     verifying: "Verifying...",
     resetting: "Resetting...",
+    emailPlaceholder: "name@example.com",
 
     termsDialog: {
       ariaLabel: "Ari Stage terms of use",
@@ -408,6 +410,18 @@ export const en = {
     },
 
     addSongsModuleDisabled: "Add songs module is disabled",
+
+    scaleMode: {
+      major: "Major",
+      minor: "Minor",
+      harmonicMinor: "Harmonic Minor",
+      melodicMinor: "Melodic Minor",
+      dorian: "Dorian",
+      phrygian: "Phrygian",
+      lydian: "Lydian",
+      mixolydian: "Mixolydian",
+      aeolian: "Aeolian",
+    },
   },
 
   // Lineups
@@ -464,6 +478,8 @@ export const en = {
     lineupNamePlaceholder: "Lineup name *",
     locationPlaceholder: "Location",
     descriptionOptionalPlaceholder: "Description (optional)",
+    datePlaceholder: "dd/mm/yyyy",
+    timePlaceholder: "--:--",
 
     moduleDisabledTitle: "Lineups module is disabled",
     moduleDisabledHint: 'You can enable it again in the Admin "Models" tab.',
@@ -561,6 +577,7 @@ export const en = {
       "Enter the artist's email address. They will receive an email with a link to join your pool.",
     sendInvite: "Send invitation",
     sendingInvite: "Sending...",
+    inviteEmailPlaceholder: "artist@example.com",
   },
 
   // Users
@@ -1456,6 +1473,8 @@ export const en = {
       fillCacheButton: "How do I fill the cache?",
       fillCacheToast:
         "To add more offline content, browse the site once while online.",
+      columnCache: "Cache",
+      columnUrl: "URL",
     },
   },
 
@@ -1488,7 +1507,7 @@ export const en = {
 
   // Accessibility
   a11y: {
-    skipToContent: "Skip to content",
+    skipToContent: "Skip to main content",
     openMenu: "Open menu",
     closeMenu: "Close menu",
     toggleMenu: "Toggle menu",
@@ -1502,6 +1521,23 @@ export const en = {
     acceptAll: "Accept All",
     rejectAll: "Reject All",
     customizePreferences: "Customize Preferences",
+    routeAnnouncer: {
+      pageLoaded: "Page loaded",
+      home: "Home",
+      login: "Login",
+      register: "Register",
+      settings: "Settings",
+      accessibility: "Accessibility Statement",
+      myProfile: "My Profile",
+      myLineups: "My Lineups",
+      admin: "System Administration",
+      artistPage: "Artist Page",
+      personalArea: "Personal Area",
+      sharing: "Sharing",
+      invitation: "Invitation",
+      resetPassword: "Reset Password",
+      unknownPage: "New Page",
+    },
   },
 
   accessibility: {

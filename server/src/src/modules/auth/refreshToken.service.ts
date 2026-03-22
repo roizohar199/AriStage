@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { pool } from "../../database/pool";
 import { AppError } from "../../core/errors";
 import { logger } from "../../core/logger";
+import { ServerLocale, tServer } from "../../i18n/serverI18n";
 
 /**
  * Refresh Token Service
@@ -33,6 +34,7 @@ export const generateRefreshToken = async (
   userId: number,
   ipAddress?: string,
   userAgent?: string,
+  locale: ServerLocale = "he-IL",
 ): Promise<{ token: string; expiresAt: Date }> => {
   // Generate a secure random token
   const token = crypto.randomBytes(64).toString("hex");
@@ -60,7 +62,7 @@ export const generateRefreshToken = async (
       userId,
       error: error.message,
     });
-    throw new AppError(500, "Failed to generate refresh token");
+    throw new AppError(500, tServer(locale, "refresh.failedGenerate"));
   }
 };
 
@@ -69,9 +71,12 @@ export const generateRefreshToken = async (
  * @param token - The refresh token to verify
  * @returns User ID if valid
  */
-export const verifyRefreshToken = async (token: string): Promise<number> => {
+export const verifyRefreshToken = async (
+  token: string,
+  locale: ServerLocale = "he-IL",
+): Promise<number> => {
   if (!token) {
-    throw new AppError(401, "Refresh token is required");
+    throw new AppError(401, tServer(locale, "auth.refreshTokenRequired"));
   }
 
   try {
@@ -84,7 +89,7 @@ export const verifyRefreshToken = async (token: string): Promise<number> => {
     )) as any[];
 
     if (!Array.isArray(rows) || rows.length === 0) {
-      throw new AppError(401, "Invalid or expired refresh token");
+      throw new AppError(401, tServer(locale, "refresh.invalidOrExpired"));
     }
 
     // Check each token hash (bcrypt compare is slow, but secure)
@@ -99,13 +104,13 @@ export const verifyRefreshToken = async (token: string): Promise<number> => {
       }
     }
 
-    throw new AppError(401, "Invalid or expired refresh token");
+    throw new AppError(401, tServer(locale, "refresh.invalidOrExpired"));
   } catch (error: any) {
     if (error instanceof AppError) {
       throw error;
     }
     logger.error("Failed to verify refresh token", { error: error.message });
-    throw new AppError(500, "Failed to verify refresh token");
+    throw new AppError(500, tServer(locale, "refresh.failedVerify"));
   }
 };
 
@@ -153,7 +158,10 @@ export const revokeRefreshToken = async (token: string): Promise<void> => {
  * Revoke all refresh tokens for a user
  * @param userId - User ID
  */
-export const revokeAllUserTokens = async (userId: number): Promise<void> => {
+export const revokeAllUserTokens = async (
+  userId: number,
+  locale: ServerLocale = "he-IL",
+): Promise<void> => {
   try {
     const [result] = await pool.query(
       `UPDATE refresh_tokens 
@@ -171,7 +179,7 @@ export const revokeAllUserTokens = async (userId: number): Promise<void> => {
       userId,
       error: error.message,
     });
-    throw new AppError(500, "Failed to revoke tokens");
+    throw new AppError(500, tServer(locale, "refresh.failedRevokeTokens"));
   }
 };
 
@@ -182,6 +190,7 @@ export const revokeAllUserTokens = async (userId: number): Promise<void> => {
  */
 export const getUserActiveSessions = async (
   userId: number,
+  locale: ServerLocale = "he-IL",
 ): Promise<
   Array<{
     id: number;
@@ -206,7 +215,7 @@ export const getUserActiveSessions = async (
       userId,
       error: error.message,
     });
-    throw new AppError(500, "Failed to retrieve sessions");
+    throw new AppError(500, tServer(locale, "refresh.failedRetrieveSessions"));
   }
 };
 
@@ -218,6 +227,7 @@ export const getUserActiveSessions = async (
 export const revokeSession = async (
   userId: number,
   sessionId: number,
+  locale: ServerLocale = "he-IL",
 ): Promise<void> => {
   try {
     const [result] = await pool.query(
@@ -228,7 +238,10 @@ export const revokeSession = async (
     );
 
     if ((result as any).affectedRows === 0) {
-      throw new AppError(404, "Session not found or already revoked");
+      throw new AppError(
+        404,
+        tServer(locale, "security.sessionNotFoundOrRevoked"),
+      );
     }
 
     logger.info("Session revoked", { userId, sessionId });
@@ -241,7 +254,7 @@ export const revokeSession = async (
       sessionId,
       error: error.message,
     });
-    throw new AppError(500, "Failed to revoke session");
+    throw new AppError(500, tServer(locale, "refresh.failedRevokeSession"));
   }
 };
 

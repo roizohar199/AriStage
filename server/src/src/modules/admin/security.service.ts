@@ -1,6 +1,7 @@
 import { pool } from "../../database/pool";
 import { logger } from "../../core/logger";
 import { AppError } from "../../core/errors";
+import { ServerLocale, tServer } from "../../i18n/serverI18n";
 import {
   getAuditLogs,
   getSecurityStats,
@@ -35,7 +36,9 @@ export interface SecurityOverview {
 /**
  * Get comprehensive security overview for admin dashboard
  */
-export const getSecurityOverview = async (): Promise<SecurityOverview> => {
+export const getSecurityOverview = async (
+  locale: ServerLocale,
+): Promise<SecurityOverview> => {
   try {
     // Get basic stats from audit logger
     const stats = await getSecurityStats();
@@ -117,14 +120,16 @@ export const getSecurityOverview = async (): Promise<SecurityOverview> => {
     };
   } catch (error: any) {
     logger.error("Failed to get security overview", { error: error.message });
-    throw new AppError(500, "Failed to get security overview");
+    throw new AppError(500, tServer(locale, "security.getOverviewFailed"));
   }
 };
 
 /**
  * Get list of currently locked accounts
  */
-export const getLockedAccounts = async (): Promise<
+export const getLockedAccounts = async (
+  locale: ServerLocale,
+): Promise<
   Array<{
     email: string;
     lockedAt: Date;
@@ -147,14 +152,19 @@ export const getLockedAccounts = async (): Promise<
     }));
   } catch (error: any) {
     logger.error("Failed to get locked accounts", { error: error.message });
-    throw new AppError(500, "Failed to get locked accounts");
+    throw new AppError(
+      500,
+      tServer(locale, "security.getLockedAccountsFailed"),
+    );
   }
 };
 
 /**
  * Get active user sessions with details
  */
-export const getActiveSessions = async (): Promise<
+export const getActiveSessions = async (
+  locale: ServerLocale,
+): Promise<
   Array<{
     id: number;
     userId: number;
@@ -199,14 +209,20 @@ export const getActiveSessions = async (): Promise<
     }));
   } catch (error: any) {
     logger.error("Failed to get active sessions", { error: error.message });
-    throw new AppError(500, "Failed to get active sessions");
+    throw new AppError(
+      500,
+      tServer(locale, "security.getActiveSessionsFailed"),
+    );
   }
 };
 
 /**
  * Revoke a specific session (refresh token)
  */
-export const revokeSession = async (sessionId: number): Promise<void> => {
+export const revokeSession = async (
+  sessionId: number,
+  locale: ServerLocale,
+): Promise<void> => {
   try {
     const [result] = (await pool.query(
       "UPDATE refresh_tokens SET revoked_at = NOW() WHERE id = ? AND revoked_at IS NULL",
@@ -214,7 +230,10 @@ export const revokeSession = async (sessionId: number): Promise<void> => {
     )) as any[];
 
     if (result.affectedRows === 0) {
-      throw new AppError(404, "Session not found or already revoked");
+      throw new AppError(
+        404,
+        tServer(locale, "security.sessionNotFoundOrRevoked"),
+      );
     }
 
     logger.info("Session revoked by admin", { sessionId });
@@ -226,7 +245,7 @@ export const revokeSession = async (sessionId: number): Promise<void> => {
       sessionId,
       error: error.message,
     });
-    throw new AppError(500, "Failed to revoke session");
+    throw new AppError(500, tServer(locale, "security.revokeSessionFailed"));
   }
 };
 
@@ -235,6 +254,7 @@ export const revokeSession = async (sessionId: number): Promise<void> => {
  */
 export const revokeAllUserSessions = async (
   userId: number,
+  locale: ServerLocale,
 ): Promise<number> => {
   try {
     const [result] = (await pool.query(
@@ -252,14 +272,20 @@ export const revokeAllUserSessions = async (
       userId,
       error: error.message,
     });
-    throw new AppError(500, "Failed to revoke user sessions");
+    throw new AppError(
+      500,
+      tServer(locale, "security.revokeUserSessionsFailed"),
+    );
   }
 };
 
 /**
  * Unlock a locked account (clear failed attempts)
  */
-export const unlockAccount = async (email: string): Promise<void> => {
+export const unlockAccount = async (
+  email: string,
+  locale: ServerLocale,
+): Promise<void> => {
   try {
     const { clearFailedAttempts } =
       await import("../security/accountLockout.service");
@@ -269,19 +295,21 @@ export const unlockAccount = async (email: string): Promise<void> => {
     logger.info("Account unlocked by admin", { email });
   } catch (error: any) {
     logger.error("Failed to unlock account", { email, error: error.message });
-    throw new AppError(500, "Failed to unlock account");
+    throw new AppError(500, tServer(locale, "security.unlockAccountFailed"));
   }
 };
 
 /**
  * Get security health score (0-100)
  */
-export const getSecurityHealthScore = async (): Promise<{
+export const getSecurityHealthScore = async (
+  locale: ServerLocale,
+): Promise<{
   score: number;
   factors: Record<string, { value: number; weight: number; score: number }>;
 }> => {
   try {
-    const overview = await getSecurityOverview();
+    const overview = await getSecurityOverview(locale);
 
     // Calculate individual factors (0-100 each)
     const factors = {
@@ -352,6 +380,6 @@ export const getSecurityHealthScore = async (): Promise<{
     logger.error("Failed to calculate security health score", {
       error: error.message,
     });
-    throw new AppError(500, "Failed to calculate security health score");
+    throw new AppError(500, tServer(locale, "security.healthScoreFailed"));
   }
 };

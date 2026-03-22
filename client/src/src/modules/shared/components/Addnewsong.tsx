@@ -119,6 +119,17 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
   editingId,
 }) => {
   const { t } = useTranslation();
+  const scaleModeLabels: Record<string, string> = {
+    "Major": t("songs.scaleMode.major"),
+    "Minor": t("songs.scaleMode.minor"),
+    "Harmonic Minor": t("songs.scaleMode.harmonicMinor"),
+    "Melodic Minor": t("songs.scaleMode.melodicMinor"),
+    "Dorian": t("songs.scaleMode.dorian"),
+    "Phrygian": t("songs.scaleMode.phrygian"),
+    "Lydian": t("songs.scaleMode.lydian"),
+    "Mixolydian": t("songs.scaleMode.mixolydian"),
+    "Aeolian": t("songs.scaleMode.aeolian"),
+  };
   const [form, setForm] = useState<SongForm>(initialForm);
   const notesList = [
     t("songs.notesPresets.happy"),
@@ -219,7 +230,7 @@ export const AddNewSong: React.FC<AddNewSongProps> = ({
                 }
                 options={scaleModes.map((mode) => ({
                   value: mode,
-                  label: mode,
+                  label: scaleModeLabels[mode] ?? mode,
                 }))}
                 className="mb-0"
               />

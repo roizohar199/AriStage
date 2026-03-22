@@ -4,6 +4,7 @@ import {
   adminSubscriptionsRepository,
   type AdminSubscriptionListRow,
 } from "./adminSubscriptions.repository";
+import { resolveRequestLocale, tServer } from "../../i18n/serverI18n";
 
 import type { Request, Response } from "express";
 
@@ -22,7 +23,10 @@ function toIsoOrNull(value: unknown): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
-function parseOptionalLimitOffset(query: AdminSubscriptionsListQuery): {
+function parseOptionalLimitOffset(
+  query: AdminSubscriptionsListQuery,
+  locale: "he-IL" | "en-US",
+): {
   limit?: number;
   offset?: number;
 } {
@@ -35,11 +39,15 @@ function parseOptionalLimitOffset(query: AdminSubscriptionsListQuery): {
   const offsetNum = rawOffset !== undefined ? Number(rawOffset) : 0;
 
   if (!Number.isFinite(limitNum) || limitNum <= 0) {
-    throw new AppError(400, "limit must be a positive number", undefined);
+    throw new AppError(400, tServer(locale, "admin.limitPositive"), undefined);
   }
 
   if (!Number.isFinite(offsetNum) || offsetNum < 0) {
-    throw new AppError(400, "offset must be a non-negative number", undefined);
+    throw new AppError(
+      400,
+      tServer(locale, "admin.offsetNonNegative"),
+      undefined,
+    );
   }
 
   const limitCapped = Math.min(Math.floor(limitNum), 200);
@@ -59,9 +67,11 @@ function mapRowToDto(row: AdminSubscriptionListRow) {
 
 export const adminSubscriptionsController = {
   listSubscriptions: asyncHandler(async (req: Request, res: Response) => {
+    const locale = resolveRequestLocale(req);
     // Keep consistent with adminUsers: optional limit/offset, cap limit at 200
     const { limit, offset } = parseOptionalLimitOffset(
       req.query as unknown as AdminSubscriptionsListQuery,
+      locale,
     );
 
     const rows = await adminSubscriptionsRepository.listSubscriptions(

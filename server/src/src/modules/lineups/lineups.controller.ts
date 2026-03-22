@@ -14,10 +14,14 @@ import {
 } from "./lineups.service";
 import { emitToUserAndHost, emitToUserUpdates } from "../../core/socket";
 import { listLineupSongsForLyricsExport } from "../lineupSongs/lineupSongs.repository";
+import { resolveRequestLocale, tRequest, tServer } from "../../i18n/serverI18n";
 
 export const lineupsController = {
   public: asyncHandler(async (req, res) => {
-    const payload = await getPublicLineup(req.params.token);
+    const payload = await getPublicLineup(
+      req.params.token,
+      resolveRequestLocale(req),
+    );
     res.json({
       ...payload.lineup,
       songs: payload.songs,
@@ -52,9 +56,12 @@ export const lineupsController = {
 
   // endpoint לקבלת ליינאפים של משתמש ספציפי (לשימוש ב-ArtistProfile)
   listByUserId: asyncHandler(async (req, res) => {
+    const locale = resolveRequestLocale(req);
     const targetUserId = parseInt(req.params.userId);
     if (isNaN(targetUserId)) {
-      return res.status(400).json({ message: "ID משתמש לא תקין" });
+      return res
+        .status(400)
+        .json({ message: tServer(locale, "lineups.invalidUserId") });
     }
 
     // בדיקה שהמשתמש הנוכחי הוא אורח והמשתמש המבוקש הוא אחד מהמארחים שלו
@@ -69,7 +76,7 @@ export const lineupsController = {
     if (hostIdsArray.length === 0 || !hostIdsArray.includes(targetUserId)) {
       return res
         .status(403)
-        .json({ message: "אין לך גישה לליינאפים של משתמש זה" });
+        .json({ message: tServer(locale, "lineups.userLineupsForbidden") });
     }
 
     const lineups = await getLineupsByUserId(targetUserId);
@@ -77,9 +84,12 @@ export const lineupsController = {
   }),
 
   get: asyncHandler(async (req, res) => {
+    const locale = resolveRequestLocale(req);
     const lineupId = parseInt(req.params.id);
     if (isNaN(lineupId)) {
-      return res.status(400).json({ message: "ID ליינאפ לא תקין" });
+      return res
+        .status(400)
+        .json({ message: tServer(locale, "lineups.invalidLineupId") });
     }
 
     const lineup = await getLineupById(lineupId, req.user);
@@ -92,8 +102,9 @@ export const lineupsController = {
   }),
 
   remove: asyncHandler(async (req, res) => {
-    await deleteLineup(req.user.id, req.params.id);
-    res.json({ message: "נמחק בהצלחה" });
+    const locale = resolveRequestLocale(req);
+    await deleteLineup(req.user.id, req.params.id, locale);
+    res.json({ message: tRequest(req, "lineups.deleted") });
   }),
 
   create: asyncHandler(async (req, res) => {
@@ -173,10 +184,12 @@ export const lineupsController = {
 
   disableShare: asyncHandler(async (req, res) => {
     await disableShareLink(req.params.id);
-    res.json({ message: "קישור השיתוף בוטל" });
+    res.json({ message: tRequest(req, "lineups.shareDisabled") });
   }),
 
   downloadCharts: asyncHandler(async (req, res) => {
+    const locale = resolveRequestLocale(req);
+    const isHebrew = locale === "he-IL";
     const puppeteer = await import("puppeteer");
     const fetch = (await import("node-fetch")).default;
     const sharp = (await import("sharp")).default;
@@ -187,7 +200,9 @@ export const lineupsController = {
     console.log("מספר צ'ארטים:", charts?.length);
 
     if (!charts || !Array.isArray(charts) || charts.length === 0) {
-      return res.status(400).json({ message: "לא נמצאו צ'ארטים להורדה" });
+      return res
+        .status(400)
+        .json({ message: tRequest(req, "lineups.noChartsToDownload") });
     }
 
     let browser;
@@ -195,7 +210,7 @@ export const lineupsController = {
       // הכנת HTML עם כל הצ'ארטים
       let htmlContent = `
         <!DOCTYPE html>
-        <html dir="rtl" lang="he">
+        <html dir="${isHebrew ? "rtl" : "ltr"}" lang="${isHebrew ? "he" : "en"}">
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -207,7 +222,7 @@ export const lineupsController = {
             }
             body {
               font-family: Arial, sans-serif;
-              direction: rtl;
+              direction: ${isHebrew ? "rtl" : "ltr"};
               line-height: 1.6;
               background: white;
               padding: 20px;
@@ -260,17 +275,17 @@ export const lineupsController = {
           <div class="song-container">
             <div class="song-title">${chart.songTitle || `Song #${i + 1}`}</div>
             <div class="song-details">
-              <div class="detail-line"><strong>מספר:</strong> ${i + 1}</div>
-              <div class="detail-line"><strong>אמן:</strong> ${
+              <div class="detail-line"><strong>${tServer(locale, "lineups.export.songNumber")}:</strong> ${i + 1}</div>
+              <div class="detail-line"><strong>${tServer(locale, "lineups.export.artist")}:</strong> ${
                 chart.artist || "N/A"
               }</div>
-              <div class="detail-line"><strong>מפתח:</strong> ${
+              <div class="detail-line"><strong>${tServer(locale, "lineups.export.key")}:</strong> ${
                 chart.key_sig || "N/A"
               }</div>
               <div class="detail-line"><strong>BPM:</strong> ${
                 chart.bpm || "N/A"
               }</div>
-              <div class="detail-line"><strong>משך:</strong> ${
+              <div class="detail-line"><strong>${tServer(locale, "lineups.export.duration")}:</strong> ${
                 chart.duration || "N/A"
               }</div>
             </div>
@@ -295,15 +310,15 @@ export const lineupsController = {
                 const imageType = chart.chartUrl.match(/\.(jpg|jpeg)$/i)
                   ? "jpeg"
                   : "png";
-                htmlContent += `<img class="chart-image" src="data:image/${imageType};base64,${base64}" alt="Chart">`;
+                htmlContent += `<img class="chart-image" src="data:image/${imageType};base64,${base64}" alt="${tServer(locale, "lineups.export.chartAlt")}">`;
               }
             }
           } catch (err) {
             console.error(`שגיאה בהוספת צ'ארט ${chart.songTitle}:`, err);
-            htmlContent += `<div class="no-chart">לא ניתן להוריד את הצ'ארט</div>`;
+            htmlContent += `<div class="no-chart">${tServer(locale, "lineups.export.chartUnavailable")}</div>`;
           }
         } else {
-          htmlContent += `<div class="no-chart">אין צ'ארט לשיר זה</div>`;
+          htmlContent += `<div class="no-chart">${tServer(locale, "lineups.export.noChartForSong")}</div>`;
         }
 
         htmlContent += `</div>`;
@@ -347,16 +362,22 @@ export const lineupsController = {
       if (browser) {
         await browser.close();
       }
-      res.status(500).json({ message: "שגיאה ביצירת ה-PDF" });
+      res
+        .status(500)
+        .json({ message: tRequest(req, "lineups.pdfGenerationFailed") });
     }
   }),
 
   downloadLyrics: asyncHandler(async (req, res) => {
+    const locale = resolveRequestLocale(req);
+    const isHebrew = locale === "he-IL";
     const puppeteer = await import("puppeteer");
 
     const lineupId = parseInt(req.params.id);
     if (isNaN(lineupId)) {
-      return res.status(400).json({ message: "ID ליינאפ לא תקין" });
+      return res
+        .status(400)
+        .json({ message: tServer(locale, "lineups.invalidLineupId") });
     }
 
     // enforce access (owner or invited guest)
@@ -368,11 +389,16 @@ export const lineupsController = {
     } catch (error: any) {
       return res
         .status(400)
-        .json({ message: error?.message || "שגיאה בטעינת מילים" });
+        .json({
+          message:
+            error?.message || tServer(locale, "lineups.lyricsLoadFailed"),
+        });
     }
 
     if (!rows || rows.length === 0) {
-      return res.status(404).json({ message: "לא נמצאו שירים בליינאפ" });
+      return res
+        .status(404)
+        .json({ message: tServer(locale, "lineups.noSongsFound") });
     }
 
     const esc = (s: string) =>
@@ -386,16 +412,16 @@ export const lineupsController = {
     const title = String(lineup?.title || "Lineup");
     let htmlContent = `
       <!DOCTYPE html>
-      <html dir="rtl" lang="he">
+      <html dir="${isHebrew ? "rtl" : "ltr"}" lang="${isHebrew ? "he" : "en"}">
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${esc(title)} - Lyrics</title>
+        <title>${esc(title)} - ${tServer(locale, "lineups.export.lyricsSuffix")}</title>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body {
             font-family: Arial, sans-serif;
-            direction: rtl;
+            direction: ${isHebrew ? "rtl" : "ltr"};
             line-height: 1.6;
             background: white;
             padding: 20px;
@@ -460,11 +486,11 @@ export const lineupsController = {
       htmlContent += `
         <div class="song-container">
           <div class="song-title">${i + 1}. ${esc(songTitle)}</div>
-          <div class="song-meta">${artist ? `<strong>אמן:</strong> ${esc(artist)}` : ""}</div>
+          <div class="song-meta">${artist ? `<strong>${tServer(locale, "lineups.export.artist")}:</strong> ${esc(artist)}` : ""}</div>
           ${
             lyricsText.trim()
               ? `<div class="lyrics">${esc(lyricsText)}</div>`
-              : `<div class="no-lyrics">אין מילים לשיר זה</div>`
+              : `<div class="no-lyrics">${tServer(locale, "lineups.export.noLyrics")}</div>`
           }
         </div>
       `;
@@ -504,7 +530,9 @@ export const lineupsController = {
           await browser.close();
         } catch {}
       }
-      res.status(500).json({ message: "שגיאה ביצירת ה-PDF" });
+      res
+        .status(500)
+        .json({ message: tRequest(req, "lineups.pdfGenerationFailed") });
     }
   }),
 };

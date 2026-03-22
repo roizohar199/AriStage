@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import * as service from "./systemSettings.service.js";
+import { tRequest } from "../../i18n/serverI18n";
 
 /**
  * System Settings Controller
@@ -18,7 +19,9 @@ export async function listSystemSettings(req: Request, res: Response) {
     res.json({ settings });
   } catch (error: any) {
     console.error("Error fetching system settings:", error);
-    res.status(500).json({ error: "Failed to fetch system settings" });
+    res
+      .status(500)
+      .json({ error: tRequest(req, "systemSettings.fetchFailed") });
   }
 }
 
@@ -32,7 +35,9 @@ export async function getI18nSettings(req: Request, res: Response) {
     res.json(settings);
   } catch (error: any) {
     console.error("Error fetching i18n settings:", error);
-    res.status(500).json({ error: "Failed to fetch i18n settings" });
+    res
+      .status(500)
+      .json({ error: tRequest(req, "systemSettings.fetchI18nFailed") });
   }
 }
 
@@ -64,6 +69,8 @@ export async function updateI18nSettings(req: Request, res: Response) {
       return res.status(400).json({ error: error.message });
     }
 
-    res.status(500).json({ error: "Failed to update i18n settings" });
+    res
+      .status(500)
+      .json({ error: tRequest(req, "systemSettings.updateI18nFailed") });
   }
 }

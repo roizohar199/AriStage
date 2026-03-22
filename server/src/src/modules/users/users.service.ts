@@ -34,6 +34,11 @@ import { transporter } from "../../integrations/mail/transporter";
 import { env } from "../../config/env";
 import { getPlanByKey } from "../plans/plans.repository";
 import { getTrialDays } from "../../services/trialUtils";
+import {
+  buildArtistInvitationEmail,
+  tServer,
+  type ServerLocale,
+} from "../../i18n/serverI18n";
 
 function toMysqlDateTime(date: Date): string {
   return date.toISOString().slice(0, 19).replace("T", " ");
@@ -58,7 +63,11 @@ export function getMyConnections(userId) {
   return findConnectedToMe(userId);
 }
 
-export async function updateProfile(userId, payload) {
+export async function updateProfile(
+  userId,
+  payload,
+  locale: ServerLocale = "he-IL",
+) {
   // ⭐ יש עדכון רק אם אחד מהשדות לא undefined
   const hasUpdates =
     payload.full_name !== undefined ||
@@ -69,27 +78,30 @@ export async function updateProfile(userId, payload) {
     payload.avatar !== undefined; // כאן avatar מגיע כמחרוזת מה-controller
 
   if (!hasUpdates) {
-    throw new AppError(400, "לא נשלחו נתונים לעדכון");
+    throw new AppError(400, tServer(locale, "users.noUpdateData"));
   }
 
   let preferredLocale: string | undefined;
   if (payload.preferred_locale !== undefined) {
     if (payload.preferred_locale === null) {
-      throw new AppError(400, "preferred_locale cannot be null");
+      throw new AppError(400, tServer(locale, "users.preferredLocaleNull"));
     }
     const raw = String(payload.preferred_locale).trim();
     if (!raw) {
-      throw new AppError(400, "preferred_locale cannot be empty");
+      throw new AppError(400, tServer(locale, "users.preferredLocaleEmpty"));
     }
     if (raw.length > 16) {
-      throw new AppError(400, "preferred_locale is too long");
+      throw new AppError(400, tServer(locale, "users.preferredLocaleTooLong"));
     }
     if (raw.toLowerCase() === "auto") {
       preferredLocale = "auto";
     } else {
       // Lightweight validation for BCP-47-ish tags (e.g. he, he-IL, en-US)
       if (!/^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(raw)) {
-        throw new AppError(400, "preferred_locale format is invalid");
+        throw new AppError(
+          400,
+          tServer(locale, "users.preferredLocaleInvalid"),
+        );
       }
       preferredLocale = raw;
     }
@@ -106,7 +118,7 @@ export async function updateProfile(userId, payload) {
   });
 
   if (!affected) {
-    throw new AppError(400, "העדכון נכשל");
+    throw new AppError(400, tServer(locale, "users.updateFailed"));
   }
 
   return getCurrentUser(userId);
@@ -135,16 +147,16 @@ function avatarToAbsolutePath(avatar: any): string | null {
   return joinUploadsPath(...normalized);
 }
 
-export async function deleteAvatar(userId) {
+export async function deleteAvatar(userId, locale: ServerLocale = "he-IL") {
   const user = await getCurrentUser(userId);
   if (!user) {
-    throw new AppError(404, "משתמש לא נמצא");
+    throw new AppError(404, tServer(locale, "auth.userNotFound"));
   }
 
   const currentAvatar = user.avatar;
   const absolutePath = avatarToAbsolutePath(currentAvatar);
 
-  const updatedUser = await updateProfile(userId, { avatar: null });
+  const updatedUser = await updateProfile(userId, { avatar: null }, locale);
 
   if (absolutePath) {
     try {
@@ -168,9 +180,13 @@ export async function deleteAvatar(userId) {
   return updatedUser;
 }
 
-export async function changePassword(userId, newPassword) {
+export async function changePassword(
+  userId,
+  newPassword,
+  locale: ServerLocale = "he-IL",
+) {
   if (!newPassword?.trim()) {
-    throw new AppError(400, "לא הוזנה סיסמה חדשה");
+    throw new AppError(400, tServer(locale, "users.newPasswordRequired"));
   }
 
   const hash = await bcrypt.hash(newPassword, 10);
@@ -181,14 +197,18 @@ export function getUsers(user) {
   return listUsers(user.role, user.id);
 }
 
-export async function createUserAccount(currentUser, payload) {
+export async function createUserAccount(
+  currentUser,
+  payload,
+  locale: ServerLocale = "he-IL",
+) {
   if (!payload.email || !payload.password || !payload.full_name) {
-    throw new AppError(400, "חובה להזין שם מלא, אימייל וסיסמה");
+    throw new AppError(400, tServer(locale, "users.createMissingFields"));
   }
 
   const existing = await findUserByEmail(payload.email);
   if (existing) {
-    throw new AppError(400, "האימייל כבר קיים במערכת");
+    throw new AppError(400, tServer(locale, "auth.emailAlreadyExists"));
   }
 
   const hash = await bcrypt.hash(payload.password, 10);
@@ -206,7 +226,12 @@ export async function createUserAccount(currentUser, payload) {
   if (nextTypeLower !== "trial") {
     const plan = await getPlanByKey(nextTypeLower);
     if (!plan) {
-      throw new AppError(400, `Invalid subscription_type: ${nextTypeLower}`);
+      throw new AppError(
+        400,
+        tServer(locale, "users.invalidSubscriptionType", {
+          value: nextTypeLower,
+        }),
+      );
     }
   }
   const subscription_status = nextTypeLower === "trial" ? "trial" : "active";
@@ -227,9 +252,14 @@ export async function createUserAccount(currentUser, payload) {
   });
 }
 
-export async function updateUserAccount(requestingUser, id, payload) {
+export async function updateUserAccount(
+  requestingUser,
+  id,
+  payload,
+  locale: ServerLocale = "he-IL",
+) {
   if (requestingUser.role !== "admin" && requestingUser.id !== Number(id)) {
-    throw new AppError(403, "אין לך הרשאה לעדכן משתמש זה");
+    throw new AppError(403, tServer(locale, "users.updateForbidden"));
   }
 
   const isAdmin = requestingUser.role === "admin";
@@ -253,12 +283,20 @@ export async function updateUserAccount(requestingUser, id, payload) {
       .toLowerCase();
 
     if (!nextTypeLower) {
-      throw new AppError(400, "Invalid subscription_type");
+      throw new AppError(
+        400,
+        tServer(locale, "users.invalidSubscriptionType", { value: "" }),
+      );
     }
     if (nextTypeLower !== "trial") {
       const plan = await getPlanByKey(nextTypeLower);
       if (!plan) {
-        throw new AppError(400, `Invalid subscription_type: ${nextTypeLower}`);
+        throw new AppError(
+          400,
+          tServer(locale, "users.invalidSubscriptionType", {
+            value: nextTypeLower,
+          }),
+        );
       }
     }
 
@@ -275,10 +313,10 @@ export function removeUserAccount(id) {
   return deleteUserById(id);
 }
 
-export async function impersonateUser(id) {
+export async function impersonateUser(id, locale: ServerLocale = "he-IL") {
   const user = await findUserById(id);
   if (!user) {
-    throw new AppError(404, "משתמש לא נמצא");
+    throw new AppError(404, tServer(locale, "auth.userNotFound"));
   }
 
   const token = signToken({
@@ -297,6 +335,7 @@ export async function impersonateUser(id) {
       email: user.email,
       full_name: user.full_name,
       role: user.role,
+      preferred_locale: user.preferred_locale,
       subscription_type: user.subscription_type,
       artist_role: user.artist_role,
       avatar: user.avatar,
@@ -305,54 +344,63 @@ export async function impersonateUser(id) {
 }
 
 // ⭐ הזמנת אמן למאגר שלי
-export async function inviteArtistToMyCollection(hostId, artistId) {
+export async function inviteArtistToMyCollection(
+  hostId,
+  artistId,
+  locale: ServerLocale = "he-IL",
+) {
   if (hostId === artistId) {
-    throw new AppError(400, "לא ניתן להזמין את עצמך");
+    throw new AppError(400, tServer(locale, "users.cannotInviteSelf"));
   }
 
   const artist = await findUserById(artistId);
   if (!artist) {
-    throw new AppError(404, "אמן לא נמצא");
+    throw new AppError(404, tServer(locale, "users.artistNotFound"));
   }
 
   // בדיקה אם האמן כבר מוזמן על ידי המארח הזה
   const { isGuest } = await import("./users.repository");
   const existingHosts = await isGuest(artistId);
   if (existingHosts.includes(hostId)) {
-    throw new AppError(400, "האמן כבר מוזמן על ידי המארח הזה");
+    throw new AppError(400, tServer(locale, "users.artistAlreadyInvited"));
   }
 
   const success = await inviteArtistRepo(artistId, hostId);
   if (!success) {
-    throw new AppError(400, "ההזמנה נכשלה");
+    throw new AppError(400, tServer(locale, "users.invitationFailed"));
   }
 
-  return { message: "האמן הוזמן בהצלחה למאגר שלך" };
+  return { message: tServer(locale, "users.artistInvited") };
 }
 
 // ⭐ ביטול הזמנת אמן מהמאגר שלי
-export async function uninviteArtistFromMyCollection(hostId, artistId) {
+export async function uninviteArtistFromMyCollection(
+  hostId,
+  artistId,
+  locale: ServerLocale = "he-IL",
+) {
   if (hostId === artistId) {
-    throw new AppError(400, "לא ניתן לבטל הזמנה של עצמך");
+    throw new AppError(400, tServer(locale, "users.cannotUninviteSelf"));
   }
 
   const artist = await findUserById(artistId);
   if (!artist) {
-    throw new AppError(404, "אמן לא נמצא");
+    throw new AppError(404, tServer(locale, "users.artistNotFound"));
   }
 
   const success = await uninviteArtistRepo(artistId, hostId);
   if (!success) {
-    throw new AppError(400, "ביטול ההזמנה נכשל - האמן לא הוזמן על ידך");
+    throw new AppError(400, tServer(locale, "users.uninviteFailed"));
   }
 
-  return { message: "השיתוף בוטל בהצלחה" };
+  return { message: tServer(locale, "users.shareCancelled") };
 }
 
 // ⭐ אורח מבטל את השתתפותו במאגר (כל המארחים או מארח ספציפי)
 export async function leaveMyCollection(
   artistId,
   hostId: number | null = null,
+  locale: ServerLocale = "he-IL",
 ) {
   const { isGuest } = await import("./users.repository");
   const existingHosts = await isGuest(artistId);
@@ -363,22 +411,22 @@ export async function leaveMyCollection(
       : [];
 
   if (existingHostsArray.length === 0) {
-    throw new AppError(400, "אינך אורח במאגר - אין לך השתתפות לבטל");
+    throw new AppError(400, tServer(locale, "users.notGuestAnyPool"));
   }
 
   if (hostId && !existingHostsArray.includes(hostId)) {
-    throw new AppError(400, "אינך אורח במאגר הזה");
+    throw new AppError(400, tServer(locale, "users.notGuestThisPool"));
   }
 
   const success = await leaveCollectionRepo(artistId, hostId);
   if (!success) {
-    throw new AppError(400, "ביטול ההשתתפות נכשל");
+    throw new AppError(400, tServer(locale, "users.leaveCollectionFailed"));
   }
 
   return {
     message: hostId
-      ? "השתתפותך במאגר בוטלה בהצלחה"
-      : "כל השתתפויותיך במאגרים בוטלו בהצלחה",
+      ? tServer(locale, "users.leftCollection")
+      : tServer(locale, "users.leftAllCollections"),
   };
 }
 
@@ -389,21 +437,29 @@ export async function getPendingInvitations(userId) {
 }
 
 // ⭐ אישור הזמנה
-export async function acceptInvitationStatus(userId, hostId) {
+export async function acceptInvitationStatus(
+  userId,
+  hostId,
+  locale: ServerLocale = "he-IL",
+) {
   const success = await acceptInvitationStatusRepo(userId, hostId);
   if (!success) {
-    throw new AppError(400, "לא נמצאה הזמנה ממתינה לאישור");
+    throw new AppError(400, tServer(locale, "users.pendingInvitationNotFound"));
   }
-  return { message: "הזמנה אושרה בהצלחה" };
+  return { message: tServer(locale, "users.invitationAccepted") };
 }
 
 // ⭐ דחיית הזמנה
-export async function rejectInvitationStatus(userId, hostId) {
+export async function rejectInvitationStatus(
+  userId,
+  hostId,
+  locale: ServerLocale = "he-IL",
+) {
   const success = await rejectInvitationStatusRepo(userId, hostId);
   if (!success) {
-    throw new AppError(400, "לא נמצאה הזמנה ממתינה לאישור");
+    throw new AppError(400, tServer(locale, "users.pendingInvitationNotFound"));
   }
-  return { message: "הזמנה נדחתה" };
+  return { message: tServer(locale, "users.invitationRejected") };
 }
 
 // ⭐ בדיקה אם משתמש הוא אורח - מחזיר רשימת מארחים
@@ -421,9 +477,14 @@ export async function checkIfHost(userId) {
 }
 
 // ⭐ שליחת הזמנה במייל
-export async function sendArtistInvitation(hostId, hostName, email) {
+export async function sendArtistInvitation(
+  hostId,
+  hostName,
+  email,
+  locale: ServerLocale = "he-IL",
+) {
   if (!email || !email.includes("@")) {
-    throw new AppError(400, "נא להזין כתובת אימייל תקינה");
+    throw new AppError(400, tServer(locale, "users.invalidEmail"));
   }
 
   // בדיקה אם המשתמש כבר קיים במערכת
@@ -431,19 +492,22 @@ export async function sendArtistInvitation(hostId, hostName, email) {
   if (existingUser) {
     // אם המשתמש כבר קיים, נזמין אותו ישירות
     if (existingUser.id === hostId) {
-      throw new AppError(400, "לא ניתן להזמין את עצמך");
+      throw new AppError(400, tServer(locale, "users.cannotInviteSelf"));
     }
 
     // בדיקה אם כבר מוזמן על ידי המארח הזה
     const { isGuest } = await import("./users.repository");
     const existingHosts = await isGuest(existingUser.id);
     if (existingHosts.includes(hostId)) {
-      throw new AppError(400, "האמן כבר מוזמן על ידי המארח הזה");
+      throw new AppError(400, tServer(locale, "users.artistAlreadyInvited"));
     }
 
     // הזמנה ישירה
     await inviteArtistRepo(existingUser.id, hostId);
-    return { message: "האמן הוזמן בהצלחה למאגר שלך", isExistingUser: true };
+    return {
+      message: tServer(locale, "users.artistInvited"),
+      isExistingUser: true,
+    };
   }
 
   // יצירת token להזמנה
@@ -454,51 +518,29 @@ export async function sendArtistInvitation(hostId, hostName, email) {
   const inviteLink = `${env.clientUrl}/invite/${token}`;
 
   // שליחת מייל
+  const mail = buildArtistInvitationEmail(locale, inviteLink, hostName);
+
   await transporter.sendMail({
     from: env.mail.user,
     to: email,
-    subject: "הזמנה למאגר Ari Stage",
-    html: `
-<div style="width:100%; background:#0d0d0d; padding:40px 0; font-family:Arial, sans-serif; direction:rtl; text-align:right;">
-  <div style="max-width:480px; margin:auto; background:#141414; padding:30px; border-radius:16px; border:1px solid #2a2a2a; direction:rtl; text-align:right;">
-    <h2 style="text-align:center; color:#ff8800; font-size:26px; margin-bottom:10px; font-weight:bold; direction:rtl;">
-      Ari Stage
-    </h2>
-    <p style="text-align:center; color:#cccccc; font-size:14px; margin-bottom:25px; direction:rtl;">
-      הזמנה למאגר אמנים
-    </p>
-    <p style="color:#e5e5e5; font-size:15px; line-height:1.8; direction:rtl;">
-      שלום 👋<br>
-      <strong>${hostName}</strong> מזמין אותך להצטרף למאגר שלו ב-Ari Stage.<br>
-      לאחר ההצטרפות, תוכל לצפות בליינאפים והשירים שלו (קריאה בלבד).
-    </p>
-    <div style="text-align:center; margin:30px 0; direction:rtl;">
-      <a href="${inviteLink}" style="background:#ff8800; color:#000; padding:14px 26px; font-size:16px; font-weight:bold; text-decoration:none; border-radius:10px; display:inline-block; box-shadow:0 0 12px rgba(255,136,0,0.4);">
-        הצטרף למאגר
-      </a>
-    </div>
-    <p style="color:#bbbbbb; font-size:13px; direction:rtl;">
-      אם הכפתור לא עובד, אפשר להעתיק את הקישור הבא:
-    </p>
-    <p style="color:#ffbb66; font-size:13px; word-break:break-all; background:#1f1f1f; padding:10px; border-radius:8px; margin-top:8px; direction:ltr; text-align:left;">
-      ${inviteLink}
-    </p>
-    <p style="color:#999; font-size:12px; margin-top:20px; direction:rtl;">
-      הקישור תקף ל-7 ימים.
-    </p>
-  </div>
-</div>
-    `,
+    subject: mail.subject,
+    html: mail.html,
   });
 
-  return { message: "הזמנה נשלחה בהצלחה למייל", isExistingUser: false };
+  return {
+    message: tServer(locale, "users.invitationSentEmail"),
+    isExistingUser: false,
+  };
 }
 
 // ⭐ טיפול בקישור הזמנה
-export async function acceptInvitation(token) {
+export async function acceptInvitation(token, locale: ServerLocale = "he-IL") {
   const invitation = await findInvitationByToken(token);
   if (!invitation) {
-    throw new AppError(400, "הזמנה לא תקינה או פגה תוקף");
+    throw new AppError(
+      400,
+      tServer(locale, "users.invitationInvalidOrExpired"),
+    );
   }
 
   // סימון ההזמנה כמשומשת
@@ -509,7 +551,7 @@ export async function acceptInvitation(token) {
   if (existingUser) {
     await inviteArtistRepo(existingUser.id, invitation.host_id);
     return {
-      message: "הזמנה נשלחה - אנא אשר את ההזמנה",
+      message: tServer(locale, "users.invitationSentAwaitingApproval"),
       userId: existingUser.id,
       needsLogin: true,
       needsApproval: true,
@@ -518,7 +560,7 @@ export async function acceptInvitation(token) {
 
   // אם המשתמש לא קיים, נחזיר את המידע להרשמה
   return {
-    message: "הצטרף למאגר",
+    message: tServer(locale, "users.joinPool"),
     email: invitation.email,
     hostId: invitation.host_id,
     needsRegistration: true,

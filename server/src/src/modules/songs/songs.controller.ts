@@ -14,6 +14,7 @@ import {
 } from "./songs.service";
 import { getSongById } from "./songs.repository";
 import { emitToUserAndHost, emitToUserUpdates } from "../../core/socket";
+import { tRequest } from "../../i18n/serverI18n";
 
 export const songsController = {
   deletePrivateChart: asyncHandler(async (req, res) => {
@@ -21,9 +22,11 @@ export const songsController = {
     const user = req.user;
     const deleted = await deleteSongChart(chartId, user.id);
     if (deleted) {
-      res.json({ message: "הצ'ארט נמחק בהצלחה" });
+      res.json({ message: tRequest(req, "songs.privateChartDeleted") });
     } else {
-      res.status(403).json({ message: "לא נמצא או אין הרשאה למחוק" });
+      res.status(403).json({
+        message: tRequest(req, "songs.privateChartNotFoundOrForbidden"),
+      });
     }
   }),
   getPrivateCharts: asyncHandler(async (req, res) => {
@@ -66,7 +69,9 @@ export const songsController = {
     const user = req.user;
     const file = req.file;
     if (!file) {
-      return res.status(400).json({ message: "לא נבחר קובץ" });
+      return res
+        .status(400)
+        .json({ message: tRequest(req, "songs.fileNotSelected") });
     }
 
     // המרת הנתיב המלא לנתיב יחסי
@@ -83,7 +88,7 @@ export const songsController = {
       user,
       relativePath,
     );
-    res.json({ message: "הצ'ארט הועלה בהצלחה", chartId });
+    res.json({ message: tRequest(req, "songs.privateChartUploaded"), chartId });
   }),
   list: asyncHandler(async (req, res) => {
     const songs = await getSongs(req.user);
@@ -166,7 +171,7 @@ export const songsController = {
     }
 
     res.status(201).json({
-      message: "✅ שיר נוסף בהצלחה",
+      message: tRequest(req, "songs.created"),
       id: payload.id,
     });
   }),
@@ -213,7 +218,7 @@ export const songsController = {
       });
     }
 
-    res.json({ message: "✅ השיר עודכן בהצלחה" });
+    res.json({ message: tRequest(req, "songs.updated") });
   }),
   remove: asyncHandler(async (req, res) => {
     const songId = parseInt(req.params.id);
@@ -233,17 +238,21 @@ export const songsController = {
       });
     }
 
-    res.json({ message: "✅ השיר נמחק בהצלחה" });
+    res.json({ message: tRequest(req, "songs.deleted") });
   }),
   uploadChart: asyncHandler(async (req, res) => {
     if (!req.file) {
-      return res.status(400).json({ message: "לא הועלה קובץ" });
+      return res
+        .status(400)
+        .json({ message: tRequest(req, "songs.fileNotUploaded") });
     }
 
     try {
       const songId = parseInt(req.params.id);
       if (isNaN(songId)) {
-        return res.status(400).json({ message: "ID שיר לא תקין" });
+        return res
+          .status(400)
+          .json({ message: tRequest(req, "songs.invalidSongId") });
       }
 
       const filePath = `/uploads/charts/${req.user.id}/${req.file.filename}`;
@@ -265,7 +274,7 @@ export const songsController = {
       }
 
       res.json({
-        message: "✅ קובץ PDF הועלה בהצלחה",
+        message: tRequest(req, "songs.chartUploaded"),
         chart_pdf_url: pdfUrl,
       });
     } catch (error: any) {
@@ -285,7 +294,7 @@ export const songsController = {
       // החזר שגיאה ברורה יותר
       if (error?.message && error.message.includes("chart_pdf")) {
         return res.status(500).json({
-          message: "השדה chart_pdf לא קיים בטבלה. נא להריץ את ה-SQL migration.",
+          message: tRequest(req, "songs.chartPdfMigrationMissing"),
           error: error.message,
         });
       }
@@ -297,7 +306,9 @@ export const songsController = {
     try {
       const songId = parseInt(req.params.id);
       if (isNaN(songId)) {
-        return res.status(400).json({ message: "ID שיר לא תקין" });
+        return res
+          .status(400)
+          .json({ message: tRequest(req, "songs.invalidSongId") });
       }
 
       await removeChartPdfForSong(songId, req.user);
@@ -311,7 +322,7 @@ export const songsController = {
       }
 
       res.json({
-        message: "✅ קובץ PDF נמחק בהצלחה",
+        message: tRequest(req, "songs.chartDeleted"),
       });
     } catch (error: any) {
       console.error("❌ שגיאה במחיקת PDF:", error);
@@ -322,7 +333,9 @@ export const songsController = {
   upsertLyrics: asyncHandler(async (req, res) => {
     const songId = parseInt(req.params.id);
     if (isNaN(songId)) {
-      return res.status(400).json({ message: "ID שיר לא תקין" });
+      return res
+        .status(400)
+        .json({ message: tRequest(req, "songs.invalidSongId") });
     }
 
     const lyricsText = req.body?.lyrics_text ?? "";
@@ -337,7 +350,7 @@ export const songsController = {
     }
 
     res.json({
-      message: "✅ המילים נשמרו בהצלחה",
+      message: tRequest(req, "songs.lyricsSaved"),
       song: updatedSong,
     });
   }),
@@ -345,7 +358,9 @@ export const songsController = {
   deleteLyrics: asyncHandler(async (req, res) => {
     const songId = parseInt(req.params.id);
     if (isNaN(songId)) {
-      return res.status(400).json({ message: "ID שיר לא תקין" });
+      return res
+        .status(400)
+        .json({ message: tRequest(req, "songs.invalidSongId") });
     }
 
     const updatedSong = await removeLyricsForSong(songId, req.user);
@@ -358,7 +373,7 @@ export const songsController = {
     }
 
     res.json({
-      message: "✅ המילים נמחקו בהצלחה",
+      message: tRequest(req, "songs.lyricsDeleted"),
       song: updatedSong,
     });
   }),

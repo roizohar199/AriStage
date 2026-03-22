@@ -6,6 +6,7 @@ import {
 import { ensureUserSubscriptionFresh } from "../../services/subscriptionService";
 import { resolveSubscriptionStatus } from "./resolveSubscriptionStatus";
 import { pool } from "../../database/pool";
+import { tRequest } from "../../i18n/serverI18n";
 
 export const subscriptionsController = {
   getPublic: asyncHandler(async (req, res) => {
@@ -35,7 +36,9 @@ export const subscriptionsController = {
     const userId = Number(req.user?.id);
 
     if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      return res
+        .status(401)
+        .json({ error: tRequest(req, "auth.notAuthenticated") });
     }
 
     // Ensure DB state is fresh (may mark expired if past expiry)
@@ -48,7 +51,9 @@ export const subscriptionsController = {
 
     const user = (rows as any[])[0];
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      return res
+        .status(404)
+        .json({ error: tRequest(req, "auth.userNotFound") });
     }
 
     let resolvedStatus = user.subscription_status;
@@ -93,7 +98,9 @@ export const subscriptionsController = {
       values.push(Number(trial_days));
     }
     if (!clauses.length) {
-      return res.status(400).json({ error: "No fields to update" });
+      return res
+        .status(400)
+        .json({ error: tRequest(req, "subscriptions.noFieldsToUpdate") });
     }
     values.push(1); // id=1
     await import("../../database/pool").then(async ({ pool }) => {

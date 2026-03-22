@@ -4,7 +4,7 @@ import {
   registerUser,
   requestPasswordReset,
   resetPasswordWithToken,
-  resetSafeResponse,
+  getResetSafeResponse,
   complete2FALogin,
 } from "./auth.service";
 import { logger } from "../../core/logger";
@@ -18,15 +18,18 @@ import {
 import { signToken } from "./token.service";
 import { findUserById } from "../users/users.repository";
 import { AppError } from "../../core/errors";
+import { resolveRequestLocale, tServer } from "../../i18n/serverI18n";
 
 export const authController = {
   login: asyncHandler(async (req: Request, res: Response) => {
+    const locale = resolveRequestLocale(req);
     const ipAddress = req.ip || req.socket.remoteAddress;
     const userAgent = req.get("user-agent");
 
     const payload = await loginUser(
       req.body.email,
       req.body.password,
+      locale,
       ipAddress,
       userAgent,
     );
@@ -46,15 +49,22 @@ export const authController = {
 
   // Complete 2FA login - after user verifies 2FA code
   complete2FA: asyncHandler(async (req: Request, res: Response) => {
+    const locale = resolveRequestLocale(req);
     const { userId, token } = req.body;
     const ipAddress = req.ip || req.socket.remoteAddress;
     const userAgent = req.get("user-agent");
 
     if (!userId || !token) {
-      throw new AppError(400, "User ID and 2FA code are required");
+      throw new AppError(400, tServer(locale, "twoFactor.userAndCodeRequired"));
     }
 
-    const payload = await complete2FALogin(userId, token, ipAddress, userAgent);
+    const payload = await complete2FALogin(
+      userId,
+      token,
+      locale,
+      ipAddress,
+      userAgent,
+    );
 
     if (payload?.role === "admin") {
       void logSystemEvent(
@@ -70,6 +80,7 @@ export const authController = {
   }),
 
   register: asyncHandler(async (req: Request, res: Response) => {
+    const locale = resolveRequestLocale(req);
     logger.info("🔵 [REGISTER] התחלת הרשמה", {
       body: req.body,
       hasFile: !!req.file,
@@ -79,17 +90,20 @@ export const authController = {
     const tempAvatar = req.file ? req.file.path : null;
 
     try {
-      const newUser = await registerUser({
-        ...req.body,
-        artist_role: req.body.artist_role || null,
-        tempAvatar, // שולחים את התמונה הזמנית ל-service
-      });
+      const newUser = await registerUser(
+        {
+          ...req.body,
+          artist_role: req.body.artist_role || null,
+          tempAvatar, // שולחים את התמונה הזמנית ל-service
+        },
+        locale,
+      );
 
       logger.info("✅ [REGISTER] הרשמה הצליחה", {
         userId: newUser.id,
         email: newUser.email,
       });
-      res.json({ message: "נוצר בהצלחה", user: newUser });
+      res.json({ message: tServer(locale, "auth.registered"), user: newUser });
     } catch (error: any) {
       logger.error("❌ [REGISTER] שגיאה בהרשמה", {
         error: error.message,
@@ -101,35 +115,38 @@ export const authController = {
   }),
 
   resetRequest: async (req: Request, res: Response) => {
+    const locale = resolveRequestLocale(req);
     try {
-      const response = await requestPasswordReset(req.body.email);
+      const response = await requestPasswordReset(req.body.email, locale);
       res.json(response);
     } catch (err: any) {
       logger.error("❌ reset-request error:", { error: err.message });
-      res.json(resetSafeResponse);
+      res.json(getResetSafeResponse(locale));
     }
   },
 
   resetPassword: asyncHandler(async (req: Request, res: Response) => {
-    await resetPasswordWithToken(req.body.token, req.body.password);
-    res.json({ message: "הסיסמה עודכנה בהצלחה! אפשר להתחבר." });
+    const locale = resolveRequestLocale(req);
+    await resetPasswordWithToken(req.body.token, req.body.password, locale);
+    res.json({ message: tServer(locale, "auth.passwordUpdatedLogin") });
   }),
 
   // Refresh access token using refresh token
   refresh: asyncHandler(async (req: Request, res: Response) => {
+    const locale = resolveRequestLocale(req);
     const { refreshToken } = req.body;
 
     if (!refreshToken) {
-      throw new AppError(401, "Refresh token is required");
+      throw new AppError(401, tServer(locale, "auth.refreshTokenRequired"));
     }
 
     // Verify the refresh token and get user ID
-    const userId = await verifyRefreshToken(refreshToken);
+    const userId = await verifyRefreshToken(refreshToken, locale);
 
     // Get user data
     const user = await findUserById(userId);
     if (!user) {
-      throw new AppError(401, "User not found");
+      throw new AppError(401, tServer(locale, "auth.userNotFound"));
     }
 
     // Generate new access token
@@ -140,6 +157,7 @@ export const authController = {
       full_name: user.full_name || "",
       artist_role: user.artist_role || null,
       avatar: user.avatar || null,
+      preferred_locale: user.preferred_locale || "he-IL",
     });
 
     logger.debug("Access token refreshed", { userId });
@@ -158,6 +176,7 @@ export const authController = {
 
   // Logout - revoke current refresh token
   logout: asyncHandler(async (req: Request, res: Response) => {
+    const locale = resolveRequestLocale(req);
     const { refreshToken } = req.body;
 
     if (refreshToken) {
@@ -165,20 +184,21 @@ export const authController = {
       logger.info("User logged out", { userId: req.user?.id });
     }
 
-    res.json({ message: "התנתקת בהצלחה" });
+    res.json({ message: tServer(locale, "auth.loggedOut") });
   }),
 
   // Logout from all sessions - revoke all user's refresh tokens
   logoutAll: asyncHandler(async (req: Request, res: Response) => {
+    const locale = resolveRequestLocale(req);
     const userId = req.user?.id;
 
     if (!userId) {
-      throw new AppError(401, "Not authenticated");
+      throw new AppError(401, tServer(locale, "auth.notAuthenticated"));
     }
 
-    await revokeAllUserTokens(userId);
+    await revokeAllUserTokens(userId, locale);
     logger.info("User logged out from all sessions", { userId });
 
-    res.json({ message: "התנתקת מכל המכשירים בהצלחה" });
+    res.json({ message: tServer(locale, "auth.loggedOutAll") });
   }),
 };

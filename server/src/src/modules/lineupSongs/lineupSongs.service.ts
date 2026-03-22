@@ -16,8 +16,14 @@ import {
 } from "../lineups/lineups.repository";
 import { checkIfGuest } from "../users/users.service";
 import { emitToUserAndHost } from "../../core/socket";
+import { normalizeLocale, tServer } from "../../i18n/serverI18n";
+
+function getUserLocale(user): "he-IL" | "en-US" {
+  return normalizeLocale(user?.preferred_locale, "he-IL") ?? "he-IL";
+}
 
 async function ensureAccess(lineupId, user) {
+  const locale = getUserLocale(user);
   if (user.role === "admin") return true;
 
   // בדיקה אם הליינאפ שייך למשתמש
@@ -39,7 +45,7 @@ async function ensureAccess(lineupId, user) {
     }
   }
 
-  throw new AppError(403, "אין לך הרשאה לפעולה בליינאפ הזה");
+  throw new AppError(403, tServer(locale, "lineupSongs.accessForbidden"));
 }
 
 const emitUpdate = async (lineupId, event = "lineup-updated", data = {}) => {
@@ -76,8 +82,9 @@ export async function getLineupSongs(lineupId, user) {
 }
 
 export async function addSongToLineup(lineupId, user, songId) {
+  const locale = getUserLocale(user);
   if (!songId) {
-    throw new AppError(400, "חובה לבחור שיר להוספה");
+    throw new AppError(400, tServer(locale, "lineupSongs.songRequired"));
   }
 
   await ensureAccess(lineupId, user);
@@ -118,15 +125,16 @@ export async function addSongToLineup(lineupId, user, songId) {
 }
 
 export async function reorderLineupSongs(lineupId, user, songs) {
+  const locale = getUserLocale(user);
   if (!Array.isArray(songs)) {
-    throw new AppError(400, "פורמט שגוי - יש להעביר מערך של שירים");
+    throw new AppError(400, tServer(locale, "lineupSongs.invalidSongsArray"));
   }
 
   // רק הבעלים של הליינאפ יכול לשנות את סדר השירים (לא אורחים)
   if (user.role !== "admin") {
     const isOwner = await lineupBelongsToUser(lineupId, user.id);
     if (!isOwner) {
-      throw new AppError(403, "רק הבעלים של הליינאפ יכול לשנות את סדר השירים");
+      throw new AppError(403, tServer(locale, "lineupSongs.reorderOwnerOnly"));
     }
   }
 
@@ -163,11 +171,12 @@ export async function reorderLineupSongs(lineupId, user, songs) {
 }
 
 export async function removeSong(lineupId, user, songId) {
+  const locale = getUserLocale(user);
   await ensureAccess(lineupId, user);
 
   const affected = await removeSongFromLineup(lineupId, songId);
   if (!affected) {
-    throw new AppError(404, "השיר לא נמצא בליינאפ");
+    throw new AppError(404, tServer(locale, "lineupSongs.songNotFound"));
   }
 
   // שליחה לחדר של הליינאפ הספציפי
@@ -196,9 +205,10 @@ export async function removeSong(lineupId, user, songId) {
 }
 
 export async function uploadChartPdfForSong(lineupSongId, user, filePath) {
+  const locale = getUserLocale(user);
   const lineupSong = await getLineupSongById(lineupSongId);
   if (!lineupSong) {
-    throw new AppError(404, "שיר לא נמצא בליינאפ");
+    throw new AppError(404, tServer(locale, "lineupSongs.songNotFound"));
   }
 
   await ensureAccess(lineupSong.lineup_id, user);
@@ -253,16 +263,17 @@ export async function uploadChartPdfForSong(lineupSongId, user, filePath) {
 }
 
 export async function removeChartPdfForSong(lineupSongId, user) {
+  const locale = getUserLocale(user);
   const lineupSong = await getLineupSongById(lineupSongId);
   if (!lineupSong) {
-    throw new AppError(404, "שיר לא נמצא בליינאפ");
+    throw new AppError(404, tServer(locale, "lineupSongs.songNotFound"));
   }
 
   await ensureAccess(lineupSong.lineup_id, user);
 
   const deleted = await deleteLineupSongChartPdf(lineupSongId);
   if (!deleted) {
-    throw new AppError(404, "קובץ PDF לא נמצא");
+    throw new AppError(404, tServer(locale, "songs.chartPdfNotFound"));
   }
 
   // שליחה לחדר של הליינאפ הספציפי

@@ -6,10 +6,11 @@ export async function getPrivateChartsForSong(songId, user) {
 import { insertSongChart } from "./songs.repository";
 // העלאת צ'ארט פרטי למשתמש
 export async function uploadPrivateChartPdfForSong(songId, user, filePath) {
+  const locale = getUserLocale(user);
   // ודא שהשיר קיים
   const song = await getSongById(songId);
   if (!song) {
-    throw new Error("שיר לא נמצא");
+    throw new Error(tServer(locale, "songs.notFound"));
   }
   // שמור את הצ'ארט בטבלת song_charts
   const chartId = await insertSongChart({
@@ -33,6 +34,11 @@ import {
   deleteSongLyrics,
 } from "./songs.repository";
 import { checkIfGuest } from "../users/users.service";
+import { normalizeLocale, tServer } from "../../i18n/serverI18n";
+
+function getUserLocale(user): "he-IL" | "en-US" {
+  return normalizeLocale(user?.preferred_locale, "he-IL") ?? "he-IL";
+}
 
 export async function getSongs(user) {
   // בדיקה אם המשתמש הוא אורח - מחזיר רשימת מארחים
@@ -46,8 +52,9 @@ export async function getSongs(user) {
 }
 
 export async function createSong(user, payload) {
+  const locale = getUserLocale(user);
   if (!payload.title) {
-    throw new AppError(400, "שם שיר הוא שדה חובה");
+    throw new AppError(400, tServer(locale, "songs.titleRequired"));
   }
 
   // כל המשתמשים יכולים ליצור שירים (כולל אורחים)
@@ -65,15 +72,16 @@ export async function createSong(user, payload) {
 }
 
 export async function updateSongDetails(user, id, payload) {
+  const locale = getUserLocale(user);
   if (!payload.title) {
-    throw new AppError(400, "שם שיר הוא שדה חובה");
+    throw new AppError(400, tServer(locale, "songs.titleRequired"));
   }
 
   // כל המשתמשים יכולים לערוך את השירים שלהם (כולל אורחים)
   if (user.role !== "admin") {
     const ownsSong = await findSongOwnership(id, user.id);
     if (!ownsSong) {
-      throw new AppError(403, "אין לך הרשאה לעדכן את השיר הזה");
+      throw new AppError(403, tServer(locale, "songs.updateForbidden"));
     }
   }
 
@@ -87,31 +95,33 @@ export async function updateSongDetails(user, id, payload) {
   });
 
   if (!affected) {
-    throw new AppError(404, "שיר לא נמצא");
+    throw new AppError(404, tServer(locale, "songs.notFound"));
   }
 }
 
 export async function removeSong(user, id) {
+  const locale = getUserLocale(user);
   // כל המשתמשים יכולים למחוק את השירים שלהם (כולל אורחים)
   if (user.role !== "admin") {
     const ownsSong = await findSongOwnership(id, user.id);
     if (!ownsSong) {
-      throw new AppError(403, "אין לך הרשאה למחוק את השיר הזה");
+      throw new AppError(403, tServer(locale, "songs.deleteForbidden"));
     }
   }
 
   const affected = await deleteSong(id);
   if (!affected) {
-    throw new AppError(404, "שיר לא נמצא");
+    throw new AppError(404, tServer(locale, "songs.notFound"));
   }
 }
 
 export async function uploadChartPdfForSong(songId, user, filePath) {
+  const locale = getUserLocale(user);
   // כל המשתמשים יכולים להעלות קבצים לשירים שלהם (כולל אורחים)
   // אורחים יכולים גם להעלות קבצים לשירים של המארח שלהם
   const song = await getSongById(songId);
   if (!song) {
-    throw new AppError(404, "שיר לא נמצא");
+    throw new AppError(404, tServer(locale, "songs.notFound"));
   }
 
   if (user.role !== "admin") {
@@ -128,7 +138,7 @@ export async function uploadChartPdfForSong(songId, user, filePath) {
       if (hostIdsArray.includes(song.user_id)) {
         // המשתמש הוא אורח והשיר שייך למארח שלו - מותר להעלות PDF
       } else {
-        throw new AppError(403, "אין לך הרשאה לעדכן את השיר הזה");
+        throw new AppError(403, tServer(locale, "songs.updateForbidden"));
       }
     }
   }
@@ -138,11 +148,12 @@ export async function uploadChartPdfForSong(songId, user, filePath) {
 }
 
 export async function removeChartPdfForSong(songId, user) {
+  const locale = getUserLocale(user);
   // כל המשתמשים יכולים למחוק קבצים מהשירים שלהם (כולל אורחים)
   // אורחים יכולים גם למחוק קבצים מהשירים של המארח שלהם
   const song = await getSongById(songId);
   if (!song) {
-    throw new AppError(404, "שיר לא נמצא");
+    throw new AppError(404, tServer(locale, "songs.notFound"));
   }
 
   if (user.role !== "admin") {
@@ -159,59 +170,67 @@ export async function removeChartPdfForSong(songId, user) {
       if (hostIdsArray.includes(song.user_id)) {
         // המשתמש הוא אורח והשיר שייך למארח שלו - מותר למחוק PDF
       } else {
-        throw new AppError(403, "אין לך הרשאה למחוק את הקובץ הזה");
+        throw new AppError(403, tServer(locale, "songs.fileDeleteForbidden"));
       }
     }
   }
 
   const deleted = await deleteSongChartPdf(songId);
   if (!deleted) {
-    throw new AppError(404, "קובץ PDF לא נמצא");
+    throw new AppError(404, tServer(locale, "songs.chartPdfNotFound"));
   }
 
   return song;
 }
 
 export async function setLyricsForSong(songId, user, lyricsText) {
+  const locale = getUserLocale(user);
   const song = await getSongById(songId);
   if (!song) {
-    throw new AppError(404, "שיר לא נמצא");
+    throw new AppError(404, tServer(locale, "songs.notFound"));
   }
 
   // Only owner (or admin) may edit lyrics
   if (user.role !== "admin") {
     const ownsSong = await findSongOwnership(songId, user.id);
     if (!ownsSong) {
-      throw new AppError(403, "רק בעל המאגר יכול להוסיף/לערוך/למחוק מילים");
+      throw new AppError(403, tServer(locale, "songs.lyricsOwnerOnly"));
     }
   }
 
   try {
     await upsertSongLyrics(songId, lyricsText);
   } catch (error: any) {
-    throw new AppError(400, error?.message || "שגיאה בשמירת מילים");
+    throw new AppError(
+      400,
+      error?.message || tServer(locale, "songs.lyricsSaveFailed"),
+    );
   }
 
   return await getSongById(songId);
 }
 
 export async function removeLyricsForSong(songId, user) {
+  const locale = getUserLocale(user);
   const song = await getSongById(songId);
   if (!song) {
-    throw new AppError(404, "שיר לא נמצא");
+    throw new AppError(404, tServer(locale, "songs.notFound"));
   }
 
   if (user.role !== "admin") {
     const ownsSong = await findSongOwnership(songId, user.id);
     if (!ownsSong) {
-      throw new AppError(403, "רק בעל המאגר יכול להוסיף/לערוך/למחוק מילים");
+      throw new AppError(403, tServer(locale, "songs.lyricsOwnerOnly"));
     }
   }
 
   try {
     await deleteSongLyrics(songId);
   } catch (error: any) {
-    throw new AppError(400, error?.message || "שגיאה במחיקת מילים");
+    throw new AppError(
+      400,
+      error?.message || tServer(locale, "songs.lyricsDeleteFailed"),
+    );
   }
 
   return await getSongById(songId);

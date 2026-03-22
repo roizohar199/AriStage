@@ -7,6 +7,7 @@ declare module "express-serve-static-core" {
       email: string;
       role: string;
       full_name?: string;
+      preferred_locale?: string | null;
     };
     // Multer attaches `file` for single-file uploads. Kept permissive to avoid
     // adding extra type dependencies.

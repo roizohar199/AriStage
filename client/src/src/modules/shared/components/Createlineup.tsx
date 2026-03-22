@@ -85,13 +85,13 @@ const CreateLineup: React.FC<CreateLineupProps> = ({
         />
 
         <DateInput
-          placeholder="dd/mm/yyyy"
+          placeholder={t("lineups.datePlaceholder")}
           value={form.date}
           onChange={(e) => setForm({ ...form, date: e.target.value })}
         />
 
         <TimeInput
-          placeholder="--:--"
+          placeholder={t("lineups.timePlaceholder")}
           value={form.time}
           onChange={(e) => setForm({ ...form, time: e.target.value })}
         />

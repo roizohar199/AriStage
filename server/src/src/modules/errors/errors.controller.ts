@@ -2,6 +2,7 @@ import { asyncHandler } from "../../core/asyncHandler";
 import { AppError } from "../../core/errors";
 import { getSystemErrors, resolveSystemError } from "./errors.service";
 import { logSystemEvent } from "../../utils/systemLogger";
+import { tRequest } from "../../i18n/serverI18n";
 
 export const errorsController = {
   list: asyncHandler(async (req, res) => {
@@ -15,7 +16,7 @@ export const errorsController = {
 
     const ok = await resolveSystemError(id, resolved);
     if (!ok) {
-      throw new AppError(404, "Error not found");
+      throw new AppError(404, tRequest(req, "errors.recordNotFound"));
     }
 
     if (resolved) {

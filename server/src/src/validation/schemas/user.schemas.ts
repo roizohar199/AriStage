@@ -8,27 +8,27 @@ import { z } from "zod";
 export const userIdSchema = z.coerce
   .number()
   .int()
-  .positive("User ID must be a positive integer");
+  .positive("validation.userIdPositive");
 
 // Full name validation
 export const fullNameSchema = z
   .string()
-  .min(2, "Full name must be at least 2 characters")
-  .max(100, "Full name is too long")
+  .min(2, "validation.fullNameMinLength")
+  .max(100, "validation.fullNameTooLong")
   .trim();
 
 // Email validation
 export const emailSchema = z
   .string()
-  .email("Invalid email format")
-  .max(255, "Email is too long")
+  .email("validation.invalidEmailFormat")
+  .max(255, "validation.emailTooLong")
   .toLowerCase()
   .trim();
 
 // Phone number validation (international format)
 export const phoneSchema = z
   .string()
-  .regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format")
+  .regex(/^\+?[1-9]\d{1,14}$/, "validation.invalidPhoneFormat")
   .optional();
 
 // Artist role validation
@@ -42,7 +42,7 @@ export const themeSchema = z.enum(["light", "dark", "system"]).optional();
 // Locale validation
 export const localeSchema = z
   .string()
-  .regex(/^[a-z]{2}(-[A-Z]{2})?$/, "Invalid locale format")
+  .regex(/^[a-z]{2}(-[A-Z]{2})?$/, "validation.invalidLocaleFormat")
   .optional();
 
 // Role validation (admin only)
@@ -83,9 +83,9 @@ export const avatarFileSchema = z.object({
           "image/gif",
           "image/webp",
         ].includes(type),
-      "Avatar must be an image (JPEG, PNG, GIF, or WebP)",
+      "validation.avatarImageOnly",
     ),
-  size: z.number().max(5 * 1024 * 1024, "Avatar file size must not exceed 5MB"),
+  size: z.number().max(5 * 1024 * 1024, "validation.avatarFileTooLarge"),
 });
 
 // User search/filter schema
@@ -117,8 +117,8 @@ export type InviteUserInput = z.infer<typeof inviteUserSchema>;
 export const bulkUserActionSchema = z.object({
   userIds: z
     .array(userIdSchema)
-    .min(1, "At least one user ID is required")
-    .max(100, "Too many users selected"),
+    .min(1, "validation.atLeastOneUserId")
+    .max(100, "validation.tooManyUsersSelected"),
   action: z.enum(["delete", "activate", "deactivate", "change_role"]),
   role: roleSchema, // Only required for 'change_role' action
 });

@@ -7,6 +7,7 @@ import { AppError } from "../../core/errors";
 import { logger } from "../../core/logger";
 import { env } from "../../config/env";
 import { logAuthEvent } from "../security/auditLogger.service";
+import { tServer, type ServerLocale } from "../../i18n/serverI18n";
 
 /**
  * Two-Factor Authentication Service
@@ -59,6 +60,7 @@ const decrypt = (encryptedText: string): string => {
 export const setup2FA = async (
   userId: number,
   email: string,
+  locale: ServerLocale = "he-IL",
 ): Promise<{ secret: string; qrCode: string; backupCodes: string[] }> => {
   try {
     // Check if 2FA is already enabled
@@ -68,7 +70,7 @@ export const setup2FA = async (
     )) as any[];
 
     if (rows[0]?.two_factor_enabled) {
-      throw new AppError(400, "2FA is already enabled for this account");
+      throw new AppError(400, tServer(locale, "twoFactor.enabled"));
     }
 
     // Generate secret
@@ -102,7 +104,7 @@ export const setup2FA = async (
       throw error;
     }
     logger.error("Failed to setup 2FA", { userId, error: error.message });
-    throw new AppError(500, "Failed to setup 2FA");
+    throw error;
   }
 };
 
@@ -115,6 +117,7 @@ export const setup2FA = async (
 export const verify2FASetup = async (
   userId: number,
   token: string,
+  locale: ServerLocale = "he-IL",
 ): Promise<boolean> => {
   try {
     // Get the secret from database
@@ -124,11 +127,11 @@ export const verify2FASetup = async (
     )) as any[];
 
     if (!rows[0] || !rows[0].two_factor_secret) {
-      throw new AppError(400, "2FA setup not initiated");
+      throw new AppError(400, tServer(locale, "twoFactor.setupInitiated"));
     }
 
     if (rows[0].two_factor_enabled) {
-      throw new AppError(400, "2FA is already enabled");
+      throw new AppError(400, tServer(locale, "twoFactor.enabled"));
     }
 
     // Decrypt secret
@@ -143,7 +146,7 @@ export const verify2FASetup = async (
     });
 
     if (!verified) {
-      throw new AppError(401, "Invalid 2FA code");
+      throw new AppError(401, tServer(locale, "twoFactor.invalidCode"));
     }
 
     // Enable 2FA
@@ -165,7 +168,7 @@ export const verify2FASetup = async (
       userId,
       error: error.message,
     });
-    throw new AppError(500, "Failed to verify 2FA");
+    throw error;
   }
 };
 
@@ -178,6 +181,7 @@ export const verify2FASetup = async (
 export const verify2FA = async (
   userId: number,
   token: string,
+  locale: ServerLocale = "he-IL",
 ): Promise<boolean> => {
   try {
     // Get user 2FA data
@@ -187,7 +191,7 @@ export const verify2FA = async (
     )) as any[];
 
     if (!rows[0] || !rows[0].two_factor_enabled || !rows[0].two_factor_secret) {
-      throw new AppError(400, "2FA is not enabled for this account");
+      throw new AppError(400, tServer(locale, "twoFactor.disabled"));
     }
 
     // Try backup code first
@@ -211,7 +215,7 @@ export const verify2FA = async (
     });
 
     if (!verified) {
-      throw new AppError(401, "Invalid 2FA code");
+      throw new AppError(401, tServer(locale, "twoFactor.invalidCode"));
     }
 
     logger.debug("2FA verified", { userId });
@@ -222,7 +226,7 @@ export const verify2FA = async (
       throw error;
     }
     logger.error("Failed to verify 2FA", { userId, error: error.message });
-    throw new AppError(500, "Failed to verify 2FA");
+    throw error;
   }
 };
 
@@ -236,6 +240,7 @@ export const disable2FA = async (
   userId: number,
   password: string,
   token?: string,
+  locale: ServerLocale = "he-IL",
 ): Promise<void> => {
   try {
     // Verify password
@@ -245,7 +250,7 @@ export const disable2FA = async (
     )) as any[];
 
     if (!rows[0]) {
-      throw new AppError(404, "User not found");
+      throw new AppError(404, tServer(locale, "auth.userNotFound"));
     }
 
     const isPasswordValid = await bcrypt.compare(
@@ -253,12 +258,12 @@ export const disable2FA = async (
       rows[0].password_hash,
     );
     if (!isPasswordValid) {
-      throw new AppError(401, "Invalid password");
+      throw new AppError(401, tServer(locale, "auth.invalidPassword"));
     }
 
     // If 2FA is enabled and token provided, verify it
     if (rows[0].two_factor_enabled && token) {
-      await verify2FA(userId, token);
+      await verify2FA(userId, token, locale);
     }
 
     // Disable 2FA
@@ -279,7 +284,7 @@ export const disable2FA = async (
       throw error;
     }
     logger.error("Failed to disable 2FA", { userId, error: error.message });
-    throw new AppError(500, "Failed to disable 2FA");
+    throw error;
   }
 };
 

@@ -1202,7 +1202,7 @@ function MyContent(): JSX.Element {
         <form onSubmit={sendInvitation} className="space-y-4">
           <div>
             <EmailInput
-              placeholder="artist@example.com"
+              placeholder={t("artists.inviteEmailPlaceholder")}
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
               className="mb-0"

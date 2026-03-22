@@ -7,6 +7,7 @@ import {
   uploadChartPdfForSong,
   removeChartPdfForSong,
 } from "./lineupSongs.service";
+import { tRequest } from "../../i18n/serverI18n";
 
 export const lineupSongsController = {
   list: asyncHandler(async (req, res) => {
@@ -63,31 +64,37 @@ export const lineupSongsController = {
   }),
   create: asyncHandler(async (req, res) => {
     await addSongToLineup(req.params.lineupId, req.user, req.body.song_id);
-    res.status(201).json({ message: "✅ שיר נוסף לליינאפ בהצלחה" });
+    res.status(201).json({ message: tRequest(req, "lineupSongs.created") });
   }),
   reorder: asyncHandler(async (req, res) => {
     await reorderLineupSongs(req.params.lineupId, req.user, req.body.songs);
-    res.json({ message: "✅ סדר השירים עודכן בהצלחה" });
+    res.json({ message: tRequest(req, "lineupSongs.reordered") });
   }),
   remove: asyncHandler(async (req, res) => {
     const lineupId = parseInt(req.params.lineupId);
     const songId = parseInt(req.params.songId);
 
     if (isNaN(lineupId) || isNaN(songId)) {
-      return res.status(400).json({ message: "ID לא תקין" });
+      return res
+        .status(400)
+        .json({ message: tRequest(req, "lineupSongs.invalidIds") });
     }
 
     await removeSong(lineupId, req.user, songId);
-    res.json({ message: "✅ השיר הוסר מהליינאפ" });
+    res.json({ message: tRequest(req, "lineupSongs.removed") });
   }),
   uploadChart: asyncHandler(async (req, res) => {
     if (!req.file) {
-      return res.status(400).json({ message: "לא הועלה קובץ" });
+      return res
+        .status(400)
+        .json({ message: tRequest(req, "lineupSongs.fileNotUploaded") });
     }
 
     const lineupSongId = parseInt(req.params.lineupSongId);
     if (isNaN(lineupSongId)) {
-      return res.status(400).json({ message: "ID שיר לא תקין" });
+      return res
+        .status(400)
+        .json({ message: tRequest(req, "lineupSongs.invalidSongId") });
     }
 
     const filePath = `/uploads/charts/${req.user.id}/${req.file.filename}`;
@@ -103,7 +110,7 @@ export const lineupSongsController = {
     const pdfUrl = `${baseUrl}${filePath}`;
 
     res.json({
-      message: "✅ קובץ PDF הועלה בהצלחה",
+      message: tRequest(req, "lineupSongs.chartUploaded"),
       chart_pdf_url: pdfUrl,
       lineupSong: updatedLineupSong,
     });
@@ -112,13 +119,15 @@ export const lineupSongsController = {
     try {
       const lineupSongId = parseInt(req.params.lineupSongId);
       if (isNaN(lineupSongId)) {
-        return res.status(400).json({ message: "ID שיר לא תקין" });
+        return res
+          .status(400)
+          .json({ message: tRequest(req, "lineupSongs.invalidSongId") });
       }
 
       await removeChartPdfForSong(lineupSongId, req.user);
 
       res.json({
-        message: "✅ קובץ PDF נמחק בהצלחה",
+        message: tRequest(req, "lineupSongs.chartDeleted"),
       });
     } catch (error: any) {
       console.error("❌ שגיאה במחיקת PDF:", error);

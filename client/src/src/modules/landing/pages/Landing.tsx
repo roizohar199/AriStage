@@ -49,7 +49,7 @@ export default function Landing() {
         {/* טקסט */}
         <div className="text-center md:text-start max-w-lg">
           <h1 className="text-4xl md:text-6xl font-extrabold text-brand-primary drop-shadow-xl">
-            Ari Stage
+            {t("common.appName")}
           </h1>
 
           <p className="text-neutral-300 mt-4 text-lg md:text-xl leading-relaxed">

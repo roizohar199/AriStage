@@ -47,12 +47,6 @@ const parseDuration = (d?: string | number | null): number => {
   return 0;
 };
 
-const safeKey = (key: unknown): string => {
-  if (!key) return "N/A";
-  const normalized = String(key).trim();
-  return normalized || "N/A";
-};
-
 const safeDuration = (duration: unknown): string => {
   const totalSec = parseDuration(duration);
   const m = Math.floor(totalSec / 60);
@@ -114,6 +108,12 @@ const normalizeNotes = (
 export default function ShareLineup() {
   const { id } = useParams<{ id: string }>();
   const { t, locale } = useTranslation();
+
+  const safeKey = (key: unknown): string => {
+    if (!key) return t("common.notSpecified");
+    const normalized = String(key).trim();
+    return normalized || t("common.notSpecified");
+  };
 
   const [lineup, setLineup] = useState<ShareLineupResponse | null>(null);
   const [loading, setLoading] = useState(true);

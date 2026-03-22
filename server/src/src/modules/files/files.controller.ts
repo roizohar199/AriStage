@@ -5,6 +5,7 @@ import {
   removeFile,
   updateFileDetails,
 } from "./files.service";
+import { tRequest } from "../../i18n/serverI18n";
 
 export const filesController = {
   list: asyncHandler(async (req, res) => {
@@ -34,6 +35,6 @@ export const filesController = {
     const deleteFromDisk = rawDisk === "1" || rawDisk === "true";
 
     await removeFile(req.user, req.params.id, { deleteFromDisk });
-    res.json({ message: "✅ הקובץ נמחק בהצלחה" });
+    res.json({ message: tRequest(req, "files.deleted") });
   }),
 };

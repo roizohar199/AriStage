@@ -365,9 +365,9 @@ export default function Users() {
             value={form.role}
             onChange={(role) => setForm({ ...form, role })}
             options={[
-              { value: "admin", label: "Admin" },
-              { value: "manager", label: "Manager" },
-              { value: "user", label: "User" },
+              { value: "admin", label: t("admin.usersTab.roles.admin") },
+              { value: "manager", label: t("admin.usersTab.roles.manager") },
+              { value: "user", label: t("admin.usersTab.roles.user") },
             ]}
           />
 
@@ -377,8 +377,8 @@ export default function Users() {
               setForm({ ...form, subscription_type })
             }
             options={[
-              { value: "trial", label: "Trial" },
-              { value: "pro", label: "Pro" },
+              { value: "trial", label: t("billing.trial") },
+              { value: "pro", label: t("billing.pro") },
             ]}
           />
 

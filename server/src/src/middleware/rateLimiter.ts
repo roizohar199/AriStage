@@ -1,5 +1,6 @@
 import rateLimit from "express-rate-limit";
 import { Request, Response } from "express";
+import { resolveRequestLocale, tServer } from "../i18n/serverI18n";
 
 /**
  * Rate Limiter Middleware for Security
@@ -10,10 +11,6 @@ import { Request, Response } from "express";
 export const globalLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute (shorter window for more flexibility)
   max: 200, // Limit each IP to 200 requests per minute (very permissive for development)
-  message: {
-    error: "Too many requests from this IP, please try again later.",
-    retryAfter: "1 minute",
-  },
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 
@@ -25,8 +22,9 @@ export const globalLimiter = rateLimit({
 
   // Custom handler for rate limit exceeded
   handler: (req: Request, res: Response) => {
+    const locale = resolveRequestLocale(req);
     res.status(429).json({
-      error: "Too many requests from this IP, please try again later.",
+      error: tServer(locale, "rateLimit.global"),
       retryAfter: "15 minutes",
     });
   },
@@ -37,18 +35,13 @@ export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // Limit each IP to 5 login attempts per windowMs
   skipSuccessfulRequests: true, // Don't count successful requests
-  message: {
-    error:
-      "Too many authentication attempts from this IP, please try again after 15 minutes.",
-    retryAfter: "15 minutes",
-  },
   standardHeaders: true,
   legacyHeaders: false,
 
   handler: (req: Request, res: Response) => {
+    const locale = resolveRequestLocale(req);
     res.status(429).json({
-      error:
-        "Too many authentication attempts. Your account has been temporarily locked for security.",
+      error: tServer(locale, "rateLimit.auth"),
       retryAfter: "15 minutes",
     });
   },
@@ -59,16 +52,13 @@ export const passwordResetLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 3, // Limit each IP to 3 password reset requests per hour
   skipSuccessfulRequests: false, // Count all requests
-  message: {
-    error: "Too many password reset requests, please try again later.",
-    retryAfter: "1 hour",
-  },
   standardHeaders: true,
   legacyHeaders: false,
 
   handler: (req: Request, res: Response) => {
+    const locale = resolveRequestLocale(req);
     res.status(429).json({
-      error: "Too many password reset attempts. Please try again after 1 hour.",
+      error: tServer(locale, "rateLimit.passwordReset"),
       retryAfter: "1 hour",
     });
   },
@@ -78,10 +68,6 @@ export const passwordResetLimiter = rateLimit({
 export const uploadLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 20, // Limit each user to 20 uploads per hour
-  message: {
-    error: "Too many file uploads, please try again later.",
-    retryAfter: "1 hour",
-  },
   standardHeaders: true,
   legacyHeaders: false,
 
@@ -92,8 +78,9 @@ export const uploadLimiter = rateLimit({
   },
 
   handler: (req: Request, res: Response) => {
+    const locale = resolveRequestLocale(req);
     res.status(429).json({
-      error: "Upload limit exceeded. Please try again later.",
+      error: tServer(locale, "rateLimit.upload"),
       retryAfter: "1 hour",
     });
   },
@@ -103,16 +90,13 @@ export const uploadLimiter = rateLimit({
 export const sensitiveOperationLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 10, // Limit to 10 sensitive operations per hour
-  message: {
-    error: "Too many requests for this operation, please try again later.",
-    retryAfter: "1 hour",
-  },
   standardHeaders: true,
   legacyHeaders: false,
 
   handler: (req: Request, res: Response) => {
+    const locale = resolveRequestLocale(req);
     res.status(429).json({
-      error: "Rate limit exceeded for this operation.",
+      error: tServer(locale, "rateLimit.sensitiveOperation"),
       retryAfter: "1 hour",
     });
   },

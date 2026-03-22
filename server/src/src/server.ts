@@ -6,6 +6,7 @@ import { socketCorsOptions } from "./config/cors";
 import { logger } from "./core/logger";
 import { verifyToken } from "./modules/auth/token.service";
 import { createWebSocketRateLimiter } from "./middleware/rateLimiter";
+import { tServer } from "./i18n/serverI18n";
 
 declare global {
   // מאפשר שימוש ב־global.io בקבצים אחרים
@@ -33,6 +34,20 @@ global.socketToUserId = new Map<string, number>();
 
 // WebSocket rate limiter
 const wsRateLimiter = createWebSocketRateLimiter();
+const websocketAuthRequired = tServer(
+  "he-IL",
+  "websocket.authenticationRequired",
+);
+const websocketInvalidToken = tServer("he-IL", "websocket.invalidToken");
+const websocketRateLimitExceeded = tServer(
+  "he-IL",
+  "websocket.rateLimitExceeded",
+);
+const websocketAuthenticationFailed = tServer(
+  "he-IL",
+  "websocket.authenticationFailed",
+);
+const websocketUnauthorized = tServer("he-IL", "websocket.unauthorized");
 
 // WebSocket Authentication Middleware
 io.use((socket, next) => {
@@ -64,7 +79,7 @@ io.use((socket, next) => {
         socketId: socket.id,
         address: socket.handshake.address,
       });
-      return next(new Error("Authentication required"));
+      return next(new Error(websocketAuthRequired));
     }
 
     // Verify JWT token
@@ -92,7 +107,7 @@ io.use((socket, next) => {
         socketId: socket.id,
         address: socket.handshake.address,
       });
-      return next(new Error("Invalid token"));
+      return next(new Error(websocketInvalidToken));
     }
 
     // Rate limit check
@@ -103,7 +118,7 @@ io.use((socket, next) => {
         userId: decoded.id,
         address: clientIp,
       });
-      return next(new Error("Rate limit exceeded"));
+      return next(new Error(websocketRateLimitExceeded));
     }
 
     // Attach user data to socket
@@ -126,7 +141,7 @@ io.use((socket, next) => {
       socketId: socket.id,
       error: error.message,
     });
-    next(new Error("Authentication failed"));
+    next(new Error(websocketAuthenticationFailed));
   }
 });
 
@@ -179,7 +194,7 @@ io.on("connection", (socket) => {
           socketId: socket.id,
           requestedUserId: numericUserId,
         });
-        socket.emit("error", { message: "Unauthorized" });
+        socket.emit("error", { message: websocketUnauthorized });
         return;
       }
 
@@ -192,7 +207,7 @@ io.on("connection", (socket) => {
           requestedUserId: numericUserId,
           actualUserId: authenticatedUser.id,
         });
-        socket.emit("error", { message: "Unauthorized" });
+        socket.emit("error", { message: websocketUnauthorized });
         return;
       }
     }
@@ -214,7 +229,7 @@ io.on("connection", (socket) => {
           socketId: socket.id,
           requestedHostId: hostId,
         });
-        socket.emit("error", { message: "Unauthorized" });
+        socket.emit("error", { message: websocketUnauthorized });
         return;
       }
 
@@ -227,7 +242,7 @@ io.on("connection", (socket) => {
           requestedHostId: hostId,
           actualUserId: authenticatedUser.id,
         });
-        socket.emit("error", { message: "Unauthorized" });
+        socket.emit("error", { message: websocketUnauthorized });
         return;
       }
     }
@@ -253,7 +268,7 @@ io.on("connection", (socket) => {
           socketId: socket.id,
           requestedUserId: userId,
         });
-        socket.emit("error", { message: "Unauthorized" });
+        socket.emit("error", { message: websocketUnauthorized });
         return;
       }
 
@@ -266,7 +281,7 @@ io.on("connection", (socket) => {
           requestedUserId: userId,
           actualUserId: authenticatedUser.id,
         });
-        socket.emit("error", { message: "Unauthorized" });
+        socket.emit("error", { message: websocketUnauthorized });
         return;
       }
     }
@@ -284,7 +299,7 @@ io.on("connection", (socket) => {
           socketId: socket.id,
           requestedUserId: userId,
         });
-        socket.emit("error", { message: "Unauthorized" });
+        socket.emit("error", { message: websocketUnauthorized });
         return;
       }
 
@@ -297,7 +312,7 @@ io.on("connection", (socket) => {
           requestedUserId: userId,
           actualUserId: authenticatedUser.id,
         });
-        socket.emit("error", { message: "Unauthorized" });
+        socket.emit("error", { message: websocketUnauthorized });
         return;
       }
     }
@@ -318,7 +333,7 @@ io.on("connection", (socket) => {
             requestedUserId: userId,
           },
         );
-        socket.emit("error", { message: "Unauthorized" });
+        socket.emit("error", { message: websocketUnauthorized });
         return;
       }
 
@@ -331,7 +346,7 @@ io.on("connection", (socket) => {
           requestedUserId: userId,
           actualUserId: authenticatedUser.id,
         });
-        socket.emit("error", { message: "Unauthorized" });
+        socket.emit("error", { message: websocketUnauthorized });
         return;
       }
     }

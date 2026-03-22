@@ -10,10 +10,13 @@
  * - Jumps focus to #main-content when activated
  */
 
+import { useTranslation } from "@/hooks/useTranslation.ts";
+
 export default function SkipLink() {
+  const { t } = useTranslation();
   return (
     <a href="#main-content" className="sr-only">
-      דלג לתוכן הראשי
+      {t("a11y.skipToContent")}
     </a>
   );
 }

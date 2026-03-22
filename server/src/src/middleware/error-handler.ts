@@ -1,6 +1,7 @@
 import { AppError } from "../core/errors";
 import { logger } from "../core/logger";
 import { recordSystemErrorBestEffort } from "../modules/errors/errors.service";
+import { tRequest } from "../i18n/serverI18n";
 
 export function errorHandler(err, req, res, next) {
   if (res.headersSent) {
@@ -15,7 +16,7 @@ export function errorHandler(err, req, res, next) {
       : null;
 
     void recordSystemErrorBestEffort({
-      message: String(err?.message || "Internal server error"),
+      message: String(err?.message || tRequest(req, "errors.internal")),
       route: `${req?.method || ""} ${req?.originalUrl || ""}`.trim(),
       user: userLabel,
       status: statusCode,
@@ -35,9 +36,9 @@ export function errorHandler(err, req, res, next) {
     });
   }
 
-  logger.error(err.message || "Internal server error", {
+  logger.error(err.message || tRequest(req, "errors.internal"), {
     stack: err.stack,
   });
 
-  res.status(500).json({ error: "Internal server error" });
+  res.status(500).json({ error: tRequest(req, "errors.internal") });
 }

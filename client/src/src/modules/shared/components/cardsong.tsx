@@ -1,5 +1,6 @@
 import React from "react";
 import { Trash2, Edit2 } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation.ts";
 
 interface Song {
   id: number;
@@ -43,6 +44,7 @@ const CardSong: React.FC<CardSongProps> = ({
   compact = false,
   hideActions = false,
 }) => {
+  const { t } = useTranslation();
   const durationText = safeDuration(song.duration_sec);
 
   return (
@@ -69,7 +71,7 @@ const CardSong: React.FC<CardSongProps> = ({
             {safeKey(song.key_sig)}
           </span>
           <span className="bg-neutral-950 px-2 py-1 rounded-2xl text-neutral-100 shadow-surface">
-            {song.bpm} BPM
+            {song.bpm} {t("songs.bpm")}
           </span>
           <span className="bg-neutral-950 px-2 py-1 rounded-2xl text-neutral-100 shadow-surface">
             {song.duration_sec}

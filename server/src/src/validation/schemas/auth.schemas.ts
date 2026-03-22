@@ -7,25 +7,22 @@ import { z } from "zod";
 // Email validation schema
 export const emailSchema = z
   .string()
-  .min(1, "Email is required")
-  .email("Invalid email format")
-  .max(255, "Email is too long")
+  .min(1, "validation.emailRequired")
+  .email("validation.invalidEmailFormat")
+  .max(255, "validation.emailTooLong")
   .toLowerCase()
   .trim();
 
 // Password validation schema (basic - detailed validation in passwordPolicy.ts)
 export const passwordSchema = z
   .string()
-  .min(8, "Password must be at least 8 characters")
-  .max(128, "Password must not exceed 128 characters");
+  .min(8, "validation.passwordMinLength")
+  .max(128, "validation.passwordMaxLength");
 
 // Locale validation schema
 export const localeSchema = z
   .string()
-  .regex(
-    /^[a-z]{2}(-[A-Z]{2})?$/,
-    "Invalid locale format (expected: en, he, en-US, he-IL)",
-  )
+  .regex(/^[a-z]{2}(-[A-Z]{2})?$/, "validation.invalidLocaleFormat")
   .optional();
 
 // Registration schema
@@ -34,8 +31,8 @@ export const registerSchema = z.object({
   password: passwordSchema,
   fullName: z
     .string()
-    .min(2, "Full name must be at least 2 characters")
-    .max(100, "Full name is too long")
+    .min(2, "validation.fullNameMinLength")
+    .max(100, "validation.fullNameTooLong")
     .trim(),
   preferredLocale: localeSchema,
 });
@@ -45,7 +42,7 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 // Login schema
 export const loginSchema = z.object({
   email: emailSchema,
-  password: z.string().min(1, "Password is required"),
+  password: z.string().min(1, "validation.passwordRequired"),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
@@ -61,7 +58,7 @@ export type PasswordResetRequestInput = z.infer<
 
 // Password reset schema
 export const passwordResetSchema = z.object({
-  token: z.string().min(1, "Reset token is required"),
+  token: z.string().min(1, "validation.resetTokenRequired"),
   newPassword: passwordSchema,
 });
 
@@ -70,16 +67,18 @@ export type PasswordResetInput = z.infer<typeof passwordResetSchema>;
 // Change password schema
 export const changePasswordSchema = z
   .object({
-    currentPassword: z.string().min(1, "Current password is required"),
+    currentPassword: z.string().min(1, "validation.currentPasswordRequired"),
     newPassword: passwordSchema,
-    confirmPassword: z.string().min(1, "Password confirmation is required"),
+    confirmPassword: z
+      .string()
+      .min(1, "validation.passwordConfirmationRequired"),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
-    message: "Passwords do not match",
+    message: "validation.passwordsDoNotMatch",
     path: ["confirmPassword"],
   })
   .refine((data) => data.currentPassword !== data.newPassword, {
-    message: "New password must be different from current password",
+    message: "validation.newPasswordMustDiffer",
     path: ["newPassword"],
   });
 
@@ -89,8 +88,8 @@ export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export const verify2FASchema = z.object({
   token: z
     .string()
-    .length(6, "2FA code must be 6 digits")
-    .regex(/^\d{6}$/, "2FA code must contain only digits"),
+    .length(6, "validation.twoFactorCodeLength")
+    .regex(/^\d{6}$/, "validation.twoFactorCodeDigits"),
 });
 
 export type Verify2FAInput = z.infer<typeof verify2FASchema>;
@@ -98,22 +97,22 @@ export type Verify2FAInput = z.infer<typeof verify2FASchema>;
 // 2FA authentication schema
 export const authenticate2FASchema = z.object({
   email: emailSchema,
-  password: z.string().min(1, "Password is required"),
+  password: z.string().min(1, "validation.passwordRequired"),
   token: z
     .string()
-    .length(6, "2FA code must be 6 digits")
-    .regex(/^\d{6}$/, "2FA code must contain only digits"),
+    .length(6, "validation.twoFactorCodeLength")
+    .regex(/^\d{6}$/, "validation.twoFactorCodeDigits"),
 });
 
 export type Authenticate2FAInput = z.infer<typeof authenticate2FASchema>;
 
 // 2FA disable schema
 export const disable2FASchema = z.object({
-  password: z.string().min(1, "Password is required for verification"),
+  password: z.string().min(1, "validation.passwordRequiredForVerification"),
   token: z
     .string()
-    .length(6, "2FA code must be 6 digits")
-    .regex(/^\d{6}$/, "2FA code must contain only digits")
+    .length(6, "validation.twoFactorCodeLength")
+    .regex(/^\d{6}$/, "validation.twoFactorCodeDigits")
     .optional(),
 });
 
@@ -121,7 +120,7 @@ export type Disable2FAInput = z.infer<typeof disable2FASchema>;
 
 // Token refresh schema
 export const refreshTokenSchema = z.object({
-  refreshToken: z.string().min(1, "Refresh token is required"),
+  refreshToken: z.string().min(1, "auth.refreshTokenRequired"),
 });
 
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;

@@ -11,6 +11,11 @@ import {
 } from "./files.repository";
 import { isElevatedRole } from "../../types/roles";
 import { getUploadsRoot } from "../../utils/uploadsRoot";
+import { normalizeLocale, tServer } from "../../i18n/serverI18n";
+
+function getUserLocale(user): "he-IL" | "en-US" {
+  return normalizeLocale(user?.preferred_locale, "he-IL") ?? "he-IL";
+}
 
 function normalizeUploadsDiskPath(fileUrl: unknown): string | null {
   if (!fileUrl) return null;
@@ -81,8 +86,9 @@ export async function getFiles(user, opts?: { userId?: number }) {
 }
 
 export async function createFile(user, payload) {
+  const locale = getUserLocale(user);
   if (!payload.file_name || !payload.file_url) {
-    throw new AppError(400, "חובה להזין שם וקישור לקובץ");
+    throw new AppError(400, tServer(locale, "files.nameAndUrlRequired"));
   }
 
   const id = await insertFile({
@@ -96,14 +102,15 @@ export async function createFile(user, payload) {
 }
 
 export async function updateFileDetails(user, id, payload) {
+  const locale = getUserLocale(user);
   if (!payload.file_name || !payload.file_name.trim()) {
-    throw new AppError(400, "חובה להזין שם קובץ");
+    throw new AppError(400, tServer(locale, "files.nameRequired"));
   }
 
   if (user.role !== "admin") {
     const ownsFile = await fileBelongsToUser(id, user.id);
     if (!ownsFile) {
-      throw new AppError(403, "אין לך הרשאה לעדכן את הקובץ הזה");
+      throw new AppError(403, tServer(locale, "files.updateForbidden"));
     }
   }
 
@@ -113,7 +120,7 @@ export async function updateFileDetails(user, id, payload) {
   });
 
   if (!affected) {
-    throw new AppError(404, "קובץ לא נמצא");
+    throw new AppError(404, tServer(locale, "files.notFound"));
   }
 
   return findFileById(id);
@@ -124,19 +131,20 @@ export async function removeFile(
   id,
   opts?: { deleteFromDisk?: boolean },
 ) {
+  const locale = getUserLocale(user);
   const isAdmin = user.role === "admin";
   const elevated = isElevatedRole(user.role);
 
   if (!isAdmin) {
     const ownsFile = await fileBelongsToUser(id, user.id);
     if (!ownsFile) {
-      throw new AppError(403, "אין לך הרשאה למחוק את הקובץ הזה");
+      throw new AppError(403, tServer(locale, "files.deleteForbidden"));
     }
   }
 
   const file = await findFileById(id);
   if (!file) {
-    throw new AppError(404, "קובץ לא נמצא");
+    throw new AppError(404, tServer(locale, "files.notFound"));
   }
 
   // Optional disk deletion for elevated roles (or admin). Non-elevated users can still
@@ -157,5 +165,5 @@ export async function removeFile(
   }
 
   const affected = await deleteFile(id);
-  if (!affected) throw new AppError(404, "קובץ לא נמצא");
+  if (!affected) throw new AppError(404, tServer(locale, "files.notFound"));
 }

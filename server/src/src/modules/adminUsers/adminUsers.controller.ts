@@ -6,6 +6,7 @@ import {
   type AdminUserListRow,
   type AdminUserSubscriptionRow,
 } from "./adminUsers.repository";
+import { resolveRequestLocale, tServer } from "../../i18n/serverI18n";
 
 import type { Request, Response } from "express";
 
@@ -44,14 +45,17 @@ function toIsoOrNull(value: unknown): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
-function parseNullableIsoDate(value: unknown): string | null | undefined {
+function parseNullableIsoDate(
+  value: unknown,
+  locale: "he-IL" | "en-US",
+): string | null | undefined {
   if (value === undefined) return undefined;
   if (value === null || value === "") return null;
   const date = new Date(String(value));
   if (Number.isNaN(date.getTime())) {
     throw new AppError(
       400,
-      "subscription_expires_at must be a valid date",
+      tServer(locale, "admin.subscriptionDateValid"),
       undefined,
     );
   }
@@ -59,15 +63,18 @@ function parseNullableIsoDate(value: unknown): string | null | undefined {
   return toMysqlDateTime(date);
 }
 
-function parseUserIdParam(raw: string): number {
+function parseUserIdParam(raw: string, locale: "he-IL" | "en-US"): number {
   const n = Number(raw);
   if (!Number.isFinite(n) || n <= 0) {
-    throw new AppError(400, "Invalid user id", undefined);
+    throw new AppError(400, tServer(locale, "admin.invalidUserId"), undefined);
   }
   return n;
 }
 
-function parseOptionalLimitOffset(query: AdminUsersListQuery): {
+function parseOptionalLimitOffset(
+  query: AdminUsersListQuery,
+  locale: "he-IL" | "en-US",
+): {
   limit?: number;
   offset?: number;
 } {
@@ -80,11 +87,15 @@ function parseOptionalLimitOffset(query: AdminUsersListQuery): {
   const offsetNum = rawOffset !== undefined ? Number(rawOffset) : 0;
 
   if (!Number.isFinite(limitNum) || limitNum <= 0) {
-    throw new AppError(400, "limit must be a positive number", undefined);
+    throw new AppError(400, tServer(locale, "admin.limitPositive"), undefined);
   }
 
   if (!Number.isFinite(offsetNum) || offsetNum < 0) {
-    throw new AppError(400, "offset must be a non-negative number", undefined);
+    throw new AppError(
+      400,
+      tServer(locale, "admin.offsetNonNegative"),
+      undefined,
+    );
   }
 
   const limitCapped = Math.min(Math.floor(limitNum), 200);
@@ -95,16 +106,19 @@ function parseOptionalLimitOffset(query: AdminUsersListQuery): {
 
 const ALLOWED_SUBSCRIPTION_STATUSES = new Set(["active", "trial", "expired"]);
 
-function normalizeStatus(value: unknown): string | null | undefined {
+function normalizeStatus(
+  value: unknown,
+  locale: "he-IL" | "en-US",
+): string | null | undefined {
   if (value === undefined) return undefined;
   if (value === null || value === "") return null;
   const s = String(value).trim().toLowerCase();
   if (!ALLOWED_SUBSCRIPTION_STATUSES.has(s)) {
     throw new AppError(
       400,
-      `subscription_status must be one of: ${Array.from(
-        ALLOWED_SUBSCRIPTION_STATUSES,
-      ).join(", ")}`,
+      tServer(locale, "admin.subscriptionStatusInvalid", {
+        values: Array.from(ALLOWED_SUBSCRIPTION_STATUSES).join(", "),
+      }),
       undefined,
     );
   }
@@ -135,8 +149,10 @@ function mapSubscriptionRowToDto(row: AdminUserSubscriptionRow) {
 
 export const adminUsersController = {
   listUsers: asyncHandler(async (req: Request, res: Response) => {
+    const locale = resolveRequestLocale(req);
     const { limit, offset } = parseOptionalLimitOffset(
       req.query as unknown as AdminUsersListQuery,
+      locale,
     );
     const rows = await adminUsersRepository.listUsers(limit, offset);
     const payload = Array.isArray(rows) ? rows.map(mapListRowToDto) : [];
@@ -144,47 +160,55 @@ export const adminUsersController = {
   }),
 
   getSubscription: asyncHandler(async (req: Request, res: Response) => {
+    const locale = resolveRequestLocale(req);
     const params = req.params as unknown as AdminUserIdParams;
-    const userId = parseUserIdParam(params.id);
+    const userId = parseUserIdParam(params.id, locale);
     const row = await adminUsersRepository.getUserSubscription(userId);
-    if (!row) throw new AppError(404, "User not found", undefined);
+    if (!row)
+      throw new AppError(404, tServer(locale, "auth.userNotFound"), undefined);
     res.json(mapSubscriptionRowToDto(row));
   }),
 
   updateSubscription: asyncHandler(async (req: Request, res: Response) => {
+    const locale = resolveRequestLocale(req);
     const params = req.params as unknown as AdminUserIdParams;
     const body = (req.body || {}) as UpdateSubscriptionBody;
     console.log("[ADMIN SUB UPDATE] params:", params);
     console.log("[ADMIN SUB UPDATE] body:", body);
 
-    const targetUserId = parseUserIdParam(params.id);
+    const targetUserId = parseUserIdParam(params.id, locale);
 
     const adminUserIdRaw = (req as any).user?.id;
     const adminUserId = Number(adminUserIdRaw);
     if (!Number.isFinite(adminUserId) || adminUserId <= 0) {
-      throw new AppError(401, "Unauthorized", undefined);
+      throw new AppError(401, tServer(locale, "admin.unauthorized"), undefined);
     }
 
     const existing =
       await adminUsersRepository.getUserSubscription(targetUserId);
-    if (!existing) throw new AppError(404, "User not found", undefined);
+    if (!existing)
+      throw new AppError(404, tServer(locale, "auth.userNotFound"), undefined);
 
     const incomingStatus =
       body.subscription_status !== undefined
-        ? normalizeStatus(body.subscription_status)
+        ? normalizeStatus(body.subscription_status, locale)
         : body.status !== undefined
-          ? normalizeStatus(body.status)
+          ? normalizeStatus(body.status, locale)
           : undefined;
 
     const incomingExpires =
       body.subscription_expires_at !== undefined
-        ? parseNullableIsoDate(body.subscription_expires_at)
+        ? parseNullableIsoDate(body.subscription_expires_at, locale)
         : body.expiresAt !== undefined
-          ? parseNullableIsoDate(body.expiresAt)
+          ? parseNullableIsoDate(body.expiresAt, locale)
           : undefined;
 
     if (incomingStatus === undefined && incomingExpires === undefined) {
-      throw new AppError(400, "No subscription fields provided", undefined);
+      throw new AppError(
+        400,
+        tServer(locale, "admin.noSubscriptionFields"),
+        undefined,
+      );
     }
 
     // Minimal validation: if status is being set to active/trial, require a valid future expiry.
@@ -192,14 +216,14 @@ export const adminUsersController = {
       if (incomingExpires === undefined) {
         throw new AppError(
           400,
-          "subscription_expires_at is required when subscription_status is active or trial",
+          tServer(locale, "admin.subscriptionExpiresRequired"),
           undefined,
         );
       }
       if (incomingExpires === null) {
         throw new AppError(
           400,
-          "subscription_expires_at must be a future date when subscription_status is active or trial",
+          tServer(locale, "admin.subscriptionExpiresFuture"),
           undefined,
         );
       }
@@ -207,7 +231,7 @@ export const adminUsersController = {
       if (!Number.isFinite(expiresMs) || expiresMs <= Date.now()) {
         throw new AppError(
           400,
-          "subscription_expires_at must be a future date when subscription_status is active or trial",
+          tServer(locale, "admin.subscriptionExpiresFuture"),
           undefined,
         );
       }
@@ -231,12 +255,17 @@ export const adminUsersController = {
     );
 
     if (!affected) {
-      throw new AppError(400, "No subscription fields provided", undefined);
+      throw new AppError(
+        400,
+        tServer(locale, "admin.noSubscriptionFields"),
+        undefined,
+      );
     }
 
     const updated =
       await adminUsersRepository.getUserSubscription(targetUserId);
-    if (!updated) throw new AppError(404, "User not found", undefined);
+    if (!updated)
+      throw new AppError(404, tServer(locale, "auth.userNotFound"), undefined);
 
     const updatedDto = mapSubscriptionRowToDto(updated);
 

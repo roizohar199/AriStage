@@ -1,10 +1,14 @@
+import { useTranslation } from "@/hooks/useTranslation.ts";
+
 export default function Splash() {
+  const { t } = useTranslation();
+
   return (
     <div className="flex items-center justify-center h-screen">
       <div className="flex flex-col items-center gap-6">
         {/* טקסט Ari Stage כמו במסך התחברות */}
         <h1 className="h-page font-extrabold text-transparent bg-brand-primary bg-clip-text drop-shadow-lg">
-          Ari Stage
+          {t("common.appName")}
         </h1>
 
         {/* Loader עגול */}

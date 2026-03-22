@@ -24,6 +24,7 @@ import {
 } from "./users.service";
 import { resolveSubscriptionStatus } from "../subscriptions/resolveSubscriptionStatus";
 import { getSubscriptionSettings } from "../subscriptions/subscriptions.repository";
+import { resolveRequestLocale, tServer } from "../../i18n/serverI18n";
 
 /* -------------------------------------------------------
    ⭐ פונקציה אחידה לתיקון URL של תמונה — פתרון לבעיה שלך
@@ -123,15 +124,20 @@ export const usersController = {
 
   // ⭐ שאר הפונקציות — ללא שינוי (לא קשור לתמונות)
   updateSettings: asyncHandler(async (req, res) => {
+    const locale = resolveRequestLocale(req);
     const avatar = req.file
       ? `/uploads/users/${req.user.id}/${req.file.filename}`
       : undefined;
 
-    const updatedUser = await updateProfile(req.user.id, {
-      ...req.body,
-      artist_role: req.body.artist_role || null,
-      avatar,
-    });
+    const updatedUser = await updateProfile(
+      req.user.id,
+      {
+        ...req.body,
+        artist_role: req.body.artist_role || null,
+        avatar,
+      },
+      locale,
+    );
 
     if (updatedUser?.avatar) {
       updatedUser.avatar = fixAvatar(req, updatedUser.avatar);
@@ -141,7 +147,8 @@ export const usersController = {
   }),
 
   deleteAvatar: asyncHandler(async (req, res) => {
-    const updatedUser = await deleteAvatarService(req.user.id);
+    const locale = resolveRequestLocale(req);
+    const updatedUser = await deleteAvatarService(req.user.id, locale);
 
     if (updatedUser?.avatar) {
       updatedUser.avatar = fixAvatar(req, updatedUser.avatar);
@@ -151,42 +158,50 @@ export const usersController = {
   }),
 
   updatePassword: asyncHandler(async (req, res) => {
-    await changePassword(req.user.id, req.body.newPass);
-    res.json({ message: "הסיסמה עודכנה בהצלחה ✅" });
+    const locale = resolveRequestLocale(req);
+    await changePassword(req.user.id, req.body.newPass, locale);
+    res.json({ message: tServer(locale, "users.passwordUpdated") });
   }),
 
   create: asyncHandler(async (req, res) => {
-    await createUserAccount(req.user, req.body);
-    res.status(201).json({ message: "המשתמש נוצר בהצלחה" });
+    const locale = resolveRequestLocale(req);
+    await createUserAccount(req.user, req.body, locale);
+    res.status(201).json({ message: tServer(locale, "users.userCreated") });
   }),
 
   update: asyncHandler(async (req, res) => {
-    await updateUserAccount(req.user, req.params.id, req.body);
-    res.json({ message: "המשתמש עודכן בהצלחה" });
+    const locale = resolveRequestLocale(req);
+    await updateUserAccount(req.user, req.params.id, req.body, locale);
+    res.json({ message: tServer(locale, "users.userUpdated") });
   }),
 
   remove: asyncHandler(async (req, res) => {
+    const locale = resolveRequestLocale(req);
     await removeUserAccount(req.params.id);
-    res.json({ message: "המשתמש נמחק בהצלחה" });
+    res.json({ message: tServer(locale, "users.userDeleted") });
   }),
 
   impersonate: asyncHandler(async (req, res) => {
-    const payload = await impersonateUser(req.params.id);
+    const locale = resolveRequestLocale(req);
+    const payload = await impersonateUser(req.params.id, locale);
     res.json({
-      message: "Impersonation success",
+      message: tServer(locale, "users.impersonationSuccess"),
       ...payload,
     });
   }),
 
   inviteArtist: asyncHandler(async (req, res) => {
+    const locale = resolveRequestLocale(req);
     const hostId = req.user.id;
     const artistId = req.body.artist_id;
 
     if (!artistId) {
-      return res.status(400).json({ message: "נא להזין ID של אמן" });
+      return res
+        .status(400)
+        .json({ message: tServer(locale, "users.artistIdRequired") });
     }
 
-    const result = await inviteArtistToMyCollection(hostId, artistId);
+    const result = await inviteArtistToMyCollection(hostId, artistId, locale);
 
     if (global.io) {
       const { emitToHost, emitToUser } = await import("../../core/socket");
@@ -201,14 +216,21 @@ export const usersController = {
   }),
 
   uninviteArtist: asyncHandler(async (req, res) => {
+    const locale = resolveRequestLocale(req);
     const hostId = req.user.id;
     const artistId = req.body.artist_id;
 
     if (!artistId) {
-      return res.status(400).json({ message: "נא להזין ID של אמן" });
+      return res
+        .status(400)
+        .json({ message: tServer(locale, "users.artistIdRequired") });
     }
 
-    const result = await uninviteArtistFromMyCollection(hostId, artistId);
+    const result = await uninviteArtistFromMyCollection(
+      hostId,
+      artistId,
+      locale,
+    );
 
     if (global.io) {
       const { emitToHost } = await import("../../core/socket");
@@ -222,10 +244,11 @@ export const usersController = {
   }),
 
   leaveCollection: asyncHandler(async (req, res) => {
+    const locale = resolveRequestLocale(req);
     const artistId = req.user.id;
     const hostId = req.body.hostId ? parseInt(req.body.hostId) : null;
 
-    const result = await leaveMyCollection(artistId, hostId);
+    const result = await leaveMyCollection(artistId, hostId, locale);
 
     if (global.io) {
       const { emitToUserAndHost } = await import("../../core/socket");
@@ -239,17 +262,20 @@ export const usersController = {
   }),
 
   acceptInvitationStatus: asyncHandler(async (req, res) => {
+    const locale = resolveRequestLocale(req);
     const userId = req.user.id;
     const hostId = parseInt(req.body.hostId);
 
     if (!hostId || isNaN(hostId)) {
-      return res.status(400).json({ message: "נא לספק hostId תקין" });
+      return res
+        .status(400)
+        .json({ message: tServer(locale, "users.validHostIdRequired") });
     }
 
     const { acceptInvitationStatus: acceptInvitationStatusService } =
       await import("./users.service");
 
-    const result = await acceptInvitationStatusService(userId, hostId);
+    const result = await acceptInvitationStatusService(userId, hostId, locale);
 
     if (global.io) {
       const { emitToUserAndHost } = await import("../../core/socket");
@@ -263,21 +289,20 @@ export const usersController = {
   }),
 
   rejectInvitationStatus: asyncHandler(async (req, res) => {
-    const avatar = req.file
-      ? `/uploads/users/${req.user.id}/${req.file.filename}`
-      : null;
-
+    const locale = resolveRequestLocale(req);
     const userId = req.user.id;
     const hostId = parseInt(req.body.hostId);
 
     if (!hostId || isNaN(hostId)) {
-      return res.status(400).json({ message: "נא לספק hostId תקין" });
+      return res
+        .status(400)
+        .json({ message: tServer(locale, "users.validHostIdRequired") });
     }
 
     const { rejectInvitationStatus: rejectInvitationStatusService } =
       await import("./users.service");
 
-    const result = await rejectInvitationStatusService(userId, hostId);
+    const result = await rejectInvitationStatusService(userId, hostId, locale);
 
     if (global.io) {
       const { emitToUserAndHost } = await import("../../core/socket");
@@ -312,21 +337,26 @@ export const usersController = {
   }),
 
   sendInvitation: asyncHandler(async (req, res) => {
+    const locale = resolveRequestLocale(req);
     const hostId = req.user.id;
-    const hostName = req.user.full_name || "אמן";
+    const hostName =
+      req.user.full_name || tServer(locale, "users.defaultHostName");
     const email = req.body.email;
 
     if (!email) {
-      return res.status(400).json({ message: "נא להזין כתובת אימייל" });
+      return res
+        .status(400)
+        .json({ message: tServer(locale, "users.emailRequired") });
     }
 
-    const result = await sendArtistInvitation(hostId, hostName, email);
+    const result = await sendArtistInvitation(hostId, hostName, email, locale);
     res.json(result);
   }),
 
   acceptInvitation: asyncHandler(async (req, res) => {
+    const locale = resolveRequestLocale(req);
     const token = req.params.token;
-    const result = await acceptInvitation(token);
+    const result = await acceptInvitation(token, locale);
     res.json(result);
   }),
 };

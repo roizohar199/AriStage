@@ -1,6 +1,7 @@
 import { asyncHandler } from "../../core/asyncHandler";
 import { getPlanByKey, listEnabledPlans } from "./plans.repository";
 import { AppError } from "../../core/errors";
+import { tRequest } from "../../i18n/serverI18n";
 
 export const plansController = {
   listPublic: asyncHandler(async (req, res) => {
@@ -19,12 +20,12 @@ export const plansController = {
       .trim()
       .toLowerCase();
     if (!key) {
-      throw new AppError(400, "key is required");
+      throw new AppError(400, tRequest(req, "plans.keyRequired"));
     }
 
     const plan = await getPlanByKey(key);
     if (!plan) {
-      throw new AppError(404, "Plan not found");
+      throw new AppError(404, tRequest(req, "admin.planNotFound"));
     }
 
     res.json({ plan });

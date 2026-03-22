@@ -1,5 +1,6 @@
 import { pool } from "../../database/pool";
 import { AppError } from "../../core/errors";
+import { tServer } from "../../i18n/serverI18n";
 
 export type SubscriptionSettings = {
   is_enabled: number;
@@ -16,7 +17,7 @@ export async function getSubscriptionSettings(): Promise<SubscriptionSettings> {
   if (!settings) {
     throw new AppError(
       500,
-      "Missing subscriptions_settings row (id=1)",
+      tServer("he-IL", "subscriptions.settingsRowMissing"),
       undefined,
     );
   }
@@ -44,7 +45,7 @@ export async function getUserSubscriptionState(
 
   const user = (rows as any[])[0];
   if (!user) {
-    throw new Error("User not found");
+    throw new Error(tServer("he-IL", "auth.userNotFound"));
   }
 
   return {
@@ -56,7 +57,7 @@ export async function getUserSubscriptionState(
 
 export async function markUserSubscriptionExpired(userId: number) {
   if (!Number.isFinite(userId) || userId <= 0) {
-    throw new Error("Invalid userId for markUserSubscriptionExpired");
+    throw new Error(tServer("he-IL", "subscriptions.invalidUserIdForExpiry"));
   }
   await pool.query(
     "UPDATE users SET subscription_status = 'expired', updated_at = NOW() WHERE id = ?",

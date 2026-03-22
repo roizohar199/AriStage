@@ -3,6 +3,7 @@ import { AppError } from "../../core/errors";
 import { getFeatureFlags, setFeatureFlag } from "./featureFlags.service";
 import { logSystemEvent } from "../../utils/systemLogger";
 import { clearFeatureFlagsCache } from "../../middleware/featureFlags";
+import { tRequest } from "../../i18n/serverI18n";
 
 export const featureFlagsController = {
   list: asyncHandler(async (_req, res) => {
@@ -20,7 +21,8 @@ export const featureFlagsController = {
 
   update: asyncHandler(async (req, res) => {
     const key = String(req.params.key || "").trim();
-    if (!key) throw new AppError(400, "Missing feature flag key");
+    if (!key)
+      throw new AppError(400, tRequest(req, "featureFlags.keyRequired"));
 
     const enabled = Boolean(req.body?.enabled);
     const description =

@@ -70,7 +70,7 @@ export default function ResetPassword() {
         </form>
 
         <p className="text-center text-neutral-500 text-xs mt-6">
-          ⚡ Ari Stage 2025
+          {t("common.appName")} 2025
         </p>
       </div>
     </div>

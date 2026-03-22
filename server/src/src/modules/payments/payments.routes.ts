@@ -9,6 +9,7 @@ import {
 import { getPlanByKey } from "../plans/plans.repository";
 import { activatePlanForUser } from "../../services/subscriptionService";
 import { AppError } from "../../core/errors";
+import { resolveRequestLocale, tServer } from "../../i18n/serverI18n";
 
 const router = Router();
 
@@ -18,16 +19,17 @@ router.post(
   requireFeatureFlagEnabled("module.payments"),
   async (req, res, next) => {
     try {
+      const locale = resolveRequestLocale(req);
       const userId = req.user?.id;
       if (!userId) {
-        throw new AppError(401, "Unauthorized");
+        throw new AppError(401, tServer(locale, "auth.notAuthenticated"));
       }
 
       const { plan, billing_period, billingPeriod } = req.body || {};
 
       const resolvedPlan = String(plan ?? "pro").trim();
       if (!resolvedPlan) {
-        throw new AppError(400, "plan is required");
+        throw new AppError(400, tServer(locale, "payments.planRequired"));
       }
 
       const resolvedBillingPeriod =
@@ -36,15 +38,18 @@ router.post(
         resolvedBillingPeriod !== "monthly" &&
         resolvedBillingPeriod !== "yearly"
       ) {
-        throw new AppError(400, "Invalid billing period");
+        throw new AppError(
+          400,
+          tServer(locale, "payments.invalidBillingPeriod"),
+        );
       }
 
       const planRow = await getPlanByKey(resolvedPlan);
       if (!planRow) {
-        throw new AppError(400, "Invalid plan");
+        throw new AppError(400, tServer(locale, "payments.invalidPlan"));
       }
       if (!planRow.enabled) {
-        throw new AppError(400, "Plan is not available");
+        throw new AppError(400, tServer(locale, "payments.planUnavailable"));
       }
 
       const payment = await createMockPayment(
@@ -70,25 +75,26 @@ router.post(
   requireFeatureFlagEnabled("module.payments"),
   async (req, res, next) => {
     try {
+      const locale = resolveRequestLocale(req);
       const userId = req.user?.id;
       if (!userId) {
-        throw new AppError(401, "Unauthorized");
+        throw new AppError(401, tServer(locale, "auth.notAuthenticated"));
       }
 
       const { paymentId } = req.body || {};
       const idNum = Number(paymentId);
 
       if (!Number.isFinite(idNum) || idNum <= 0) {
-        throw new AppError(400, "paymentId is required");
+        throw new AppError(400, tServer(locale, "payments.paymentIdRequired"));
       }
 
       const payment = await findPaymentById(idNum);
       if (!payment) {
-        throw new AppError(404, "Payment not found");
+        throw new AppError(404, tServer(locale, "payments.paymentNotFound"));
       }
 
       if (payment.user_id !== Number(userId)) {
-        throw new AppError(403, "Cannot confirm payment for another user");
+        throw new AppError(403, tServer(locale, "payments.otherUserForbidden"));
       }
 
       if (payment.status === "paid") {

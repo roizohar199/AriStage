@@ -8,6 +8,7 @@ export interface TokenPayload {
   full_name: string;
   artist_role?: string | null;
   avatar?: string | null;
+  preferred_locale?: string | null;
 }
 
 export function signToken(payload: TokenPayload) {
@@ -28,6 +29,7 @@ export function signToken(payload: TokenPayload) {
       full_name: payload.full_name || "",
       artist_role: payload.artist_role || null,
       avatar: payload.avatar || null,
+      preferred_locale: payload.preferred_locale || null,
     },
     env.jwtSecret,
     { expiresIn },

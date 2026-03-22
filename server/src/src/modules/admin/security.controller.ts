@@ -11,6 +11,7 @@ import {
   unlockAccount,
   getSecurityHealthScore,
 } from "./security.service";
+import { resolveRequestLocale, tRequest, tServer } from "../../i18n/serverI18n";
 
 /**
  * Admin Security Controller
@@ -23,7 +24,8 @@ export const securityController = {
    * Get comprehensive security overview
    */
   getOverview: asyncHandler(async (req: Request, res: Response) => {
-    const overview = await getSecurityOverview();
+    const locale = resolveRequestLocale(req);
+    const overview = await getSecurityOverview(locale);
     res.json(overview);
   }),
 
@@ -69,7 +71,8 @@ export const securityController = {
    * Get list of currently locked accounts
    */
   getLockedAccounts: asyncHandler(async (req: Request, res: Response) => {
-    const lockedAccounts = await getLockedAccounts();
+    const locale = resolveRequestLocale(req);
+    const lockedAccounts = await getLockedAccounts(locale);
     res.json(lockedAccounts);
   }),
 
@@ -78,16 +81,17 @@ export const securityController = {
    * Unlock a locked account
    */
   unlockAccount: asyncHandler(async (req: Request, res: Response) => {
+    const locale = resolveRequestLocale(req);
     const { email } = req.body;
 
     if (!email) {
-      throw new AppError(400, "Email is required");
+      throw new AppError(400, tServer(locale, "users.emailRequired"));
     }
 
-    await unlockAccount(email);
+    await unlockAccount(email, locale);
 
     res.json({
-      message: "Account unlocked successfully",
+      message: tRequest(req, "security.accountUnlocked"),
     });
   }),
 
@@ -96,7 +100,8 @@ export const securityController = {
    * Get list of active user sessions
    */
   getActiveSessions: asyncHandler(async (req: Request, res: Response) => {
-    const sessions = await getActiveSessions();
+    const locale = resolveRequestLocale(req);
+    const sessions = await getActiveSessions(locale);
     res.json(sessions);
   }),
 
@@ -105,16 +110,17 @@ export const securityController = {
    * Revoke a specific session
    */
   revokeSession: asyncHandler(async (req: Request, res: Response) => {
+    const locale = resolveRequestLocale(req);
     const sessionId = parseInt(req.params.id);
 
     if (isNaN(sessionId)) {
-      throw new AppError(400, "Invalid session ID");
+      throw new AppError(400, tServer(locale, "security.invalidSessionId"));
     }
 
-    await revokeSession(sessionId);
+    await revokeSession(sessionId, locale);
 
     res.json({
-      message: "Session revoked successfully",
+      message: tRequest(req, "security.sessionRevoked"),
     });
   }),
 
@@ -123,16 +129,19 @@ export const securityController = {
    * Revoke all sessions for a specific user
    */
   revokeUserSessions: asyncHandler(async (req: Request, res: Response) => {
+    const locale = resolveRequestLocale(req);
     const userId = parseInt(req.params.userId);
 
     if (isNaN(userId)) {
-      throw new AppError(400, "Invalid user ID");
+      throw new AppError(400, tServer(locale, "security.invalidUserId"));
     }
 
-    const revokedCount = await revokeAllUserSessions(userId);
+    const revokedCount = await revokeAllUserSessions(userId, locale);
 
     res.json({
-      message: `${revokedCount} session(s) revoked successfully`,
+      message: tRequest(req, "security.sessionsRevoked", {
+        count: revokedCount,
+      }),
       revokedCount,
     });
   }),
@@ -142,7 +151,8 @@ export const securityController = {
    * Get security health score and analysis
    */
   getHealthScore: asyncHandler(async (req: Request, res: Response) => {
-    const health = await getSecurityHealthScore();
+    const locale = resolveRequestLocale(req);
+    const health = await getSecurityHealthScore(locale);
     res.json(health);
   }),
 

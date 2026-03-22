@@ -2,6 +2,7 @@
 export const he = {
   // Common UI
   common: {
+    appName: "Ari Stage",
     save: "שמור",
     cancel: "בטל",
     delete: "מחק",
@@ -137,6 +138,7 @@ export const he = {
     verify: "אמת",
     verifying: "מאמת...",
     resetting: "מאפס...",
+    emailPlaceholder: "name@example.com",
 
     termsDialog: {
       ariaLabel: "תקנון השימוש של Ari Stage",
@@ -406,6 +408,18 @@ export const he = {
     },
 
     addSongsModuleDisabled: "מודול הוספת שירים כבוי",
+
+    scaleMode: {
+      major: "מז'ור",
+      minor: "מינור",
+      harmonicMinor: "הרמוני מינור",
+      melodicMinor: "מלודי מינור",
+      dorian: "דוריאן",
+      phrygian: "פריגי",
+      lydian: "לידי",
+      mixolydian: "מיקסולידי",
+      aeolian: "אאוליאן",
+    },
   },
 
   // Lineups
@@ -462,6 +476,8 @@ export const he = {
     lineupNamePlaceholder: "שם הליינאפ *",
     locationPlaceholder: "מיקום",
     descriptionOptionalPlaceholder: "תיאור (אופציונלי)",
+    datePlaceholder: "dd/mm/yyyy",
+    timePlaceholder: "--:--",
 
     moduleDisabledTitle: "מודול ליינאפים כבוי",
     moduleDisabledHint: "ניתן להפעיל אותו מחדש בטאב “מודלים” באדמין.",
@@ -557,6 +573,7 @@ export const he = {
       "הזן את כתובת האימייל של האמן. הוא יקבל מייל עם קישור להצטרפות למאגר שלך.",
     sendInvite: "שלח הזמנה",
     sendingInvite: "שולח...",
+    inviteEmailPlaceholder: "artist@example.com",
   },
 
   // Users
@@ -1435,6 +1452,8 @@ export const he = {
       fillCacheButton: "איך למלא קאש?",
       fillCacheToast:
         "כדי להוסיף עוד תוכן ל-Offline: תטייל באתר במצב Online פעם אחת",
+      columnCache: "Cache",
+      columnUrl: "URL",
     },
   },
 
@@ -1467,7 +1486,7 @@ export const he = {
 
   // Accessibility
   a11y: {
-    skipToContent: "דלג לתוכן",
+    skipToContent: "דלג לתוכן הראשי",
     openMenu: "פתח תפריט",
     closeMenu: "סגור תפריט",
     toggleMenu: "החלף תפריט",
@@ -1481,6 +1500,23 @@ export const he = {
     acceptAll: "קבל הכל",
     rejectAll: "דחה הכל",
     customizePreferences: "התאם העדפות",
+    routeAnnouncer: {
+      pageLoaded: "עמוד נטען",
+      home: "דף הבית",
+      login: "התחברות",
+      register: "הרשמה",
+      settings: "הגדרות",
+      accessibility: "הצהרת נגישות",
+      myProfile: "הפרופיל שלי",
+      myLineups: "הלהקות שלי",
+      admin: "ניהול מערכת",
+      artistPage: "עמוד אמן",
+      personalArea: "האזור האישי",
+      sharing: "שיתוף",
+      invitation: "הזמנה",
+      resetPassword: "איפוס סיסמה",
+      unknownPage: "עמוד חדש",
+    },
   },
 
   accessibility: {

@@ -1,5 +1,6 @@
 import { AppError } from "../core/errors";
 import { env } from "../config/env";
+import { tRequest } from "../i18n/serverI18n";
 import {
   getSubscriptionSettings,
   getUserSubscriptionState,
@@ -47,7 +48,9 @@ export async function requireActiveSubscription(req: any, res: any, next: any) {
 
     const userId = Number(req.user?.id);
     if (!userId) {
-      return next(new AppError(401, "Unauthorized", undefined));
+      return next(
+        new AppError(401, tRequest(req, "auth.notAuthenticated"), undefined),
+      );
     }
 
     const { subscription_status, subscription_expires_at } =

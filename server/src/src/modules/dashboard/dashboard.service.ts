@@ -2,6 +2,7 @@ import { AppError } from "../../core/errors";
 import { countAll, countWhere } from "./dashboard.repository";
 import { pool } from "../../database/pool";
 import os from "os";
+import { ServerLocale, tServer } from "../../i18n/serverI18n";
 
 let lastCpuUsage = process.cpuUsage();
 let lastHrtime = process.hrtime.bigint();
@@ -52,9 +53,12 @@ function getActiveUsersCount(): number {
   return typeof fallback === "number" ? fallback : 0;
 }
 
-export async function getDashboardPayload(user) {
+export async function getDashboardPayload(
+  user,
+  locale: ServerLocale = "he-IL",
+) {
   if (!user?.id) {
-    throw new AppError(401, "משתמש לא מזוהה");
+    throw new AppError(401, tServer(locale, "dashboard.userNotIdentified"));
   }
 
   if (user.role === "admin") {
@@ -117,9 +121,12 @@ export async function getDashboardPayload(user) {
   };
 }
 
-export async function getSharedDashboardStats(user) {
+export async function getSharedDashboardStats(
+  user,
+  locale: ServerLocale = "he-IL",
+) {
   if (!user?.id) {
-    throw new AppError(401, "משתמש לא מזוהה");
+    throw new AppError(401, tServer(locale, "dashboard.userNotIdentified"));
   }
 
   // קבלת רשימת אמנים שהזמינו אותי

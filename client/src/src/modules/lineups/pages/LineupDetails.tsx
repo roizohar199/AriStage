@@ -265,7 +265,7 @@ const AddSongModal = memo(function AddSongModal({
               <p className="text-neutral-400 text-xs">{s.artist}</p>
               <div className="flex flex-wrap gap-2 mt-2 text-xs">
                 <p className="px-2 py-1 bg-neutral-950 rounded-2xl">
-                  BPM {s.bpm || ""}
+                  {t("songs.bpm")} {s.bpm || ""}
                 </p>
                 <p className="px-2 py-1 bg-neutral-950 rounded-2xl">
                   {s.key_sig || "-"}
@@ -647,7 +647,7 @@ export default function LineupDetails() {
         if (!song.song_id) continue;
 
         // המרת duration לפורמט מתאים
-        let formattedDuration = "N/A";
+        let formattedDuration = t("common.notSpecified");
         if (song.duration) {
           if (typeof song.duration === "number") {
             const minutes = Math.floor(song.duration / 60);

@@ -225,7 +225,9 @@ export default function Header({
       <div className="h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between shadow-surface">
         {/* Left: Logo - hide on mobile */}
         <div className="items-center gap-0 hidden md:flex">
-          <h1 className="h-page text-neutral-100 font-bold">AriStage</h1>
+          <h1 className="h-page text-neutral-100 font-bold">
+            {t("common.appName")}
+          </h1>
           <Music2Icon size={24} className="text-brand-primary" />
         </div>
 
@@ -315,7 +317,7 @@ export default function Header({
                   src={user?.avatar}
                   name={user?.full_name}
                   email={user?.email}
-                  alt="Avatar"
+                  alt={t("settings.avatar")}
                   className="h-full w-full"
                   imgClassName="h-full w-full object-cover"
                   fallbackClassName="h-full w-full flex items-center justify-center bg-neutral-700"
@@ -398,10 +400,10 @@ export default function Header({
                 <thead className="sticky top-0 bg-neutral-900">
                   <tr>
                     <th className="text-start px-3 py-2 text-neutral-300 font-semibold">
-                      Cache
+                      {t("offline.cacheModal.columnCache")}
                     </th>
                     <th className="text-start px-3 py-2 text-neutral-300 font-semibold">
-                      URL
+                      {t("offline.cacheModal.columnUrl")}
                     </th>
                   </tr>
                 </thead>

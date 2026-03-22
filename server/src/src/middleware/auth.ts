@@ -3,6 +3,7 @@ import { AppError } from "../core/errors";
 import { env } from "../config/env";
 import { isKnownRole } from "../types/roles";
 import { touchUserLastSeen } from "../modules/users/users.repository";
+import { tRequest } from "../i18n/serverI18n";
 
 import type { NextFunction, Request, Response } from "express";
 
@@ -12,15 +13,12 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     const header = req.headers.authorization || "";
 
     if (!header.startsWith("Bearer ")) {
-      throw new AppError(
-        401,
-        "Unauthorized - Missing or invalid Authorization header",
-      );
+      throw new AppError(401, tRequest(req, "auth.missingAuthorizationHeader"));
     }
 
     const token = header.split(" ")[1];
     if (!token) {
-      throw new AppError(401, "Unauthorized - Missing token");
+      throw new AppError(401, tRequest(req, "auth.missingToken"));
     }
 
     const decoded: any = verifyToken(token);
@@ -35,6 +33,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
       email: decoded.email,
       role: decoded.role,
       full_name: decoded.full_name || "",
+      preferred_locale: decoded.preferred_locale || null,
     };
 
     // Non-blocking: admin "Last Seen" tracking.
@@ -43,10 +42,10 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     next();
   } catch (err: any) {
     if (err?.name === "TokenExpiredError") {
-      return next(new AppError(401, "Token expired"));
+      return next(new AppError(401, tRequest(req, "auth.tokenExpired")));
     }
     if (err?.name === "JsonWebTokenError") {
-      return next(new AppError(401, "Invalid token"));
+      return next(new AppError(401, tRequest(req, "auth.invalidToken")));
     }
     next(err);
   }
@@ -67,7 +66,7 @@ export function requireRoles(roles: string[] = []) {
     if (!roles.length) return next();
 
     if (!req.user || !roles.includes(req.user.role)) {
-      return next(new AppError(403, "Forbidden - Role not allowed"));
+      return next(new AppError(403, tRequest(req, "auth.forbiddenRole")));
     }
 
     next();

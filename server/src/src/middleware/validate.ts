@@ -1,6 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import { ZodSchema, ZodError } from "zod";
 import { AppError } from "../core/errors";
+import {
+  resolveRequestLocale,
+  tServer,
+  translateServerMessage,
+} from "../i18n/serverI18n";
 
 /**
  * Validation Middleware
@@ -18,13 +23,14 @@ export const validateBody = (schema: ZodSchema) => {
       next();
     } catch (error) {
       if (error instanceof ZodError) {
+        const locale = resolveRequestLocale(req);
         const errors = error.issues.map((err) => ({
           field: err.path.join("."),
-          message: err.message,
+          message: translateServerMessage(locale, err.message),
         }));
 
         return res.status(400).json({
-          error: "Validation failed",
+          error: tServer(locale, "errors.validationFailed"),
           details: errors,
         });
       }
@@ -44,13 +50,14 @@ export const validateQuery = (schema: ZodSchema) => {
       next();
     } catch (error) {
       if (error instanceof ZodError) {
+        const locale = resolveRequestLocale(req);
         const errors = error.issues.map((err) => ({
           field: err.path.join("."),
-          message: err.message,
+          message: translateServerMessage(locale, err.message),
         }));
 
         return res.status(400).json({
-          error: "Invalid query parameters",
+          error: tServer(locale, "errors.invalidQueryParameters"),
           details: errors,
         });
       }
@@ -70,13 +77,14 @@ export const validateParams = (schema: ZodSchema) => {
       next();
     } catch (error) {
       if (error instanceof ZodError) {
+        const locale = resolveRequestLocale(req);
         const errors = error.issues.map((err) => ({
           field: err.path.join("."),
-          message: err.message,
+          message: translateServerMessage(locale, err.message),
         }));
 
         return res.status(400).json({
-          error: "Invalid URL parameters",
+          error: tServer(locale, "errors.invalidUrlParameters"),
           details: errors,
         });
       }
@@ -107,14 +115,15 @@ export const validate = (schemas: {
       next();
     } catch (error) {
       if (error instanceof ZodError) {
+        const locale = resolveRequestLocale(req);
         const errors = error.issues.map((err) => ({
           field: err.path.join("."),
-          message: err.message,
+          message: translateServerMessage(locale, err.message),
           type: err.code,
         }));
 
         return res.status(400).json({
-          error: "Validation failed",
+          error: tServer(locale, "errors.validationFailed"),
           details: errors,
         });
       }
@@ -135,11 +144,12 @@ export const validateFile = (
 ) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const file = req.file;
+    const locale = resolveRequestLocale(req);
 
     // Check if file is required
     if (options.required && !file) {
       return res.status(400).json({
-        error: "File is required",
+        error: tServer(locale, "errors.fileRequired"),
       });
     }
 
@@ -150,7 +160,9 @@ export const validateFile = (
     // Check file size
     if (options.maxSize && file.size > options.maxSize) {
       return res.status(400).json({
-        error: `File size must not exceed ${options.maxSize / 1024 / 1024}MB`,
+        error: tServer(locale, "errors.fileTooLarge", {
+          sizeMb: options.maxSize / 1024 / 1024,
+        }),
       });
     }
 
@@ -160,7 +172,9 @@ export const validateFile = (
       !options.allowedMimeTypes.includes(file.mimetype)
     ) {
       return res.status(400).json({
-        error: `Invalid file type. Allowed types: ${options.allowedMimeTypes.join(", ")}`,
+        error: tServer(locale, "errors.invalidFileType", {
+          types: options.allowedMimeTypes.join(", "),
+        }),
       });
     }
 
