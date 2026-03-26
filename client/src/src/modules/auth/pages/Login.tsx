@@ -14,7 +14,56 @@ import {
   Input,
   PasswordInput,
 } from "@/modules/shared/components/FormControls";
+import { getBrowserLocale } from "@/modules/shared/lib/locale";
 import { X } from "lucide-react";
+
+type RegisterFormValues = {
+  fullName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  artistRole: string;
+  agreed: boolean;
+};
+
+type RegisterPayload = {
+  fullName: string;
+  email: string;
+  password: string;
+  artistRole: string;
+  agreed: boolean;
+  preferredLocale: string;
+};
+
+type RegisterField = keyof RegisterFormValues;
+
+type RegisterFieldErrors = Partial<Record<RegisterField, string>>;
+
+type RegisterErrorDetail = {
+  field?: string;
+  message?: string;
+};
+
+type RegisterErrorResponse = {
+  error?: string;
+  details?: RegisterErrorDetail[];
+};
+
+const REGISTER_FIELD_MAP: Partial<Record<string, RegisterField>> = {
+  fullName: "fullName",
+  full_name: "fullName",
+  email: "email",
+  password: "password",
+  confirmPassword: "confirmPassword",
+  confirm_password: "confirmPassword",
+  artistRole: "artistRole",
+  artist_role: "artistRole",
+  role: "artistRole",
+  agreed: "agreed",
+};
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const REGISTER_PASSWORD_MIN_LENGTH = 8;
 
 export default function Login() {
   const { t, translations } = useTranslation();
@@ -25,11 +74,11 @@ export default function Login() {
   const tabFromUrl = search.get("tab");
 
   const [tab, setTab] = useState("login");
-  const [full_name, setFullName] = useState("");
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [role, setRole] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [artistRole, setArtistRole] = useState("");
   const [avatar, setAvatar] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [agreed, setAgreed] = useState(false);
@@ -37,6 +86,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isTermsOpen, setIsTermsOpen] = useState(false);
+  const [registerErrors, setRegisterErrors] = useState<RegisterFieldErrors>({});
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -55,6 +105,108 @@ export default function Login() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [isTermsOpen]);
+
+  const clearRegisterErrors = (...fields: RegisterField[]) => {
+    setRegisterErrors((current) => {
+      if (!fields.length) return {};
+
+      let changed = false;
+      const next = { ...current };
+
+      for (const field of fields) {
+        if (next[field]) {
+          delete next[field];
+          changed = true;
+        }
+      }
+
+      return changed ? next : current;
+    });
+  };
+
+  const clearRegisterFeedback = (...fields: RegisterField[]) => {
+    setError("");
+    setMessage("");
+    clearRegisterErrors(...fields);
+  };
+
+  const validateRegisterForm = (
+    values: RegisterFormValues,
+  ): RegisterFieldErrors => {
+    const nextErrors: RegisterFieldErrors = {};
+    const trimmedFullName = values.fullName.trim();
+    const trimmedEmail = values.email.trim();
+
+    if (!trimmedFullName) {
+      nextErrors.fullName = t("auth.fullNameRequired");
+    } else if (trimmedFullName.length < 2) {
+      nextErrors.fullName = t("auth.fullNameTooShort");
+    }
+
+    if (!trimmedEmail) {
+      nextErrors.email = t("auth.emailRequired");
+    } else if (!EMAIL_PATTERN.test(trimmedEmail)) {
+      nextErrors.email = t("errors.invalidEmail");
+    }
+
+    if (!values.password) {
+      nextErrors.password = t("auth.passwordRequired");
+    } else if (values.password.length < REGISTER_PASSWORD_MIN_LENGTH) {
+      nextErrors.password = t("auth.passwordTooShort");
+    }
+
+    if (!values.confirmPassword || values.password !== values.confirmPassword) {
+      nextErrors.confirmPassword = t("auth.passwordMismatch");
+    }
+
+    if (!values.agreed) {
+      nextErrors.agreed = t("auth.termsRequired");
+    }
+
+    return nextErrors;
+  };
+
+  const applyRegisterApiFieldErrors = (err: unknown) => {
+    const responseData = (
+      err as { response?: { data?: RegisterErrorResponse } }
+    )?.response?.data;
+
+    if (!Array.isArray(responseData?.details)) {
+      return false;
+    }
+
+    const nextErrors = responseData.details.reduce<RegisterFieldErrors>(
+      (acc, detail) => {
+        const mappedField = detail.field
+          ? REGISTER_FIELD_MAP[detail.field]
+          : undefined;
+
+        if (mappedField && detail.message && !acc[mappedField]) {
+          acc[mappedField] = detail.message;
+        }
+
+        return acc;
+      },
+      {},
+    );
+
+    if (!Object.keys(nextErrors).length) {
+      return false;
+    }
+
+    setRegisterErrors(nextErrors);
+    setError(
+      typeof responseData.error === "string" ? responseData.error.trim() : "",
+    );
+    return true;
+  };
+
+  const hasRegisterPassword = password.length > 0;
+  const isRegisterPasswordValid =
+    password.length >= REGISTER_PASSWORD_MIN_LENGTH;
+  const hasConfirmPassword = confirmPassword.length > 0;
+  const isConfirmPasswordMatch =
+    hasConfirmPassword && password === confirmPassword;
 
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -82,7 +234,11 @@ export default function Login() {
       // Navigate to home - let the app routing decide the destination
       navigate("/");
     } catch (err: any) {
-      setError(getApiErrorMessage(err, "auth.loginError"));
+      if (err?.response?.status === 401) {
+        setError(t("auth.invalidCredentials"));
+      } else {
+        setError(getApiErrorMessage(err, "auth.loginError"));
+      }
     } finally {
       setLoading(false);
     }
@@ -93,60 +249,62 @@ export default function Login() {
   -------------------------------------------- */
   const handleRegister = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (loading) return;
+
     setError("");
     setMessage("");
+    setRegisterErrors({});
 
-    console.log("🔵 [REGISTER] התחלת הרשמה", {
-      full_name,
+    const values: RegisterFormValues = {
+      fullName,
       email,
-      role,
-      hasAvatar: !!avatar,
+      password,
+      confirmPassword,
+      artistRole,
       agreed,
-    });
+    };
 
-    if (!full_name.trim()) {
-      console.log("❌ [REGISTER] שם מלא חסר");
-      return setError(t("auth.fullNameRequired"));
+    const validationErrors = validateRegisterForm(values);
+    if (Object.keys(validationErrors).length) {
+      setRegisterErrors(validationErrors);
+      return;
     }
-    if (password !== confirm) {
-      console.log("❌ [REGISTER] הסיסמאות לא תואמות");
-      return setError(t("auth.passwordMismatch"));
-    }
-    if (!agreed) {
-      console.log("❌ [REGISTER] לא אישר את התקנון");
-      return setError(t("auth.termsRequired"));
-    }
+
+    const payload: RegisterPayload = {
+      fullName: values.fullName.trim(),
+      email: values.email.trim().toLowerCase(),
+      password: values.password,
+      artistRole: values.artistRole.trim(),
+      agreed: values.agreed,
+      preferredLocale: getBrowserLocale(),
+    };
 
     try {
       setLoading(true);
-      console.log("🟡 [REGISTER] בונה FormData...");
+
+      if (import.meta.env.DEV) {
+        console.debug("[REGISTER] payload", {
+          fullName: payload.fullName,
+          email: payload.email,
+          artistRole: payload.artistRole,
+          agreed: payload.agreed,
+          preferredLocale: payload.preferredLocale,
+          hasAvatar: !!avatar,
+        });
+      }
 
       const form = new FormData();
-      form.append("full_name", full_name);
-      form.append("email", email);
-      form.append("password", password);
-      form.append("artist_role", role);
-      // Persist initial locale from the user's browser (future i18n)
-      try {
-        form.append("preferred_locale", navigator.language || "he-IL");
-      } catch {
-        form.append("preferred_locale", "he-IL");
-      }
+      form.append("fullName", payload.fullName);
+      form.append("email", payload.email);
+      form.append("password", payload.password);
+      form.append("artistRole", payload.artistRole);
+      form.append("agreed", String(payload.agreed));
+      form.append("preferredLocale", payload.preferredLocale);
       if (avatar) form.append("avatar", avatar);
-
-      console.log("🟡 [REGISTER] שולח בקשה לשרת...", {
-        url: "/auth/register",
-        full_name,
-        email,
-        artist_role: role,
-        hasAvatar: !!avatar,
-      });
 
       const response = await api.post("/auth/register", form, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
-      console.log("✅ [REGISTER] הצלחה!", response.data);
 
       setMessage(t("auth.registerSuccess"));
       setTab("login");
@@ -154,23 +312,18 @@ export default function Login() {
       setFullName("");
       setEmail("");
       setPassword("");
-      setConfirm("");
-      setRole("");
+      setConfirmPassword("");
+      setArtistRole("");
       setAvatar(null);
       setPreview(null);
       setAgreed(false);
+      setRegisterErrors({});
     } catch (err: any) {
-      console.error("❌ [REGISTER] שגיאה!", {
-        error: err,
-        response: err?.response,
-        data: err?.response?.data,
-        status: err?.response?.status,
-        message: err?.response?.data?.message || err?.message,
-      });
-      setError(getApiErrorMessage(err, "auth.registerError"));
+      if (!applyRegisterApiFieldErrors(err)) {
+        setError(getApiErrorMessage(err, "auth.registerError"));
+      }
     } finally {
       setLoading(false);
-      console.log("🟢 [REGISTER] סיימתי");
     }
   };
 
@@ -268,9 +421,13 @@ export default function Login() {
             <Input
               type="text"
               placeholder={t("auth.fullName")}
-              value={full_name}
-              onChange={(e) => setFullName(e.target.value)}
+              value={fullName}
+              onChange={(e) => {
+                setFullName(e.target.value);
+                clearRegisterFeedback("fullName");
+              }}
               className="mb-0"
+              error={registerErrors.fullName}
               required
             />
 
@@ -278,9 +435,13 @@ export default function Login() {
             <Input
               type="text"
               placeholder={t("auth.role")}
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
+              value={artistRole}
+              onChange={(e) => {
+                setArtistRole(e.target.value);
+                clearRegisterFeedback("artistRole");
+              }}
               className="mb-0"
+              error={registerErrors.artistRole}
             />
 
             <EmailInput
@@ -288,32 +449,73 @@ export default function Login() {
               dir="ltr"
               style={{ unicodeBidi: "isolate" }}
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                clearRegisterFeedback("email");
+              }}
               className="mb-0"
+              error={registerErrors.email}
               required
             />
 
             <PasswordInput
               placeholder={t("auth.choosePassword")}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                clearRegisterFeedback("password", "confirmPassword");
+              }}
               className="mb-0"
+              error={registerErrors.password}
               required
             />
+            {hasRegisterPassword ? (
+              <p
+                className={`text-xs mt-1 ${
+                  isRegisterPasswordValid ? "text-green-400" : "text-amber-300"
+                }`}
+                role="status"
+              >
+                {isRegisterPasswordValid
+                  ? t("auth.passwordLooksGood")
+                  : t("auth.passwordMinLengthHint", {
+                      min: REGISTER_PASSWORD_MIN_LENGTH,
+                    })}
+              </p>
+            ) : null}
 
             <PasswordInput
               placeholder={t("auth.confirmPassword")}
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                clearRegisterFeedback("confirmPassword");
+              }}
               className="mb-0"
+              error={registerErrors.confirmPassword}
               required
             />
+            {hasConfirmPassword ? (
+              <p
+                className={`text-xs mt-1 ${
+                  isConfirmPasswordMatch ? "text-green-400" : "text-amber-300"
+                }`}
+                role="status"
+              >
+                {isConfirmPasswordMatch
+                  ? t("auth.passwordsMatch")
+                  : t("auth.passwordMismatch")}
+              </p>
+            ) : null}
 
             <label className="flex items-center text-xs text-gray-300">
               <input
                 type="checkbox"
                 checked={agreed}
-                onChange={(e) => setAgreed(e.target.checked)}
+                onChange={(e) => {
+                  setAgreed(e.target.checked);
+                  clearRegisterFeedback("agreed");
+                }}
                 className="mr-2 m-2 accent-brand-primary"
                 required
               />
@@ -332,6 +534,11 @@ export default function Login() {
                 </button>
               </span>
             </label>
+            {registerErrors.agreed ? (
+              <p className="text-red-400 text-xs -mt-2" role="alert">
+                {registerErrors.agreed}
+              </p>
+            ) : null}
 
             <DesignActionButtonBig type="submit" disabled={loading}>
               {loading ? t("auth.registering") : t("auth.register")}
@@ -390,6 +597,7 @@ export default function Login() {
               onClick={() => {
                 setError("");
                 setMessage("");
+                setRegisterErrors({});
                 setTab(tabKey);
               }}
             >

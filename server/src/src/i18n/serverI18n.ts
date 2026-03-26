@@ -71,6 +71,10 @@ const MESSAGES = {
     "he-IL": "השם המלא ארוך מדי",
     "en-US": "Full name is too long",
   },
+  "validation.roleTooLong": {
+    "he-IL": "התפקיד ארוך מדי",
+    "en-US": "Role is too long",
+  },
   "validation.passwordRequired": {
     "he-IL": "נא להזין סיסמה",
     "en-US": "Password is required",

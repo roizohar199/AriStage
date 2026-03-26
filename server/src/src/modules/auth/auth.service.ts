@@ -327,6 +327,7 @@ export async function registerUser(payload: any, locale: ServerLocale) {
     full_name,
     email,
     artist_role: artist_role || null,
+    preferred_locale,
     avatar: finalAvatarPath,
   };
 }

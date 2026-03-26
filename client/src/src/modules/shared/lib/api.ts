@@ -9,6 +9,33 @@ import {
   subscriptionBlockedEvent,
 } from "@/modules/shared/contexts/AuthContext.tsx";
 
+const LOCAL_401_HANDLING_PATHS = new Set([
+  "/auth/login",
+  "/auth/login/2fa",
+  "/auth/register",
+  "/auth/reset-request",
+  "/auth/reset-password",
+]);
+
+function normalizeRequestPath(url: unknown): string {
+  if (typeof url !== "string") return "";
+
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+
+  try {
+    const parsed = new URL(trimmed, window.location.origin);
+    return parsed.pathname;
+  } catch {
+    return trimmed.split("?")[0] || "";
+  }
+}
+
+function shouldHandle401Locally(config: any): boolean {
+  const path = normalizeRequestPath(config?.url);
+  return LOCAL_401_HANDLING_PATHS.has(path);
+}
+
 function resolveUiLocale(): Locale {
   try {
     const raw = getDocumentLocale();
@@ -193,6 +220,10 @@ api.interceptors.response.use(
       // =============================
 
       if (status === 401) {
+        if (shouldHandle401Locally(config)) {
+          return Promise.reject(err);
+        }
+
         // אם יש טוקן מקורי → אנחנו בייצוג → לא מוחקים כלום
         if (localStorage.getItem("ari_original_token")) {
           emitToast(t("auth.impersonationTokenExpired"), "error");

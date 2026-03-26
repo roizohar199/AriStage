@@ -106,12 +106,14 @@ const COMMON_PASSWORDS = new Set([
 export const PASSWORD_POLICY = {
   minLength: 8,
   maxLength: 128,
-  requireUppercase: true,
-  requireLowercase: true,
-  requireNumber: true,
-  requireSpecialChar: true,
-  preventCommon: true,
-  preventUserInfo: true,
+  requireUppercase: false,
+  requireLowercase: false,
+  requireNumber: false,
+  requireSpecialChar: false,
+  preventCommon: false,
+  preventUserInfo: false,
+  preventRepeatedChars: false,
+  preventSequentialChars: false,
 };
 
 export interface PasswordValidationResult {
@@ -196,7 +198,7 @@ export const validatePassword = (
   }
 
   // Check for sequential or repeated characters
-  if (/(.)\1{2,}/.test(password)) {
+  if (PASSWORD_POLICY.preventRepeatedChars && /(.)\1{2,}/.test(password)) {
     errors.push(
       'Password should not contain repeated characters (e.g., "aaa", "111")',
     );
@@ -204,6 +206,7 @@ export const validatePassword = (
   }
 
   if (
+    PASSWORD_POLICY.preventSequentialChars &&
     /(?:abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz|012|123|234|345|456|567|678|789)/i.test(
       password,
     )

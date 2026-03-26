@@ -89,16 +89,25 @@ export const authController = {
     });
 
     const tempAvatar = req.file ? req.file.path : null;
+    const normalizedRegisterPayload = {
+      ...req.body,
+      full_name:
+        typeof req.body?.fullName === "string"
+          ? req.body.fullName
+          : req.body?.full_name,
+      artist_role:
+        typeof req.body?.artistRole === "string"
+          ? req.body.artistRole
+          : req.body?.artist_role || null,
+      preferred_locale:
+        typeof req.body?.preferredLocale === "string"
+          ? req.body.preferredLocale
+          : req.body?.preferred_locale,
+      tempAvatar,
+    };
 
     try {
-      const newUser = await registerUser(
-        {
-          ...req.body,
-          artist_role: req.body.artist_role || null,
-          tempAvatar, // שולחים את התמונה הזמנית ל-service
-        },
-        locale,
-      );
+      const newUser = await registerUser(normalizedRegisterPayload, locale);
 
       logger.info("✅ [REGISTER] הרשמה הצליחה", {
         userId: newUser.id,
