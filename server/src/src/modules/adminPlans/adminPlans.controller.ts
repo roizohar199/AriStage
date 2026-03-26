@@ -1,9 +1,15 @@
 import { asyncHandler } from "../../core/asyncHandler.js";
 import { AppError } from "../../core/errors.js";
+import { logger } from "../../core/logger.js";
 import { logSystemEvent } from "../../utils/systemLogger.js";
 import { resolveRequestLocale, tServer } from "../../i18n/serverI18n";
+import type { BillingPeriod } from "../../services/subscriptionService.js";
+import { markSubscriptionCancelledAtPeriodEnd } from "../../services/subscriptionService.js";
+import { listActiveProviderSubscriptionsForPlanPeriod } from "../payments/payments.repository.js";
+import { cancelPayPalSubscription } from "../payments/paypal.service.js";
 import {
   createPlan,
+  getPlanById,
   listPlans,
   setPlanEnabled,
   updatePlan,
@@ -68,6 +74,102 @@ function requireEnabled(value: unknown, locale: "he-IL" | "en-US"): boolean {
   );
 }
 
+async function cancelDisabledBillingPeriodRenewals(params: {
+  planKey: string;
+  billingPeriod: BillingPeriod;
+}) {
+  const activeSubscriptions =
+    await listActiveProviderSubscriptionsForPlanPeriod({
+      provider: "paypal",
+      planKey: params.planKey,
+      billingPeriod: params.billingPeriod,
+    });
+
+  let cancelledCount = 0;
+  let failedCount = 0;
+
+  for (const subscription of activeSubscriptions) {
+    try {
+      await cancelPayPalSubscription(
+        subscription.provider_subscription_id,
+        `Plan ${params.planKey}/${params.billingPeriod} was disabled by admin`,
+      );
+      await markSubscriptionCancelledAtPeriodEnd({
+        userId: subscription.user_id,
+        cancelledAt: new Date(),
+        renewsAt: subscription.subscription_renews_at,
+        provider: "paypal",
+        providerSubscriptionId: subscription.provider_subscription_id,
+      });
+      cancelledCount += 1;
+    } catch (error) {
+      failedCount += 1;
+      logger.error(
+        "Failed to cancel PayPal renewal after plan period disable",
+        {
+          planKey: params.planKey,
+          billingPeriod: params.billingPeriod,
+          userId: subscription.user_id,
+          providerSubscriptionId: subscription.provider_subscription_id,
+          error,
+        },
+      );
+    }
+  }
+
+  return {
+    billingPeriod: params.billingPeriod,
+    affectedCount: activeSubscriptions.length,
+    cancelledCount,
+    failedCount,
+  };
+}
+
+async function enforcePlanAvailabilityTransitions(params: {
+  previousPlan: Awaited<ReturnType<typeof getPlanById>>;
+  nextPlan: Awaited<ReturnType<typeof getPlanById>>;
+}) {
+  const previousPlan = params.previousPlan;
+  const nextPlan = params.nextPlan;
+  if (!previousPlan || !nextPlan) {
+    return [];
+  }
+
+  const periodsToDisable = (["monthly", "yearly"] as const).filter(
+    (billingPeriod) => {
+      const previousEnabled =
+        previousPlan.enabled &&
+        (billingPeriod === "monthly"
+          ? previousPlan.monthly_enabled
+          : previousPlan.yearly_enabled);
+      const nextEnabled =
+        nextPlan.enabled &&
+        (billingPeriod === "monthly"
+          ? nextPlan.monthly_enabled
+          : nextPlan.yearly_enabled);
+
+      return previousEnabled && !nextEnabled;
+    },
+  );
+
+  const results: Array<{
+    billingPeriod: BillingPeriod;
+    affectedCount: number;
+    cancelledCount: number;
+    failedCount: number;
+  }> = [];
+  for (const billingPeriod of periodsToDisable) {
+    results.push(
+      await cancelDisabledBillingPeriodRenewals({
+        planKey: nextPlan.key,
+        billingPeriod,
+      }),
+    );
+  }
+
+  return results;
+}
+
 export const adminPlansController = {
   list: asyncHandler(async (_req, res) => {
     const plans = await listPlans();
@@ -89,6 +191,14 @@ export const adminPlansController = {
         body.enabled !== undefined
           ? requireEnabled(body.enabled, locale)
           : true,
+      monthly_enabled:
+        body.monthly_enabled !== undefined
+          ? requireEnabled(body.monthly_enabled, locale)
+          : true,
+      yearly_enabled:
+        body.yearly_enabled !== undefined
+          ? requireEnabled(body.yearly_enabled, locale)
+          : true,
     };
 
     const created = await createPlan(input);
@@ -97,7 +207,13 @@ export const adminPlansController = {
       "info",
       "admin_create_plan",
       "Admin created plan",
-      { planId: created.id, key: created.key, enabled: created.enabled },
+      {
+        planId: created.id,
+        key: created.key,
+        enabled: created.enabled,
+        monthly_enabled: created.monthly_enabled,
+        yearly_enabled: created.yearly_enabled,
+      },
       Number(req.user?.id),
     );
 
@@ -108,6 +224,7 @@ export const adminPlansController = {
     const locale = resolveRequestLocale(req);
     const id = parsePlanId(String(req.params.id), locale);
     const body = req.body || {};
+    const previousPlan = await getPlanById(id);
 
     const input: UpdatePlanInput = {
       key: requireString(body.key, "key", locale),
@@ -117,17 +234,31 @@ export const adminPlansController = {
       monthly_price: requireInt(body.monthly_price, "monthly_price", locale),
       yearly_price: requireInt(body.yearly_price, "yearly_price", locale),
       enabled: requireEnabled(body.enabled, locale),
+      monthly_enabled: requireEnabled(body.monthly_enabled, locale),
+      yearly_enabled: requireEnabled(body.yearly_enabled, locale),
     };
 
     const updated = await updatePlan(id, input);
     if (!updated)
       throw new AppError(404, tServer(locale, "admin.planNotFound"), undefined);
 
+    const renewalResults = await enforcePlanAvailabilityTransitions({
+      previousPlan,
+      nextPlan: updated,
+    });
+
     void logSystemEvent(
       "info",
       "admin_update_plan",
       "Admin updated plan",
-      { planId: updated.id, key: updated.key, enabled: updated.enabled },
+      {
+        planId: updated.id,
+        key: updated.key,
+        enabled: updated.enabled,
+        monthly_enabled: updated.monthly_enabled,
+        yearly_enabled: updated.yearly_enabled,
+        renewalResults,
+      },
       Number(req.user?.id),
     );
 
@@ -139,16 +270,29 @@ export const adminPlansController = {
     const id = parsePlanId(String(req.params.id), locale);
     const body = req.body || {};
     const enabled = requireEnabled(body.enabled, locale);
+    const previousPlan = await getPlanById(id);
 
     const updated = await setPlanEnabled(id, enabled);
     if (!updated)
       throw new AppError(404, tServer(locale, "admin.planNotFound"), undefined);
 
+    const renewalResults = await enforcePlanAvailabilityTransitions({
+      previousPlan,
+      nextPlan: updated,
+    });
+
     void logSystemEvent(
       "info",
       "admin_toggle_plan_enabled",
       "Admin toggled plan enabled",
-      { planId: updated.id, key: updated.key, enabled: updated.enabled },
+      {
+        planId: updated.id,
+        key: updated.key,
+        enabled: updated.enabled,
+        monthly_enabled: updated.monthly_enabled,
+        yearly_enabled: updated.yearly_enabled,
+        renewalResults,
+      },
       Number(req.user?.id),
     );
 

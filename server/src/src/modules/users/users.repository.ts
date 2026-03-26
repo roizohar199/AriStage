@@ -4,7 +4,7 @@ import { isElevatedRole } from "../../types/roles";
 // ✔ משוך את המשתמש כולל השדות החדשים
 export async function getCurrentUser(id) {
   const [rows] = await pool.query(
-    "SELECT id, full_name, email, role, theme, preferred_locale, artist_role, avatar, subscription_type, subscription_status, subscription_started_at, subscription_expires_at FROM users WHERE id=?",
+    "SELECT id, full_name, email, role, theme, preferred_locale, artist_role, avatar, subscription_type, subscription_status, subscription_provider, provider_customer_id, provider_subscription_id, subscription_started_at, subscription_expires_at, subscription_renews_at, subscription_cancel_at_period_end, subscription_cancelled_at FROM users WHERE id=?",
     [id],
   );
   return rows[0];
@@ -75,7 +75,7 @@ export async function updatePassword(id, hash) {
 // ✔ רשימת משתמשים
 export async function listUsers(role, userId) {
   let query =
-    "SELECT id, full_name, email, role, subscription_type, subscription_status, subscription_started_at, subscription_expires_at, created_at FROM users";
+    "SELECT id, full_name, email, role, subscription_type, subscription_status, subscription_provider, provider_subscription_id, subscription_started_at, subscription_expires_at, subscription_renews_at, subscription_cancel_at_period_end, subscription_cancelled_at, created_at FROM users";
   const params: any[] = [];
 
   // Only admin/manager are considered elevated. Any unknown role is

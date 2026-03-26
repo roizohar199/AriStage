@@ -744,8 +744,8 @@ const MESSAGES = {
     "en-US": "offset must be a non-negative number",
   },
   "admin.subscriptionDateValid": {
-    "he-IL": "subscription_expires_at חייב להיות תאריך תקין",
-    "en-US": "subscription_expires_at must be a valid date",
+    "he-IL": "{field} חייב להיות תאריך תקין",
+    "en-US": "{field} must be a valid date",
   },
   "admin.invalidUserId": {
     "he-IL": "מזהה המשתמש אינו תקין",
@@ -770,6 +770,12 @@ const MESSAGES = {
       "subscription_expires_at חייב להיות תאריך עתידי כאשר subscription_status הוא active או trial",
     "en-US":
       "subscription_expires_at must be a future date when subscription_status is active or trial",
+  },
+  "admin.subscriptionDateOrderInvalid": {
+    "he-IL":
+      "subscription_started_at חייב להיות מוקדם או שווה ל-subscription_expires_at",
+    "en-US":
+      "subscription_started_at must be earlier than or equal to subscription_expires_at",
   },
   "admin.subscriptionStatusInvalid": {
     "he-IL": "subscription_status חייב להיות אחד מהערכים: {values}",

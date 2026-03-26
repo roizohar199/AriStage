@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   Calendar,
@@ -8,9 +8,10 @@ import {
   Zap,
 } from "lucide-react";
 import BaseModal from "./BaseModal.tsx";
-import api from "@/modules/shared/lib/api.ts";
+import api, { getApiErrorMessage } from "@/modules/shared/lib/api.ts";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import { useSubscription } from "@/modules/shared/hooks/useSubscription.ts";
+import { emitToast } from "@/modules/shared/lib/toastBus.js";
 import { useTranslation } from "@/hooks/useTranslation.ts";
 
 type BillingPeriod = "monthly" | "yearly";
@@ -30,7 +31,48 @@ type AvailablePlan = {
   monthly_price: number;
   yearly_price: number;
   enabled: boolean;
+  monthly_enabled: boolean;
+  yearly_enabled: boolean;
 };
+
+function isBillingPeriodAvailableForPlan(
+  plan: Pick<
+    AvailablePlan,
+    "enabled" | "monthly_enabled" | "yearly_enabled"
+  > | null,
+  billingPeriod: BillingPeriod,
+) {
+  if (!plan || plan.enabled === false) {
+    return false;
+  }
+
+  return billingPeriod === "yearly"
+    ? plan.yearly_enabled
+    : plan.monthly_enabled;
+}
+
+function getPreferredBillingPeriod(
+  plan: AvailablePlan | null,
+  preferred: BillingPeriod,
+): BillingPeriod {
+  if (!plan) {
+    return preferred;
+  }
+
+  if (isBillingPeriodAvailableForPlan(plan, preferred)) {
+    return preferred;
+  }
+
+  if (isBillingPeriodAvailableForPlan(plan, "monthly")) {
+    return "monthly";
+  }
+
+  if (isBillingPeriodAvailableForPlan(plan, "yearly")) {
+    return "yearly";
+  }
+
+  return preferred;
+}
 
 export default function UpgradeModal({
   open,
@@ -48,7 +90,76 @@ export default function UpgradeModal({
   const [selectedBillingPeriod, setSelectedBillingPeriod] =
     useState<BillingPeriod>("monthly");
   const [submitting, setSubmitting] = useState(false);
+  const [awaitingPayPalApproval, setAwaitingPayPalApproval] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const popupWindowRef = useRef<Window | null>(null);
+  const popupPollRef = useRef<number | null>(null);
+  const popupCompletedRef = useRef(false);
+
+  const clearPopupWatcher = () => {
+    if (popupPollRef.current !== null) {
+      window.clearInterval(popupPollRef.current);
+      popupPollRef.current = null;
+    }
+  };
+
+  const closePopupWindow = () => {
+    clearPopupWatcher();
+    const popupWindow = popupWindowRef.current;
+    popupWindowRef.current = null;
+
+    if (popupWindow && !popupWindow.closed) {
+      popupWindow.close();
+    }
+  };
+
+  const beginPopupWatcher = () => {
+    clearPopupWatcher();
+    popupPollRef.current = window.setInterval(() => {
+      const popupWindow = popupWindowRef.current;
+      if (!popupWindow) {
+        clearPopupWatcher();
+        return;
+      }
+
+      if (popupWindow.closed) {
+        popupWindowRef.current = null;
+        clearPopupWatcher();
+
+        if (!popupCompletedRef.current) {
+          setAwaitingPayPalApproval(false);
+          setError(t("billing.paypal.popupClosed"));
+        }
+      }
+    }, 500);
+  };
+
+  const openPayPalPopup = (approvalUrl: string) => {
+    const width = 520;
+    const height = 760;
+    const left = Math.max(
+      0,
+      Math.round(window.screenX + (window.outerWidth - width) / 2),
+    );
+    const top = Math.max(
+      0,
+      Math.round(window.screenY + (window.outerHeight - height) / 2),
+    );
+    const features = [
+      `width=${width}`,
+      `height=${height}`,
+      `left=${left}`,
+      `top=${top}`,
+      "resizable=yes",
+      "scrollbars=yes",
+      "toolbar=no",
+      "menubar=no",
+      "location=yes",
+      "status=no",
+    ].join(",");
+
+    return window.open(approvalUrl, "paypal-subscription-approval", features);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -73,13 +184,22 @@ export default function UpgradeModal({
         setPlans(nextPlans);
 
         const firstEnabledPlanId =
-          nextPlans.find((p) => p.enabled !== false)?.id ?? null;
+          nextPlans.find(
+            (p) =>
+              isBillingPeriodAvailableForPlan(p, "monthly") ||
+              isBillingPeriodAvailableForPlan(p, "yearly"),
+          )?.id ?? null;
 
         // Keep selection if still exists; otherwise pick first.
         setSelectedPlanId((prev) => {
           if (
             prev &&
-            nextPlans.some((p) => p.id === prev && p.enabled !== false)
+            nextPlans.some(
+              (p) =>
+                p.id === prev &&
+                (isBillingPeriodAvailableForPlan(p, "monthly") ||
+                  isBillingPeriodAvailableForPlan(p, "yearly")),
+            )
           )
             return prev;
           return firstEnabledPlanId ?? nextPlans[0]?.id ?? null;
@@ -98,6 +218,59 @@ export default function UpgradeModal({
       mounted = false;
     };
   }, [open, initialBillingPeriod]);
+
+  useEffect(() => {
+    if (!open) {
+      popupCompletedRef.current = false;
+      setAwaitingPayPalApproval(false);
+      clearPopupWatcher();
+      return;
+    }
+
+    const handleMessage = async (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) {
+        return;
+      }
+
+      const payload = event.data;
+      if (!payload || payload.type !== "paypal-subscription-result") {
+        return;
+      }
+
+      popupCompletedRef.current = true;
+      closePopupWindow();
+      setAwaitingPayPalApproval(false);
+
+      if (payload.status === "success") {
+        await refreshUser();
+        if (payload.message) {
+          emitToast(String(payload.message), "success");
+        }
+        onClose();
+        return;
+      }
+
+      if (payload.status === "cancelled") {
+        if (payload.message) {
+          emitToast(String(payload.message), "warning");
+        }
+        setError(String(payload.message || t("billing.paypal.cancelled")));
+        return;
+      }
+
+      if (payload.message) {
+        emitToast(String(payload.message), "error");
+      }
+      setError(String(payload.message || t("billing.paypal.activateError")));
+    };
+
+    window.addEventListener("message", handleMessage);
+
+    return () => {
+      window.removeEventListener("message", handleMessage);
+      clearPopupWatcher();
+    };
+  }, [open, onClose, refreshUser, t]);
 
   const formatDate = (raw: unknown) => {
     if (!raw) return "—";
@@ -133,10 +306,23 @@ export default function UpgradeModal({
     return plans[0] || null;
   }, [plans, selectedPlanId]);
 
-  const isSelectedPlanEnabled = selectedPlan?.enabled !== false;
+  useEffect(() => {
+    if (!open || !selectedPlan) {
+      return;
+    }
+
+    const nextPeriod = getPreferredBillingPeriod(
+      selectedPlan,
+      selectedBillingPeriod,
+    );
+
+    if (nextPeriod !== selectedBillingPeriod) {
+      setSelectedBillingPeriod(nextPeriod);
+    }
+  }, [open, selectedBillingPeriod, selectedPlan]);
 
   const handleUpgrade = async () => {
-    if (submitting) return;
+    if (submitting || awaitingPayPalApproval) return;
     if (!selectedPlan) {
       setError(t("billing.upgradeModal.noPlanAvailable"));
       return;
@@ -147,6 +333,11 @@ export default function UpgradeModal({
       return;
     }
 
+    if (!isBillingPeriodAvailableForPlan(selectedPlan, selectedBillingPeriod)) {
+      setError(t("billing.upgradeModal.periodNotAvailable"));
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
@@ -154,30 +345,60 @@ export default function UpgradeModal({
       const { data } = await api.post("/payments/create", {
         plan: selectedPlan.key,
         billing_period: selectedBillingPeriod,
+        provider: "paypal",
+        return_to: `${window.location.pathname}${window.location.search}`,
       } as any);
 
       const paymentId =
         (data && (data.paymentId || data.id || data.payment?.id)) || null;
+      const approvalUrl =
+        (data &&
+          (data.approvalUrl ||
+            data.approval_url ||
+            data.links?.find?.((link: any) => link?.rel === "approve")
+              ?.href)) ||
+        null;
 
-      if (!paymentId) {
-        throw new Error("Missing payment id from create response");
+      if (data?.provider === "mock") {
+        if (!paymentId) {
+          throw new Error("Missing payment id from create response");
+        }
+
+        await api.post("/payments/mock-success", { paymentId } as any);
+
+        try {
+          await api.get("/subscriptions/me", { skipErrorToast: true } as any);
+        } catch {
+          // Best-effort only; refreshUser below is the source of truth.
+        }
+
+        await refreshUser();
+        onClose();
+        return;
       }
 
-      await api.post("/payments/mock-success", { paymentId } as any);
-
-      // Ensure subscription status is refreshed from server
-      try {
-        await api.get("/subscriptions/me", { skipErrorToast: true } as any);
-      } catch {
-        // Best-effort only; refreshUser below is the source of truth.
+      if (!approvalUrl) {
+        throw new Error("Missing PayPal approval url from create response");
       }
 
-      await refreshUser();
+      popupCompletedRef.current = false;
+      const popupWindow = openPayPalPopup(String(approvalUrl));
+      if (!popupWindow) {
+        throw new Error(t("billing.paypal.popupBlocked"));
+      }
 
-      onClose();
+      popupWindowRef.current = popupWindow;
+      setAwaitingPayPalApproval(true);
+      beginPopupWatcher();
     } catch (err) {
-      console.error("Mock subscription upgrade failed", err);
-      setError(t("billing.upgradeModal.upgradeError"));
+      console.error("PayPal subscription upgrade failed", err);
+      setError(
+        getApiErrorMessage(
+          err,
+          "billing.upgradeModal.upgradeError",
+          t("billing.upgradeModal.upgradeError"),
+        ),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -268,6 +489,15 @@ export default function UpgradeModal({
     };
   }, [selectedPlan, selectedBillingPeriod, t]);
 
+  const selectedPlanOnlyMonthly =
+    !!selectedPlan &&
+    isBillingPeriodAvailableForPlan(selectedPlan, "monthly") &&
+    !isBillingPeriodAvailableForPlan(selectedPlan, "yearly");
+  const selectedPlanOnlyYearly =
+    !!selectedPlan &&
+    isBillingPeriodAvailableForPlan(selectedPlan, "yearly") &&
+    !isBillingPeriodAvailableForPlan(selectedPlan, "monthly");
+
   return (
     <BaseModal
       open={open}
@@ -355,7 +585,11 @@ export default function UpgradeModal({
                   {t("billing.upgradeModal.billingPeriod")}
                 </div>
                 <div className="text-xs text-neutral-500">
-                  {t("billing.upgradeModal.canChangeBeforePayment")}
+                  {selectedPlanOnlyMonthly
+                    ? t("billing.upgradeModal.onlyMonthlyAvailable")
+                    : selectedPlanOnlyYearly
+                      ? t("billing.upgradeModal.onlyYearlyAvailable")
+                      : t("billing.upgradeModal.canChangeBeforePayment")}
                 </div>
               </div>
 
@@ -363,10 +597,17 @@ export default function UpgradeModal({
                 <button
                   type="button"
                   onClick={() => setSelectedBillingPeriod("monthly")}
+                  disabled={
+                    !isBillingPeriodAvailableForPlan(selectedPlan, "monthly")
+                  }
                   className={`px-4 py-2 rounded-2xl text-sm font-semibold transition ${
                     selectedBillingPeriod === "monthly"
                       ? "bg-neutral-100 text-neutral-950"
                       : "text-neutral-300 hover:text-neutral-100"
+                  } ${
+                    !isBillingPeriodAvailableForPlan(selectedPlan, "monthly")
+                      ? "opacity-40 cursor-not-allowed"
+                      : ""
                   }`}
                 >
                   {t("billing.upgradeModal.billingMonthly")}
@@ -374,10 +615,17 @@ export default function UpgradeModal({
                 <button
                   type="button"
                   onClick={() => setSelectedBillingPeriod("yearly")}
+                  disabled={
+                    !isBillingPeriodAvailableForPlan(selectedPlan, "yearly")
+                  }
                   className={`px-4 py-2 rounded-2xl text-sm font-semibold transition ${
                     selectedBillingPeriod === "yearly"
                       ? "bg-neutral-100 text-neutral-950"
                       : "text-neutral-300 hover:text-neutral-100"
+                  } ${
+                    !isBillingPeriodAvailableForPlan(selectedPlan, "yearly")
+                      ? "opacity-40 cursor-not-allowed"
+                      : ""
                   }`}
                 >
                   {t("billing.upgradeModal.billingYearly")}
@@ -388,13 +636,19 @@ export default function UpgradeModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {plans.map((plan) => {
                 const isSelected = selectedPlan?.id === plan.id;
-                const isEnabled = plan.enabled !== false;
+                const isEnabled =
+                  isBillingPeriodAvailableForPlan(plan, "monthly") ||
+                  isBillingPeriodAvailableForPlan(plan, "yearly");
+                const displayBillingPeriod = getPreferredBillingPeriod(
+                  plan,
+                  selectedBillingPeriod,
+                );
                 const primaryPrice =
-                  selectedBillingPeriod === "monthly"
+                  displayBillingPeriod === "monthly"
                     ? plan.monthly_price
                     : plan.yearly_price;
                 const cadence =
-                  selectedBillingPeriod === "monthly"
+                  displayBillingPeriod === "monthly"
                     ? t("billing.upgradeModal.cadencePerMonth")
                     : t("billing.upgradeModal.cadencePerYear");
 
@@ -440,6 +694,28 @@ export default function UpgradeModal({
                             {!isEnabled ? (
                               <span className="inline-flex items-center rounded-lg bg-neutral-800 text-neutral-200 text-xs font-semibold px-2 py-1">
                                 {t("common.notAvailable")}
+                              </span>
+                            ) : isBillingPeriodAvailableForPlan(
+                                plan,
+                                "monthly",
+                              ) &&
+                              !isBillingPeriodAvailableForPlan(
+                                plan,
+                                "yearly",
+                              ) ? (
+                              <span className="inline-flex items-center rounded-lg bg-neutral-800 text-neutral-200 text-xs font-semibold px-2 py-1">
+                                {t("billing.upgradeModal.onlyMonthlyAvailable")}
+                              </span>
+                            ) : isBillingPeriodAvailableForPlan(
+                                plan,
+                                "yearly",
+                              ) &&
+                              !isBillingPeriodAvailableForPlan(
+                                plan,
+                                "monthly",
+                              ) ? (
+                              <span className="inline-flex items-center rounded-lg bg-neutral-800 text-neutral-200 text-xs font-semibold px-2 py-1">
+                                {t("billing.upgradeModal.onlyYearlyAvailable")}
                               </span>
                             ) : null}
                           </div>
@@ -518,6 +794,34 @@ export default function UpgradeModal({
                 </div>
               </div>
             ) : null}
+
+            <div className="rounded-2xl border border-[#1f5ea8]/30 bg-[linear-gradient(135deg,rgba(0,48,135,0.22),rgba(0,156,222,0.14))] p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="inline-flex items-center rounded-full border border-[#009cde]/35 bg-[#003087] px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-white">
+                    PayPal
+                  </div>
+                  <div className="mt-3 text-sm font-semibold text-neutral-100">
+                    {t("billing.upgradeModal.paypalProviderTitle")}
+                  </div>
+                  <p className="mt-1 text-sm text-neutral-300">
+                    {t("billing.upgradeModal.paypalProviderDescription")}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-white px-4 py-3 text-right shadow-[0_10px_30px_rgba(0,0,0,0.18)]">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-500">
+                    {t("billing.upgradeModal.providerLabel")}
+                  </div>
+                  <div className="mt-1 text-xl font-black text-[#003087]">
+                    Pay<span className="text-[#009cde]">Pal</span>
+                  </div>
+                  <div className="mt-1 text-xs text-neutral-600">
+                    {t("billing.upgradeModal.popupExperienceBadge")}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="bg-neutral-900/60 rounded-2xl p-6 border border-neutral-800">
@@ -528,19 +832,41 @@ export default function UpgradeModal({
         {/* CTA Button */}
         <button
           onClick={handleUpgrade}
-          disabled={submitting || !selectedPlan || !isSelectedPlanEnabled}
+          disabled={
+            submitting ||
+            awaitingPayPalApproval ||
+            !selectedPlan ||
+            !isBillingPeriodAvailableForPlan(
+              selectedPlan,
+              selectedBillingPeriod,
+            )
+          }
           className="w-full px-6 py-3 bg-brand-primary hover:bg-brand-primaryLight disabled:opacity-70 disabled:cursor-not-allowed text-neutral-100 font-semibold rounded-2xl transition-colors"
         >
           {submitting
             ? t("billing.upgradeModal.upgrading")
-            : billingSummary && billingSummary.amount !== null
-              ? t("billing.upgradeModal.proceedToPaymentWithAmount", {
-                  amount: billingSummary.amount,
-                  currency: billingSummary.currency,
-                  cadence: billingSummary.cadence,
-                })
-              : t("billing.upgradeModal.proceedToPayment")}
+            : awaitingPayPalApproval
+              ? t("billing.upgradeModal.awaitingPopupApproval")
+              : billingSummary && billingSummary.amount !== null
+                ? t("billing.upgradeModal.proceedToPaymentWithAmount", {
+                    amount: billingSummary.amount,
+                    currency: billingSummary.currency,
+                    cadence: billingSummary.cadence,
+                  })
+                : t("billing.upgradeModal.proceedToPayment")}
         </button>
+
+        <p className="text-xs text-neutral-500 text-center">
+          {awaitingPayPalApproval
+            ? t("billing.upgradeModal.paypalPopupNotice")
+            : t("billing.upgradeModal.paypalRedirectNotice")}
+        </p>
+
+        {awaitingPayPalApproval ? (
+          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+            {t("billing.upgradeModal.popupPendingHelp")}
+          </div>
+        ) : null}
 
         {error && (
           <div className="bg-red-900/40 border border-red-700 text-red-200 text-sm rounded-xl px-3 py-2">

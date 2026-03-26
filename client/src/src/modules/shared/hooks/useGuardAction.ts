@@ -1,4 +1,5 @@
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
+import { useOpenBillingPage } from "@/modules/shared/hooks/useOpenBillingPage.ts";
 import { emitToast } from "@/modules/shared/lib/toastBus.ts";
 import { useSubscription } from "@/modules/shared/hooks/useSubscription.ts";
 import { useTranslation } from "@/hooks/useTranslation.ts";
@@ -19,6 +20,7 @@ export function useGuardAction() {
   const { subscriptionBlocked, subscriptionStatus, user } = useAuth();
   const subscription = useSubscription();
   const { t } = useTranslation();
+  const openBillingPage = useOpenBillingPage();
 
   return function guardAction<T extends (...args: any[]) => any>(
     action: T,
@@ -49,7 +51,7 @@ export function useGuardAction() {
         // Show toast notification
         emitToast(message, "warning");
 
-        window.openUpgradeModal?.();
+        openBillingPage();
 
         if (options?.onBlocked) {
           options.onBlocked();

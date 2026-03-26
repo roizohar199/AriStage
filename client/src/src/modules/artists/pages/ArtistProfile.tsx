@@ -9,6 +9,7 @@ import BlockLineup from "@/modules/shared/components/blocklineup";
 import CardSong from "@/modules/shared/components/cardsong";
 import Tab, { type TabItem } from "@/modules/shared/components/Tab";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
+import { useOpenBillingPage } from "@/modules/shared/hooks/useOpenBillingPage.ts";
 import { useTranslation } from "@/hooks/useTranslation.ts";
 
 const Charts = lazy(() => import("@/modules/shared/components/Charts"));
@@ -24,6 +25,7 @@ export default function ArtistProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { subscriptionBlocked } = useAuth();
+  const openBillingPage = useOpenBillingPage();
   const location = useLocation();
   const isLineupRoute = /^\/artist\/\d+\/lineups\/\d+/.test(location.pathname);
   const [artist, setArtist] = useState<any>(null);
@@ -90,7 +92,7 @@ export default function ArtistProfile() {
 
   const handleSelectTab = (tab: "lineups" | "songs") => {
     if (subscriptionBlocked) {
-      window.openUpgradeModal?.();
+      openBillingPage();
       return;
     }
 
@@ -321,7 +323,7 @@ export default function ArtistProfile() {
                   <button
                     onClick={() => {
                       if (subscriptionBlocked) {
-                        window.openUpgradeModal?.();
+                        openBillingPage();
                         return;
                       }
                       navigate("/my");

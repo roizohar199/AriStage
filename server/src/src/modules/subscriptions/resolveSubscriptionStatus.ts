@@ -1,13 +1,6 @@
-export type ResolvedSubscriptionStatus = "active" | "trial" | "expired";
+import { getSubscriptionWindow } from "./subscriptionWindow";
 
-function toMs(value: unknown): number {
-  if (!value) return NaN;
-  if (value instanceof Date) return value.getTime();
-  const raw = String(value).trim();
-  const normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
-  const ms = new Date(normalized).getTime();
-  return Number.isNaN(ms) ? NaN : ms;
-}
+export type ResolvedSubscriptionStatus = "active" | "trial" | "expired";
 
 /**
  * Resolve a stable subscription status for the client.
@@ -18,7 +11,7 @@ function toMs(value: unknown): number {
  * - otherwise "expired"
  */
 export function resolveSubscriptionStatus(
-  user: any
+  user: any,
 ): ResolvedSubscriptionStatus {
   if (!user) return "expired";
 
@@ -29,20 +22,18 @@ export function resolveSubscriptionStatus(
     ? String(user.subscription_status)
     : "";
   const status = rawStatus.toLowerCase();
-
-  // Support future schema naming without breaking current DB.
-  const expiresAt = (user.trial_end_date ??
-    user.subscription_expires_at) as any;
-  const expiresMs = toMs(expiresAt);
-  const isExpiryValidAndInFuture =
-    !Number.isNaN(expiresMs) && Date.now() <= expiresMs;
+  const window = getSubscriptionWindow({
+    subscription_started_at: user.subscription_started_at,
+    subscription_expires_at:
+      user.trial_end_date ?? user.subscription_expires_at,
+  });
 
   if (status === "active") {
-    return isExpiryValidAndInFuture ? "active" : "expired";
+    return window.isWithinWindow ? "active" : "expired";
   }
 
   if (status === "trial") {
-    return isExpiryValidAndInFuture ? "trial" : "expired";
+    return window.isWithinWindow ? "trial" : "expired";
   }
 
   return "expired";

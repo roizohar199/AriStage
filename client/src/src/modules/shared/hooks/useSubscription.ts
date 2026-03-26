@@ -13,6 +13,11 @@ export type SubscriptionModel = {
   status: "active" | "trial" | "expired";
   plan: SubscriptionPlan;
   expiresAt: Date | null;
+  renewsAt: Date | null;
+  provider: string | null;
+  providerSubscriptionId: string | null;
+  cancelAtPeriodEnd: boolean;
+  cancelledAt: Date | null;
   permissions: SubscriptionPermissions;
   trial_days?: number;
   subscription_started_at?: string | null;
@@ -69,6 +74,8 @@ export function useSubscription(): SubscriptionModel | null {
   const plan = normalizeSubscriptionType(user.subscription_type);
 
   const expiresAt = parseExpiresAt(user.subscription_expires_at);
+  const renewsAt = parseExpiresAt(user.subscription_renews_at);
+  const cancelledAt = parseExpiresAt(user.subscription_cancelled_at);
 
   const isActiveLike = status === "active" || status === "trial";
   const isAdmin = user.role === "admin";
@@ -88,6 +95,13 @@ export function useSubscription(): SubscriptionModel | null {
     status,
     plan,
     expiresAt,
+    renewsAt,
+    provider: user.subscription_provider ?? null,
+    providerSubscriptionId: user.provider_subscription_id ?? null,
+    cancelAtPeriodEnd:
+      user.subscription_cancel_at_period_end === true ||
+      user.subscription_cancel_at_period_end === 1,
+    cancelledAt,
     permissions,
     trial_days: user.trial_days,
     subscription_started_at: user.subscription_started_at,

@@ -44,6 +44,7 @@ import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useToast } from "../../shared/components/ToastProvider";
 import ArtistCard from "../../shared/components/ArtistCard";
 import Bord from "@/modules/shared/components/bord";
+import { useOpenBillingPage } from "@/modules/shared/hooks/useOpenBillingPage.ts";
 import { useTranslation } from "@/hooks/useTranslation.ts";
 
 import type { Socket } from "socket.io-client";
@@ -137,6 +138,7 @@ function MyContent() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connectedArtistsCount, setConnectedArtistsCount] = useState(0);
   const [selectedTab, setSelectedTab] = useState<MyTabKey>("songs");
+  const openBillingPage = useOpenBillingPage();
 
   const tabs = useMemo<Array<TabItem<MyTabKey>>>(() => {
     const base: Array<TabItem<MyTabKey>> = [
@@ -152,7 +154,7 @@ function MyContent() {
   const handleSelectTab = useCallback(
     (tab: MyTabKey) => {
       if (subscriptionBlocked) {
-        window.openUpgradeModal?.();
+        openBillingPage();
         return;
       }
 
@@ -168,7 +170,7 @@ function MyContent() {
 
       navigate(`/my?tab=${tab}`);
     },
-    [navigate, subscriptionBlocked, lineupsEnabled],
+    [navigate, openBillingPage, subscriptionBlocked, lineupsEnabled],
   );
 
   // Sync selectedTab with URL
@@ -888,7 +890,7 @@ function MyContent() {
                       await api.put(`/songs/${editId}`, cleanForm);
                     } else {
                       if (!canCreateOrMutate) {
-                        window.openUpgradeModal?.();
+                        openBillingPage();
                         return;
                       }
                       await api.post("/songs", cleanForm);
@@ -968,7 +970,7 @@ function MyContent() {
                 index={i}
                 onOpen={() => {
                   if (subscriptionBlocked) {
-                    window.openUpgradeModal?.();
+                    openBillingPage();
                     return;
                   }
                   navigate(`/my/lineups/${l.id}`);
@@ -1017,7 +1019,7 @@ function MyContent() {
                       });
                     } else {
                       if (!canMutateLineups) {
-                        window.openUpgradeModal?.();
+                        openBillingPage();
                         return;
                       }
                       await api.post("/lineups", {

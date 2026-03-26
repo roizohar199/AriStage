@@ -82,6 +82,8 @@ export const authController = {
 
   register: asyncHandler(async (req: Request, res: Response) => {
     const locale = resolveRequestLocale(req);
+    const ipAddress = req.ip || req.socket.remoteAddress;
+    const userAgent = req.get("user-agent");
     logger.info("🔵 [REGISTER] התחלת הרשמה", {
       hasEmail: typeof req.body?.email === "string",
       hasFile: !!req.file,
@@ -108,11 +110,22 @@ export const authController = {
 
     try {
       const newUser = await registerUser(normalizedRegisterPayload, locale);
+      const authPayload = await loginUser(
+        normalizedRegisterPayload.email,
+        normalizedRegisterPayload.password,
+        locale,
+        ipAddress,
+        userAgent,
+      );
 
       logger.info("✅ [REGISTER] הרשמה הצליחה", {
         userId: newUser.id,
       });
-      res.json({ message: tServer(locale, "auth.registered"), user: newUser });
+      res.json({
+        ...authPayload,
+        message: tServer(locale, "auth.registered"),
+        user: newUser,
+      });
     } catch (error: any) {
       logger.error("❌ [REGISTER] שגיאה בהרשמה", {
         error: error.message,

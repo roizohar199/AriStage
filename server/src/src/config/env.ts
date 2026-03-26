@@ -53,6 +53,15 @@ interface EnvConfig {
     user: string;
     pass: string;
   };
+  paypal: {
+    clientId: string;
+    clientSecret: string;
+    mode: "sandbox" | "live";
+    webhookId: string;
+    returnUrl: string;
+    cancelUrl: string;
+    planMappings: string;
+  };
 }
 
 const host = process.env.HOST || "0.0.0.0";
@@ -92,6 +101,18 @@ export const env: EnvConfig = {
   mail: {
     user: process.env.MAIL_USER || "",
     pass: process.env.MAIL_PASS || "",
+  },
+  paypal: {
+    clientId: process.env.PAYPAL_CLIENT_ID || "",
+    clientSecret: process.env.PAYPAL_CLIENT_SECRET || "",
+    mode:
+      String(process.env.PAYPAL_MODE || "sandbox").toLowerCase() === "live"
+        ? "live"
+        : "sandbox",
+    webhookId: process.env.PAYPAL_WEBHOOK_ID || "",
+    returnUrl: (process.env.PAYPAL_RETURN_URL || "").replace(/\/$/, ""),
+    cancelUrl: (process.env.PAYPAL_CANCEL_URL || "").replace(/\/$/, ""),
+    planMappings: process.env.PAYPAL_PLAN_MAPPINGS || "",
   },
 };
 

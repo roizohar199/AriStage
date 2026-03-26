@@ -10,6 +10,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@paypal/paypal-server-sdk": "^2.2.0",
     "bcryptjs": "^2.4.3",
     "bidi-js": "^1.0.3",
     "canvas": "^3.2.0",

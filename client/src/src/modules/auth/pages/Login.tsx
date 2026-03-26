@@ -306,8 +306,10 @@ export default function Login() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      setMessage(t("auth.registerSuccess"));
-      setTab("login");
+      const token = String(response?.data?.token ?? "").trim();
+      if (!token) {
+        throw new Error("Missing token from register response");
+      }
 
       setFullName("");
       setEmail("");
@@ -318,6 +320,9 @@ export default function Login() {
       setPreview(null);
       setAgreed(false);
       setRegisterErrors({});
+
+      await login(token);
+      navigate("/billing");
     } catch (err: any) {
       if (!applyRegisterApiFieldErrors(err)) {
         setError(getApiErrorMessage(err, "auth.registerError"));

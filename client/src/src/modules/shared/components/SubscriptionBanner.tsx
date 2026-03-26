@@ -1,19 +1,25 @@
 import { AlertCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
+import { useOpenBillingPage } from "@/modules/shared/hooks/useOpenBillingPage.ts";
 import api from "@/modules/shared/lib/api.js";
 import { useTranslation } from "@/hooks/useTranslation.ts";
 
 type SubscriptionPlan = {
-  tier: string;
-  monthlyPrice: number;
-  yearlyPrice: number;
+  id: number;
+  key: string;
+  name: string;
+  description: string | null;
   currency: string;
+  monthly_price: number;
+  yearly_price: number;
+  enabled: boolean;
 };
 
 export default function SubscriptionBanner() {
   const { subscriptionBlocked, user } = useAuth();
   const { t } = useTranslation();
+  const openBillingPage = useOpenBillingPage();
   const [price, setPrice] = useState<number | null>(null);
   const [priceLoading, setPriceLoading] = useState(false);
 
@@ -28,11 +34,11 @@ export default function SubscriptionBanner() {
     setPriceLoading(true);
 
     (api as any)
-      .get("/subscriptions/plans", { skipErrorToast: true })
+      .get("/plans/available", { skipErrorToast: true })
       .then(({ data }: any) => {
         if (!mounted) return;
         const plans = (Array.isArray(data) ? data : []) as SubscriptionPlan[];
-        const monthly = plans[0]?.monthlyPrice;
+        const monthly = plans[0]?.monthly_price;
         setPrice(typeof monthly === "number" ? monthly : null);
       })
       .catch(() => {
@@ -54,7 +60,7 @@ export default function SubscriptionBanner() {
   }
 
   const handleUpgrade = () => {
-    window.openUpgradeModal?.();
+    openBillingPage();
   };
 
   return (

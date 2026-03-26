@@ -11,6 +11,8 @@ function mapRowToPlan(row: PlanRow): Plan {
     monthly_price: Number(row.monthly_price),
     yearly_price: Number(row.yearly_price),
     enabled: Number(row.enabled) === 1,
+    monthly_enabled: Number(row.monthly_enabled) === 1,
+    yearly_enabled: Number(row.yearly_enabled) === 1,
   };
 }
 
@@ -27,13 +29,17 @@ export type CreatePlanInput = {
   monthly_price: number;
   yearly_price: number;
   enabled?: boolean;
+  monthly_enabled?: boolean;
+  yearly_enabled?: boolean;
 };
 
 export async function createPlan(input: CreatePlanInput): Promise<Plan> {
   const enabledValue = input.enabled === false ? 0 : 1;
+  const monthlyEnabledValue = input.monthly_enabled === false ? 0 : 1;
+  const yearlyEnabledValue = input.yearly_enabled === false ? 0 : 1;
 
   const [result] = await pool.query(
-    "INSERT INTO plans (`key`, `name`, `description`, `currency`, `monthly_price`, `yearly_price`, `enabled`) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO plans (`key`, `name`, `description`, `currency`, `monthly_price`, `yearly_price`, `enabled`, `monthly_enabled`, `yearly_enabled`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
     [
       input.key,
       input.name,
@@ -42,6 +48,8 @@ export async function createPlan(input: CreatePlanInput): Promise<Plan> {
       input.monthly_price,
       input.yearly_price,
       enabledValue,
+      monthlyEnabledValue,
+      yearlyEnabledValue,
     ],
   );
 
@@ -62,6 +70,8 @@ export type UpdatePlanInput = {
   monthly_price: number;
   yearly_price: number;
   enabled: boolean;
+  monthly_enabled: boolean;
+  yearly_enabled: boolean;
 };
 
 export async function updatePlan(
@@ -69,9 +79,11 @@ export async function updatePlan(
   input: UpdatePlanInput,
 ): Promise<Plan | null> {
   const enabledValue = input.enabled ? 1 : 0;
+  const monthlyEnabledValue = input.monthly_enabled ? 1 : 0;
+  const yearlyEnabledValue = input.yearly_enabled ? 1 : 0;
 
   const [result] = await pool.query(
-    "UPDATE plans SET `key` = ?, `name` = ?, `description` = ?, `currency` = ?, `monthly_price` = ?, `yearly_price` = ?, `enabled` = ? WHERE id = ?",
+    "UPDATE plans SET `key` = ?, `name` = ?, `description` = ?, `currency` = ?, `monthly_price` = ?, `yearly_price` = ?, `enabled` = ?, `monthly_enabled` = ?, `yearly_enabled` = ? WHERE id = ?",
     [
       input.key,
       input.name,
@@ -80,6 +92,8 @@ export async function updatePlan(
       input.monthly_price,
       input.yearly_price,
       enabledValue,
+      monthlyEnabledValue,
+      yearlyEnabledValue,
       id,
     ],
   );

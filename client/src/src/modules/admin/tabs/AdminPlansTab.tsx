@@ -35,6 +35,8 @@ export type Plan = {
   monthly_price: number;
   yearly_price: number;
   enabled: boolean;
+  monthly_enabled: boolean;
+  yearly_enabled: boolean;
 };
 
 type PlanUpsertInput = {
@@ -45,6 +47,8 @@ type PlanUpsertInput = {
   monthly_price: number;
   yearly_price: number;
   enabled: boolean;
+  monthly_enabled: boolean;
+  yearly_enabled: boolean;
 };
 
 type AdminPaymentRow = {
@@ -61,6 +65,7 @@ type SubscriptionSettings = {
   is_enabled: number;
   price_ils: number;
   trial_days: number;
+  trial_enabled: number;
 };
 
 // 2) API helpers
@@ -146,11 +151,13 @@ async function getSubscriptionSettings(): Promise<SubscriptionSettings | null> {
     is_enabled: Number((data as any).is_enabled ?? 0),
     price_ils: Number((data as any).price_ils ?? 0),
     trial_days: Number((data as any).trial_days ?? 14),
+    trial_enabled: Number((data as any).trial_enabled ?? 1),
   };
 }
 
 async function updateSubscriptionSettings(payload: {
   trial_days: number;
+  trial_enabled: number;
 }): Promise<SubscriptionSettings> {
   const { data } = await api.put("/subscriptions/settings", payload, {
     skipErrorToast: true,
@@ -177,6 +184,8 @@ type PlanFormState = {
   monthly_price: string;
   yearly_price: string;
   enabled: boolean;
+  monthly_enabled: boolean;
+  yearly_enabled: boolean;
 };
 
 function PlanForm({
@@ -200,6 +209,8 @@ function PlanForm({
       yearly_price:
         typeof p?.yearly_price === "number" ? String(p.yearly_price) : "0",
       enabled: p?.enabled ?? true,
+      monthly_enabled: p?.monthly_enabled ?? true,
+      yearly_enabled: p?.yearly_enabled ?? true,
     };
   }, [initialPlan]);
 
@@ -249,6 +260,8 @@ function PlanForm({
       monthly_price: Math.trunc(monthly),
       yearly_price: Math.trunc(yearly),
       enabled: !!form.enabled,
+      monthly_enabled: !!form.monthly_enabled,
+      yearly_enabled: !!form.yearly_enabled,
     };
 
     setSubmitting(true);
@@ -364,6 +377,38 @@ function PlanForm({
           </span>
         </label>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label className="flex items-center gap-2 rounded-2xl border border-neutral-800 px-3 py-2">
+            <input
+              type="checkbox"
+              checked={form.monthly_enabled}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, monthly_enabled: e.target.checked }))
+              }
+              className="accent-brand-primary"
+              disabled={!canEdit || submitting}
+            />
+            <span className="text-sm text-neutral-200">
+              {t("admin.plansTab.form.labels.monthlyEnabled")}
+            </span>
+          </label>
+
+          <label className="flex items-center gap-2 rounded-2xl border border-neutral-800 px-3 py-2">
+            <input
+              type="checkbox"
+              checked={form.yearly_enabled}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, yearly_enabled: e.target.checked }))
+              }
+              className="accent-brand-primary"
+              disabled={!canEdit || submitting}
+            />
+            <span className="text-sm text-neutral-200">
+              {t("admin.plansTab.form.labels.yearlyEnabled")}
+            </span>
+          </label>
+        </div>
+
         <DesignActionButton type="submit" disabled={!canEdit || submitting}>
           {submitting ? t("common.saving") : t("common.save")}
         </DesignActionButton>
@@ -398,6 +443,7 @@ export default function AdminPlansTab({
   const [paymentsError, setPaymentsError] = useState<string | null>(null);
 
   const [trialDaysInput, setTrialDaysInput] = useState<string>("14");
+  const [trialEnabled, setTrialEnabled] = useState<boolean>(true);
   const [trialDaysLoading, setTrialDaysLoading] = useState<boolean>(true);
   const [trialDaysSaving, setTrialDaysSaving] = useState<boolean>(false);
 
@@ -431,7 +477,10 @@ export default function AdminPlansTab({
       try {
         const settings = await getSubscriptionSettings();
         if (!isMounted) return;
-        if (settings) setTrialDaysInput(String(settings.trial_days ?? 14));
+        if (settings) {
+          setTrialDaysInput(String(settings.trial_days ?? 14));
+          setTrialEnabled(Number(settings.trial_enabled ?? 1) === 1);
+        }
       } catch (err) {
         console.error("Admin getSubscriptionSettings failed", err);
       } finally {
@@ -603,7 +652,7 @@ export default function AdminPlansTab({
     t,
   ]);
 
-  const saveTrialDays = async () => {
+  const saveTrialSettings = async () => {
     if (!canEdit) return;
 
     const parsed = Number(trialDaysInput);
@@ -616,17 +665,23 @@ export default function AdminPlansTab({
 
     setTrialDaysSaving(true);
     try {
-      await updateSubscriptionSettings({ trial_days: value });
+      await updateSubscriptionSettings({
+        trial_days: value,
+        trial_enabled: trialEnabled ? 1 : 0,
+      });
       setTrialDaysInput(String(value));
-      showToast(t("admin.plansTab.messages.trialDaysUpdated"), "success");
+      showToast(t("admin.plansTab.messages.trialSettingsUpdated"), "success");
     } catch (err: any) {
       if (err?.response?.status === 403) {
         showToast(
-          t("admin.plansTab.messages.noPermissionUpdateTrialDays"),
+          t("admin.plansTab.messages.noPermissionUpdateTrialSettings"),
           "error",
         );
       } else {
-        showToast(t("admin.plansTab.messages.updateTrialDaysFailed"), "error");
+        showToast(
+          t("admin.plansTab.messages.updateTrialSettingsFailed"),
+          "error",
+        );
       }
     } finally {
       setTrialDaysSaving(false);
@@ -648,6 +703,31 @@ export default function AdminPlansTab({
               {t("admin.plansTab.subscriptionSettings.trialDaysDescription")}
             </p>
 
+            <label className="flex items-center justify-between gap-3 rounded-2xl border border-neutral-700 bg-neutral-900/50 px-4 py-3">
+              <div className="space-y-1">
+                <div className="text-sm font-semibold text-neutral-100">
+                  {t("admin.plansTab.subscriptionSettings.trialModeLabel")}
+                </div>
+                <div className="text-xs text-neutral-400">
+                  {trialEnabled
+                    ? t(
+                        "admin.plansTab.subscriptionSettings.trialModeEnabledHelp",
+                      )
+                    : t(
+                        "admin.plansTab.subscriptionSettings.trialModeDisabledHelp",
+                      )}
+                </div>
+              </div>
+
+              <input
+                type="checkbox"
+                checked={trialEnabled}
+                onChange={(e) => setTrialEnabled(e.target.checked)}
+                disabled={!canEdit || trialDaysLoading || trialDaysSaving}
+                className="h-5 w-5 accent-brand-primary"
+              />
+            </label>
+
             <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-end">
               <Input
                 label={t("admin.plansTab.subscriptionSettings.trialDaysLabel")}
@@ -661,7 +741,7 @@ export default function AdminPlansTab({
               {canEdit ? (
                 <DesignActionButton
                   type="button"
-                  onClick={saveTrialDays}
+                  onClick={saveTrialSettings}
                   disabled={trialDaysLoading || trialDaysSaving}
                 >
                   {trialDaysSaving ? t("common.saving") : t("common.save")}
@@ -735,6 +815,12 @@ export default function AdminPlansTab({
                     {t("admin.plansTab.form.labels.enabled")}
                   </th>
                   <th className="px-3 py-2 font-semibold">
+                    {t("admin.plansTab.form.labels.monthlyEnabled")}
+                  </th>
+                  <th className="px-3 py-2 font-semibold">
+                    {t("admin.plansTab.form.labels.yearlyEnabled")}
+                  </th>
+                  <th className="px-3 py-2 font-semibold">
                     {t("common.actions")}
                   </th>
                 </tr>
@@ -771,6 +857,28 @@ export default function AdminPlansTab({
                           }
                         >
                           {p.enabled ? t("common.yes") : t("common.no")}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap text-neutral-200">
+                        <span
+                          className={
+                            p.monthly_enabled
+                              ? "text-brand-primary"
+                              : "text-neutral-400"
+                          }
+                        >
+                          {p.monthly_enabled ? t("common.yes") : t("common.no")}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap text-neutral-200">
+                        <span
+                          className={
+                            p.yearly_enabled
+                              ? "text-brand-primary"
+                              : "text-neutral-400"
+                          }
+                        >
+                          {p.yearly_enabled ? t("common.yes") : t("common.no")}
                         </span>
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap">

@@ -12,6 +12,7 @@ const ShareLineup = lazy(() => import("./share/pages/ShareLineup.tsx"));
 const SubscriptionBlocked = lazy(
   () => import("./billing/pages/SubscriptionBlocked.tsx"),
 );
+const PayPalReturn = lazy(() => import("./billing/pages/PayPalReturn.tsx"));
 const Settings = lazy(() => import("./settings/pages/Settings.tsx"));
 const MyArtist = lazy(() => import("./artists/pages/MyArtist.tsx"));
 const ArtistProfile = lazy(() => import("./artists/pages/ArtistProfile.tsx"));
@@ -48,6 +49,7 @@ export const protectedRoutes: ProtectedRoute[] = [
   { path: "/artist/:id/*", component: ArtistProfile },
   { path: "/settings", component: Settings },
   { path: "/billing", component: SubscriptionBlocked },
+  { path: "/billing/paypal-return", component: PayPalReturn },
   { path: "/logout", component: Logout },
   // { path: "/users", component: Users, roles: ["admin", "manager"] },
   { path: "/admin", component: Admin },

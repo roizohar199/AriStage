@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import Footer from "@/modules/shared/components/Footer.tsx";
 import Header from "@/modules/shared/components/Header.tsx";
 import SubscriptionBanner from "@/modules/shared/components/SubscriptionBanner.tsx";
@@ -11,16 +11,6 @@ import {
 import SkipLink from "@/modules/shared/components/a11y/SkipLink";
 import RouteAnnouncer from "@/modules/shared/components/a11y/RouteAnnouncer";
 import { useTranslation } from "@/hooks/useTranslation.ts";
-
-const UpgradeModal = lazy(
-  () => import("@/modules/shared/components/UpgradeModal.tsx"),
-);
-
-declare global {
-  interface Window {
-    openUpgradeModal?: (billingPeriod?: "monthly" | "yearly") => void;
-  }
-}
 
 interface User {
   id: number;
@@ -49,19 +39,6 @@ export default function AppLayout({
   const { user } = useCurrentUser();
   const isAuthenticated = !!user?.id;
   const effectiveLocale = resolveEffectiveLocaleFromUser(user);
-  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
-  const [preferredUpgradeBillingPeriod, setPreferredUpgradeBillingPeriod] =
-    useState<"monthly" | "yearly" | null>(null);
-
-  useEffect(() => {
-    window.openUpgradeModal = (billingPeriod) => {
-      setPreferredUpgradeBillingPeriod(billingPeriod ?? null);
-      setIsUpgradeModalOpen(true);
-    };
-    return () => {
-      delete window.openUpgradeModal;
-    };
-  }, []);
 
   useEffect(() => {
     const mainEl = scrollAreaRef.current;
@@ -131,7 +108,7 @@ export default function AppLayout({
         </header>
       )}
 
-      {/* Main content - Blur applied only when modal is open */}
+      {/* Main content */}
       <main
         id="main-content"
         ref={scrollAreaRef}
@@ -150,17 +127,6 @@ export default function AppLayout({
           <Footer />
         </div>
       </main>
-
-      {/* Subscription Upgrade Modal */}
-      <Suspense fallback={null}>
-        {isUpgradeModalOpen ? (
-          <UpgradeModal
-            open={isUpgradeModalOpen}
-            onClose={() => setIsUpgradeModalOpen(false)}
-            initialBillingPeriod={preferredUpgradeBillingPeriod ?? undefined}
-          />
-        ) : null}
-      </Suspense>
     </div>
   );
 }

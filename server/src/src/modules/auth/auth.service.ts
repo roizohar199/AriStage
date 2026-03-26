@@ -14,6 +14,7 @@ import {
   type ServerLocale,
 } from "../../i18n/serverI18n";
 import { activateTrialForUser } from "../../services/subscriptionService";
+import { getSubscriptionSettings } from "../subscriptions/subscriptions.repository";
 import {
   createUser,
   findUserByEmail,
@@ -227,6 +228,8 @@ export async function complete2FALogin(
 
 export async function registerUser(payload: any, locale: ServerLocale) {
   const { full_name, email, password, artist_role, tempAvatar } = payload;
+  const subscriptionSettings = await getSubscriptionSettings();
+  const isTrialEnabled = Number(subscriptionSettings.trial_enabled ?? 1) === 1;
 
   const preferredLocaleRaw = payload?.preferred_locale;
   let preferred_locale = preferredLocaleRaw
@@ -286,14 +289,16 @@ export async function registerUser(payload: any, locale: ServerLocale) {
     password_hash,
     role: "user",
     subscription_type: "trial",
-    subscription_status: "trial",
+    subscription_status: isTrialEnabled ? "trial" : "expired",
     subscription_expires_at: null,
     preferred_locale,
     artist_role: artist_role || null,
     avatar: null,
   });
 
-  await activateTrialForUser(userId);
+  if (isTrialEnabled) {
+    await activateTrialForUser(userId);
+  }
 
   logger.info("✅ [REGISTER] משתמש נוצר", { userId });
 

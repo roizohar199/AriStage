@@ -7,6 +7,8 @@ export type Plan = {
   monthly_price: number;
   yearly_price: number;
   enabled: boolean;
+  monthly_enabled: boolean;
+  yearly_enabled: boolean;
 };
 
 export type PlanRow = {
@@ -18,6 +20,8 @@ export type PlanRow = {
   monthly_price: number;
   yearly_price: number;
   enabled: number; // tinyint(1)
+  monthly_enabled: number; // tinyint(1)
+  yearly_enabled: number; // tinyint(1)
   created_at?: string;
   updated_at?: string | null;
 };

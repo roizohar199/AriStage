@@ -793,6 +793,11 @@ export const en = {
         trialDaysDescription:
           "Controls how many trial days a user gets before it expires.",
         trialDaysLabel: "Trial days",
+        trialModeLabel: "Trial mode",
+        trialModeEnabledHelp:
+          "New registrations receive a trial and existing trial users keep their current access.",
+        trialModeDisabledHelp:
+          "New registrations go straight to billing, and users currently in trial are moved to expired.",
       },
       readOnly: "Read-only",
       actions: {
@@ -826,6 +831,8 @@ export const en = {
           monthlyPrice: "Monthly price",
           yearlyPrice: "Yearly price",
           enabled: "Enabled",
+          monthlyEnabled: "Monthly available",
+          yearlyEnabled: "Yearly available",
         },
         errors: {
           keyRequired: "Key is required",
@@ -854,9 +861,10 @@ export const en = {
         planDeleted: "Plan deleted successfully",
         deletePlanFailed: "Error deleting plan",
         invalidTrialDays: "Invalid trial days",
-        trialDaysUpdated: "Trial days updated",
-        noPermissionUpdateTrialDays: "No permission to update trial days",
-        updateTrialDaysFailed: "Error updating trial days",
+        trialSettingsUpdated: "Trial settings updated",
+        noPermissionUpdateTrialSettings:
+          "No permission to update trial settings",
+        updateTrialSettingsFailed: "Error updating trial settings",
       },
       deleteConfirm: {
         title: "Delete plan",
@@ -1187,6 +1195,19 @@ export const en = {
     trialCalculationError: "Cannot calculate trial days (missing end date)",
     daysRemaining: "Days Remaining",
     trialEnded: "Trial Ended",
+    renewalDateValue: "Next renewal: {date}",
+    accessUntilDate: "Access remains active until {date}",
+    paymentProviderValue: "Payment provider: {provider}",
+    cancelScheduled:
+      "Cancellation is scheduled for the end of the current billing period",
+    cancelSubscriptionButton: "Cancel auto-renewal",
+    cancellingSubscription: "Cancelling renewal...",
+    cancelSubscriptionConfirm:
+      "Cancel the PayPal auto-renewal at the end of the current billing period?",
+    cancelSubscriptionSuccess:
+      "Auto-renewal was cancelled. The subscription stays active until the end of the current billing period.",
+    cancelSubscriptionError:
+      "Unable to cancel the subscription renewal right now",
     active: "Active",
     expired: "Expired",
     twoFactorAuth: "Two-Factor Authentication",
@@ -1362,6 +1383,24 @@ export const en = {
       "Your subscription has expired. Please upgrade to continue using the system.",
     trialEndedTitle: "Your trial has ended",
     upgradeNow: "Upgrade Now",
+    paypal: {
+      processingTitle: "Validating PayPal subscription",
+      processing: "Updating your subscription with PayPal. Please wait...",
+      successTitle: "Subscription activated",
+      success: "Your payment was approved and the subscription is now active.",
+      cancelledTitle: "Payment flow cancelled",
+      cancelled: "The PayPal approval flow was cancelled before activation.",
+      errorTitle: "Could not validate subscription",
+      activateError:
+        "An error occurred while validating the PayPal subscription.",
+      missingSubscriptionId:
+        "Missing PayPal subscription id. Please start the upgrade flow again.",
+      backToSettings: "Back to settings",
+      popupBlocked:
+        "Your browser blocked the PayPal popup. Allow popups and try again.",
+      popupClosed:
+        "The PayPal window was closed before approval was completed.",
+    },
 
     loadingPlans: "Loading plans...",
     trialUpgradePrompt:
@@ -1372,6 +1411,8 @@ export const en = {
     upgradeModal: {
       noPlanAvailable: "No plan available for upgrade right now",
       planNotAvailable: "The selected plan is not available right now",
+      periodNotAvailable:
+        "The selected billing period is not available for this plan",
       upgradeError:
         "An error occurred while upgrading (test). Please try again.",
 
@@ -1393,6 +1434,8 @@ export const en = {
 
       billingMonthly: "Monthly",
       billingYearly: "Yearly",
+      onlyMonthlyAvailable: "Monthly only",
+      onlyYearlyAvailable: "Yearly only",
       cadencePerMonth: "per month",
       cadencePerYear: "per year",
       monthlyEquivalent: "≈ {amount} {currency} / month",
@@ -1405,10 +1448,22 @@ export const en = {
       pricePerMonthShort: "{currency} {price} / month",
       pricePerYearShort: "{currency} {price} / year",
 
-      upgrading: "Upgrading (test)...",
+      upgrading: "Redirecting to PayPal...",
+      awaitingPopupApproval: "Waiting for PayPal approval...",
       proceedToPayment: "Proceed to payment",
       proceedToPaymentWithAmount:
         "Proceed to payment - {amount} {currency} {cadence}",
+      paypalRedirectNotice:
+        "Payment approval continues in PayPal and then returns automatically to the app.",
+      paypalPopupNotice:
+        "A PayPal popup window is open. Approve the subscription there and it will close automatically.",
+      popupPendingHelp:
+        "Waiting for your approval in the PayPal window. Once approved, the app will refresh the subscription automatically.",
+      paypalProviderTitle: "Secure payment with PayPal",
+      paypalProviderDescription:
+        "Approval happens in a dedicated PayPal popup, so you stay in the app without losing page context.",
+      providerLabel: "Payment method",
+      popupExperienceBadge: "Secure popup flow",
     },
 
     subscriptionRequiredTitle: "Active subscription required",

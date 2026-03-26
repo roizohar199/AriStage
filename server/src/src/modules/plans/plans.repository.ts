@@ -1,3 +1,4 @@
+import type { BillingPeriod } from "../../services/subscriptionService";
 import { pool } from "../../database/pool";
 
 export type Plan = {
@@ -9,6 +10,8 @@ export type Plan = {
   monthly_price: number;
   yearly_price: number;
   enabled: boolean;
+  monthly_enabled: boolean;
+  yearly_enabled: boolean;
 };
 
 type PlanRow = {
@@ -20,6 +23,8 @@ type PlanRow = {
   monthly_price: number;
   yearly_price: number;
   enabled: number;
+  monthly_enabled: number;
+  yearly_enabled: number;
 };
 
 function mapRowToPlan(row: PlanRow): Plan {
@@ -32,7 +37,22 @@ function mapRowToPlan(row: PlanRow): Plan {
     monthly_price: Number(row.monthly_price),
     yearly_price: Number(row.yearly_price),
     enabled: Number(row.enabled) === 1,
+    monthly_enabled: Number(row.monthly_enabled) === 1,
+    yearly_enabled: Number(row.yearly_enabled) === 1,
   };
+}
+
+export function isPlanBillingPeriodEnabled(
+  plan: Pick<Plan, "enabled" | "monthly_enabled" | "yearly_enabled">,
+  billingPeriod: BillingPeriod,
+): boolean {
+  if (!plan.enabled) {
+    return false;
+  }
+
+  return billingPeriod === "yearly"
+    ? plan.yearly_enabled
+    : plan.monthly_enabled;
 }
 
 export async function getPlanByKey(key: string): Promise<Plan | null> {
@@ -50,7 +70,7 @@ export async function getPlanByKey(key: string): Promise<Plan | null> {
 
 export async function listEnabledPlans(): Promise<Plan[]> {
   const [rows] = await pool.query(
-    "SELECT * FROM plans WHERE enabled = 1 ORDER BY monthly_price ASC, yearly_price ASC",
+    "SELECT * FROM plans WHERE enabled = 1 AND (monthly_enabled = 1 OR yearly_enabled = 1) ORDER BY monthly_price ASC, yearly_price ASC",
   );
   return (rows as PlanRow[]).map(mapRowToPlan);
 }

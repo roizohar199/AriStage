@@ -17,8 +17,14 @@ export type CurrentUser = {
   preferred_locale?: string | null;
   subscription_type?: string;
   subscription_status?: string;
+  subscription_provider?: string | null;
+  provider_customer_id?: string | null;
+  provider_subscription_id?: string | null;
   subscription_started_at?: string | null;
   subscription_expires_at?: string | null;
+  subscription_renews_at?: string | null;
+  subscription_cancel_at_period_end?: boolean | number;
+  subscription_cancelled_at?: string | null;
   trial_days?: number;
 };
 

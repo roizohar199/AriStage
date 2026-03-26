@@ -5,6 +5,7 @@ import api, { getApiErrorMessage } from "@/modules/shared/lib/api.js";
 import { useToast } from "@/modules/shared/components/ToastProvider.jsx";
 import { useConfirm } from "@/modules/shared/confirm/useConfirm.ts";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
+import { useOpenBillingPage } from "@/modules/shared/hooks/useOpenBillingPage.ts";
 import { useTranslation } from "@/hooks/useTranslation.ts";
 import SharedArtistsStats from "../components/SharedArtistsStats";
 import ArtistCard from "@/modules/shared/components/ArtistCard";
@@ -39,6 +40,7 @@ export default function MyArtist() {
   const confirm = useConfirm();
   const navigate = useNavigate();
   const { subscriptionBlocked } = useAuth();
+  const openBillingPage = useOpenBillingPage();
   const { t } = useTranslation();
   // הזמנות ממתינות הוסרו
   const [artists, setArtists] = useState<Artist[]>([]);
@@ -221,7 +223,7 @@ export default function MyArtist() {
                   })}
                   onClick={() => {
                     if (subscriptionBlocked) {
-                      window.openUpgradeModal?.();
+                      openBillingPage();
                       return;
                     }
                     navigate(`/artist/${artist.id}`);
@@ -230,7 +232,7 @@ export default function MyArtist() {
                     if (e.key === "Enter" || e.key === " ") {
                       if (subscriptionBlocked) {
                         e.preventDefault();
-                        window.openUpgradeModal?.();
+                        openBillingPage();
                         return;
                       }
                       navigate(`/artist/${artist.id}`);

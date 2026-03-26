@@ -788,6 +788,11 @@ export const he = {
         trialDaysDescription:
           "קובע כמה ימים יש למשתמש במצב ניסיון (trial) לפני שפג תוקף.",
         trialDaysLabel: "ימי ניסיון",
+        trialModeLabel: "מצב ניסיון",
+        trialModeEnabledHelp:
+          "משתמשים חדשים מקבלים trial, ומשתמשים שכבר נמצאים ב-trial ממשיכים כרגיל.",
+        trialModeDisabledHelp:
+          "משתמשים חדשים יעברו ישר למסך תשלום, ומשתמשים שנמצאים כרגע ב-trial יעברו למצב פג תוקף.",
       },
       readOnly: "קריאה בלבד",
       actions: {
@@ -821,6 +826,8 @@ export const he = {
           monthlyPrice: "מחיר חודשי",
           yearlyPrice: "מחיר שנתי",
           enabled: "מופעל",
+          monthlyEnabled: "חודשי פעיל",
+          yearlyEnabled: "שנתי פעיל",
         },
         errors: {
           keyRequired: "שדה מפתח הוא חובה",
@@ -849,9 +856,10 @@ export const he = {
         planDeleted: "המסלול נמחק בהצלחה",
         deletePlanFailed: "שגיאה במחיקת מסלול",
         invalidTrialDays: "ימי ניסיון לא תקינים",
-        trialDaysUpdated: "ימי ניסיון עודכנו",
-        noPermissionUpdateTrialDays: "אין הרשאה לעדכן ימי ניסיון",
-        updateTrialDaysFailed: "שגיאה בעדכון ימי ניסיון",
+        trialSettingsUpdated: "הגדרות מצב ניסיון עודכנו",
+        noPermissionUpdateTrialSettings:
+          "אין הרשאה לעדכן את הגדרות מצב הניסיון",
+        updateTrialSettingsFailed: "שגיאה בעדכון הגדרות מצב הניסיון",
       },
       deleteConfirm: {
         title: "מחיקת מסלול",
@@ -1176,6 +1184,17 @@ export const he = {
     trialCalculationError: "לא ניתן לחשב ימי ניסיון (חסר תאריך סיום)",
     daysRemaining: "ימים נותרו",
     trialEnded: "תקופת הניסיון הסתיימה",
+    renewalDateValue: "חידוש הבא: {date}",
+    accessUntilDate: "הגישה פעילה עד {date}",
+    paymentProviderValue: "ספק תשלום: {provider}",
+    cancelScheduled: "הביטול נקבע לסוף תקופת החיוב הנוכחית",
+    cancelSubscriptionButton: "בטל חידוש אוטומטי",
+    cancellingSubscription: "מבטל חידוש...",
+    cancelSubscriptionConfirm:
+      "לבטל את החידוש האוטומטי של המנוי ב-PayPal בסוף התקופה הנוכחית?",
+    cancelSubscriptionSuccess:
+      "החידוש האוטומטי בוטל. המנוי יישאר פעיל עד סוף התקופה הנוכחית.",
+    cancelSubscriptionError: "לא ניתן לבטל את חידוש המנוי כרגע",
     active: "פעיל",
     expired: "הסתיים",
     twoFactorAuth: "אימות דו-שלבי",
@@ -1348,6 +1367,20 @@ export const he = {
       "המנוי שלך פג תוקף. אנא שדרג כדי להמשיך להשתמש במערכת.",
     trialEndedTitle: "תקופת הניסיון הסתיימה",
     upgradeNow: "שדרג עכשיו",
+    paypal: {
+      processingTitle: "מאמת מנוי ב-PayPal",
+      processing: "מעדכן את המנוי שלך מול PayPal. נא להמתין...",
+      successTitle: "המנוי הופעל",
+      success: "התשלום אושר והמנוי עודכן בהצלחה.",
+      cancelledTitle: "תהליך התשלום בוטל",
+      cancelled: "אישור PayPal בוטל לפני השלמת המנוי.",
+      errorTitle: "לא ניתן לאמת את המנוי",
+      activateError: "אירעה שגיאה באימות המנוי מול PayPal.",
+      missingSubscriptionId: "חסר מזהה מנוי מ-PayPal. נסה שוב מתוך מסך השדרוג.",
+      backToSettings: "חזרה להגדרות",
+      popupBlocked: "הדפדפן חסם את חלון PayPal. אפשר חלונות קופצים ונסה שוב.",
+      popupClosed: "חלון PayPal נסגר לפני שהאישור הושלם.",
+    },
 
     loadingPlans: "טוען מסלולים...",
     trialUpgradePrompt: "כדי להמשיך להשתמש במערכת יש לשדרג מנוי • מחיר:",
@@ -1357,6 +1390,7 @@ export const he = {
     upgradeModal: {
       noPlanAvailable: "אין מסלול זמין לשדרוג כרגע",
       planNotAvailable: "המסלול הנבחר אינו זמין כרגע",
+      periodNotAvailable: "תקופת החיוב שנבחרה אינה זמינה למסלול הזה",
       upgradeError: "אירעה שגיאה בשדרוג המנוי (בדיקה). נסה שוב.",
 
       titleExpired: "המנוי פג תוקף",
@@ -1377,6 +1411,8 @@ export const he = {
 
       billingMonthly: "חודשי",
       billingYearly: "שנתי",
+      onlyMonthlyAvailable: "חודשי בלבד",
+      onlyYearlyAvailable: "שנתי בלבד",
       cadencePerMonth: "לחודש",
       cadencePerYear: "לשנה",
       monthlyEquivalent: "≈ {amount} {currency} לחודש",
@@ -1389,9 +1425,21 @@ export const he = {
       pricePerMonthShort: "{currency} {price} לחודש",
       pricePerYearShort: "{currency} {price} לשנה",
 
-      upgrading: "מבצע שדרוג (בדיקה)...",
+      upgrading: "מעביר ל-PayPal...",
+      awaitingPopupApproval: "ממתין לאישור ב-PayPal...",
       proceedToPayment: "המשך לתשלום",
       proceedToPaymentWithAmount: "המשך לתשלום - {amount} {currency} {cadence}",
+      paypalRedirectNotice:
+        "המשך התשלום והאישור יתבצעו ב-PayPal ולאחר מכן תחזור אוטומטית למערכת.",
+      paypalPopupNotice:
+        "חלון PayPal נפתח בנפרד. אשר את המנוי שם והחלון ייסגר אוטומטית.",
+      popupPendingHelp:
+        "ממתינים לאישור שלך בחלון PayPal. לאחר האישור נחזיר אותך אוטומטית ונרענן את המנוי.",
+      paypalProviderTitle: "תשלום מאובטח דרך PayPal",
+      paypalProviderDescription:
+        "האישור מתבצע בחלון PayPal ייעודי, בלי לצאת מהמערכת ובלי לאבד את ההקשר של הדף.",
+      providerLabel: "אמצעי תשלום",
+      popupExperienceBadge: "חלון קופץ מאובטח",
     },
 
     subscriptionRequiredTitle: "נדרש מנוי פעיל",

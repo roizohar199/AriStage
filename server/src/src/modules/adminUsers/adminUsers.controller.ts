@@ -20,15 +20,15 @@ type AdminUserIdParams = {
   id: string;
 };
 
-type SubscriptionType = "trial" | "pro";
-
 type UpdateSubscriptionBody = {
-  subscription_type?: SubscriptionType;
+  subscription_type?: string | null;
   // preferred
   subscription_status?: string | null;
+  subscription_started_at?: string | null;
   subscription_expires_at?: string | null;
   // backwards/alternate client naming
   status?: string | null;
+  startedAt?: string | null;
   expiresAt?: string | null;
 };
 
@@ -46,9 +46,16 @@ function toIsoOrNull(value: unknown): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
+function toMysqlDateTimeOrNull(value: unknown): string | null {
+  const iso = toIsoOrNull(value);
+  if (!iso) return null;
+  return toMysqlDateTime(new Date(iso));
+}
+
 function parseNullableIsoDate(
   value: unknown,
   locale: "he-IL" | "en-US",
+  fieldName: string,
 ): string | null | undefined {
   if (value === undefined) return undefined;
   if (value === null || value === "") return null;
@@ -56,7 +63,7 @@ function parseNullableIsoDate(
   if (Number.isNaN(date.getTime())) {
     throw new AppError(
       400,
-      tServer(locale, "admin.subscriptionDateValid"),
+      tServer(locale, "admin.subscriptionDateValid", { field: fieldName }),
       undefined,
     );
   }
@@ -143,7 +150,9 @@ function mapListRowToDto(row: AdminUserListRow) {
 
 function mapSubscriptionRowToDto(row: AdminUserSubscriptionRow) {
   return {
+    subscription_type: row.subscription_type ?? null,
     subscription_status: row.subscription_status ?? null,
+    subscription_started_at: toIsoOrNull(row.subscription_started_at),
     subscription_expires_at: toIsoOrNull(row.subscription_expires_at),
   };
 }
@@ -197,12 +206,47 @@ export const adminUsersController = {
 
     const incomingExpires =
       body.subscription_expires_at !== undefined
-        ? parseNullableIsoDate(body.subscription_expires_at, locale)
+        ? parseNullableIsoDate(
+            body.subscription_expires_at,
+            locale,
+            "subscription_expires_at",
+          )
         : body.expiresAt !== undefined
-          ? parseNullableIsoDate(body.expiresAt, locale)
+          ? parseNullableIsoDate(
+              body.expiresAt,
+              locale,
+              "subscription_expires_at",
+            )
           : undefined;
 
-    if (incomingStatus === undefined && incomingExpires === undefined) {
+    const incomingStarted =
+      body.subscription_started_at !== undefined
+        ? parseNullableIsoDate(
+            body.subscription_started_at,
+            locale,
+            "subscription_started_at",
+          )
+        : body.startedAt !== undefined
+          ? parseNullableIsoDate(
+              body.startedAt,
+              locale,
+              "subscription_started_at",
+            )
+          : undefined;
+
+    const normalizedSubscriptionType =
+      body.subscription_type === undefined
+        ? undefined
+        : body.subscription_type === null
+          ? null
+          : String(body.subscription_type).trim().toLowerCase() || null;
+
+    if (
+      incomingStatus === undefined &&
+      incomingStarted === undefined &&
+      incomingExpires === undefined &&
+      normalizedSubscriptionType === undefined
+    ) {
       throw new AppError(
         400,
         tServer(locale, "admin.noSubscriptionFields"),
@@ -236,12 +280,40 @@ export const adminUsersController = {
       }
     }
 
+    const nextStartedRaw =
+      incomingStarted !== undefined
+        ? incomingStarted
+        : toMysqlDateTimeOrNull(existing.subscription_started_at);
+    const nextExpiresRaw =
+      incomingExpires !== undefined
+        ? incomingExpires
+        : toMysqlDateTimeOrNull(existing.subscription_expires_at);
+
+    if (nextStartedRaw !== null && nextExpiresRaw !== null) {
+      const startedMs = new Date(nextStartedRaw.replace(" ", "T")).getTime();
+      const expiresMs = new Date(nextExpiresRaw.replace(" ", "T")).getTime();
+      if (
+        Number.isFinite(startedMs) &&
+        Number.isFinite(expiresMs) &&
+        startedMs > expiresMs
+      ) {
+        throw new AppError(
+          400,
+          tServer(locale, "admin.subscriptionDateOrderInvalid"),
+          undefined,
+        );
+      }
+    }
+
     const payload = {
-      ...(body.subscription_type !== undefined
-        ? { subscription_type: body.subscription_type }
+      ...(normalizedSubscriptionType !== undefined
+        ? { subscription_type: normalizedSubscriptionType }
         : {}),
       ...(incomingStatus !== undefined
         ? { subscription_status: incomingStatus }
+        : {}),
+      ...(incomingStarted !== undefined
+        ? { subscription_started_at: incomingStarted }
         : {}),
       ...(incomingExpires !== undefined
         ? { subscription_expires_at: incomingExpires }
@@ -277,7 +349,9 @@ export const adminUsersController = {
       "Admin updated user subscription",
       {
         targetUserId,
+        newType: updatedDto.subscription_type,
         newStatus: updatedDto.subscription_status,
+        newStartedAt: updatedDto.subscription_started_at,
         newExpiresAt: updatedDto.subscription_expires_at,
       },
       adminUserId,

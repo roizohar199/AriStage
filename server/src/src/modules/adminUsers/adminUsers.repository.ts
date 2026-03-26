@@ -15,15 +15,16 @@ export type AdminUserListRow = {
 };
 
 export type AdminUserSubscriptionRow = {
+  subscription_type: string | null;
   subscription_status: string | null;
+  subscription_started_at: Date | string | null;
   subscription_expires_at: Date | string | null;
 };
 
-type SubscriptionType = "trial" | "pro";
-
 export type AdminUpdateUserSubscriptionPayload = {
-  subscription_type?: SubscriptionType;
+  subscription_type?: string | null;
   subscription_status?: string | null;
+  subscription_started_at?: string | null;
   subscription_expires_at?: string | null;
 };
 
@@ -52,7 +53,7 @@ async function getUserSubscription(
   userId: number,
 ): Promise<AdminUserSubscriptionRow | null> {
   const [rows] = await pool.query(
-    "SELECT subscription_status, subscription_expires_at FROM users WHERE id = ? LIMIT 1",
+    "SELECT subscription_type, subscription_status, subscription_started_at, subscription_expires_at FROM users WHERE id = ? LIMIT 1",
     [userId],
   );
   return (rows as any[])[0] || null;
@@ -76,6 +77,10 @@ async function updateUserSubscription(
   if (payload.subscription_status !== undefined) {
     clauses.push("subscription_status = ?");
     params.push(payload.subscription_status);
+  }
+  if (payload.subscription_started_at !== undefined) {
+    clauses.push("subscription_started_at = ?");
+    params.push(payload.subscription_started_at);
   }
   if (payload.subscription_expires_at !== undefined) {
     clauses.push("subscription_expires_at = ?");

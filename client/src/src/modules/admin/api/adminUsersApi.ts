@@ -6,12 +6,16 @@ export type AdminUserDto = {
   name: string | null;
   role: string;
   createdAt: string | null;
+  subscription_type: string | null;
   subscription_status: "active" | "trial" | "expired" | string | null;
+  subscription_started_at: string | null;
   subscription_expires_at: string | null;
 };
 
 export type UpdateAdminUserSubscriptionPayload = {
+  subscription_type?: string | null;
   subscription_status?: "active" | "trial" | "expired" | string | null;
+  subscription_started_at?: string | null;
   subscription_expires_at?: string | null;
 };
 
@@ -29,9 +33,11 @@ export async function listAdminUsers(params?: {
 
 export async function updateAdminUserSubscription(
   userId: number,
-  payload: UpdateAdminUserSubscriptionPayload
+  payload: UpdateAdminUserSubscriptionPayload,
 ): Promise<{
+  subscription_type: string | null;
   subscription_status: string | null;
+  subscription_started_at: string | null;
   subscription_expires_at: string | null;
 }> {
   const { data } = await api.put(
@@ -39,11 +45,13 @@ export async function updateAdminUserSubscription(
     payload,
     {
       skipErrorToast: true,
-    } as any
+    } as any,
   );
 
   return {
+    subscription_type: data?.subscription_type ?? null,
     subscription_status: data?.subscription_status ?? null,
+    subscription_started_at: data?.subscription_started_at ?? null,
     subscription_expires_at: data?.subscription_expires_at ?? null,
   };
 }

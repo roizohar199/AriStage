@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
-import api, { getApiErrorMessage } from "@/modules/shared/lib/api.js";
+import api, {
+  getApiErrorMessage,
+  getApiSuccessMessage,
+} from "@/modules/shared/lib/api.js";
 import { useAuth } from "@/modules/shared/contexts/AuthContext.tsx";
 import { useSystemSettings } from "@/modules/shared/contexts/SystemSettingsContext.tsx";
+import { useOpenBillingPage } from "@/modules/shared/hooks/useOpenBillingPage.ts";
 import { useSubscription } from "@/modules/shared/hooks/useSubscription.ts";
 import { useTranslation } from "@/hooks/useTranslation.ts";
 import DesignActionButton from "@/modules/shared/components/DesignActionButton";
@@ -33,6 +37,7 @@ export default function Settings() {
   const { user, setUser, refreshUser } = useAuth();
   const { i18nSettings } = useSystemSettings();
   const subscription = useSubscription();
+  const openBillingPage = useOpenBillingPage();
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -84,8 +89,33 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deletingAvatar, setDeletingAvatar] = useState(false);
+  const [cancellingSubscription, setCancellingSubscription] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const formatSubscriptionDate = (value: Date | string | null | undefined) => {
+    if (!value) return null;
+    const date = value instanceof Date ? value : new Date(String(value));
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toLocaleDateString(
+      (user?.preferred_locale || "he-IL") as string,
+      {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      },
+    );
+  };
+
+  const renewalDate = formatSubscriptionDate(
+    subscription?.expiresAt ??
+      user?.subscription_expires_at ??
+      subscription?.renewsAt ??
+      user?.subscription_renews_at ??
+      null,
+  );
+  const isPayPalSubscription = subscription?.provider === "paypal";
+  const cancelAtPeriodEnd = subscription?.cancelAtPeriodEnd === true;
 
   // 📥 טעינת פרטי משתמש
   useEffect(() => {
@@ -229,6 +259,43 @@ export default function Settings() {
     }
   };
 
+  const cancelSubscription = async () => {
+    if (cancellingSubscription || !isPayPalSubscription || cancelAtPeriodEnd) {
+      return;
+    }
+
+    const confirmed = window.confirm(t("settings.cancelSubscriptionConfirm"));
+    if (!confirmed) return;
+
+    setCancellingSubscription(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const { data } = await api.post("/payments/paypal/cancel", {}, {
+        skipSuccessToast: true,
+      } as any);
+      await refreshUser();
+      setSuccess(
+        getApiSuccessMessage(
+          data,
+          "settings.cancelSubscriptionSuccess",
+          t("settings.cancelSubscriptionSuccess"),
+        ),
+      );
+    } catch (err: any) {
+      setError(
+        getApiErrorMessage(
+          err,
+          "settings.cancelSubscriptionError",
+          t("settings.cancelSubscriptionError"),
+        ),
+      );
+    } finally {
+      setCancellingSubscription(false);
+    }
+  };
+
   if (loading)
     return (
       <div className="text-center text-neutral-400 p-6">
@@ -290,6 +357,38 @@ export default function Settings() {
           </div>
         )}
 
+        {renewalDate ? (
+          <div className="text-sm text-neutral-300">
+            {cancelAtPeriodEnd
+              ? t("settings.accessUntilDate", { date: renewalDate })
+              : t("settings.renewalDateValue", { date: renewalDate })}
+          </div>
+        ) : null}
+
+        {isPayPalSubscription ? (
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <div className="rounded-2xl bg-neutral-950 px-3 py-2 text-xs text-neutral-300">
+              {t("settings.paymentProviderValue", { provider: "PayPal" })}
+            </div>
+            {cancelAtPeriodEnd ? (
+              <div className="rounded-2xl bg-amber-500/10 border border-amber-500/20 px-3 py-2 text-xs text-amber-200">
+                {t("settings.cancelScheduled")}
+              </div>
+            ) : isSubscriptionActive ? (
+              <DesignActionButton
+                type="button"
+                variant="danger"
+                onClick={cancelSubscription}
+                disabled={cancellingSubscription}
+              >
+                {cancellingSubscription
+                  ? t("settings.cancellingSubscription")
+                  : t("settings.cancelSubscriptionButton")}
+              </DesignActionButton>
+            ) : null}
+          </div>
+        ) : null}
+
         {shouldShowUpgrade && (
           <div className="pt-4 border-t border-neutral-800 space-y-4">
             <div>
@@ -304,7 +403,7 @@ export default function Settings() {
             <div className="max-w-md w- full space-y-4 mx-auto">
               <DesignActionButtonBig
                 type="button"
-                onClick={() => window.openUpgradeModal?.()}
+                onClick={() => openBillingPage()}
               >
                 {t("settings.upgradeButton")}
               </DesignActionButtonBig>

@@ -1,5 +1,6 @@
 import { asyncHandler } from "../../core/asyncHandler";
 import {
+  expireActiveTrials,
   getSubscriptionSettings,
   getSubscriptionPlans,
 } from "./subscriptions.repository";
@@ -15,6 +16,7 @@ export const subscriptionsController = {
       is_enabled: settings.is_enabled,
       price_ils: settings.price_ils,
       trial_days: settings.trial_days,
+      trial_enabled: settings.trial_enabled,
     });
   }),
 
@@ -24,6 +26,7 @@ export const subscriptionsController = {
       is_enabled: settings.is_enabled,
       price_ils: settings.price_ils,
       trial_days: settings.trial_days,
+      trial_enabled: settings.trial_enabled,
     });
   }),
 
@@ -45,7 +48,7 @@ export const subscriptionsController = {
     await ensureUserSubscriptionFresh(userId);
 
     const [rows] = await pool.query(
-      "SELECT role, subscription_type, subscription_status, subscription_expires_at, subscription_started_at FROM users WHERE id = ? LIMIT 1",
+      "SELECT role, subscription_type, subscription_status, subscription_provider, provider_subscription_id, subscription_expires_at, subscription_started_at, subscription_renews_at, subscription_cancel_at_period_end, subscription_cancelled_at FROM users WHERE id = ? LIMIT 1",
       [userId],
     );
 
@@ -72,8 +75,14 @@ export const subscriptionsController = {
     res.json({
       subscription_type: user.subscription_type ?? null,
       subscription_status: resolvedStatus,
+      subscription_provider: user.subscription_provider ?? null,
+      provider_subscription_id: user.provider_subscription_id ?? null,
       subscription_expires_at: user.subscription_expires_at ?? null,
       subscription_started_at: user.subscription_started_at ?? null,
+      subscription_renews_at: user.subscription_renews_at ?? null,
+      subscription_cancel_at_period_end:
+        Number(user.subscription_cancel_at_period_end ?? 0) === 1,
+      subscription_cancelled_at: user.subscription_cancelled_at ?? null,
       trial_days,
       isActive: resolvedStatus === "active",
       isExpired: resolvedStatus === "expired",
@@ -81,7 +90,8 @@ export const subscriptionsController = {
   }),
 
   updateSettings: asyncHandler(async (req, res) => {
-    const { price_ils, is_enabled, trial_days } = req.body || {};
+    const previousSettings = await getSubscriptionSettings();
+    const { price_ils, is_enabled, trial_days, trial_enabled } = req.body || {};
     // Minimal update query
     const clauses: string[] = [];
     const values: any[] = [];
@@ -97,6 +107,10 @@ export const subscriptionsController = {
       clauses.push("trial_days = ?");
       values.push(Number(trial_days));
     }
+    if (trial_enabled !== undefined) {
+      clauses.push("trial_enabled = ?");
+      values.push(Number(trial_enabled));
+    }
     if (!clauses.length) {
       return res
         .status(400)
@@ -109,6 +123,15 @@ export const subscriptionsController = {
         values,
       );
     });
+
+    if (
+      trial_enabled !== undefined &&
+      Number(previousSettings.trial_enabled) === 1 &&
+      Number(trial_enabled) === 0
+    ) {
+      await expireActiveTrials();
+    }
+
     const updated = await getSubscriptionSettings();
     res.json(updated);
   }),
